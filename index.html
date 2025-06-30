@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Fix - Land Your Dream Job</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * { 
+      font-family: 'Inter', sans-serif; 
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      overflow-x: hidden;
+    }
+    
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 8s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease infinite;
+    }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(180deg); }
+    }
+    
+    .morphing-blob {
+      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+      animation: morph 8s ease-in-out infinite;
+    }
+    
+    @keyframes morph {
+      0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+    }
+    
+    .pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+      to { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8), 0 0 60px rgba(118, 75, 162, 0.6); }
+    }
+    
+    .typing-animation::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    
+    .card-hover {
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-hover::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s;
+    }
+    
+    .card-hover:hover::before {
+      left: 100%;
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-20px) scale(1.02);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    }
+    
+    .parallax-element {
+      will-change: transform;
+    }
+    
+    .neon-glow {
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor;
+    }
+    
+    .particle-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      animation: particleFloat 10s linear infinite;
+    }
+    
+    @keyframes particleFloat {
+      0% {
+        transform: translateY(100vh) translateX(0);
+        opacity: 0;
+      }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% {
+        transform: translateY(-100px) translateX(100px);
+        opacity: 0;
+      }
+    }
+    
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(60px);
+      transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .counter {
+      font-weight: 900;
+      font-size: 3rem;
+      line-height: 1;
+    }
+    
+    .glowing-border {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .glowing-border::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #667eea);
+      background-size: 400% 400%;
+      border-radius: inherit;
+      z-index: -1;
+      animation: gradientShift 3s ease infinite;
+    }
+    
+    .progress-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1000;
+      transition: width 0.3s ease;
+    }
+    
+    @media (max-width: 768px) {
+      .counter { font-size: 2rem; }
+      .floating { animation-duration: 4s; }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progressBar"></div>
+
+  <!-- Particle Background -->
+  <div class="particle-container" id="particleContainer"></div>
+
+  <!-- 3D Background Canvas -->
+  <canvas id="threejs-canvas" style="position: fixed; top: 0; left: 0; z-index: -1; width: 100%; height: 100%;"></canvas>
+
+  <!-- Hero Section with Dynamic Elements -->
+  <section class="gradient-bg min-h-screen flex items-center relative overflow-hidden">
+    <!-- Animated Blobs -->
+    <div class="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 morphing-blob floating opacity-20"></div>
+    <div class="absolute top-40 right-20 w-24 h-24 bg-gradient-to-br from-blue-400 to-cyan-400 morphing-blob floating opacity-30" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-32 left-20 w-40 h-40 bg-gradient-to-br from-yellow-400 to-orange-400 morphing-blob floating opacity-15" style="animation-delay: 4s;"></div>
+    
+    <div class="container mx-auto px-6 text-center text-white relative z-10">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-tight neon-glow">
+          Land Your <span class="gradient-text typing-animation" id="dreamJobText">Dream Job</span><br>
+          with AI-Powered Resumes
+        </h1>
+        <p class="text-xl md:text-3xl mb-12 text-white/90 max-w-4xl mx-auto font-light">
+          Stop getting ignored. Get noticed by recruiters with professionally crafted resumes that beat ATS systems and stand out from the crowd.
+        </p>
+        
+        <!-- Animated Stats -->
+        <div class="flex justify-center gap-8 md:gap-16 mb-12 flex-wrap">
+          <div class="text-center glass-effect p-6 rounded-2xl pulse-glow">
+            <div class="counter text-yellow-300" data-target="247">0</div>
+            <div class="text-sm text-white/80 font-medium">Resumes Enhanced</div>
+          </div>
+          <div class="text-center glass-effect p-6 rounded-2xl pulse-glow" style="animation-delay: 0.5s;">
+            <div class="counter text-green-300" data-target="89">0</div>
+            <div class="text-sm text-white/80 font-medium">Interview Rate %</div>
+          </div>
+          <div class="text-center glass-effect p-6 rounded-2xl pulse-glow" style="animation-delay: 1s;">
+            <div class="counter text-blue-300" data-target="24">0</div>
+            <div class="text-sm text-white/80 font-medium">Hour Turnaround</div>
+          </div>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <button class="glowing-border bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-10 py-5 rounded-full font-bold text-xl shadow-2xl transform transition-all duration-300 hover:scale-110 hover:shadow-yellow-500/25" onclick="scrollToSection('packages')">
+            🚀 Start Your Transformation
+          </button>
+          <button class="glass-effect text-white px-10 py-5 rounded-full font-bold text-xl transition-all duration-300 hover:bg-white/20 hover:scale-105" onclick="scrollToSection('testimonials')">
+            ✨ See Success Stories
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section with Scroll Animations -->
+  <section class="py-24 bg-gray-900 relative">
+    <div class="container mx-auto px-6">
+      <div class="max-w-6xl mx-auto text-center">
+        <h2 class="text-4xl md:text-6xl font-black mb-12 scroll-reveal">
+          Are You Tired of Being <span class="gradient-text">Invisible</span> to Recruiters?
+        </h2>
+        <div class="grid md:grid-cols-3 gap-8 mt-16">
+          <div class="text-center p-8 glass-effect rounded-2xl card-hover scroll-reveal">
+            <div class="text-6xl mb-6 floating">😤</div>
+            <h3 class="font-bold text-2xl mb-4 text-red-400">Applications Ignored</h3>
+            <p class="text-gray-300 text-lg">Your resume gets lost in the pile of hundreds of applications</p>
+          </div>
+          <div class="text-center p-8 glass-effect rounded-2xl card-hover scroll-reveal" style="transition-delay: 0.2s;">
+            <div class="text-6xl mb-6 floating" style="animation-delay: 1s;">🤖</div>
+            <h3 class="font-bold text-2xl mb-4 text-orange-400">ATS Systems Reject You</h3>
+            <p class="text-gray-300 text-lg">Automated systems filter out your resume before humans see it</p>
+          </div>
+          <div class="text-center p-8 glass-effect rounded-2xl card-hover scroll-reveal" style="transition-delay: 0.4s;">
+            <div class="text-6xl mb-6 floating" style="animation-delay: 2s;">📉</div>
+            <h3 class="font-bold text-2xl mb-4 text-blue-400">Zero Interview Calls</h3>
+            <p class="text-gray-300 text-lg">Weeks pass by without a single response from employers</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section with Interactive Cards -->
+  <section id="packages" class="py-24 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div class="container mx-auto px-6">
+      <div class="text-center mb-20 scroll-reveal">
+        <h2 class="text-4xl md:text-6xl font-black mb-6 gradient-text">Choose Your Success Package</h2>
+        <p class="text-2xl text-gray-300 max-w-3xl mx-auto">Professional, ATS-optimized, and designed to get you noticed</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <!-- Basic Package -->
+        <div class="glass-effect rounded-3xl p-10 card-hover scroll-reveal glowing-border" style="transition-delay: 0.1s;">
+          <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6 pulse-glow">
+              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-3xl font-black mb-4 text-blue-400">Resume Fix</h3>
+            <div class="text-5xl font-black text-white mb-4">$29</div>
+            <div class="text-gray-400 text-lg">Perfect for job seekers</div>
+          </div>
+          <ul class="space-y-4 mb-10 text-lg">
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Professional rewrite & formatting</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> ATS optimization</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Keyword enhancement</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> 24-hour delivery</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> 1 revision included</li>
+          </ul>
+          <button class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 pulse-glow">
+            Get Started
+          </button>
+        </div>
+
+        <!-- Popular Package -->
+        <div class="glass-effect rounded-3xl p-10 card-hover scroll-reveal glowing-border relative" style="transition-delay: 0.3s; transform: scale(1.05);">
+          <div class="absolute -top-6 left-1/2 transform -translate-x-1/2">
+            <span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-2 rounded-full text-lg font-black pulse-glow neon-glow">
+              🔥 MOST POPULAR
+            </span>
+          </div>
+          <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mb-6 pulse-glow">
+              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+            <h3 class="text-3xl font-black mb-4 text-purple-400">Resume + LinkedIn</h3>
+            <div class="text-5xl font-black text-white mb-4">$59</div>
+            <div class="text-gray-400 text-lg">Complete online presence</div>
+          </div>
+          <ul class="space-y-4 mb-10 text-lg">
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Everything in Resume Fix</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> LinkedIn profile optimization</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Professional headline & summary</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Skills section enhancement</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Recruiter visibility boost</li>
+          </ul>
+          <button class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 pulse-glow">
+            Choose Popular 🚀
+          </button>
+        </div>
+
+        <!-- Pro Package -->
+        <div class="glass-effect rounded-3xl p-10 card-hover scroll-reveal glowing-border" style="transition-delay: 0.5s;">
+          <div class="text-center mb-8">
+            <div class="inline-block p-4 bg-gradient-to-br from-green-500 to-teal-600 rounded-full mb-6 pulse-glow">
+              <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+              </svg>
+            </div>
+            <h3 class="text-3xl font-black mb-4 text-green-400">Pro Package</h3>
+            <div class="text-5xl font-black text-white mb-4">$99</div>
+            <div class="text-gray-400 text-lg">Complete career arsenal</div>
+          </div>
+          <ul class="space-y-4 mb-10 text-lg">
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Everything in Resume + LinkedIn</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Custom cover letter template</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Job application strategy guide</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> Interview preparation tips</li>
+            <li class="flex items-center"><span class="text-green-400 mr-3 text-xl">✓</span> 30-day email support</li>
+          </ul>
+          <button class="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-105 pulse-glow">
+            Go Pro ⭐
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials with Interactive Elements -->
+  <section id="testimonials" class="py-24 bg-gray-900">
+    <div class="container mx-auto px-6">
+      <div class="text-center mb-20 scroll-reveal">
+        <h2 class="text-4xl md:text-6xl font-black mb-6 text-white">Success Stories That <span class="gradient-text">Speak Volumes</span></h2>
+        <p class="text-2xl text-gray-300">Real people. Real results. Real fast.</p>
+      </div>
+      
+      <div class="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div class="glass-effect p-10 rounded-3xl card-hover scroll-reveal" style="transition-delay: 0.1s;">
+          <div class="flex items-center mb-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-black text-2xl pulse-glow">
+              A
+            </div>
+            <div class="ml-6">
+              <div class="font-bold text-xl text-white">Alex Rodriguez</div>
+              <div class="text-gray-400">Software Engineer</div>
+            </div>
+          </div>
+          <p class="text-gray-300 text-lg italic mb-6 leading-relaxed">"I went from 0 responses to landing 3 interviews in just one week! The resume transformation was incredible."</p>
+          <div class="flex text-yellow-400 text-2xl">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+        
+        <div class="glass-effect p-10 rounded-3xl card-hover scroll-reveal" style="transition-delay: 0.3s;">
+          <div class="flex items-center mb-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-black text-2xl pulse-glow">
+              J
+            </div>
+            <div class="ml-6">
+              <div class="font-bold text-xl text-white">Jamie Liu</div>
+              <div class="text-gray-400">Marketing Manager</div>
+            </div>
+          </div>
+          <p class="text-gray-300 text-lg italic mb-6 leading-relaxed">"The LinkedIn optimization brought recruiters to ME. I had 5 companies reach out within 2 weeks!"</p>
+          <div class="flex text-yellow-400 text-2xl">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+        
+        <div class="glass-effect p-10 rounded-3xl card-hover scroll-reveal" style="transition-delay: 0.5s;">
+          <div class="flex items-center mb-6">
+            <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-black text-2xl pulse-glow">
+              S
+            </div>
+            <div class="ml-6">
+              <div class="font-bold text-xl text-white">Sarah Chen</div>
+              <div class="text-gray-400">Data Analyst</div>
+            </div>
+          </div>
+          <p class="text-gray-300 text-lg italic mb-6 leading-relaxed">"Increased my salary by 40% with the new resume. The investment paid for itself 100x over!"</p>
+          <div class="flex text-yellow-400 text-2xl">
+            ⭐⭐⭐⭐⭐
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA with Explosive Visuals -->
+  <section class="py-24 gradient-bg relative overflow-hidden">
+    <div class="container mx-auto px-6 text-center relative z-10">
+      <div class="max-w-4xl mx-auto text-white scroll-reveal">
+        <h2 class="text-4xl md:text-7xl font-black mb-8 neon-glow">Ready to Transform Your Career?</h2>
+        <p class="text-2xl mb-12 text-white/90 font-light">Join hundreds of professionals who've already upgraded their career prospects</p>
+        
+        <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-10">
+          <a href="mailto:slims0702@gmail.com" class="glowing-border bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-12 py-6 rounded-full font-black text-2xl transform transition-all duration-300 hover:scale-110 pulse-glow">
+            📧 Email Me Now
+          </a>
+          <a href="https://www.linkedin.com/in/kashif-shafiq-3b0570223?" class="glass-effect text-white px-12 py-6 rounded-full font-black text-2xl transition-all duration-300 hover:bg-white/20 hover:scale-105">
+            💼 LinkedIn DM
+          </a>
+        </div>
+        
+        <div class="text-lg text-white/80 glass-effect p-6 rounded-2xl inline-block">
+          ⚡ 24-hour turnaround • 💯 Satisfaction guaranteed • 🔄 Free revision included
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black text-white py-12">
+    <div class="container mx-auto px-6 text-center">
+      <div class="mb-6">
+        <h3 class="text-3xl font-black gradient-text">AI Resume Fix</h3>
+      </div>
+      <div class="text-gray-400">
+        © 2025 AI Resume Fix. Transforming careers, one resume at a time. 💻✨
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scrolling function
+    function scrollToSection(sectionId) {
+      document.getElementById(sectionId).scrollIntoView({
+        behavior: 'smooth'
+      });
+    }
+
+    // Progress bar
+    window.addEventListener('scroll', () => {
+      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (window.scrollY / windowHeight) * 100;
+      document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Particle system
+    function createParticles() {
+      const container = document.getElementById('particleContainer');
+      
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 10 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        container.appendChild(particle);
+      }
+    }
+
+    // Counter animation
+    function animateCounters() {
+      const counters = document.querySelectorAll('.counter');
+      
+      counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const increment = target / 100;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          counter.textContent = Math.floor(current);
+        }, 20);
+      });
+    }
+
+    // Scroll reveal animation
+    function handleScrollReveal() {
+      const reveals = document.querySelectorAll('.scroll-reveal');
+      
+      reveals.forEach(reveal => {
+        const windowHeight = window.innerHeight;
+        const elementTop = reveal.getBoundingClientRect().top;
+        const elementVisible = 150;
+        
+        if (elementTop < windowHeight - elementVisible) {
+          reveal.classList.add('revealed');
+        }
+      });
+    }
+
+    // Typing animation
+    function typeWriter() {
+      const texts = ['Dream Job', 'Career Goals', 'Success Story', 'Future Today'];
+      let textIndex = 0;
+      let charIndex = 0;
+      const element = document.getElementById('dreamJobText');
+      
+      function type() {
+        if (charIndex 
