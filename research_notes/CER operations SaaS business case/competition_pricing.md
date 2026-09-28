@@ -422,7 +422,7 @@ The best-fit buyers are portfolio administrators: ESCos, cooperatives such as è
   - City Green Light works with 330+ municipalities — [citygreenlight.com](https://citygreenlight.com/comunita-energetiche-rinnovabili/)
   - WeCER is a national aggregated CER — [Plenitude](https://corporate.eniplenitude.com/it/media/comunicati-stampa/energie-rinnovabili/20-10-2025-comunita-energetiche-plenitude-e-coesa-insieme-per-offrire-un-nuovo-servizio-dedicato-alle-aziende-italiane)
   - MyCER markets "multi-CER" — [mycer.it](https://www.mycer.it/mycer/)
-- **Front-office price pressure:** Hopee is free — [hopee.it](https://www.hopee.it/); Energiesolidali charges a 12 € one-off fee — [energiesolidali.it](https://www.energiesolidali.it/index.php/comunita-energetiches/tariffe-servizio-cer)
+- **Front-office price pressure:** Hopee is free — [hopee.it](https://www.hopee.it/); Energiesolidali charges a 12 € one-off fee — [energiesolidali.it](https://www.energiesolidali.it/index.php/comunita-energetiche/tariffe-servizio-cer)
 - **The GSE is automating the primary-substation check and POD changes** (April 2026), which erodes "cabina primaria check" as a paid feature — [pv magazine Italia](https://www.pv-magazine.it/2026/04/28/cer-gse-ora-e-piu-semplice-modificare-le-configurazioni-gia-approvate/)
 
 ### Inferences (candidate white-space features, prioritised by evidence strength)
