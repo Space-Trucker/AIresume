@@ -1,0 +1,298 @@
+{
+  "hazard_zone": [
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 5.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 8.83052443531793,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 5.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 4.424981688839614,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 20.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 19.956070004966765,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 20.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 9.965512194277267,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 50.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 32.145988255043996,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 0.3,
+      "E_uJ": 50.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 16.052821916990858,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 5.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 0.0,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 5.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 0.0,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 20.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 0.0,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 20.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 0.0,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 50.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 8.83052443531793,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 1550,
+      "tau_ps": 3.0,
+      "E_uJ": 50.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 4.424981688839614,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 30.0,
+      "mpe_ANSI": 1000.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 5.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 32.145988255043996,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 5.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 16.052821916990858,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 20.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 64.81908941565145,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 20.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 32.36886951352922,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 50.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 102.62491565784943,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 0.3,
+      "E_uJ": 50.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 51.42541373742807,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 0.3,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 5.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 8.83052443531793,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 5.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 4.424981688839614,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 20.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 19.956070004966765,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 20.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 9.965512194277267,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 50.0,
+      "NA": 0.1,
+      "zone_IEC_mm": 32.145988255043996,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    },
+    {
+      "lam_nm": 2050,
+      "tau_ps": 3.0,
+      "E_uJ": 50.0,
+      "NA": 0.2,
+      "zone_IEC_mm": 16.052821916990858,
+      "zone_ANSI_mm": 0.0,
+      "mpe_IEC": 3.0,
+      "mpe_ANSI": 100.0
+    }
+  ],
+  "average": {
+    "floor footprint 1 m^2 (beams end on floor)": 0.001,
+    "head leaning 30 cm above voxels, intercepting 20% of beams in 200 cm^2": 0.01
+  },
+  "hand_blanking": [
+    {
+      "hazard_mm": 2,
+      "track_err_mm": 5,
+      "latency_ms": 5,
+      "hand_speed_m_s": 1.0,
+      "margin_mm": 12.0,
+      "blanked_fraction": 0.012723995334535044
+    },
+    {
+      "hazard_mm": 2,
+      "track_err_mm": 10,
+      "latency_ms": 10,
+      "hand_speed_m_s": 2.0,
+      "margin_mm": 32.0,
+      "blanked_fraction": 0.03021948891952073
+    },
+    {
+      "hazard_mm": 5,
+      "track_err_mm": 5,
+      "latency_ms": 5,
+      "hand_speed_m_s": 1.0,
+      "margin_mm": 15.0,
+      "blanked_fraction": 0.013572261690170714
+    },
+    {
+      "hazard_mm": 5,
+      "track_err_mm": 10,
+      "latency_ms": 10,
+      "hand_speed_m_s": 2.0,
+      "margin_mm": 35.0,
+      "blanked_fraction": 0.034354787403244616
+    },
+    {
+      "hazard_mm": 10,
+      "track_err_mm": 5,
+      "latency_ms": 5,
+      "hand_speed_m_s": 1.0,
+      "margin_mm": 20.0,
+      "blanked_fraction": 0.016541193934895556
+    },
+    {
+      "hazard_mm": 10,
+      "track_err_mm": 10,
+      "latency_ms": 10,
+      "hand_speed_m_s": 2.0,
+      "margin_mm": 40.0,
+      "blanked_fraction": 0.04135298483723889
+    }
+  ]
+}

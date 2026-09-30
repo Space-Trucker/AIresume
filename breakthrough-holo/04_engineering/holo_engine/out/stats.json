@@ -1,0 +1,31 @@
+{
+  "points_per_frame": 23845,
+  "stroke_luminance": 5.0,
+  "room_background": 1.0,
+  "point_intensity_cd": 1.5e-05,
+  "total_lumens": 4.494676609490917,
+  "interlock_margin_mm": 22.5,
+  "blanked_fraction": 0.011155378486055745,
+  "aperture_use": [
+    22411,
+    1161,
+    7
+  ],
+  "glove_events": [
+    {
+      "finger": "index",
+      "touching": true,
+      "voxels_within": 10,
+      "intensity": 1.0,
+      "nearest_mm": 1.0040470754964756
+    },
+    {
+      "finger": "thumb",
+      "touching": false,
+      "voxels_within": 0,
+      "intensity": 0.0,
+      "nearest_mm": 78.51676337259183
+    }
+  ],
+  "video_panel_points": 719
+}
