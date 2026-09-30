@@ -30,3 +30,12 @@ B_double_5+5uJ_delay30ns skipped (exists)
 B_double_5+5uJ_delay3ns skipped (exists)
 B_double_5+5uJ_delay300ns skipped (exists)
 A_E300uJ_eps1e+08 skipped (exists)
+C_shell_E100uJ_R30um eta=0.0774 NO/J=4.94e+15 wall=1507s
+C_shell_E10uJ_R100um eta=8.23e-14 NO/J=7.55e+13 wall=1524s
+C_shell_E10uJ_R30um eta=0.00269 NO/J=1.14e+16 wall=1538s
+C_shell_E100uJ_R100um eta=4.04e-06 NO/J=5.76e+16 wall=1590s
+M_mix_E3uJ_eps3e+08 eta=0.0243 NO/J=2.65e+15 wall=55s
+M_mix_E10uJ_eps3e+08 eta=0.038 NO/J=3.87e+15 wall=55s
+M_mix_E100uJ_eps3e+08 eta=0.0866 NO/J=6.56e+15 wall=62s
+D_cyl_matched_E10uJ_eps3e+08 eta=0.112 NO/J=1.37e+16 wall=516s
+D_cyl_matched_E100uJ_eps3e+08 eta=0.262 NO/J=3.27e+16 wall=687s

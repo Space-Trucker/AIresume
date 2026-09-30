@@ -337,3 +337,36 @@ Independent review (`05_reviews/red_team_2_spark.md`): 4 critical, 10 major, 8 m
 - Absolute micro-spark η better than about ×3, given the Biberman factor, conductivity table and geometry.
 
 v1 runs are archived in `results/v1_superseded/`.
+
+---
+
+## 2026-09-30 · Entry 11: Atlas complete; E10c re-grade; the lumen-locked pollution law
+
+**Atlas (40 formats, SPARK v2).**
+
+| Finding | Detail | Prediction |
+|---|---|---|
+| η rises with spark size at fixed deposition density | ε = 10⁹: 0.034 lm/W at 1 µJ → 0.39 at 1 mJ | P5 ✓ |
+| Coefficient below prediction | η/r₀ ≈ 2×10³ lm W⁻¹ m⁻¹, 2.5× under my estimate | P10 ✗ |
+| Double pulse loses light | 0.15–0.73× single; the reheated kernel is dilute | P9 ✗, P12 ✓ |
+| Shell implosion | Stalled numerically | P13 inconclusive |
+| Line focus | η ×3, same UV and chemistry per lumen | — |
+| Mixing | No effect on micro-spark light; −20–25 % NO | — |
+
+Operational note: the shell runs hung for 2 h on 4 cores (time step collapsed at the converging shock). I added a wall-clock cap with a `completed` flag. My first `pkill -f atlas.py` killed its own shell, because the command line contained the pattern; I redid it safely.
+
+**E10c: feasibility with SPARK numbers** (model-form bands η ×3, reactive ×3, UV ×(0.5–3); noise +5.4 dB from the V16 fail):
+
+| Target | P(home) | P(venue) |
+|---|---|---|
+| Sparse accents | 0 | 0.69–0.73 |
+| 5 m sketch | 0 | 0.15–0.23 |
+| Film contrast (9 m) | 0 | 0.03–0.05 |
+| Film density | 0 | 0 |
+| Film exact | 0 | 0 |
+
+For the sketch, the binding constraints are air (80 % of draws fail), noise (76 %) and O₃ (37 %).
+
+**Lumen-locked pollution law (T4).** UV and reactive gases per lumen are fixed by the plasma's spectral shape and VUV lines, not by spark design.
+- The UV cap alone limits a continuous display to Φ ≤ 1 lm with the user at 0.4 m. Film density needs 1.5 lm; the film itself needs 19 lm.
+- Registered as P14 for the bench.

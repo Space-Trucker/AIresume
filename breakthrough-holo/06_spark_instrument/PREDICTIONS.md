@@ -55,3 +55,9 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 | P10 | η ∝ r₀ holds, but η/r₀ = 1.9–2.25×10³ lm W⁻¹ m⁻¹ at ε = 3×10⁸ (predicted 3–8×10³) | **FAIL** (proportionality ✓, coefficient 2.5× lower). Mechanism: the isochoric figure of merit ignored the energy that escapes as VUV lines and the time spent cooling below the visible-emitting temperature. |
 | P11 | NO/J: 10 µJ 4.9–10×10¹⁵; 1 mJ 1.7–4.0×10¹⁶ (≥ 3×10¹⁶ only for ε ≥ 10⁹) | **PARTIAL** |
 | P12 | double pulse < 1.2× | **PASS** |
+| P13 | Shell (converging-shock) deposition: all 4 runs stalled numerically (dt collapse at the converging shock; stopped by the wall-clock cap at 2.5–107 ns, before most light is emitted). Partial η 0.0027–0.077 vs 0.038–0.087 Gaussian. | **INCONCLUSIVE** (numerics; the Noh test passes for ideal gas but the real-gas shell stalls) |
+
+### New results outside the registered predictions (flagged as post hoc)
+- Line focus (cylindrical, matched peak ε and r₀): η ×2.95–3.02 vs sphere, while reactive gases, O₃ and actinic UV **per lumen** are unchanged (ratio 0.98–1.14).
+- Mixing on/off does not change micro-spark η (light is emitted in the first ns) and lowers NO by 20–25 %.
+- **Lumen-locked pollution law** (T4): actinic UV per lm·s = 1.8–2.3×10⁻³ J_eff and reactive molecules per lm·s = 1.8–3.7×10¹⁷ across all 30 efficient designs. Post hoc, so it is registered now as a prediction for the bench (X1/X2): **P14**. Any spark format measured on the bench will give actinic UV/lm·s within 1–4.6×10⁻³ J_eff and reactive/lm·s within 1–7×10¹⁷.
