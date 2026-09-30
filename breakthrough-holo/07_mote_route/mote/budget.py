@@ -59,9 +59,12 @@ def intercept(a, w):
 def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitter="phosphor:cyan_BaSi2O2N2",
            lam_trap=1550, pump_lam=405, throw=1.5, R_head=0.05, T_max=450.0, u_air=0.3, f=30.0, duty=0.7,
            w_s=1e-3, C_ph=1.0, A_trap=0.9, rho_p=1500.0, albedo=0.8, g_side=0.5, scatter_lam=488,
-           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4, eta_single=0.5, B_focus=None, R_ft=None, eta_shape=0.8):
+           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4, eta_single=0.5, B_focus=None, R_ft=None, eta_shape=0.8, arch_params=None,
+           pump_R_head=None, pump_throw=None):
     L, S = CONTENT[content] if isinstance(content, str) else content
-    A = ARCH[arch]
+    A = dict(ARCH[arch]) if arch in ARCH else {}
+    if arch_params:
+        A.update(arch_params)          # e.g. a room head array from sim_m4: heads, h_worst, h_mean, single, eta=1
     w_t = waist(lam_trap, throw, R_head, M2)
     # focus tracking: a beam's focus must follow the mote along the beam axis. A tracking loop of bandwidth B_focus
     # lags a ramp of speed v by v / (2 pi B_focus); keeping that lag <= z_R / 2 needs z_R = pi w^2 / lambda >=
@@ -83,7 +86,7 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
     # --- emitter: absorbed pump power and its heat (solved together with temperature) -----------------------
     kind, _, name = emitter.partition(":")
     lam_e_nm = pump_lam if kind == "phosphor" else (980 if kind == "uc" else scatter_lam)
-    w_p = waist(lam_e_nm, throw, R_head, M2)
+    w_p = waist(lam_e_nm, pump_throw or throw, pump_R_head or R_head, M2)
     if B_focus:
         w_p = max(w_p, math.sqrt(v * lam_e_nm * 1e-9 / (math.pi ** 2 * B_focus)))
     icp = intercept(a, w_p)
