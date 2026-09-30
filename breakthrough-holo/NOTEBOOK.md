@@ -230,7 +230,7 @@ The red team found 3 critical, 11 major and 5 minor problems (`05_reviews/red_te
 2. **More projectors do not change the absorbed power.** Sparks just above threshold absorb 0.2–3 % (E3 model) and are far too dim. Absorbed power is therefore set by the light wanted, P_abs = lumens/η. That is a per-room quantity, and chemistry, UV and the noise floor scale with it.
 3. **Spreading the same light over more, smaller sparks is a trade, not a win.**
    - Heat-release noise ∝ P_abs·E_spark gives −3 dB per halving of spark energy.
-   - The η model gives 0.154 → 0.134 → 0.117 lm/W for 5 → 2.5 → 1.25 µJ, so each halving costs +15 % absorbed power and hence more NO₂/UV. The binding constraint gets worse.
+   - The η model gives 0.139 → 0.111 → 0.090 lm/W for 5 → 2.5 → 1.25 µJ absorbed, so each halving costs +23–25 % absorbed power and hence more NO₂/UV. The binding constraint gets worse. (A first draft of this entry quoted 0.154/0.134/0.117 before the check ran; corrected.)
 
 **What multiple projectors do help:**
 - The étendue problem (E12).
