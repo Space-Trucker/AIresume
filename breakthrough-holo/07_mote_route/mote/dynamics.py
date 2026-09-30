@@ -38,16 +38,19 @@ def path_positions(points, speed, dt, loops=1):
 
 
 def simulate(points, speed, a, rho_p, P_beam, w, kp, draft=(0.1, 0.0, 0.0), gust_sigma=0.1, gust_tau=0.3,
-             eta_trap=0.3, Tm=T0, loops=3, seed=0, hand_wake=None, dt=None):
-    """Integrate the mote; returns dict(lost, t_lost, max_lag/w, rms_lag, Fmax_over_weight)."""
+             eta_trap=0.3, Tm=T0, loops=3, seed=0, hand_wake=None, dt=None, start_moving=True):
+    """Integrate the mote; returns dict(lost, t_lost, max_lag/w, rms_lag, Fmax_over_weight).
+
+    start_moving: the mote starts with the trap's velocity (steady tracing). With False it starts at rest and the
+    trap starts at full speed (an impulsive start, which loses motes whenever v * tau_p > ~3w)."""
     rng = np.random.default_rng(seed)
     m = 4 / 3 * math.pi * a ** 3 * rho_p
     tau_p = m / (6 * math.pi * mu_air(T0) * a)
     dt = dt or min(tau_p / 5, 2e-5)
-    ts, X, _ = path_positions(points, speed, dt, loops)
+    ts, X, Vtrap = path_positions(points, speed, dt, loops)
     Fmax = trap_Fmax(a, P_beam, w, kp, eta_trap=eta_trap, Tm=Tm)
     x = X[0].copy()
-    v = np.zeros(3)
+    v = Vtrap[0].copy() if start_moving else np.zeros(3)
     gust = np.zeros(3)
     lags = []
     Tf = 0.5 * (T0 + Tm)

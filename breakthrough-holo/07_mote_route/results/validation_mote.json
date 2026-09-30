@@ -1,0 +1,263 @@
+{
+ "passed": 26,
+ "total": 26,
+ "tests": [
+  {
+   "id": "M01",
+   "name": "mean free path of air, 293 K",
+   "kind": "P",
+   "value": 0.06506418743828747,
+   "criterion": "0.066 um +-3 %",
+   "status": "PASS",
+   "source": "Hinds 2.25"
+  },
+  {
+   "id": "M02",
+   "name": "Cunningham factor d = 1 um and 0.1 um",
+   "kind": "P",
+   "value": [
+    1.1635824655545082,
+    2.859232740906691
+   ],
+   "criterion": "1.168, 2.91 +-4 %",
+   "status": "PASS",
+   "source": "Hinds table A.11"
+  },
+  {
+   "id": "M03",
+   "name": "settling velocity, d = 10 um, unit density",
+   "kind": "P",
+   "value": 3.0546952099427425,
+   "criterion": "3.06 mm/s +-4 %",
+   "status": "PASS",
+   "source": "Hinds table A.11 (3.06e-3 m/s)"
+  },
+  {
+   "id": "M04",
+   "name": "diffusion coefficient, d = 1 um",
+   "kind": "P",
+   "value": 2.7556513082926682e-11,
+   "criterion": "2.77e-11 m^2/s +-5 %",
+   "status": "PASS",
+   "source": "Hinds table A.9"
+  },
+  {
+   "id": "M05",
+   "name": "drag = Stokes x (1 + 3Re/16)",
+   "kind": "I",
+   "value": 9.077042354587659e-10,
+   "criterion": "exact",
+   "status": "PASS",
+   "source": "Oseen"
+  },
+  {
+   "id": "M06",
+   "name": "small-dT conduction with temperature jump",
+   "kind": "I",
+   "value": 1.2893510296764816,
+   "criterion": "1.289 K +-1 %",
+   "status": "PASS",
+   "source": "Fuchs jump-sphere solution"
+  },
+  {
+   "id": "M07",
+   "name": "Kirchhoff integral vs numerical",
+   "kind": "I",
+   "value": 16.04071006926846,
+   "criterion": "trapezoid +-1e-6",
+   "status": "PASS",
+   "source": "calculus"
+  },
+  {
+   "id": "M08",
+   "name": "air conductivity at 600 K",
+   "kind": "P",
+   "value": 0.04623846752164722,
+   "criterion": "0.0469 W/m/K +-5 %",
+   "status": "PASS",
+   "source": "Incropera table A.4 (46.9 mW/m/K)"
+  },
+  {
+   "id": "M09",
+   "name": "continuum photophoretic force = Yalamov/Reed formula",
+   "kind": "I",
+   "value": 1.087269942138673e-09,
+   "criterion": "exact",
+   "status": "PASS",
+   "source": "Reed 1977 eq.; Horvath 2014 review"
+  },
+  {
+   "id": "M10",
+   "name": "slip factor -> 1 as Kn -> 0",
+   "kind": "I",
+   "value": 0.9995902356530679,
+   "criterion": "> 0.999",
+   "status": "PASS",
+   "source": "limit"
+  },
+  {
+   "id": "M11",
+   "name": "heat-force identity: F/dT independent of a (continuum)",
+   "kind": "I",
+   "value": [
+    4.470854002074187e-12,
+    4.470854002074185e-12,
+    4.470854002074185e-12,
+    4.470854002074595e-12
+   ],
+   "criterion": "spread < 1e-9",
+   "status": "PASS",
+   "source": "T5 derivation"
+  },
+  {
+   "id": "M12",
+   "name": "photophoretic / radiation-pressure force, a = 2.5 um",
+   "kind": "P",
+   "value": 1418.1445219489894,
+   "criterion": "1e2 - 1e5",
+   "status": "PASS",
+   "source": "R5: JOSA B 34, 1242 (2017); Opt. Express 2009"
+  },
+  {
+   "id": "M13",
+   "name": "lateral/axial dipole ratio = (3/8) g a",
+   "kind": "I",
+   "value": 0.037499987952135286,
+   "criterion": "0.03750 +-0.5 %",
+   "status": "PASS",
+   "source": "T5 derivation"
+  },
+  {
+   "id": "M14",
+   "name": "push4 minimal summed force = -3 min(u.d)",
+   "kind": "I",
+   "value": 1.7763568394002505e-15,
+   "criterion": "< 1e-6",
+   "status": "PASS",
+   "source": "LP check of T5"
+  },
+  {
+   "id": "M15",
+   "name": "V(555) = 1 -> 683 lm/W",
+   "kind": "I",
+   "value": 679.585,
+   "criterion": "683 +-0.5 %",
+   "status": "PASS",
+   "source": "CIE 1924"
+  },
+  {
+   "id": "M16",
+   "name": "blackbody luminous efficacy at 3000 K",
+   "kind": "P",
+   "value": 20.669615140112967,
+   "criterion": "20.7 lm/W +-5 %",
+   "status": "PASS",
+   "source": "R6 (Planck x V); Murphy lumens-per-watt"
+  },
+  {
+   "id": "M17",
+   "name": "UC Er/Yb efficacy at saturation, 293 K",
+   "kind": "P",
+   "value": 74.21946411351236,
+   "criterion": "60-120 lm/W_abs (R6)",
+   "status": "PASS",
+   "source": "R6: Kaiser 2017 (UCQY 10.5 %), Sci Rep 2023"
+  },
+  {
+   "id": "M18",
+   "name": "UC absorptance, d = 5 um, 20 % Yb (path d) vs R6 1.4 %",
+   "kind": "P",
+   "value": 0.013409283682267348,
+   "criterion": "1.4 % +-25 %",
+   "status": "PASS",
+   "source": "R6 section 1.5"
+  },
+  {
+   "id": "M19",
+   "name": "phosphor energy balance: out + heat = absorbed",
+   "kind": "I",
+   "value": 1.0,
+   "criterion": "1.000",
+   "status": "PASS",
+   "source": "energy conservation"
+  },
+  {
+   "id": "M20",
+   "name": "Class 1 AEL table (980/1064/1550/405 nm)",
+   "kind": "I",
+   "value": [
+    3.9e-05,
+    0.0014160044136033955,
+    0.00197,
+    0.01
+   ],
+   "criterion": "R7 K1 values",
+   "status": "PASS",
+   "source": "R7 K1; IEC 60825-1:2014 Table 3"
+  },
+  {
+   "id": "M21",
+   "name": "dynamic loss threshold brackets static F_max/drag on a circle (0.8x kept, 1.25x lost)",
+   "kind": "I",
+   "value": {
+    "v_static": 1.1395978777329836,
+    "kept_at_0p8": true,
+    "lost_at_1p25": true
+   },
+   "criterion": "both true",
+   "status": "PASS",
+   "source": "consistency"
+  },
+  {
+   "id": "M22",
+   "name": "BYU 1.83 m/s (Nature 2018) reproducible below char/ignition (dT < 700 K) at eta = 1",
+   "kind": "C",
+   "value": {
+    "min": 162.20059960400715,
+    "max": 403.12748303806904
+   },
+   "criterion": "100 K < dT < 700 K for all cases",
+   "status": "PASS",
+   "source": "R5: Smalley et al. Nature 553, 486 (2018)"
+  },
+  {
+   "id": "M23",
+   "name": "Shvedov 2009 guiding (1 cm/s, < 1 mW) within model",
+   "kind": "C",
+   "value": 1.1515590473859698,
+   "criterion": "absorbed power needed < 1 mW x intercept(0.1)",
+   "status": "PASS",
+   "source": "R5: Shvedov Opt. Express 2009"
+  },
+  {
+   "id": "M24",
+   "name": "BYU hold power (18-24 mW) >> model gravity-balance absorbed power",
+   "kind": "C",
+   "value": 3.0155655589864043,
+   "criterion": "< 1 % of 18 mW",
+   "status": "PASS",
+   "source": "R5: BYU rig papers (RSI 2021)"
+  },
+  {
+   "id": "M25",
+   "name": "budget: absorbed power reproduces required force at solved T",
+   "kind": "I",
+   "value": 1.0,
+   "criterion": "1 +-1e-6",
+   "status": "PASS",
+   "source": "self-consistency"
+  },
+  {
+   "id": "M26",
+   "name": "budget: solved T within heat balance (trap heat <= loss at T)",
+   "kind": "I",
+   "value": {
+    "heat_in_trap": 2.2345401097038897e-05,
+    "loss": 2.406969157164849e-05
+   },
+   "criterion": "trap heat <= loss <= 1.2 x trap+pump",
+   "status": "PASS",
+   "source": "self-consistency"
+  }
+ ]
+}
