@@ -418,3 +418,46 @@ The new combination has not been analysed in the literature I know. The projecto
 - per-beam laser class. At 1550 nm the Class 1 CW limit is ~10 mW, which could make each beam Class 1: a consumer route that plasma never had.
 
 Research agents launched: R5 (optical-trap display state of the art), R6 (emitter materials), R7 (CW-IR and particle safety).
+
+## 2026-09-30 · Entry 14: MOTE instrument v1, atlas, feedback and the steering wall
+
+**What R5–R7 changed.**
+- **Room throw widens the trap.** A 1.5 m throw makes the focus much wider than a mote (w ≈ 6–19 µm at 1550 nm). So a single-head gradient trap wastes most of its heat.
+- **Consumer rules mean Class 1.** US and EU consumer IR displays must be Class 1: 10 mW per beam at 1550 nm, 39 µW at 405 nm.
+- **Emitter choice.** Upconversion works (~74 lm/W absorbed) but absorbs weakly. Incandescent motes burn.
+
+**New physics, derived and validated** (T5; `validate_mote.py` 26/26):
+- **Heat-force identity.** The force per kelvin of mean mote heating does not depend on radius: 9.5×10⁻¹² N/K at k_p = 0.02. **Heat, not laser power, limits speed.**
+- **Speed law.** v_max ∝ ΔT/(a (k_p + 2k_g) h).
+- **Lateral law.** F_x/F_z = (3/8) g a, which gives η_lat = 0.75 a/w.
+- **Push-trap allocation factors.** Tetrahedral heads: 1–3; octahedral: 1–√3.
+- **Focus law.** P_beam · B_focus ≥ I λ v k/2π.
+- **BYU consistency.** The model reproduces BYU's 1.83 m/s record with 160–400 K of heating. That implies BYU's single-beam trap reaches η ≳ 0.4.
+
+**Atlas M1** (576 designs × 5 targets; best by channel count). Design: push4, a = 1 µm, k_p = 0.02, 300 mm heads, cyan phosphor with a 405 nm pump.
+- **Film density** (4 cd/m², 30 m of strokes): 1 131 motes, 4 524 channels, 1.8 W of 1550 nm. Class 1 per beam (0.87 mW) and at every exit window; 36 µW pump per beam against the 39 µW limit; mote ΔT = 149 K.
+- **Sketch:** 188 motes, 754 channels.
+- **Accent:** 38 motes, 151 channels.
+- **Film-exact in a lit lab:** only upconversion motes with push6, needing 32 k channels.
+- **Scatter motes are dead.** I first missed forward diffraction, which lights the walls as much as the image; it was fixed in atlas v2.
+
+**Feedback M2.** A push trap needs a ≥ 15–20 kHz loop at room gusts and ≤ 0.5 µm position sensing.
+- An attempted disturbance observer made things worse by amplifying sensor noise. This is logged as a negative result.
+- M2b adds the photophoretic force lag: the mote's internal thermal diffusion, τ_F ≈ 15 µs at a = 1 µm.
+
+**Steering wall (M3).** Each channel needs:
+- ~78 000 resolvable positions per axis over a 1 m field (more than a 30 mm galvo);
+- 0.3–0.6 µrad pointing precision;
+- 2–17 kHz focus tracking;
+- 20 kHz control.
+
+Each function exists in some device; thousands of integrated channels do not. **The binding problem has moved from physics to engineering.**
+
+**My own bugs this entry** (all fixed before any result was used):
+- **Budget.** The final force was not recomputed at the converged temperature (M25 caught it).
+- **Dynamics.** An impulsive start lost every mote in the validation test; motes now start moving with the trap.
+- **Feedback sim, time step.** A 12.5 µm step was larger than the trap.
+- **Feedback sim, stale reference.** A stale plan reference in the beam re-centring was worse than no correction.
+- **Shell.** `pkill -f` killed my own shell a second time. **Rule: kill by PID only.**
+
+Predictions: 8 ✓, 3 partial, 1 inconclusive (RESULTS.md §5). Red team 4 is running. Verdict v4 waits for it.

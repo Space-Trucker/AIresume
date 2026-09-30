@@ -52,7 +52,7 @@ def flat(rho, R):
 
 def run(a=1e-6, rho_p=1500.0, kp=0.02, heads="tetra", R_ft=10e-6, speed=1.0, radius=0.05, T_sim=0.3,
         f_loop=20e3, tau_steer=None, sigma_m=0.5e-6, draft=(0.1, 0.0, 0.0), gust_sigma=0.1, gust_tau=0.3,
-        F_cap_factor=1.5, u_design=0.3, Tm=400.0, n_motes=16, seed=0, dt=None, trace=False, dob=False, dob_tau=2.0):
+        F_cap_factor=1.5, u_design=0.3, Tm=400.0, n_motes=16, seed=0, dt=None, trace=False, dob=False, dob_tau=2.0, force_lag=True, rhoc_p=1.5e6, beta_F=0.2, w_c_cap=True):
     """Integrate n_motes independent motes (independent gusts and sensor noise) in parallel."""
     rng = np.random.default_rng(seed)
     D = TETRA if heads == "tetra" else OCTA
@@ -74,6 +74,14 @@ def run(a=1e-6, rho_p=1500.0, kp=0.02, heads="tetra", R_ft=10e-6, speed=1.0, rad
     w_i = w_c / 10
     om = speed / radius
     decay = math.exp(-dt / tau_p)
+    # the photophoretic force needs the mote's internal temperature dipole to form: a first-order lag with
+    # tau_F = beta_F a^2 / alpha_p (alpha_p = k_p / (rho c)_p; beta_F ~ 0.2 because the lit surface layer forms first)
+    tau_F = beta_F * a * a / (kp / rhoc_p) if force_lag else 0.0
+    lagF = 1 - math.exp(-dt / tau_F) if tau_F > 0 else 1.0
+    f_eff = None
+    if tau_F > 0 and w_c_cap:
+        w_c = min(w_c, 1.0 / (4 * tau_F))           # keep the loop well inside the force-lag pole
+        w_i = w_c / 10
     slew = 1 - math.exp(-dt / tau_steer)
     draft = np.asarray(draft, float)
 
@@ -139,6 +147,10 @@ def run(a=1e-6, rho_p=1500.0, kp=0.02, heads="tetra", R_ft=10e-6, speed=1.0, rad
         scale = np.minimum(1.0, F_beam_max / np.maximum(f.max(axis=1), 1e-30))
         f *= scale[:, None]
         sat = scale < 1.0
+        if f_eff is None:
+            f_eff = f.copy()
+        f_eff += (f - f_eff) * lagF
+        f = f_eff
         r = x - centre
         F = np.tile(grav, (M, 1))
         F_beams_start = F.copy()
@@ -182,4 +194,4 @@ def run(a=1e-6, rho_p=1500.0, kp=0.02, heads="tetra", R_ft=10e-6, speed=1.0, rad
     return dict(trace=tr, sigma_rho_um=sig * 1e6, loss_rate_extrap_per_min=rate_extrap * 60,n=M, lost_frac=float(lost.mean()), t_lost=t_lost, T_sim=T_sim,
                 loss_per_min=float(lost.mean()) / T_sim * 60, rms_err_um=float(np.sqrt(sq_err.sum() / max(1, n) / M)) * 1e6,
                 max_err_um=float(np.median(max_err)) * 1e6, max_rho_um=float(np.median(max_rho)) * 1e6,
-                tau_p_us=tau_p * 1e6, dt_us=dt * 1e6, F_nom=F_nom)
+                tau_p_us=tau_p * 1e6, tau_F_us=tau_F * 1e6, dt_us=dt * 1e6, F_nom=F_nom)
