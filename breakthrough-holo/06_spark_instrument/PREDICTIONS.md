@@ -24,3 +24,15 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 | P11 | NO per J rises with spark energy (bigger kernels cool more slowly) | 10 µJ ≈ 1×10¹⁶ /J → 1 mJ ≥ 3×10¹⁶ /J | Zeldovich freeze-out vs conduction time r²/χ |
 | P12 | Double pulse (5 + 5 µJ, delay 3–300 ns) gives < 1.2× the η of a single 10 µJ pulse (i.e. P9 will FAIL) | η ratio < 1.2 | reheated kernel is at low density; emission ∝ n² |
 | P13 | Shell deposition (converging shock, 1D spherical upper bound) raises η > 3× vs the same-energy Gaussian | η ratio > 3 | Guderley implosion compresses and heats the centre |
+
+### Scores, round 1 (appended 2026-09-30 after the first instrument runs)
+
+| ID | Result | Score |
+|---|---|---|
+| P1 | ξ₀ = 1.0356 vs 1.0328 (0.27 %) | **PASS** |
+| P2 | 50 mJ ns spark (r₀ 300 µm): blast 49 % ✓, but radiated 3.9 % (predicted 10–40 %, literature 22–34 %) | **FAIL** (radiation). Candidate missing mechanisms: emission *during* the ns heating (deposition treated as instantaneous), line wings of trapped VUV resonance lines, ions above 3+. A 2022 simulation also gets 2.3 % against the same experiment, so the discrepancy is known in the literature. |
+| P3 | 10 µJ micro-spark radiated 0.53 % | **PASS** |
+| P4 | η = 0.085 lm/W | **PASS** (inside 0.01–0.5), but carries the P2 caveat |
+| P6 | NO 1.1×10¹⁶ /J (µJ) vs 3.4×10¹⁶ /J (50 mJ) | **PASS** |
+| P7 | O₃ from VUV/EUV = 2.5×10¹⁵ /J (18 % of all reactive species, not "comparable") | **PARTIAL** |
+| P8 | Sedov-fit blast share 52 % (µJ) | **PASS** under the literature definition; the far-field acoustic share is only 3.9 % |
