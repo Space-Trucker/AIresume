@@ -1,0 +1,88 @@
+{
+  "calibration_rayleigh_550_pass": true,
+  "rayleigh": [
+    {
+      "lam_nm": 450,
+      "beta_per_m": 2.57151987629239e-05,
+      "line_cd_m2_per_W_1mm": 0.039833235615995825,
+      "watts_per_voxel_for_1cd": 25.10466409609041,
+      "watts_per_voxel_for_10cd": 251.04664096090409,
+      "watts_per_voxel_for_100cd": 2510.4664096090405
+    },
+    {
+      "lam_nm": 532,
+      "beta_per_m": 1.2946874679786561e-05,
+      "line_cd_m2_per_W_1mm": 0.4646405204780623,
+      "watts_per_voxel_for_1cd": 2.152201445907287,
+      "watts_per_voxel_for_10cd": 21.522014459072867,
+      "watts_per_voxel_for_100cd": 215.22014459072872
+    },
+    {
+      "lam_nm": 633,
+      "beta_per_m": 6.3817798054964595e-06,
+      "line_cd_m2_per_W_1mm": 0.06191428692927182,
+      "watts_per_voxel_for_1cd": 16.15136101207717,
+      "watts_per_voxel_for_10cd": 161.51361012077172,
+      "watts_per_voxel_for_100cd": 1615.136101207717
+    }
+  ],
+  "rayleigh_frame_1e5_voxels_10cd_W": 2152201.445907287,
+  "coherent_side_suppression": [
+    {
+      "w0_over_lambda": 0.25,
+      "log10_side_suppression": -3.2147360474708675
+    },
+    {
+      "w0_over_lambda": 0.5,
+      "log10_side_suppression": -12.85894418988347
+    },
+    {
+      "w0_over_lambda": 1.0,
+      "log10_side_suppression": -51.43577675953388
+    },
+    {
+      "w0_over_lambda": 2.0,
+      "log10_side_suppression": -205.74310703813552
+    },
+    {
+      "w0_over_lambda": 5.0,
+      "log10_side_suppression": -1285.8944189883468
+    }
+  ],
+  "incoherent_nl": {
+    "intensity_W_m2": 5e+17,
+    "ratio_to_rayleigh": 0.00279920224593412,
+    "rayleigh_photons_per_pulse": 1820.9053678838886,
+    "nonlinear_photons_per_pulse": 5.097082395414076
+  },
+  "microwave_thz": [
+    {
+      "f_GHz": 10,
+      "voxel_mm": 30.0,
+      "peak_W": 22984670.059344534,
+      "J_per_voxel_1us": 22.984670059344534,
+      "avg_W_at_1e5_voxels_s": 2298467.0059344536
+    },
+    {
+      "f_GHz": 100,
+      "voxel_mm": 3.0,
+      "peak_W": 229846.70059344533,
+      "J_per_voxel_1us": 0.22984670059344534,
+      "avg_W_at_1e5_voxels_s": 22984.670059344535
+    },
+    {
+      "f_GHz": 300,
+      "voxel_mm": 1.0,
+      "peak_W": 25538.52228816059,
+      "J_per_voxel_1us": 0.02553852228816059,
+      "avg_W_at_1e5_voxels_s": 2553.852228816059
+    },
+    {
+      "f_GHz": 1000,
+      "voxel_mm": 0.3,
+      "peak_W": 2298.467005934453,
+      "J_per_voxel_1us": 0.002298467005934453,
+      "avg_W_at_1e5_voxels_s": 229.8467005934453
+    }
+  ]
+}
