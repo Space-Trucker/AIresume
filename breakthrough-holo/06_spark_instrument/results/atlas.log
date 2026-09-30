@@ -1,2 +1,7 @@
 40 cases
 A_E1uJ_eps1e+08 eta=0.00101 NO/J=3.39e+15 wall=59s
+A_E1uJ_eps3e+08 eta=0.0161 NO/J=2.48e+15 wall=84s
+A_E1uJ_eps1e+09 eta=0.0343 NO/J=4.46e+15 wall=122s
+A_E3uJ_eps1e+08 eta=0.00152 NO/J=5.56e+15 wall=63s
+A_E1uJ_eps3e+09 eta=0.0374 NO/J=4.62e+15 wall=170s
+A_E3uJ_eps3e+08 eta=0.0243 NO/J=3.60e+15 wall=90s
