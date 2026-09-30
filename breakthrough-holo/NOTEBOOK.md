@@ -154,3 +154,24 @@ Quiet (≤ 45 dB(A)) holds only for sparse content or treated rooms.
 | 57 m | 0.45 | 0.31 |
 
 Film *density* in a dim lab is therefore plausible, and the product tier is decided by two bench measurements: X1 (lm per J) and X2 (NO/NO₂/O₃ speciation per J). A lit-room film match stays out of reach.
+
+---
+
+## 2026-09-30 · Entry 6: Owner rules; Fable idea round; double-validation of agent claims
+
+**Owner (mid-run):** check for existing runs before simulating; double-validate every result, mine or an agent's. Now protocol rules 11–12 in WORKFLOW.md.
+
+**Fable idea round.** Same verdict as Opus and Sonnet: film-exact is impossible in air; the closest is "Fairy Lights at 100× scale in a dim lab". It independently arrived at the constant-flux, subsonic, never-blank drawing rule (the same as E6c) and warm-room cyan. Its two no-go scalings reinforce T2:
+- No bright and chemically cold air plasma exists (radiative branching ∝ ionisation fraction).
+- A quiet isobaric kernel radiates ≥ 10 % only above r ≈ 3 mm.
+
+**Double-validation of its claims:**
+
+1. **Regulatory: CONFIRMED** (search snippets from UL, BSI, ANSI blog, iTeh; standard text not purchased).
+   - EN 50689:2021 allows consumer laser products only in Class 1, Class 2 and a restricted part of Class 3R. Class 1C (engineering controls protect the eyes) is limited to skin-contact devices and is excluded from EN 50689.
+   - So an open-air, presence-sensed plasma projector has **no consumer/home certification route today**. The route is professional or venue products under variance, which ROADMAP phase 2 already assumed.
+   - This lowers R10 (sellable to homes) and qualifies R8 ("everyday use" = supervised venues until a new product category exists).
+2. **Chemistry "10–30 lm with a downdraft hood": arithmetic checks, model incomplete.** The room-balance term is 18 ppb as claimed, but it omits the near-field plume. The same 10 % leak gives ~127 ppb at a face 0.5 m away unless the downdraft reliably carries it away from faces (experiment X5). It also assumes ~1 lm/W for 10 µJ kernels, against the lab's 0.1–0.4 (Opus and Sonnet both agree with the lab). **Not adopted.** The lab's E10/E5b numbers stand.
+3. **Ultrasound from the regular click comb: CHECKED, benign.** The 40 kHz comb line from heat-release pulses is ~59.6 dB per channel at 1 m, ~70 dB for 12 channels, against a 100 dB public limit.
+   - Parametric self-demodulation of MHz blast ultrasound is negligible: it is absorbed at 42–160 dB/m, so it has only a few cm of interaction length. This is an order-of-magnitude estimate, not simulated.
+4. **Ar II 488/496 nm lines** (air is 0.93 % Ar) as a cyan contribution: plausible but unquantified. Left for X1 spectroscopy.

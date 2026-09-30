@@ -1,6 +1,6 @@
 # Idea round 1: synthesis (three independent models, each briefed with the same bottleneck memo)
 
-Files: `idea_round_1_opus.md` (35 ideas), `idea_round_1_sonnet.md`, `idea_round_1_fable.md` (added when complete).
+Files: `idea_round_1_opus.md` (35 ideas), `idea_round_1_sonnet.md`, `idea_round_1_fable.md`. All three models reached the same verdict independently.
 
 ## Where the three models agree with the lab
 
@@ -41,3 +41,16 @@ Files: `idea_round_1_opus.md` (35 ideas), `idea_round_1_sonnet.md`, `idea_round_
 
 - **Sonnet: "noise is 35–45 dB over and no pulse format or cancellation recovers it."** Subsonic tracing is not cancellation of individual sparks. A regular, subsonically moving click train simply has almost no audio-band content (a steady moving source doesn't radiate). E6c shows it numerically with full phase-accurate sums over 96 far-field directions.
 - **The lab's own first E6 claim (−26 dB) was direct-field only.** It was corrected (Entry 3) before any reviewer flagged it.
+
+## Fable (added) and its validation
+
+- **Top ideas:**
+  - A downdraft-hood capture with a consumable cartridge.
+  - Constant-flux acoustics: never blank, grey scale by revisit density, and a subwoofer for the < 300 Hz frame comb. This is the same physics as E6c.
+  - Warm dim room with N II / Ar II cyan lines.
+  - Seeded ps and 2 µm heater with Zeldovich freeze-out for 3–10× lm per NO.
+- **Regulatory warning (confirmed, Entry 6):**
+  - EN 50689 consumer products are limited to Class 1, Class 2 and a restricted part of Class 3R.
+  - Class 1C is for skin-contact devices only.
+  - So there is no home-product route for an open-air plasma projector today. It is a venue or professional product under variance.
+- **Its 10–30 lm estimate was not adopted:** it omits the near-field plume (~127 ppb at 0.5 m) and assumes ~1 lm/W for 10 µJ kernels.
