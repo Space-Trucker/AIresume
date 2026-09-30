@@ -38,6 +38,10 @@ ARCH = {  # heads, eta (None = lateral formula), h_worst, h_mean, max single-bea
     "lateral2": dict(heads=2, eta=None, h_worst=1.0, h_mean=1.0, single=0.5, profile=math.e / 2),
     "push4": dict(heads=4, eta=1.0, h_worst=3.0, h_mean=2.23, single=1.22, profile=1.0),
     "push6": dict(heads=6, eta=1.0, h_worst=math.sqrt(3), h_mean=1.5, single=1.0, profile=1.0),
+    # 'single': one head, BYU-type aberrated single-beam 3D trap, extrapolated from 125 mm to room throw at similar NA.
+    # eta_single (default 0.5) is inferred, not measured: BYU's 1.83 m/s is reproducible below 700 K only if eta >~ 0.4
+    # (validation M22). Required regime: mote radius >= 0.8 w (BYU: particle larger than the focal structure).
+    "single": dict(heads=1, eta="single", h_worst=1.0, h_mean=1.0, single=1.0, profile=1.0),
 }
 # profile: P_beam = I_at_mote * pi w^2/2 * profile. LG01 ring peak is 2P/(pi w^2 e); the dimpled flat-top is taken as
 # a Gaussian-equivalent peak (factor 1) plus FLATTOP_PENALTY below.
@@ -55,11 +59,21 @@ def intercept(a, w):
 def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitter="phosphor:cyan_BaSi2O2N2",
            lam_trap=1550, pump_lam=405, throw=1.5, R_head=0.05, T_max=450.0, u_air=0.3, f=30.0, duty=0.7,
            w_s=1e-3, C_ph=1.0, A_trap=0.9, rho_p=1500.0, albedo=0.8, g_side=0.5, scatter_lam=488,
-           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4):
+           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4, eta_single=0.5, B_focus=None):
     L, S = CONTENT[content] if isinstance(content, str) else content
     A = ARCH[arch]
     w_t = waist(lam_trap, throw, R_head, M2)
-    eta = ph.eta_lateral(a, w_t) if A["eta"] is None else A["eta"]
+    # focus tracking: a beam's focus must follow the mote along the beam axis. A tracking loop of bandwidth B_focus
+    # lags a ramp of speed v by v / (2 pi B_focus); keeping that lag <= z_R / 2 needs z_R = pi w^2 / lambda >=
+    # v / (pi B_focus), which sets a minimum waist (T5 section 8)
+    if B_focus:
+        w_t = max(w_t, math.sqrt(v * lam_trap * 1e-9 / (math.pi ** 2 * B_focus)))
+    if A["eta"] is None:
+        eta = ph.eta_lateral(a, w_t)
+    elif A["eta"] == "single":
+        eta = eta_single
+    else:
+        eta = A["eta"]
     Phi = 4 * math.pi * L * w_s * S
     N = S * f / (v * duty)
     phi_m = Phi / (N * duty)
@@ -68,7 +82,10 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
 
     # --- emitter: absorbed pump power and its heat (solved together with temperature) -----------------------
     kind, _, name = emitter.partition(":")
-    w_p = waist(pump_lam if kind == "phosphor" else (980 if kind == "uc" else scatter_lam), throw, R_head, M2)
+    lam_e_nm = pump_lam if kind == "phosphor" else (980 if kind == "uc" else scatter_lam)
+    w_p = waist(lam_e_nm, throw, R_head, M2)
+    if B_focus:
+        w_p = max(w_p, math.sqrt(v * lam_e_nm * 1e-9 / (math.pi ** 2 * B_focus)))
     icp = intercept(a, w_p)
 
     def emitter_heat(Tm):
@@ -130,6 +147,8 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
     I_mote = P_abs_beam / (A_trap * math.pi * a * a)
     if arch == "lateral2":
         P_beam = max(I_mote * math.pi * w_t ** 2 / 2 * A["profile"], P_abs_beam / A_trap)
+    elif arch == "single":
+        P_beam = P_abs_beam / (A_trap * intercept(a, w_t))
     else:
         P_beam = max(I_mote * math.pi * w_t ** 2 / 2 * FLATTOP_PENALTY, P_abs_beam / A_trap)
     trap_W_per_mote = (2 * P_beam if arch == "lateral2" else P_beam * A["h_mean"] / A["single"])
@@ -144,8 +163,16 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
 
     # pass-through light that reaches the walls, relative to the image flux
     if kind in ("phosphor", "scatter"):
-        A_em = ph.PHOSPHOR[name]["A_abs"] if kind == "phosphor" else albedo
-        wall_W = P_pump_total * (1 - icp * (A_em if kind == "phosphor" else 1.0))
+        # light reaching the walls: the part of the beam that misses the mote, plus forward diffraction (Babinet:
+        # a mote much larger than the wavelength removes 2x its geometric cross-section; the extra 1x is diffracted
+        # into a ~lambda/(2a) cone that lands on the walls), plus, for a phosphor, the unabsorbed intercepted pump
+        x_size = 2 * math.pi * a / (lam_e * 1e-9)
+        q_diff = min(1.0, (x_size / 4.0) ** 2)            # ~0 for small motes (Rayleigh), -> 1 for x >> 1
+        if kind == "phosphor":
+            A_em = ph.PHOSPHOR[name]["A_abs"]
+            wall_W = P_pump_total * ((1 - icp) + icp * q_diff + icp * (1 - A_em) * 0.5)
+        else:
+            wall_W = P_pump_total * ((1 - icp) + icp * q_diff + icp * albedo * (1 - g_side))
         wall_lm = 683 * ph.V(lam_e) * wall_W * whitener_gain
         wall_ratio = wall_lm / Phi
     else:
@@ -157,6 +184,8 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
     n_axis = field / (2 * w_t)
 
     fails = []
+    if arch == "single" and a < 0.8 * w_t:
+        fails.append("single_regime")
     if Tm > T_max:
         fails.append("heat")
     if P_beam > ael_t:

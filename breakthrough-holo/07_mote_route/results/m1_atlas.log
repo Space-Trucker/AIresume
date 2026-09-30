@@ -1,0 +1,24 @@
+accent done (33 s)
+sketch done (65 s)
+film_contrast done (97 s)
+film_density done (130 s)
+film_exact done (163 s)
+
+== accent: 84/576 feasible; fail causes {'single_regime': 144, 'emitter_exit_class': 111, 'wall_light': 342, 'trap_beam_class': 46, 'trap_exit_class': 56, 'heat': 212, 'emitter_beam_class': 78}
+   phosphor:cyan_BaSi2O2N2@405      push4    a=1.0 kp=0.02 R=0.15 v=1.14 N=38 ch=151 dT=146 trap 0.06 W (0.88 mW/beam) pump 26.9/39 uW wall 0.016
+   uc:Er_green_red_Yb98@980         lateral2 a=5.0 kp=0.02 R=0.15 v=0.47 N=92 ch=184 dT=149 trap 0.03 W (0.18 mW/beam) pump 149.7/1416 uW wall 0.000
+
+== sketch: 73/576 feasible; fail causes {'single_regime': 144, 'trap_exit_class': 156, 'emitter_exit_class': 199, 'wall_light': 342, 'trap_beam_class': 46, 'heat': 212, 'emitter_beam_class': 78}
+   phosphor:cyan_BaSi2O2N2@405      push4    a=1.0 kp=0.02 R=0.15 v=1.14 N=188 ch=754 dT=146 trap 0.30 W (0.88 mW/beam) pump 26.9/39 uW wall 0.016
+   uc:Er_green_red_Yb98@980         lateral2 a=5.0 kp=0.02 R=0.15 v=0.47 N=460 ch=920 dT=149 trap 0.16 W (0.18 mW/beam) pump 149.7/1416 uW wall 0.000
+
+== film_contrast: 70/576 feasible; fail causes {'single_regime': 144, 'trap_exit_class': 200, 'emitter_exit_class': 250, 'wall_light': 342, 'trap_beam_class': 45, 'heat': 212, 'emitter_beam_class': 99}
+   phosphor:cyan_BaSi2O2N2@405      push4    a=1.0 kp=0.02 R=0.15 v=1.14 N=339 ch=1357 dT=149 trap 0.54 W (0.87 mW/beam) pump 36.2/39 uW wall 0.016
+   uc:Er_green_red_Yb98@980         lateral2 a=5.0 kp=0.02 R=0.15 v=0.47 N=828 ch=1657 dT=150 trap 0.29 W (0.18 mW/beam) pump 198.5/1416 uW wall 0.000
+
+== film_density: 52/576 feasible; fail causes {'single_regime': 144, 'trap_exit_class': 296, 'emitter_exit_class': 360, 'wall_light': 342, 'trap_beam_class': 45, 'heat': 212, 'emitter_beam_class': 99}
+   phosphor:cyan_BaSi2O2N2@405      push4    a=1.0 kp=0.02 R=0.15 v=1.14 N=1131 ch=4524 dT=149 trap 1.81 W (0.87 mW/beam) pump 36.2/39 uW wall 0.016
+   uc:Er_green_red_Yb98@980         lateral2 a=5.0 kp=0.02 R=0.15 v=0.47 N=2761 ch=5522 dT=150 trap 0.98 W (0.18 mW/beam) pump 198.5/1416 uW wall 0.000
+
+== film_exact: 2/576 feasible; fail causes {'single_regime': 144, 'trap_exit_class': 281, 'emitter_beam_class': 281, 'emitter_exit_class': 557, 'wall_light': 343, 'trap_beam_class': 34, 'heat': 233}
+   uc:Er_green_red_Yb98@980         push6    a=5.0 kp=0.02 R=0.15 v=0.24 N=5393 ch=32356 dT=142 trap 1.61 W (0.20 mW/beam) pump 1241.6/1416 uW wall 0.000
