@@ -9,3 +9,6 @@
 {'R_ft': 2e-05, 'gust_sigma': 0.1, 'f_loop': 50000.0} lost 0.00 rms_err 6.79 um tau_F 15.0 us (116 s)
 {'R_ft': 2e-05, 'gust_sigma': 0.2, 'f_loop': 10000.0} lost 0.00 rms_err 36.88 um tau_F 15.0 us (125 s)
 {'R_ft': 2e-05, 'gust_sigma': 0.2, 'f_loop': 20000.0} lost 0.00 rms_err 18.91 um tau_F 15.0 us (134 s)
+{'R_ft': 2e-05, 'gust_sigma': 0.2, 'f_loop': 50000.0} lost 0.00 rms_err 13.56 um tau_F 15.0 us (143 s)
+{'R_ft': 1e-05, 'gust_sigma': 0.1, 'f_loop': 20000.0, 'beta_F': 0.1} lost 0.00 rms_err 8.92 um tau_F 7.5 us (161 s)
+{'R_ft': 1e-05, 'gust_sigma': 0.1, 'f_loop': 20000.0, 'beta_F': 0.5} lost 0.00 rms_err 16.70 um tau_F 37.5 us (179 s)
