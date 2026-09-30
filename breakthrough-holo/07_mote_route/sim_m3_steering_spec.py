@@ -3,8 +3,8 @@
 For each content target, take the atlas design with the fewest steering channels (results/m1_best.json). Each
 channel (one beam from one head to one mote) needs:
 * lateral positioning over the field: resolvable spots per axis = field / (2 w); tiles are possible, with hand-over;
-* depth (focus) tracking: Rayleigh range z_R = pi w^2 / lambda; levels = depth range / (z_R/2);
-  focus slew bandwidth ~ v / (z_R/2) for motion along the beam;
+* depth (focus) tracking: Rayleigh range z_R = pi w^2 / lambda; levels = depth range / (z_R/2). A first-order focus
+  loop of bandwidth B lags a ramp of speed v by v/(2 pi B); keeping the lag <= z_R/2 needs B >= v / (pi z_R);
 * pointing precision ~ R_ft/10 for the trap (R_ft = 1.5 w) and ~ w_p/4 for the pump; angular = precision / throw;
 * intensity modulation and position sensing at the control-loop rate (M2: >= ~20 kHz).
 The technology table holds representative per-device values (order of magnitude, from memory; marked in the output).
@@ -54,7 +54,7 @@ def spec(d):
                 channels=d["channels"], v=v, w_trap_um=w * 1e6, w_pump_um=w_p * 1e6,
                 spots_per_axis_full_field=FIELD / (2 * w), zR_trap_mm=zR_t * 1e3, zR_pump_um=zR_p * 1e6,
                 depth_levels_trap=DEPTH / (zR_t / 2), depth_levels_pump=DEPTH / (zR_p / 2),
-                focus_bw_trap_kHz=v / (zR_t / 2) / 1e3, focus_bw_pump_kHz=v / (zR_p / 2) / 1e3,
+                focus_bw_trap_kHz=v / (math.pi * zR_t) / 1e3, focus_bw_pump_kHz=v / (math.pi * zR_p) / 1e3,
                 pointing_trap_urad=R_ft / 10 / THROW * 1e6, pointing_pump_urad=w_p / 4 / THROW * 1e6,
                 focus_power_at_10mm_pupil_D=diopters_head * mag ** 2, loop_kHz=F_LOOP / 1e3)
 

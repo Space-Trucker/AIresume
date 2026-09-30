@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.join(HERE, "mote"))
 import budget as bd  # noqa: E402
 from sim_m1_atlas import V_GRID  # noqa: E402
 
+ARCHS = sys.argv[1].split(",") if len(sys.argv) > 1 else ["push4", "push6", "lateral2", "single"]
+TAG = sys.argv[2] if len(sys.argv) > 2 else ""
 SCEN = {"ideal": None, "AOL_100kHz": 1e5, "20kHz": 2e4, "MEMS_5kHz": 5e3}
 out = {}
 for content in ("accent", "sketch", "film_contrast", "film_density", "film_exact"):
@@ -26,7 +28,7 @@ for content in ("accent", "sketch", "film_contrast", "film_density", "film_exact
     for sname, B in SCEN.items():
         best = None
         for arch, (em, lp), a, R, eta in itertools.product(
-                ["push4", "push6", "lateral2", "single"],
+                ARCHS,
                 [("phosphor:cyan_BaSi2O2N2", 405), ("uc:Er_green_red_Yb98", 980)],
                 [1e-6, 2.5e-6, 5e-6], [0.05, 0.15, 0.3], [0.5]):
             if arch != "single" and R == 0.3:
@@ -43,5 +45,5 @@ for content in ("accent", "sketch", "film_contrast", "film_density", "film_exact
                   f"w_t={best['w_trap_um']:.1f} w_p={best['w_pump_um']:.1f} um trap {best['P_trap_total_W']:.2f} W", flush=True)
         else:
             print(f"{content:14s} {sname:11s} NONE feasible", flush=True)
-with open(os.path.join(HERE, "results", "m1c_focus_scenarios.json"), "w") as fh:
+with open(os.path.join(HERE, "results", f"m1c_focus_scenarios{TAG}.json"), "w") as fh:
     json.dump(out, fh, indent=1, default=float)
