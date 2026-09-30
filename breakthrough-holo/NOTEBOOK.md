@@ -461,3 +461,47 @@ Each function exists in some device; thousands of integrated channels do not. **
 - **Shell.** `pkill -f` killed my own shell a second time. **Rule: kill by PID only.**
 
 Predictions: 8 ✓, 3 partial, 1 inconclusive (RESULTS.md §5). Red team 4 is running. Verdict v4 waits for it.
+
+## 2026-09-30 · Entry 15: Red team 4 lands; MOTE v2; the owner's room rig
+
+**Red team 4 (MOTE): 3 critical, 11 major, 11 minor.** Per owner rule 12, I re-derived or recomputed every key claim before accepting it:
+- **ρ(T_f) mixed with T₀:** a real bug, +25 % force. Now ρT = p/R.
+- **C_ph:** my claimed range [1, 1.56] double-counted. Re-derivation F = 4π C_s μ² T₁/(ρT) shows the code's form is C_s = 9/8, and the same formula reproduces Epstein exactly (M27, M28). **C_ph ∈ [0.67, 1.04].**
+- **Doughnut trap:** my linear law was wrong both ways. The exact integral (M29) matches RT4 to ±0.01.
+- **J₁ = A/2:** needs absorption depth ≲ a/30. My straight-ray model (M30) matches RT4's ray trace.
+- **"Impossible mote":** accepted. A low-k body cannot also be a dense absorber. New mote classes, by FOM = (J₁/A)/(k_eff + 2k_g):
+  - engineered aerogel with an island NIR skin: 5.3;
+  - core–shell (dense phosphor core, aerogel shell): 4.4;
+  - plausible: 2.0;
+  - dense: 0.4.
+- **Feedback beam:** the 10 µm flat-top edge was unrealisable. Accepted. My R_ft 20–30 µm runs have realisable edges.
+- **Safety:** accepted. Class 1 needs scheduler-enforced no-overlap plus a fault-shutdown design.
+
+**Owner's direction: many discreet heads in the room.** M4 studied layouts:
+- **Corners are bad.** A 4-corner layout has worst-case heat factor 16.5; 8 corners, 4.8.
+- **What works:** heads directly above and below the image, plus a close ring. The **R12 "lab rig"** has worst 2.22, mean 1.33 and throws 1.2–2.3 m. It survives one blocked head in 99 % of cases.
+
+**M5 corrected atlas: the hard truth.**
+- **Normal room** (0.3 m/s drafts): nothing is feasible, not even a 1 m accent.
+- **Designed lab** (quiet-air zone ≤ 0.15 m/s, 500 K phosphor, scheduled no-overlap, non-fluorescent surfaces), at 45 Hz with an engineered mote:
+
+  | Target | Channels |
+  |---|---|
+  | Accent | 840–1 000 (passive pairs, no fast loop) |
+  | Iron-Man sketch | 2 700–4 400 |
+  | Film density | 9 100–15 100, with 33–85 W of 1550 nm |
+  | Film-exact | ~40 000 |
+
+- **Plausible motes:** 3–5× worse.
+
+**Predictions rescored:** 2 ✓, 2 partial, 6 ✗, 2 inconclusive. My v1 "8 ✓" rested on my own bugs. That is why the red team exists.
+
+**M22 (BYU consistency) now fails.** The corrected force needs 270–745 K for BYU's lateral 1.83 m/s. Either BYU's particle was low-k, or the continuum model under-predicts. **A measurement of force per absorbed watt on a real mote is now bench item 1 for the whole route.**
+
+**Verdict v4.** Not solved. MOTE is the best route: silent, chemistry-free and Class-1-beamed. It is conditional on:
+- a mote material nobody has made;
+- a designed room;
+- a 10³–10⁴-channel beam engine;
+- a new safety argument.
+
+Scorecard: 4 MET / 5 PARTIAL / 1 NOT MET, up from 4 / 4 / 2 in v3.

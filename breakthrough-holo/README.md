@@ -4,7 +4,15 @@ An overnight research lab, run autonomously, answering one question:
 
 > Can a single "very sophisticated projector" make Iron Man-style holograms in open room air, with no glasses, fog or screens, touchable with at most a glove, and safe for everyday use?
 
-**Short answer (after the red team): not as asked.**
+**Short answer (verdict v4, after four red teams): not solved, but there is now a physics-allowed route. Its first unknown is a new material, not physics.**
+
+- **Phase 3, MOTE (`07_mote_route/`):** the projector's heads hold micro-motes (1–4 µm) in invisible 1550 nm beams and sweep them along the image; each mote glows cyan under a µW violet pump.
+  - No ozone, UV, noise, fog or screen. Every trap beam is ≤ 10 mW.
+  - After red team 4, it works only in a *designed lab*: a quiet-air zone, a 12-head room rig, and an engineered aerogel or core–shell mote that has never been made.
+  - It then needs ~1 000 steered beams for accents, ~3 000–4 000 for an Iron-Man sketch and ~10⁴ for film density.
+  - Ordinary drafty rooms are ruled out. Bench item 1: measure force per absorbed watt on a real mote.
+
+**Phases 1–2 (plasma), unchanged:**
 
 The only way to put light at a point in open air is to spark that point with a focused laser pulse (proved in T1). Sparks are dim lamps, and each one makes noise, NO₂/O₃ and UV-C through an open Class 4 laser focus.
 
@@ -33,6 +41,8 @@ Full grading: [`05_reviews/FINAL_VERDICT.md`](05_reviews/FINAL_VERDICT.md).
 | [`05_reviews/`](05_reviews) | Independent idea rounds (three other models), red team, final verdict |
 | [`06_spark_instrument/`](06_spark_instrument) | SPARK: EOS, radiation, hydro and chemistry; validation suite; prediction registry; 40-format atlas |
 | [`06_buehler_factcheck/`](06_buehler_factcheck) | Claim-by-claim fact-check of the post the owner shared |
+| [`07_mote_route/`](07_mote_route) | Phase 3: MOTE instrument (physics, budget v1/v2, feedback, room head arrays), atlases M1–M5, research notes R5–R8, `RESULTS.md` |
+| [`02_theory/T5_mote_theory.md`](02_theory/T5_mote_theory.md) | MOTE theory: heat–force identity, speed, lateral, focus, feedback and steering laws (with the v2 correction box) |
 | [`01_research/`](01_research) | Literature notes with sources: plasma displays, particle displays and haptics, safety limits, film analysis, research methods |
 
 ## Key figures (`03_simulations/results/`)

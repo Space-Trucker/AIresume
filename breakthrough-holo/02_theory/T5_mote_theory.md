@@ -2,6 +2,20 @@
 
 **Route.** The projector dispenses motes of radius a ≈ 1–5 µm. Infrared photophoretic beams hold each mote and move it along the strokes of the image fast enough for persistence of vision. The mote makes its own light: a phosphor pumped by a µW violet beam, or upconversion pumped at 980 nm. T1 left two ways to put light at a point in open air: plasma (Phase 1–2) or matter at the point. This is the second way, and it avoids plasma's walls of ozone, NO₂, UV and noise.
 
+
+> **v2 correction box (after red team 4; numbers below this box are v1 unless marked).** Each correction was re-derived or recomputed independently before acceptance. Details: `07_mote_route/RESULTS.md` §1.
+> - **§1, force.** ρ and T are taken at the same state (ρT = p/R), which removes a spurious ×T_f/T₀ (+25 %). The creep prefactor corresponds to C_s = 9/8, so **C_ph ∈ [0.67, 1.04]**, not [1, 1.56].
+> - **§1, J₁.** J₁ = A/2 only for skin-deep absorption (α·a ≳ 30). The heat-force identity holds per unit of J₁/A. The governing figure of merit is **FOM = (J₁/A)/(k_eff + 2k_g)**.
+>   - 6.1 m·K/W in v1;
+>   - 4.4–5.3 for engineered aerogel / core–shell motes (none made yet);
+>   - 2.0 for a plausible-optimistic mote;
+>   - 0.4 for dense motes.
+> - **§2, speeds.** Corrected heat-limited speeds are **0.4–0.9 m/s** for engineered motes (a = 1–2.5 µm, 450 K hot face) and 0.2–0.4 m/s for plausible-optimistic ones.
+> - **§3, lateral efficiency.** The linear η_lat = 0.75 a/w is valid only for a ≪ w. The exact LG01 integral gives η = 0.25 / 0.37 / 0.12 at a/w = 0.16 / 0.39 / 0.78.
+> - **§8–9, beams and loop.** Flat-top push beams need R_ft ≥ 20 µm so that their edges are realisable, and a ≥ 20–50 kHz loop. Passive LG01 pairs need no fast loop.
+> - **§6, safety.** Class 1 needs scheduler-enforced no-overlap and a certified fault shutdown. Per-beam compliance is not enough.
+> - **§10, channels.** Channels are étendue-tiled. The corrected designed-lab counts are ~10³ (accent) to ~10⁴ (film density).
+
 Code: `07_mote_route/mote/` (physics, safety, budget, feedback). Validation: `07_mote_route/validation/validate_mote.py` (26/26). Results: `07_mote_route/RESULTS.md`.
 
 ## 1. Heat–force identity

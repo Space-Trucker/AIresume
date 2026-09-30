@@ -1,6 +1,40 @@
 # Aether-M: architecture of a MOTE hologram projector (concept; numbers from `07_mote_route/RESULTS.md`)
 
-**Status:** draft concept. Red team 4 findings will be folded in.
+> **v2 update (red team 4 plus the owner's room rig).** This supersedes the numbers in the v1 text below.
+>
+> **The room ("lab rig", M4).** Twelve small heads (100–300 mm windows):
+> - a ring of 6 in a ceiling cove about 1.8 m around the workbench;
+> - a low ring of 4 in the bench skirt or floor;
+> - one ceiling spot directly above the image and one floor or bench head directly below it.
+>
+> Throws are 1.2–2.3 m. Each mote uses about 3 heads at a time, chosen and handed over by the workload manager. The rig survives one blocked head in 99 % of cases. Corner-only layouts are 2–7× worse on heat.
+>
+> **Room requirements:**
+> - a quiet-air zone (≤ 0.15 m/s) around the image, e.g. displacement ventilation or a gentle laminar curtain;
+> - non-fluorescent surfaces near the beams.
+>
+> **Engineered motes:** aerogel or core–shell with an island NIR-absorber skin. They do not exist yet; bench item 1 is to make them and measure them.
+>
+> **Scale in a designed lab at 45 Hz:**
+>
+> | Target | Motes | Trap beams | 1550 nm total |
+> |---|---|---|---|
+> | Accent | ~420–500 | ~840–1 000 (passive doughnut pairs, no fast loop) | ~3 W |
+> | Iron-Man sketch | ~900–2 200 | ~2 700–4 400 | 8–16 W |
+> | Film density | ~3 000–7 600 | ~9 000–15 000 | 33–85 W |
+>
+> **Software stack (the owner's question: "rendering software, workload management and ...?"):**
+> 1. **Content renderer:** models, UI and video become strokes, then mote tours (`holo_engine/mote_plan.py`).
+> 2. **Workload manager:** assigns and hands over motes between heads. It balances load, routes around hands and bodies, and enforces the *safety scheduling rule* that no two foci of one head share a 3.5/7 mm line of sight.
+> 3. **Real-time control:** a per-channel intensity and steering loop, ≥ 20–50 kHz for push beams; passive pairs need only feed-forward.
+> 4. **Room sensing:** mote tracking (per-channel back-scatter plus cameras); hand, head and eye tracking.
+> 5. **Calibration:** head poses, beam maps, focus tables; continuous self-calibration from the motes themselves.
+> 6. **Safety supervisor:** independent hardware. Accessible-emission sums at the worst points, per-head power monitors, obstruction interlock in about 100 µs, certified fault shutdown.
+> 7. **Mote logistics:** dispense, recapture, clean and replace; count lost motes.
+> 8. **Interaction:** gesture recognition plus haptic glove.
+> 9. **Air manager:** monitors the quiet-air zone and slows or pauses content when drafts exceed the margin.
+
+**Status (v1 text below):** draft concept, superseded where it conflicts with the box above.
 
 ## One-paragraph description
 

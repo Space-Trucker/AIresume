@@ -1,38 +1,63 @@
-# Final verdict (v3, after the SPARK instrument campaign and three red teams)
+# Final verdict (v4: MOTE route added; red team 4 applied)
 
-*Graded against the requirements frozen in `00_mission/GOAL.md` before any results. History: v1 over-graded; red team 1 corrected it to v2; this v3 adds the SPARK spark-physics instrument (built after the owner's "AI builds its own instrument" request), its 40-format atlas, and red teams 2 and 3.*
+*Graded against the requirements frozen in `00_mission/GOAL.md`. History:*
+- *v1 over-graded; red team 1 corrected it (v2).*
+- *v3 added the SPARK instrument (red teams 2–3).*
+- *v4 adds Phase 3, the MOTE route: light-held self-emitting micro-motes. It includes red team 4, my independent checks of its claims, and the owner's direction that many discreet heads in the room are acceptable.*
 
 ## Answer
 
-**The full vision cannot be unlocked by simulation or by engineering: an Iron Man film-quality hologram in open room air from one projector, with no glasses, fog or screen, touchable, and safe for everyday home use.** Two parts are proved and one is regulatory:
+**Not solved. No ping, per the owner's rule.** The two routes that physics allows (T1: light made at the point) now stand as follows.
 
-1. **Physics (T1).** In clean air, light can only be made at a point by turning that point into plasma. Every other mechanism fails by many orders of magnitude, and three independent models plus two red teams agree. So any such projector is a laser-spark display.
-2. **Physics (SPARK instrument).** Laser sparks are dim lamps: 0.016–0.4 lm per absorbed watt, and smaller for the fine sparks that thin lines need. They make ozone and NO, emit actinic UV, and click.
-   - A home display is ruled out by **noise**. Spark noise alone exceeds a living room's 35 dB(A) in 97–100 % of simulated cases, even with a silent air handler.
-   - Anything near film brightness is ruled out by **air quality**.
-3. **Regulation.** The beam is an open Class 4 laser focus. Consumer laser rules (EN 50689) have no route for it, so it is a supervised-venue installation at best.
+**1. Plasma (laser sparks, v3, unchanged).**
+- **Home:** ruled out by spark noise and consumer laser rules.
+- **Supervised dim venue:** a "sketch" has an open probability of 0–0.6 that only a bench can settle.
 
-**What remains open, and only a bench can settle it:** whether a *venue* version can show an Iron-Man *sketch* (≈ 5 m of glowing blue-white lines, dim room, touchable with a glove). SPARK puts that probability anywhere between **0 and ~0.6**, depending on three things no simulation can pin down:
-- whether the quiet-drawing trick works on real sparks;
-- how much of the fumes the airflow captures;
-- the true UV/ozone per unit of light.
+**2. MOTE (Phase 3, v2 after red team 4).** The projector's heads hold micro-motes in invisible 1550 nm beams and sweep them along the image; each mote glows cyan under a µW violet pump.
+- No law of physics is violated.
+- No ozone, UV, noise, fog or screen.
+- Trap beams are ≤ 10 mW each.
 
-## Scorecard (v3; unchanged from v2 except the evidence)
+But after correcting my own errors (red team 4), it is a **conditional** design:
+
+| Condition | Status |
+|---|---|
+| A mote with FOM = (J₁/A)/(k_eff + 2k_g) ≳ 4 m·K/W plus a strongly absorbing emitter core (aerogel or core–shell with an island NIR-absorber skin) | **Not made or measured anywhere.** Plausible-optimistic motes (FOM ≈ 2) make everything 3–5× bigger; dense motes make nothing feasible |
+| A designed room: quiet-air zone (≤ 0.15 m/s), non-fluorescent surfaces, a 12-head "lab rig" (ceiling ring + low ring + ceiling spot + floor head, 1.2–2.3 m throws) | Architectural; fits the owner's "heads set gracefully in the room" |
+| Steering engine | **~10³ channels for an accent, ~3–4×10³ for an Iron-Man sketch, ~10⁴ for film density** (étendue-tiled, with hand-over). Push beams also need ≥ 20–50 kHz control; passive doughnut pairs need none |
+| Class 1 as a product | Needs scheduler-enforced no-overlap of foci (the workload manager as a safety function) plus a certified fault shutdown. A new safety argument, not yet accepted by any notified body |
+| Ordinary home room | **Ruled out:** 0.3 m/s drafts consume the whole heat-limited speed budget; stray violet pump lights optical brighteners |
+
+## Scorecard for the best route (MOTE, designed lab, engineered mote *if it can be made*)
 
 | ID | Requirement | Grade | Evidence |
 |---|---|---|---|
-| R1 | Free-space image | MET | T1; in-volume plasma |
-| R2 | No eyewear | MET | isotropic emission |
-| R3 | No added media | MET | room air only |
-| R4 | Projector only | PARTIAL | needs a dim warm room, a laser rack and an air handler |
-| R5 | All-around, many viewers | MET | isotropic |
-| R6 | 3D models, animation, video | PARTIAL | sparse wireframes; video only as a dot panel at near random-order noise |
-| R7 | Touch | PARTIAL | glove haptics yes; the interlock leaves 45–90 mm holes around hands |
-| R8 | Safe for everyday use | **NOT MET** | Home: noise (SPARK + E10c; red team 3). Laser: open Class 4. Air: fails beyond a sketch in home-sized rooms. UV: binds only for lamp certification at 0.2 m, not at normal viewing distances (red team 3 corrected my T4 v1 claim). |
-| R9 | Iron Man quality | PARTIAL | the film's contrast in a dim room at sketch density, if the venue questions resolve favourably; no orange; not film density |
-| R10 | Buildable by a startup | NOT MET | the scanner étendue problem is only solved on paper (galvo tiling, E12); 20–60 W 1550 nm ultrafast sources are not commercial parts |
+| R1 | Free-space image | MET | Motes emit at the point, in open air |
+| R2 | No eyewear | MET | Isotropic phosphor emission |
+| R3 | No added media | **PARTIAL** | µg of projector-supplied, recovered motes; micro-dust, not fog. Needs the owner's ruling. 1–2.5 µm motes are respirable; composite toxicology unknown |
+| R4 | Projector only | PARTIAL | A 12-head room rig plus a quiet-air zone. The owner accepts many heads |
+| R5 | All-around, many viewers | MET | Isotropic |
+| R6 | 3D models, animation, video | PARTIAL | Wireframes; motion limited by mote speed (0.2–0.5 m/s strokes) |
+| R7 | Touch | PARTIAL | Glove haptics. Hands shadow beams and push motes; redundant heads help (1 % of cases lose the mote with one head blocked in the 12-head rig). Motes themselves cannot be felt |
+| R8 | Safe for everyday use | **PARTIAL** | No chemistry, no noise; beams Class 1 per beam. Product Class 1 depends on scheduling and fault shutdown. Normal (drafty) rooms don't work |
+| R9 | Iron Man quality | PARTIAL | Dim-lab film density at ~10⁴ channels; sketch at ~3×10³. Cyan ✓; orange via a second phosphor |
+| R10 | Buildable by a startup | NOT MET | Needs a new mote material, then a 10³–10⁴-channel beam engine |
 
-**4 MET, 4 PARTIAL, 2 NOT MET. Not solved, so no ping, per the owner's rule.**
+**4 MET, 5 PARTIAL, 1 NOT MET.** v3 had 4 / 4 / 2. MOTE converts R8 from NOT MET to PARTIAL, but only in a designed room, and only if the mote exists.
+
+## What would move the verdict (bench, ordered by value of information)
+
+| # | Measurement | Why |
+|---|---|---|
+| **1** | **Photophoretic force per absorbed watt, and k_eff, on a real engineered mote** (aerogel or core–shell with island NIR skin), 1–3 µm, in air at 1 atm | Decides whether the MOTE route exists at all (FOM ≳ 4, or C_ph near 1). Also resolves M22 (BYU consistency) |
+| 2 | Cyan phosphor on a hot mote: 405 nm absorption of a µm core, quench at 450–500 K, lumens per absorbed W | Pump Class 1 margin and wall light |
+| 3 | One mote, two opposed LG01 heads at 1.5–2 m (passive pair): lateral η, escape speed against absorbed power | The passive (no fast loop) architecture |
+| 4 | One mote, four heads, closed loop ≥ 20–50 kHz, fans on | The push architecture |
+| 5 | Plasma X4/X5 (subsonic tracing, fume capture) | The venue sketch route (v3) |
+
+---
+
+## Plasma route (v3 content, unchanged)
 
 ## What the SPARK campaign established (and how firmly)
 
