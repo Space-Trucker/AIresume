@@ -1,6 +1,6 @@
 # Final verdict
 
-*Graded against the requirements frozen in `00_mission/GOAL.md` before any results existed. A requirement is MET only if a simulation or cited measurement supports it with numbers, and PARTIAL if it is met only under stated restrictions. Draft v1: will be revised after the red-team review.*
+*Graded against the requirements frozen in `00_mission/GOAL.md` before any results existed. Three independent models (Opus, Sonnet, Fable) reviewed the bottleneck and reached the same verdict; see `IDEA_ROUND_1_SYNTHESIS.md`. A requirement is MET only if a simulation or cited measurement supports it with numbers, and PARTIAL if it is met only under stated restrictions. Draft v1: will be revised after the red-team review.*
 
 ## One-paragraph answer
 
@@ -25,13 +25,13 @@ It cannot match the film's density (the film shows 9–57 m of strokes), its bri
 | R7 | Touch interaction | **MET** | Glove haptics against the virtual geometry. Content in front of the hand stays visible (in-volume emission). The interlock leaves a 22 mm gap around skin and blanks < 4 % of the image (E7). |
 | R8 | Safe for everyday use | **PARTIAL** | Five sub-checks below. |
 | R9 | Iron Man quality | **PARTIAL** | Life-size ✓; µm voxels at 2 mm pitch ✓; film contrast in a dim lab ✓; azure hue 202–213° vs film 181–199° (near) ✓; smooth 60 Hz ✓. **Density 5–9 m vs the film's 9–57 m ✗; orange accents ✗** (desired only). |
-| R10 | Buildable by a startup | **MET** | Every part exists today (1550 nm ultrafast fibre lasers, AODs, depth cameras, FPGA). BOM, roadmap and a runnable reference pipeline are provided. **Two plasma numbers are unmeasured** (ROADMAP X1, X2). |
+| R10 | Buildable by a startup | **MET** (build) / ⚠ (sell to homes) | Every part exists today (1550 nm ultrafast fibre lasers, AODs, depth cameras, FPGA). BOM, roadmap and a runnable reference pipeline are provided. **Unmeasured plasma numbers:** X1, X2, X6, X7. **Regulatory:** EN 50689 allows consumer lasers only in Class 1, Class 2 and a restricted part of Class 3R; Class 1C (engineering-protected eyes) is for skin-contact devices only. So there is no home-product route today; first sales are venue or professional under variance (Entry 6). |
 
 **R8 sub-checks:**
 
 | Check | Result | Status |
 |---|---|---|
-| Laser | Hazard confined to ≤ 16 mm around each focus; ≤ 10 % of MPE elsewhere. Relies on an active tracking interlock (Class 1 by engineering controls), not intrinsic safety. | ✓ |
+| Laser | Hazard confined to ≤ 16 mm around each focus; ≤ 10 % of MPE elsewhere. Relies on an active tracking interlock (Class 1 by engineering controls), not intrinsic safety. **Consumer classification not currently available** (EN 50689), so venue/professional use under variance comes first. | ✓ physics / ⚠ regulation |
 | Air | Breathing-zone increment 10–23 ppb. P(≤ 50 ppb) = 0.82–0.96 and P(≤ 13 ppb, strict WHO 24-h NO₂) = 0.58–0.75 over literature uncertainty. | ⚠ pending X1–X2 |
 | Hearing and ultrasound | 40–44 dB(A); ultrasound bands ≤ 82 dB (limits 85 dB(A) and 100 dB). | ✓ |
 | Living-room comfort | 40–44 dB(A) is above the WHO 35 dB(A) guideline. | ⚠ |
