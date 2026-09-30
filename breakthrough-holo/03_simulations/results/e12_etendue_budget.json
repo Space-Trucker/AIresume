@@ -1,0 +1,206 @@
+{
+  "TeO2 AOD, 10 us access (random access)": {
+    "N_per_axis": 500,
+    "mode": "random",
+    "tiling": [
+      {
+        "heads": 1,
+        "field_m": 1.0,
+        "NA": 0.0004933803235848756,
+        "w0_um": 1000.0,
+        "E_breakdown_uJ": 471238.8980384689,
+        "voxel_length_mm": 4053.6679401158617,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 4,
+        "field_m": 0.5,
+        "NA": 0.000986760647169751,
+        "w0_um": 500.0,
+        "E_breakdown_uJ": 117809.72450961723,
+        "voxel_length_mm": 1013.4169850289654,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 9,
+        "field_m": 0.3333333333333333,
+        "NA": 0.0014801409707546267,
+        "w0_um": 333.33333333333337,
+        "E_breakdown_uJ": 52359.87755982989,
+        "voxel_length_mm": 450.40754890176254,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 16,
+        "field_m": 0.25,
+        "NA": 0.001973521294339502,
+        "w0_um": 250.0,
+        "E_breakdown_uJ": 29452.431127404307,
+        "voxel_length_mm": 253.35424625724136,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 25,
+        "field_m": 0.2,
+        "NA": 0.0024669016179243775,
+        "w0_um": 200.0,
+        "E_breakdown_uJ": 18849.55592153876,
+        "voxel_length_mm": 162.1467176046345,
+        "click_rate_ok_at_300k": false
+      }
+    ]
+  },
+  "galvo 10 mm mirror, +-20 deg (vector)": {
+    "N_per_axis": 4516.129032258064,
+    "mode": "vector",
+    "tiling": [
+      {
+        "heads": 1,
+        "field_m": 1.0,
+        "NA": 0.004456338406573069,
+        "w0_um": 110.71428571428572,
+        "E_breakdown_uJ": 5776.282921109297,
+        "voxel_length_mm": 49.68845523534878,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 4,
+        "field_m": 0.5,
+        "NA": 0.008912676813146139,
+        "w0_um": 55.35714285714286,
+        "E_breakdown_uJ": 1444.0707302773242,
+        "voxel_length_mm": 12.422113808837196,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 9,
+        "field_m": 0.3333333333333333,
+        "NA": 0.01336901521971921,
+        "w0_um": 36.9047619047619,
+        "E_breakdown_uJ": 641.809213456588,
+        "voxel_length_mm": 5.520939470594306,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 16,
+        "field_m": 0.25,
+        "NA": 0.017825353626292277,
+        "w0_um": 27.67857142857143,
+        "E_breakdown_uJ": 361.01768256933104,
+        "voxel_length_mm": 3.105528452209299,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 25,
+        "field_m": 0.2,
+        "NA": 0.022281692032865348,
+        "w0_um": 22.142857142857142,
+        "E_breakdown_uJ": 231.0513168443717,
+        "voxel_length_mm": 1.9875382094139502,
+        "click_rate_ok_at_300k": false
+      }
+    ]
+  },
+  "galvo 30 mm mirror, +-20 deg (vector)": {
+    "N_per_axis": 13548.387096774193,
+    "mode": "vector",
+    "tiling": [
+      {
+        "heads": 1,
+        "field_m": 1.0,
+        "NA": 0.013369015219719208,
+        "w0_um": 36.904761904761905,
+        "E_breakdown_uJ": 641.8092134565884,
+        "voxel_length_mm": 5.520939470594309,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 4,
+        "field_m": 0.5,
+        "NA": 0.026738030439438416,
+        "w0_um": 18.452380952380953,
+        "E_breakdown_uJ": 160.4523033641471,
+        "voxel_length_mm": 1.3802348676485772,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 9,
+        "field_m": 0.3333333333333333,
+        "NA": 0.040107045659157625,
+        "w0_um": 12.3015873015873,
+        "E_breakdown_uJ": 71.3121348285098,
+        "voxel_length_mm": 0.613437718954923,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 16,
+        "field_m": 0.25,
+        "NA": 0.05347606087887683,
+        "w0_um": 9.226190476190476,
+        "E_breakdown_uJ": 40.113075841036775,
+        "voxel_length_mm": 0.3450587169121443,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 25,
+        "field_m": 0.2,
+        "NA": 0.06684507609859604,
+        "w0_um": 7.3809523809523805,
+        "E_breakdown_uJ": 25.67236853826353,
+        "voxel_length_mm": 0.22083757882377228,
+        "click_rate_ok_at_300k": false
+      }
+    ]
+  },
+  "galvo 50 mm mirror, +-15 deg (vector, slow)": {
+    "N_per_axis": 16774.1935483871,
+    "mode": "vector",
+    "tiling": [
+      {
+        "heads": 1,
+        "field_m": 1.0,
+        "NA": 0.01655211408155712,
+        "w0_um": 29.807692307692303,
+        "E_breakdown_uJ": 418.69506380821787,
+        "voxel_length_mm": 3.6016779682427345,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 4,
+        "field_m": 0.5,
+        "NA": 0.03310422816311424,
+        "w0_um": 14.903846153846152,
+        "E_breakdown_uJ": 104.67376595205447,
+        "voxel_length_mm": 0.9004194920606836,
+        "click_rate_ok_at_300k": true
+      },
+      {
+        "heads": 9,
+        "field_m": 0.3333333333333333,
+        "NA": 0.04965634224467135,
+        "w0_um": 9.935897435897433,
+        "E_breakdown_uJ": 46.52167375646865,
+        "voxel_length_mm": 0.40018644091585936,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 16,
+        "field_m": 0.25,
+        "NA": 0.06620845632622847,
+        "w0_um": 7.451923076923076,
+        "E_breakdown_uJ": 26.168441488013617,
+        "voxel_length_mm": 0.2251048730151709,
+        "click_rate_ok_at_300k": false
+      },
+      {
+        "heads": 25,
+        "field_m": 0.2,
+        "NA": 0.08276057040778559,
+        "w0_um": 5.961538461538462,
+        "E_breakdown_uJ": 16.74780255232872,
+        "voxel_length_mm": 0.14406711872970945,
+        "click_rate_ok_at_300k": false
+      }
+    ]
+  }
+}

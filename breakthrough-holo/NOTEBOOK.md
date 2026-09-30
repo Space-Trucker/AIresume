@@ -175,3 +175,44 @@ Film *density* in a dim lab is therefore plausible, and the product tier is deci
 3. **Ultrasound from the regular click comb: CHECKED, benign.** The 40 kHz comb line from heat-release pulses is ~59.6 dB per channel at 1 m, ~70 dB for 12 channels, against a 100 dB public limit.
    - Parametric self-demodulation of MHz blast ultrasound is negligible: it is absorbed at 42–160 dB/m, so it has only a few cm of interaction length. This is an order-of-magnitude estimate, not simulated.
 4. **Ar II 488/496 nm lines** (air is 0.93 % Ar) as a cyan contribution: plausible but unquantified. Left for X1 spectroscopy.
+
+---
+
+## 2026-09-30 · Entry 7: Red team, independent validation, regrade (v1 over-graded)
+
+The red team found 3 critical, 11 major and 5 minor problems (`05_reviews/red_team_1.md`). Per owner rule 12, I re-checked before adopting:
+
+| # | Claim | My check | Verdict |
+|---|---|---|---|
+| 16 | AOD scanner violates étendue ~250×/axis | N_AOD = τΔf ≈ 500; need F/(2w₀) ≈ 10⁵ at NA 0.1, F = 1 m | **Confirmed** |
+| 11 | 22.5 mm margin allows 2× MPE at NA 0.09 / 40 µJ | 2E/(π(NA·d)²) = 6.2 J/m² vs 3 J/m² | **Confirmed** |
+| 13 | UV margin is 1–11×, not > 100× | E7b band-resolved ICNIRP S(λ): N₂ bands 1.9–5.3×; hot continuum 0.1–0.4× (dose over the limit) | **Confirmed, worse** |
+| 7 | Subsonic gain is content-dependent (UI −6 dB) | Independent UI-glyph content, my code: −6.1 dB (random control −0.1 dB) | **Confirmed** |
+| 14 | Class 4; no consumer class; SIL 2 too low | Entry 6 web check (EN 50689 classes 1/2/restricted 3R; 1C only for skin contact) | **Confirmed** |
+| 3 | Efficacy calibration is circular | R1 gap G2: no measured lm/W for laser sparks | **Confirmed** (my calibration was estimate-on-estimate) |
+| 9 | 90 % capture implausible from a ceiling sink | Sink velocity Q/(2πx²) = 0.04 m/s at 1 m < room drafts | **Confirmed** |
+| 8 | Fan noise missing; wrong limit and distance | 900 m³/h through media beds ≈ purifier max 55–65 dB(A) | **Accepted** (estimate) |
+| 10 | Speciation likely O₃-rich; ×12 fragile | ns quench vs µs–ms Zeldovich; VUV photolysis | **Accepted** (physics argument; X7 decides) |
+| 6 | Listener locking fragile (ear ±5 mm, jitter, reflections) | Consistent with my own Entry 3 correction | **Accepted** |
+| 4, 12, 15, 17, 18 | Absorption, object hazards, transmitted power, source availability, colour adaptation | Consistent with lab data (E3) and physics | **Accepted** |
+
+**E10b (red-team-corrected Monte Carlo):**
+- Efficacy 0.01–1 lm/W.
+- Capture 0.3–0.9.
+- Speciation ×1–2.3.
+- UV constraint added.
+- Noise at 0.4 m, including the fan, with content-dependent gain.
+
+| Target | P(home-safe) | P(venue-safe) |
+|---|---|---|
+| Sparse accents (1 m) | 0 | 0.71 |
+| Sketch (5 m) | 0 | 0.36 |
+| Film contrast (9 m) | 0 | 0.21 |
+| Film density (30 m) | 0 | 0.08 |
+| Film-exact | 0 | 0 |
+
+**E12 étendue budget:** AOD random access cannot address a room. A galvo-tiled redesign (4 heads, 30–50 mm mirrors, NA ≈ 0.03, 100–160 µJ per voxel) is consistent on paper, but hazard zones grow ~1/NA.
+
+**Regrade:** 4 MET / 4 PARTIAL / 2 NOT MET (R8 safety, R10 buildability). Not solved; no ping. FINAL_VERDICT rewritten as v2.
+
+**Lesson for the protocol:** my v1 engineering claims were graded before an adversarial review. Next time the red team runs *before* any verdict draft is written.

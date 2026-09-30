@@ -1,63 +1,74 @@
-# Final verdict
+# Final verdict (v2, after the red team)
 
-*Graded against the requirements frozen in `00_mission/GOAL.md` before any results existed. Three independent models (Opus, Sonnet, Fable) reviewed the bottleneck and reached the same verdict; see `IDEA_ROUND_1_SYNTHESIS.md`. A requirement is MET only if a simulation or cited measurement supports it with numbers, and PARTIAL if it is met only under stated restrictions. Draft v1: will be revised after the red-team review.*
+*Graded against the requirements frozen in `00_mission/GOAL.md` before any results existed. A requirement is MET only if a simulation or cited measurement supports it with numbers. v1 over-graded. The independent red team (`red_team_1.md`) found 3 critical and 11 major problems; I re-checked every critical and major claim I could test, and all held. Validation details are in NOTEBOOK Entry 7. This v2 adopts the corrected scorecard.*
 
 ## One-paragraph answer
 
-**Iron Man-*style* holograms from a single projector, with no glasses, fog, gas or screen, visible from all around and touchable with a glove, can be engineered on paper with known physics and within safety limits. They are not film-*exact*.**
+**No, not as the owner asked: a single projector cannot make film-quality Iron Man holograms in open air that are safe for everyday home use. The reason is physics, not effort, and five independent analyses agree.**
 
-The only way to make light at a point in open air is to turn that point of air into a tiny plasma spark with a focused eye-safe (1550 nm) laser pulse (T1: a theorem plus a numerical kill of every alternative). Air sparks are poor lamps, and each one makes a click and a whiff of NO/O₃. That caps a room-safe display at roughly **0.2–0.5 lumens of light, i.e. 5–9 m of glowing strokes**, redrawn 60 times a second (T2, E10).
+The only way to make light at a point in open room air, with no glasses, fog or screen, is to ionise that point with a focused laser (T1: theorem plus numerical elimination of every alternative). Air sparks are dim lamps: 0.01–1 lm per watt, and never measured for display-sized sparks. Every spark also produces:
+- a click (noise);
+- NO₂/O₃ (air quality);
+- UV-C (a skin and eye dose).
 
-In a **dim, warm-lit room**, which is how Tony Stark's workshop is lit, that is enough to reproduce the film's *contrast* and a *near-cyan azure* hue (E11), life-size and all-around. It stays quiet enough for an office (~40–44 dB(A)) thanks to a new drawing method, subsonic multi-channel tracing (E6c).
+It is also an open Class 4 laser focus.
 
-It cannot match the film's density (the film shows 9–57 m of strokes), its brightness in a lit room, its orange accents, or full-motion video. Those would need 10–400× more light than the air of a room can safely supply.
+Put together, the safe light budget in a room is far below what the film shows (E10b, red-team corrected, Monte Carlo over all literature uncertainty):
+- **Home use: probability 0** at every content level. Noise alone rules it out; even the scrubber fan exceeds 35 dB(A).
+- **Supervised venue** (≤ 55 dB(A)): 0.71 for sparse accents (~1 m of glowing strokes), 0.36 for an Iron-Man "sketch" (~5 m), 0.21 for film contrast in a dim lab (~9 m), 0.08 for film density (~30 m), 0 for the film-exact lit lab.
 
-## Scorecard
+## Scorecard (v2)
 
-| ID | Requirement | Grade | Evidence |
-|---|---|---|---|
-| R1 | Image in free space, nothing behind it | **MET** | In-volume plasma voxels (T1, E3) |
-| R2 | No eyewear | **MET** | Isotropic emission seen by the naked eye |
-| R3 | No added media | **MET** | Only room air, ionised at the focus. The capture airflow is room air. |
-| R4 | Projector only (+ glove) | **MET** | One ceiling "halo": laser, optics, sensors and air handling (ARCHITECTURE). Needs a dimmable, warm-lit room. |
-| R5 | All-around, many viewers | **MET** | Spontaneous emission is isotropic; no viewing zone (T1) |
-| R6 | 3D models, animation, video panel | **PARTIAL** | 3D wireframes and animation at 60 Hz within a 5–9 m stroke budget (holo_engine demo). Video only as a low-resolution monochrome dot panel (~2.6k dots). |
-| R7 | Touch interaction | **MET** | Glove haptics against the virtual geometry. Content in front of the hand stays visible (in-volume emission). The interlock leaves a 22 mm gap around skin and blanks < 4 % of the image (E7). |
-| R8 | Safe for everyday use | **PARTIAL** | Five sub-checks below. |
-| R9 | Iron Man quality | **PARTIAL** | Life-size ✓; µm voxels at 2 mm pitch ✓; film contrast in a dim lab ✓; azure hue 202–213° vs film 181–199° (near) ✓; smooth 60 Hz ✓. **Density 5–9 m vs the film's 9–57 m ✗; orange accents ✗** (desired only). |
-| R10 | Buildable by a startup | **MET** (build) / ⚠ (sell to homes) | Every part exists today (1550 nm ultrafast fibre lasers, AODs, depth cameras, FPGA). BOM, roadmap and a runnable reference pipeline are provided. **Unmeasured plasma numbers:** X1, X2, X6, X7. **Regulatory:** EN 50689 allows consumer lasers only in Class 1, Class 2 and a restricted part of Class 3R; Class 1C (engineering-protected eyes) is for skin-contact devices only. So there is no home-product route today; first sales are venue or professional under variance (Entry 6). |
+| ID | Requirement | v1 | **v2** | Why |
+|---|---|---|---|---|
+| R1 | Image in free space | MET | **MET** | In-volume plasma voxels (T1, E3) |
+| R2 | No eyewear | MET | **MET** | Isotropic emission |
+| R3 | No added media | MET | **MET** | Only room air |
+| R4 | Projector only (+ glove) | MET | **PARTIAL** | Needs a dim (≤ 10 lux), warm-lit room, a separate laser rack, and an air handler |
+| R5 | All-around, many viewers | MET | **MET** | Spontaneous emission is isotropic |
+| R6 | 3D models, animation, video | PARTIAL | **PARTIAL** | Sparse wireframes only; video is a low-resolution dot panel at almost random-order noise (red team #7, reproduced: UI content −6 dB) |
+| R7 | Touch | MET | **PARTIAL** | Glove haptics work, but a laser interlock blanks a 45–90 mm sphere around every hand and ~170 mm around heads. Ceiling apertures shadow up to ~20 % of content under a leaning user (red team #11). |
+| R8 | Safe for everyday use | PARTIAL | **NOT MET** | Six sub-checks below. |
+| R9 | Iron Man quality | PARTIAL | **PARTIAL** | Film-contrast azure strokes are possible only as a sparse sketch in a dim warm room, and the efficacy they rely on is unmeasured. There is no orange, and the film density of 9–57 m of strokes has P(safe) ≤ 0.2. |
+| R10 | Buildable by a startup | MET | **NOT MET** | Three problems, listed below. |
 
 **R8 sub-checks:**
 
-| Check | Result | Status |
-|---|---|---|
-| Laser | Hazard confined to ≤ 16 mm around each focus; ≤ 10 % of MPE elsewhere. Relies on an active tracking interlock (Class 1 by engineering controls), not intrinsic safety. **Consumer classification not currently available** (EN 50689), so venue/professional use under variance comes first. | ✓ physics / ⚠ regulation |
-| Air | Breathing-zone increment 10–23 ppb. P(≤ 50 ppb) = 0.82–0.96 and P(≤ 13 ppb, strict WHO 24-h NO₂) = 0.58–0.75 over literature uncertainty. | ⚠ pending X1–X2 |
-| Hearing and ultrasound | 40–44 dB(A); ultrasound bands ≤ 82 dB (limits 85 dB(A) and 100 dB). | ✓ |
-| Living-room comfort | 40–44 dB(A) is above the WHO 35 dB(A) guideline. | ⚠ |
-| UV | More than 100× margin. | ✓ |
+| Check | Result |
+|---|---|
+| Laser | An open Class 4 beam (peak 17× and average 2000–4000× over Class 1). Presence sensing cannot lower the class. EN 50689 bars consumer Class 4; the US needs an FDA variance (red team #14; confirmed, Entry 6). |
+| Interlock | The v1 margins allowed 2× the MPE (verified). Concave objects can re-collimate the transmitted beam across the room (red team #12). |
+| UV | The band-resolved actinic dose at 0.3–0.5 m is 0.1–5× the 8-h limit (E7b, worse than the red team's estimate). |
+| Air | The v1 assumption of 90 % capture from a ceiling sink is implausible; realistic 0.3–0.7 (red team #9). |
+| Noise | 50–58 dB(A) at the user plus the fan, against 35 dB(A) (red team #8). |
+| Hearing | Hearing-safe; nothing approaches 85 dB(A). |
 
-**Result: 7 MET, 3 PARTIAL, 0 NOT MET under the pre-registered criteria. Against the owner's stricter wish, "exact Iron Man hologram quality", the answer is no.** Film-exact brightness in a lit room scores P(safe) ≈ 0.01–0.11 (E10).
+**R10 problems:**
+- The random-access scanner violates étendue by ~250× per axis (verified).
+- A galvo-tiled redesign (E12: 4 heads, NA ≈ 0.03, 100–160 µJ per voxel) is consistent on paper, but it enlarges the hazard zones and has no optical design yet.
+- A 20–60 W 1550 nm ultrafast source is not a commercial part.
 
-Per the owner's instruction and the pre-registered rule ("ping only if the design MEETS the spec"), **this outcome does not trigger a ping.**
+**Result: 4 MET, 4 PARTIAL, 2 NOT MET. Not solved. Per the owner's instruction, no ping.**
 
-## What is genuinely new here
+## What is solid (and new)
 
-1. **A clean impossibility result (T1).**
-   - Line-of-sight theorem and touch lemma.
-   - A numerical kill of Rayleigh, Raman, coherent and incoherent nonlinear optics, acousto-optics, microwave and thermal routes.
-   - Conclusion: air plasma is the *only* projector-only, medium-free route, whoever builds it.
-2. **The light–chemistry–noise trilemma (T2).** It turns "can we build Iron Man holograms?" into two measurable numbers: lumens per absorbed joule, and reactive molecules per joule.
-3. **Subsonic multi-channel tracing (E6c).**
-   - Draw every stroke with a regular > 20 kHz click train moving slower than sound. This removes 19.5–26.5 dB of audible noise in *all* directions, including room reverberation.
-   - The same idea was reached independently by the Opus reviewer. The Sonnet reviewer, lacking it, judged noise unrecoverable.
-4. **Listener phase locking (E6b):** −35 to −40 dB direct-field noise at up to 8 tracked ears at once, by firing-time optimisation. Reflections cap the real-room gain at 1–10 dB, and I caught and corrected my own over-claim.
-5. **Warm-room colour adaptation (E11):** the colourless-looking plasma reads as saturated azure in a 2700 K room (Bradford model). That is close to film cyan.
-6. **A runnable reference pipeline (`holo_engine/`).**
-   - Content → budget fit → safety gate (tracked hands and heads, 3 apertures) → glove haptics → physically scaled previews.
+1. **T1: impossibility theorem.** Light at a point in clean air must be made there. The v1 argument is sharpened by the idea rounds' momentum-budget argument: every coherent process stays inside the source aperture's cone. So a projector-only, medium-free, all-around display is necessarily an air-plasma display, whoever builds it.
+2. **T2: the governing budget.** For any such display, lumens per joule against reactive molecules, audible sound and UV per joule. The binding numbers are two unmeasured plasma properties: efficacy, and NO/NO₂/O₃ per joule.
+3. **E6c: subsonic multi-channel tracing.** A new drawing law for quiet plasma displays: regular > 35 kHz click trains moving slower than sound. It gives −20 to −26 dB total radiated noise for long smooth strokes, but only −3 to −8 dB for UI or video content (red team, reproduced).
+4. **E5b, E7b, E11, E12:** speciation kinetics, band-resolved UV, colour adaptation, and the étendue budget. Each removes a hidden assumption a future builder would otherwise trip on.
+5. **Process:** three independent idea rounds and one red team. Two of my own over-claims were caught and corrected in the record (Entries 3 and 7).
 
-## What would change the verdict
+## What an honest next step looks like
 
-- **X1/X2 at the optimistic end** (efficacy ≥ 1 lm/W for 5–20 µJ seeded-and-heated kernels, and ≤ 10¹⁶ reactive molecules per J, mostly NO): the stroke budget grows about 5–15×, reaching film density in a dim lab.
-- **Owner accepts contained particles** (T3): colour and brightness routes reopen, with their own safety problems.
-- **Owner accepts a helmet visor** for personal use: exact film quality is available today, and it is a separate product.
+A **desk-scale, supervised research demonstrator** (≈ 5–30 cm field, 1 galvo head, Class 4 under a variance, dim room) whose purpose is to *measure* the numbers that decide everything (ROADMAP X1–X7):
+- lm per absorbed J;
+- speciation;
+- the 200–400 nm UV spectrum;
+- spark stability;
+- the capture efficiency of a real airflow.
+
+If X1 turns out ≥ 1 lm/W with O₃-free, NO-light chemistry and low UV-C, the venue tier grows. None of the plausible outcomes makes a safe living-room Iron Man projector.
+
+For the owner's other ideas:
+- A **helmet visor HUD** gives exact film quality today; it is eyewear, which is allowed in a helmet.
+- **Contained particle displays** give colour at desk scale (T3).

@@ -85,3 +85,17 @@ The optional, grey-zone alternative is **projector-supplied scattering particles
    - **Addressability.** A hand can block the beam path from the projector. Several apertures and occlusion-aware scheduling are needed.
    - **Colour.** Air plasma emits violet-blue molecular bands (cold plasma) through to white continuum (hot plasma). There is no independent RGB. Colour is the hardest requirement (R9), and grey-zone hybrids may be the only route to the orange accents.
 3. **Touch:** a glove (allowed by the owner) with vibrotactile feedback plus camera hand tracking, optionally ultrasound mid-air haptics or plasma-shock haptics. The rendering kernel must re-route voxels whose beams would cross a hand.
+
+---
+
+## 6. Proof gaps closed after review (red team #1; idea rounds' momentum-budget theorem)
+
+- **Refraction.** Inhomogeneous air (heat, sound, plasma wake) bends rays but cannot send them sideways. The largest possible deviation is set by total internal reflection at a density step. For fully depleted air, Δn ≤ 2.7×10⁻⁴, so the bend is at most ≈ 2·√(2Δn) ≈ 2.6°. Viewers at large angles cannot be reached.
+- **Plasma mirrors.** Even with multiple ionisation, 1 atm air reaches only n_e ≈ 1–2×10²⁶ m⁻³. That is far below the critical density for visible light (4.5×10²⁷ m⁻³ at 500 nm), so a plasma cannot reflect visible light toward a viewer.
+- **Coherent processes, in general (momentum budget).** Every parametric output wave-vector is a signed sum of input wave-vectors that all come from the projector's aperture cone.
+  - Sideways visible output would need far-infrared or longer inputs, or gain.
+  - Crossed-beam four-wave mixing aimed at an eye is therefore not a loophole.
+  - The only exits are:
+    1. incoherent emission at P (plasma);
+    2. condensed matter at P (particles);
+    3. gain-guided emission, which in air exists only for UV-violet lines with gain-length ≪ 1 at 1 atm.

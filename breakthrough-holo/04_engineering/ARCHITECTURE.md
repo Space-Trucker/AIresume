@@ -1,5 +1,12 @@
 # Aether-1: architecture of an air-plasma hologram projector
 
+> **RED-TEAM STATUS (read first).** This architecture was reviewed adversarially (`05_reviews/red_team_1.md`), and three problems were confirmed:
+> 1. §3.2 addressing optics violate étendue (~250×/axis). The E12 redesign is ~4 galvo-tiled heads with 30–50 mm mirrors, NA ≈ 0.03 and 100–160 µJ per voxel; its optics are still to be designed.
+> 2. The device is an **open Class 4 laser**. There is no consumer classification route (EN 50689). The only lawful route is a supervised venue installation under variance, with a SIL-3-class interlock.
+> 3. The quiet and clean numbers rest on idealisations: noise is 50–58 dB(A) at the user plus the fan; realistic capture is 0.3–0.7; UV is 0.1–5× the limit.
+>
+> The sections below are kept as the v1 design record. Corrections are marked **[RT]**. Feasibility after correction: `03_simulations/sim_e10b_redteam_corrected.py`.
+
 *Aerial Emissive Three-dimensional Holographic Engine.* A ceiling "halo" projector that draws glowing points in ordinary room air: no fog, no screen, no glasses. The points are visible from every side and can be touched with a glove.
 
 Every number below comes from a simulation in `03_simulations/` or a cited source in `01_research/`. Numbers marked **[EXP]** are the critical unknowns that the first lab experiments must measure (see `ROADMAP.md`).
@@ -82,6 +89,10 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
   - Laser interlock loop.
 - **Average exposure** anywhere outside the capsules: ≤ 10 mW/cm², against a 100 mW/cm² corneal limit (E7).
 - **Certification target:** Class 1 during operation by engineering controls (IEC 60825-1), functional safety IEC 61508 SIL 2, FDA variance for a demonstration laser product (US).
+  - **[RT]** Not achievable. The accessible beam is Class 4 and presence sensing cannot lower the class.
+  - The real route is a venue installation under variance with a trained operator and a SIL-3-class interlock.
+  - The kernel must also add a scene depth map, blank any voxel whose post-focus cone meets an unknown or specular object within ~1 m, and apply eye margins to any unrecognised occupant (pets, toddlers).
+  - Margins must come from the real NA(z) and energy: 45–90 mm, not 22 mm.
 
 ### 3.4 Air handling
 
@@ -107,7 +118,7 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
 
 - Thin knit glove, 10 IR-retroreflective markers (sub-mm tracking), 5 fingertip voice-coil or piezo actuators.
 - BLE LE isochronous link, ≤ 7.5 ms.
-- Outer layer opaque and non-ablating at 1550 nm (aluminised aramid). It adds a passive safety layer, although the kernel never relies on it.
+- **[RT]** The outer layer must be *diffuse and absorbing* (carbon-loaded), not aluminised. A cupped reflective glove can re-collimate a voxel's transmitted beam above MPE across the room (red team #12).
 - **Touch** is computed against the *virtual geometry*, not the lit voxels: the interlock blanks voxels within 22 mm of the hand, but the finger still "feels" the surface (`holo_engine/demo.py`).
 - **Gestures:** pinch/grab to move, two-hand spread to scale, flick to throw away, poke for buttons. These are the film's interactions (R4 DR-12).
 - **Conformal emitters (optional, idea round):** a sparse grid of flexible micro-LEDs in the glove shows hologram content that lies *on* the hand, such as the film's gauntlet scene. A surface point emitting isotropically is correct for every viewer. The glove is also the one place where the film's **orange accents** can appear.

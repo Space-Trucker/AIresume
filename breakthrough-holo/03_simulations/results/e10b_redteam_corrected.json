@@ -1,0 +1,52 @@
+{
+  "sparse accent (3 cd/m2, 1 m of strokes)": {
+    "P_air_ok": 0.835,
+    "P_uv_ok": 0.913,
+    "P_home": 0.0,
+    "P_venue": 0.71,
+    "median_dBA": 49.32739871381919,
+    "median_P_abs": 0.3930090745567957,
+    "median_uv": 3.091441551915334,
+    "median_ppb": 2.8284332669836028
+  },
+  "Iron-Man sketch (3 cd/m2, 5 m)": {
+    "P_air_ok": 0.492,
+    "P_uv_ok": 0.654,
+    "P_home": 0.0,
+    "P_venue": 0.363,
+    "median_dBA": 53.048313367459905,
+    "median_P_abs": 1.9464648193139555,
+    "median_uv": 14.283021612924642,
+    "median_ppb": 13.348332048462472
+  },
+  "film contrast, dim lab (4 cd/m2, 9 m)": {
+    "P_air_ok": 0.314,
+    "P_uv_ok": 0.469,
+    "P_home": 0.0,
+    "P_venue": 0.209,
+    "median_dBA": 56.290429261019696,
+    "median_P_abs": 4.260542290697154,
+    "median_uv": 35.38171208287855,
+    "median_ppb": 29.483234873833283
+  },
+  "film density, dim lab (4 cd/m2, 30 m)": {
+    "P_air_ok": 0.13,
+    "P_uv_ok": 0.233,
+    "P_home": 0.0,
+    "P_venue": 0.082,
+    "median_dBA": 60.60506779321717,
+    "median_P_abs": 13.583081310797322,
+    "median_uv": 126.83436985265757,
+    "median_ppb": 101.18780554565991
+  },
+  "film-exact lit lab (50 cd/m2, 30 m)": {
+    "P_air_ok": 0.003,
+    "P_uv_ok": 0.002,
+    "P_home": 0.0,
+    "P_venue": 0.0,
+    "median_dBA": 77.31182920584959,
+    "median_P_abs": 101.25965333619908,
+    "median_uv": 1566.623191969126,
+    "median_ppb": 730.9873500899646
+  }
+}

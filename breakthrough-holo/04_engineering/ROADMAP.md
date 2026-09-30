@@ -6,10 +6,10 @@ The simulations leave five physical numbers that decide how bright, how quiet an
 
 | # | Experiment | Setup | Decides |
 |---|---|---|---|
-| X1 | **Luminous output per absorbed joule** of single micro-sparks vs pulse energy (1–100 µJ), duration (0.3–10 ps, fs-seed + ps-heater pairs), wavelength (1.03 vs 1.55 µm), NA (0.1–0.3) | Calibrated photometer and spectrometer at 0.3 m; energy meter before and after the focus gives absorption | η (lm/W). The model says 0.1–0.4 (band 0.03–1.2). **Every lumen of the product scales with this.** |
+| X1 | **Luminous output per absorbed joule** (plus a calibrated 200–900 nm spectrum, the absorbed fraction, and UV-C for the actinic budget, E7b) of single micro-sparks vs pulse energy (1–100 µJ), duration (0.3–10 ps, fs-seed + ps-heater pairs), wavelength (1.03 vs 1.55 µm), NA (0.1–0.3) | Calibrated photometer and spectrometer at 0.3 m; energy meter before and after the focus gives absorption | η (lm/W). The model says 0.1–0.4 (band 0.03–1.2). **Every lumen of the product scales with this.** |
 | X2 | **O₃ / NO / NO₂ per absorbed joule** at the same settings | Sealed 10 L chamber, ppb analysers, 10⁵–10⁶ sparks | Y (molecules/J), band 3×10¹⁵–1.5×10¹⁷. Sets the chemistry cap. |
 | X3 | **Acoustic N-wave** of one spark: shape and duration at 0.1–2 m, and the fraction of energy in the shock | 1/8" microphone to 200 kHz + a Schlieren photo | k_T and f_ac, which set the audible fraction. |
-| X4 | **Acoustic phase scheduling** demo: 1–4 microphones as "ears", a 5k-spark frame | FPGA pulse picker plus 2-axis AOD | Validates −26 dB (1 ear) and the multi-ear result (E6b) in real air. |
+| X4 | **Acoustic phase scheduling** demo: 1–4 microphones as "ears", a 5k-spark frame | FPGA pulse picker plus 2-axis AOD | Tests subsonic tracing (E6c) on real strokes, UI and video content. Listener locking is expected to give ≤ 2 dB in a furnished room (red team #6). |
 | X5 | **Capture efficiency** of push–pull airflow around a spark cloud | Tracer gas, then real sparks with an NO analyser at "face" positions | The capture fraction (design assumes 0.9). |
 | X6 | **Spark-to-spark absorbed-energy stability** (fs seed + ps heater vs single pulse) | Transmitted-energy monitor, 10⁶ shots | Must be ≤ 10 % rms, or subsonic tracing loses its noise gain (E6c: 5 % → −21 dB, 10 % → −18 dB, 20 % → −14 dB) |
 | X7 | **Speciation** (NO : NO₂ : O₃) of 5–30 µJ micro-sparks | Same chamber as X2 with separate NO, NO₂ and O₃ analysers | E5b: the room-safe power budget ranges from ×2.3 (O₃-rich) to ×12.3 (NO-rich). Decides whether film *density* is reachable (P = 0.45–0.81). |
@@ -20,7 +20,7 @@ The simulations leave five physical numbers that decide how bright, how quiet an
 - **NO-rich products:** film stroke density (15–57 m) at film contrast in a dim lab.
 - **O₃-rich products:** a 5–9 m "sketch" tier.
 
-## Phase 1: desk-scale demonstrator "Aether-D" (≈ 9–12 months)
+## Phase 1: desk-scale demonstrator "Aether-D" (≈ 9–12 months), a supervised Class 4 research instrument, not a product (red team)
 
 - A 30 × 30 × 30 cm volume, 1 optical head, 2 channels, 5–10 W, 1550 nm.
 - Safety kernel on an FPGA with a single depth camera and a hand-only interlock (the head kept out by enclosure geometry: a clear-acrylic hood, open front).
@@ -43,6 +43,8 @@ The full architecture in `ARCHITECTURE.md`:
 - **Iron Man helmet:** inside a helmet the display sits centimetres from the eye, so the right technology is not the plasma projector. It is a visor HUD (holographic waveguide or birdbath combiner), which is proven and cheap and gives full colour and film quality for the wearer. A helmet line is a separate, much easier product. A "no glasses" requirement cannot apply to a helmet, since the visor *is* the eyewear.
 
 ## Risks, ranked
+
+0. **[RT] Regulatory and physics ceiling.** Open Class 4 has no consumer route. E10b gives P(home-safe) = 0 and a venue tier only.
 
 1. **X1/X2 come out at the pessimistic end** (efficacy ≤ 0.05 lm/W or ≥ 10¹⁷ molecules/J). The product then shrinks to sparse, dark-room effects.
 2. **Regulatory:** a Class 4 source made safe by active interlocks in a consumer space. The route is IEC 60825-1 "Class 1 during operation" + IEC 61508 SIL 2 + an FDA variance. Expect 12–24 months and to start with supervised venues (B2B) before homes.

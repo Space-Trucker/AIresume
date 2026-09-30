@@ -4,9 +4,15 @@ An overnight research lab, run autonomously, answering one question:
 
 > Can a single "very sophisticated projector" make Iron Man-style holograms in open room air, with no glasses, fog or screens, touchable with at most a glove, and safe for everyday use?
 
-**Short answer.** *Iron Man-style*: yes, on paper, with known physics. *Film-exact*: no.
+**Short answer (after the red team): not as asked.**
 
-The only way to put light at a point in open air is to spark that point with a focused laser pulse. Sparks are dim, clicky and make trace NO/O₃. That caps a room-safe display at ~5–9 m of glowing strokes, which is enough for a life-size, near-cyan, touchable wireframe in a dim warm-lit room. The film shows 9–57 m of strokes, orange accents and lit-room brightness, and physics puts that out of reach.
+The only way to put light at a point in open air is to spark that point with a focused laser pulse (proved in T1). Sparks are dim lamps, and each one makes noise, NO₂/O₃ and UV-C through an open Class 4 laser focus.
+
+The room-safe light budget therefore allows only sparse glowing sketches:
+- **P(safe in a home) = 0.**
+- **Supervised venue:** 0.71 for sparse accents, 0.36 for a ~5 m "Iron-Man sketch", 0.08 for film density, 0 for film-exact (E10b).
+
+The solid contributions are the impossibility theorem, the governing budget, a new quiet-drawing law (subsonic multi-channel tracing), and a list of seven experiments that decide the rest.
 
 Full grading: [`05_reviews/FINAL_VERDICT.md`](05_reviews/FINAL_VERDICT.md).
 
@@ -15,7 +21,7 @@ Full grading: [`05_reviews/FINAL_VERDICT.md`](05_reviews/FINAL_VERDICT.md).
 | [`00_mission/GOAL.md`](00_mission/GOAL.md) | The request, the reference frames and requirements R1–R10, frozen before any result |
 | [`NOTEBOOK.md`](NOTEBOOK.md) | Dated lab notebook: every hypothesis, kill and correction (including my own mistakes) |
 | [`02_theory/`](02_theory) | T1: what physics allows (theorem + kills). T2: the light–chemistry–noise trilemma. T3: grey-zone routes. |
-| [`03_simulations/`](03_simulations) | 11 simulations, each calibrated against a published number (`python3 run_all.py --fast`) |
+| [`03_simulations/`](03_simulations) | 15 simulation scripts. Every model is calibrated against a published number where one exists; the red-team corrections are in E10b (`python3 run_all.py --fast`) |
 | [`04_engineering/`](04_engineering) | Aether-1 architecture, roadmap and experiments, and the runnable `holo_engine` pipeline |
 | [`05_reviews/`](05_reviews) | Independent idea rounds (three other models), red team, final verdict |
 | [`01_research/`](01_research) | Literature notes with sources: plasma displays, particle displays and haptics, safety limits, film analysis, research methods |

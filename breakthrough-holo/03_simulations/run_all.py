@@ -15,9 +15,12 @@ SCRIPTS = [
     "sim_e6b_multilistener_phase_scheduling.py",
     "sim_e6c_subsonic_tracing.py",
     "sim_e7_laser_safety.py",
+    "sim_e7b_uv_actinic.py",
     "sim_e9_particle_swarm.py",
     "sim_e10_feasibility_map.py",
     "sim_e11_plasma_color.py",
+    "sim_e10b_redteam_corrected.py",
+    "sim_e12_etendue_budget.py",
 ]
 
 if __name__ == "__main__":
