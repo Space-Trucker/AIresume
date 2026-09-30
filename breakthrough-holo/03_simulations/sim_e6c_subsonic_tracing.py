@@ -124,3 +124,25 @@ if __name__ == "__main__":
     ax.set_title("Subsonic multi-channel tracing: quiet in every direction (reverberation included)", fontsize=9)
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e6c_subsonic_tracing.png", dpi=120); plt.close()
     print("  saved results/e6c_subsonic_tracing.json/.png")
+
+
+# ---------------------------------------------------------------- robustness: shot-to-shot spark jitter
+if __name__ == "__main__":
+    print("  robustness to shot-to-shot absorbed-energy jitter (K=12, 40 kHz, ramp 4):")
+    P, T, Aamp, counts = schedule_subsonic(strokes, 12, 40e3, spacing, 4)
+    jit = {}
+    for sigma in (0.05, 0.10, 0.20):
+        A2 = Aamp * (1 + sigma * rng.standard_normal(len(Aamp)))
+        vals = []
+        for L in sphere[::3]:
+            r = np.linalg.norm(P - L, axis=1)
+            a = A2 / r
+            g = (np.exp(-1j * np.outer(w_ang, T + r / C_SOUND)) * a[None, :]).sum(1)
+            vals.append(np.sum(W * np.abs(g) ** 2) / (np.sum(a ** 2) * np.sum(W)))
+        tot = 10 * np.log10(np.mean(vals))
+        jit[sigma] = float(tot)
+        print(f"    energy jitter {sigma*100:4.0f}% rms -> total radiated audible power {tot:+.1f} dB vs random "
+              f"(jitter floor ~ {10*np.log10(sigma**2/(1+sigma**2)):+.1f} dB)")
+    import json as _j
+    _p = f"{RESULTS}/e6c_subsonic_tracing.json"
+    _d = _j.load(open(_p)); _d["jitter"] = jit; _j.dump(_d, open(_p, "w"), indent=2)

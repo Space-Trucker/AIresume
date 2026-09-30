@@ -11,8 +11,14 @@ The simulations leave five physical numbers that decide how bright, how quiet an
 | X3 | **Acoustic N-wave** of one spark: shape and duration at 0.1–2 m, and the fraction of energy in the shock | 1/8" microphone to 200 kHz + a Schlieren photo | k_T and f_ac, which set the audible fraction. |
 | X4 | **Acoustic phase scheduling** demo: 1–4 microphones as "ears", a 5k-spark frame | FPGA pulse picker plus 2-axis AOD | Validates −26 dB (1 ear) and the multi-ear result (E6b) in real air. |
 | X5 | **Capture efficiency** of push–pull airflow around a spark cloud | Tracer gas, then real sparks with an NO analyser at "face" positions | The capture fraction (design assumes 0.9). |
+| X6 | **Spark-to-spark absorbed-energy stability** (fs seed + ps heater vs single pulse) | Transmitted-energy monitor, 10⁶ shots | Must be ≤ 10 % rms, or subsonic tracing loses its noise gain (E6c: 5 % → −21 dB, 10 % → −18 dB, 20 % → −14 dB) |
+| X7 | **Speciation** (NO : NO₂ : O₃) of 5–30 µJ micro-sparks | Same chamber as X2 with separate NO, NO₂ and O₃ analysers | E5b: the room-safe power budget ranges from ×2.3 (O₃-rich) to ×12.3 (NO-rich). Decides whether film *density* is reachable (P = 0.45–0.81). |
 
-**Go / no-go:** proceed to Phase 1 if X1 × (1/X2) is at least the model's nominal value, i.e. ≥ 3×10⁻¹⁸ lm·s per reactive molecule. If it lands at the optimistic end, the lit-room ceiling rises by up to 10× and the product tier moves up.
+**Go / no-go:** proceed to Phase 1 if X1 × (1/X2) is at least the model's nominal value (≥ 3×10⁻¹⁸ lm·s per reactive molecule) *and* X6 ≤ 10 % rms.
+
+**Product tier is set by X7:**
+- **NO-rich products:** film stroke density (15–57 m) at film contrast in a dim lab.
+- **O₃-rich products:** a 5–9 m "sketch" tier.
 
 ## Phase 1: desk-scale demonstrator "Aether-D" (≈ 9–12 months)
 
