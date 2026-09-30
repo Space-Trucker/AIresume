@@ -22,7 +22,7 @@ But after correcting my own errors (red team 4), it is a **conditional** design:
 
 | Condition | Status |
 |---|---|
-| A mote with FOM = (J₁/A)/(k_eff + 2k_g) ≳ 4 m·K/W plus a strongly absorbing emitter core (aerogel or core–shell with an island NIR-absorber skin) | **Not made or measured anywhere.** Plausible-optimistic motes (FOM ≈ 2) make everything 3–5× bigger; dense motes make nothing feasible |
+| A mote with FOM = (J₁/A)/(k_eff + 2k_g) ≳ 4 m·K/W plus a strongly absorbing emitter core | **Not made or measured anywhere.** Validated (M7): passes only with an **ITO-class plasmonic NIR skin** (α ≳ 3×10⁵ cm⁻¹; FOM ≈ 5). The safer Cs_xWO₃ skin fails or is marginal (FOM 0.4–3.9). ITO needs a toxicology study (~ng/m³ exposure estimated). Plausible-optimistic motes (FOM ≈ 2) make everything 3–5× bigger; dense motes make nothing feasible |
 | A designed room: quiet-air zone (≤ 0.15 m/s), non-fluorescent surfaces, a 12-head "lab rig" (ceiling ring + low ring + ceiling spot + floor head, 1.2–2.3 m throws) | Architectural; fits the owner's "heads set gracefully in the room" |
 | Steering engine | **~10³ channels for an accent, ~3–4×10³ for an Iron-Man sketch, ~10⁴ for film density** (étendue-tiled, with hand-over). Push beams also need ≥ 20–50 kHz control; passive doughnut pairs need none |
 | Class 1 as a product | Needs scheduler-enforced no-overlap of foci (the workload manager as a safety function) plus a certified fault shutdown. A new safety argument, not yet accepted by any notified body |

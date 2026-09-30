@@ -1,0 +1,113 @@
+{
+ "alpha_cwo_snippet": 9498.007678571274,
+ "rows": [
+  {
+   "recipe": "A: a=1.5um, islands 0.2um, 60% cover",
+   "absorber": "CsWO3 (from R9 snippet)",
+   "tau_normal": 0.11397609214285528,
+   "A": 0.31958284109850826,
+   "j1A": 0.038758146386844064,
+   "k_eff": 0.04,
+   "FOM": 0.4240497416503726
+  },
+  {
+   "recipe": "A: a=1.5um, islands 0.2um, 60% cover",
+   "absorber": "CsWO3 (R9 upper, 5e4)",
+   "tau_normal": 0.6,
+   "A": 0.8355063161127734,
+   "j1A": 0.1859665934645058,
+   "k_eff": 0.04,
+   "FOM": 2.034645442718882
+  },
+  {
+   "recipe": "A: a=1.5um, islands 0.2um, 60% cover",
+   "absorber": "ITO NC (R9, 5.7e5)",
+   "tau_normal": 6.84,
+   "A": 0.9999468083079337,
+   "j1A": 0.4856137664018889,
+   "k_eff": 0.04,
+   "FOM": 5.313060901552395
+  },
+  {
+   "recipe": "A': a=1.5um, loaded shell 0.4um, 30%",
+   "absorber": "CsWO3 (from R9 snippet)",
+   "tau_normal": 0.11397609214285528,
+   "A": 0.2876753357391663,
+   "j1A": 0.034908265506380244,
+   "k_eff": 0.04,
+   "FOM": 0.3819285066343571
+  },
+  {
+   "recipe": "A': a=1.5um, loaded shell 0.4um, 30%",
+   "absorber": "CsWO3 (R9 upper, 5e4)",
+   "tau_normal": 0.6,
+   "A": 0.8080622078752228,
+   "j1A": 0.1686266611305149,
+   "k_eff": 0.04,
+   "FOM": 1.8449306469421758
+  },
+  {
+   "recipe": "A': a=1.5um, loaded shell 0.4um, 30%",
+   "absorber": "ITO NC (R9, 5.7e5)",
+   "tau_normal": 6.84,
+   "A": 0.9994443139890234,
+   "j1A": 0.4713313447206914,
+   "k_eff": 0.04,
+   "FOM": 5.156798082283275
+  },
+  {
+   "recipe": "B: a=3um, loaded shell 0.6um, 40%",
+   "absorber": "CsWO3 (from R9 snippet)",
+   "tau_normal": 0.22795218428571057,
+   "A": 0.5075266507540945,
+   "j1A": 0.07260834501412143,
+   "k_eff": 0.04628042135851798,
+   "FOM": 0.7433254689558093
+  },
+  {
+   "recipe": "B: a=3um, loaded shell 0.6um, 40%",
+   "absorber": "CsWO3 (R9 upper, 5e4)",
+   "tau_normal": 1.2,
+   "A": 0.9578281423382947,
+   "j1A": 0.29933842998669985,
+   "k_eff": 0.04628042135851798,
+   "FOM": 3.064467022393703
+  },
+  {
+   "recipe": "B: a=3um, loaded shell 0.6um, 40%",
+   "absorber": "ITO NC (R9, 5.7e5)",
+   "tau_normal": 13.68,
+   "A": 0.9999873165644461,
+   "j1A": 0.4894617440015333,
+   "k_eff": 0.04628042135851798,
+   "FOM": 5.0108479999799975
+  },
+  {
+   "recipe": "B': a=4um, loaded shell 1.0um, 40%",
+   "absorber": "CsWO3 (from R9 snippet)",
+   "tau_normal": 0.3799203071428509,
+   "A": 0.6668977248605077,
+   "j1A": 0.11338533505950994,
+   "k_eff": 0.04628042135851798,
+   "FOM": 1.1607785212488997
+  },
+  {
+   "recipe": "B': a=4um, loaded shell 1.0um, 40%",
+   "absorber": "CsWO3 (R9 upper, 5e4)",
+   "tau_normal": 2.0,
+   "A": 0.9883376576329508,
+   "j1A": 0.37819033075306996,
+   "k_eff": 0.04628042135851798,
+   "FOM": 3.8717106815601467
+  },
+  {
+   "recipe": "B': a=4um, loaded shell 1.0um, 40%",
+   "absorber": "ITO NC (R9, 5.7e5)",
+   "tau_normal": 22.8,
+   "A": 0.9999980571091028,
+   "j1A": 0.4921953987098685,
+   "k_eff": 0.04628042135851798,
+   "FOM": 5.038833697321555
+  }
+ ]
+}

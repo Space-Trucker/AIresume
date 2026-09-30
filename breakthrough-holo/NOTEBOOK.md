@@ -522,3 +522,22 @@ Supporting findings:
 **Double-check of R9's calibration claim.** Lewittes 1982 at 30 Torr is "within 10 %" only for an assumed k_p = 0.3 and an unknown J₁, near the Kn ≈ 1 maximum. I downgrade it to order-of-magnitude consistency. There is still no absolute 1 atm micron force measurement, so bench item 1 is unchanged.
 
 The route's first question is now concrete: make recipe A or B at 1–4 µm, then measure k_eff, skin optical depth, α₄₀₅ and force per absorbed watt.
+
+## 2026-09-30 · Entry 17: Owner: "Validate and confirm"
+
+**Three-layer validation.**
+1. **Suite:** 31/32 pass. M22 (BYU consistency) fails honestly, as reported.
+2. **Reproducibility:** four headline atlas rows re-run from the committed code give identical channel counts (837 / 2 656 / 9 121 / 13 134).
+3. **Independent recipe check (M7).**
+   - A new ray-march shell model passes its self-tests. A thin opaque shell gives 0.4996, and the whole-sphere case matches `physics.j1_over_A`, an independent implementation, to 3 decimals.
+   - The first version of the M7 script had a bug: optically thick steps did not conserve energy. The self-test caught it, and the fix is an exact exp(−τ) difference.
+
+**Result: not confirmed as written.**
+- R9's recipe A used Cs_xWO₃ islands 0.2 µm thick on a 1.5 µm mote. R9's own shielding snippet implies α ≈ 1×10⁴ cm⁻¹, so the skin τ is only 0.1–0.6 and the FOM is 0.4–2.0. That fails.
+- Recipe B with Cs_xWO₃ is marginal at best (3.1–3.9).
+- Both pass only with an ITO-class plasmonic skin (FOM ≈ 5.0–5.3).
+- R9's rejection of ITO rested on occupational toxicity. My exposure estimate for lost motes is ~ng/m³, ~10³× below the cited lowest-effect level, so ITO becomes a toxicology question rather than a veto.
+- Recipe B's 60–90 % pump absorptance needs α₄₀₅ ≳ 4×10³ cm⁻¹, which is unverified.
+- **This was a synthesis error in R9:** it said Cs_xWO₃ needs ~1 µm solid-equivalent, then used 0.2 µm. I had passed it on without checking; the owner's request caught it.
+
+Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. The rest of verdict v4 is unchanged.

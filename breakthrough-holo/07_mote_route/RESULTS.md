@@ -49,6 +49,30 @@ Figure of merit: FOM = (J₁/A)/(k_eff + 2k_g) in m·K/W. Speed, force per kelvi
 - Skin: Cs_xWO₃ islands with a silica overcoat.
 - Expected: FOM ≈ 4.1 and 405 nm absorptance ≈ 60–90 %. This is the bright variant.
 
+**Validation of these recipes (M7, `sim_m7_recipe_check.py`; owner asked "validate and confirm").**
+- **Model self-tests pass.**
+  - A thin opaque shell gives A = 1.00, J₁/A = 0.4996.
+  - The whole-sphere case matches `physics.j1_over_A`, an independent implementation, to 3 decimals (0.1339 vs 0.1337; 0.4282 vs 0.4278).
+- **Cs_xWO₃ absorption from R9's own snippet** (0.9 mg/cm² gives 70 % shielding): α ≈ 9.5×10³ cm⁻¹.
+
+| Recipe | Absorber | Skin τ | J₁/A | FOM | Verdict |
+|---|---|---|---|---|---|
+| A (a = 1.5 µm, 0.2 µm islands, 60 %) | Cs_xWO₃, α ≈ 1×10⁴ | 0.11 | 0.04 | 0.4 | **FAIL** |
+| A | Cs_xWO₃, α = 5×10⁴ (R9 upper) | 0.60 | 0.19 | 2.0 | **FAIL** |
+| A | ITO nanocrystals, α ≈ 5.7×10⁵ | 6.8 | 0.49 | **5.3** | PASS |
+| B (a = 3 µm, 0.6 µm loaded shell, 40 %) | Cs_xWO₃, 1×10⁴ / 5×10⁴ | 0.23 / 1.2 | 0.07 / 0.30 | 0.7 / 3.1 | FAIL / marginal |
+| B′ (a = 4 µm, 1 µm shell) | Cs_xWO₃, 5×10⁴ | 2.0 | 0.38 | 3.9 | marginal |
+| B / B′ | ITO nanocrystals | 14–23 | 0.49 | **5.0** | PASS |
+
+- **"Both recipes clear FOM ≳ 4" is NOT confirmed as written.** With the preferred, safer Cs_xWO₃ skin, recipe A fails (FOM 0.4–2.0) and recipe B is at best marginal (3.1–3.9).
+- **Only an ITO-class plasmonic absorber** (α ≳ 3×10⁵ cm⁻¹, e.g. ITO or other doped-oxide nanocrystals tuned to 1550 nm) passes, at FOM ≈ 5.
+- **R9 rejected ITO for inhalation toxicity.** My exposure estimate:
+  - ~1 µg of ITO per day from lost motes gives ~ng/m³ in a ventilated room, about 10³× below the lowest-effect level R9 cites (0.01 mg/m³, rat);
+  - a silica overcoat helps further.
+
+  This makes ITO a toxicology question, not a veto. It still needs a toxicology study.
+- **Recipe B's 60–90 % pump absorptance** needs Eu²⁺ α₄₀₅ ≳ 4×10³ cm⁻¹. At 1×10³ cm⁻¹ it is only 21–27 %. This is unverified.
+
 **Rejected materials.**
 - ITO is a strong absorber, but inhaled indium causes lung disease.
 - TiN and carbon are opaque in the visible.
