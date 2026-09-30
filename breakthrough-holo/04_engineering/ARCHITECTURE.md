@@ -89,12 +89,19 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
 - **Scrubbing:** 900 m³/h through MnO₂ (ozone catalyst), KMnO₄/alumina (NO → NO₂ capture) and activated carbon (NO₂).
 - **Closed loop:** ppb-level O₃/NO₂ sensors at the halo rim. The **brightness governor** caps absorbed power so the breathing-zone increment stays ≤ 20 ppb. The allowance is ~2–3 W absorbed with capture on, against 0.3 W without (E5).
 
-### 3.5 Acoustic phase scheduler
+### 3.5 Quiet drawing: subsonic multi-channel tracing (primary) + listener phase locking (optional)
 
-- **Inputs:** the ear positions of up to M tracked people (from head pose), and the frame's voxel list.
-- **Solve:** firing phases t_k minimising A-weighted power at the harmonics of the frame rate at each ear (L-BFGS, warm-started from the previous frame).
-- **Result:** −26 dB for 1 listener, 34.5 dB(A) (E6). Multi-listener performance is in E6b.
-- **Fallback:** if untracked people are present, drop to a quieter, dimmer mode.
+- **Primary (E6c): subsonic pens.** Each of the K = 12–24 channels owns a set of strokes and traces them back to back.
+  - Regular click train at 25–40 kHz, i.e. above hearing.
+  - 3 mm pitch, trace speed 75–120 m/s (Mach 0.22–0.35).
+  - 4-voxel energy ramps at stroke ends.
+- **Physics:** a steady source moving slower than sound radiates no audio except at ends, turns and jumps.
+- **Result: total radiated audible power −19.5 to −26.5 dB in *all* directions**, so the room's reverberant field drops too. Worst direction −14.5 to −19.5 dB.
+- **Counter-example:** drawing with one supersonic beam (Mach 3) is +7.6 dB louder, from Mach-wave booms.
+- **Optional (E6b): listener phase locking.** Small firing-time shifts make clicks arrive evenly at up to 8 tracked ears: −35 to −40 dB in the *direct* field only.
+  - Reflections are not controlled, so the real-room benefit is 1–10 dB on top.
+  - Not yet co-optimised with subsonic tracing.
+- **Operating point:** 40–44 dB(A) at 1 m in a normal room for 5–9 m of strokes (E10). That is hearing-safe (limit 85 dB(A)) and a quiet-office level, not bedroom-quiet.
 
 ### 3.6 Glove (the only thing the user wears)
 
@@ -103,6 +110,23 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
 - Outer layer opaque and non-ablating at 1550 nm (aluminised aramid). It adds a passive safety layer, although the kernel never relies on it.
 - **Touch** is computed against the *virtual geometry*, not the lit voxels: the interlock blanks voxels within 22 mm of the hand, but the finger still "feels" the surface (`holo_engine/demo.py`).
 - **Gestures:** pinch/grab to move, two-hand spread to scale, flick to throw away, poke for buttons. These are the film's interactions (R4 DR-12).
+
+### 3.6b Room setting (part of the product spec)
+
+- **Dim room:** background ≲ 0.5–2 cd/m² (≈ 2–10 lux).
+  - Strokes of 3–10 cd/m² then have the film's own contrast ratio (4.5–12× background, R4).
+- **Warm (2700–3000 K) room lighting.**
+  - After chromatic adaptation, the plasma's bluish-white continuum is *seen* as saturated azure: hue 202–213°, against the film's cyan at 181–199° (E11, Bradford model).
+  - The film's workshop is itself warm-lit.
+- **Stroke budget (brightness × length), from air chemistry and noise:**
+
+  | Air limit | Stroke length | Luminance |
+  |---|---|---|
+  | Strict (≤ 13 ppb, P = 0.75) | ~5 m | 3 cd/m² |
+  | Lenient (≤ 50 ppb, P = 0.82) | ~9 m | 4 cd/m² |
+
+  For comparison, a life-size armor silhouette is ~9–15 m.
+  - `content.fit_to_budget` picks strokes by priority: silhouettes → small features → contour slices.
 
 ### 3.7 Content engine (`holo_engine/`, runnable)
 
@@ -130,8 +154,9 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
 
 ## 5. Capability versus the film (details in `05_reviews/FINAL_VERDICT.md`)
 
-**Achievable:**
-- Life-size, all-around-visible, glove-touchable **blue-white wireframe** holograms of ~5k–15k points at 60 Hz, in a dim room.
+**Achievable (E10 Monte Carlo over literature uncertainty):**
+- Life-size, all-around-visible, glove-touchable **azure wireframe** holograms (warm-lit room) with **5–9 m of glowing strokes** (2.5k–4.5k points at 2 mm pitch) at 60 Hz, in a dim room.
+- About 40–44 dB(A); P(safe) 0.58–0.96 depending on the air criterion.
 - 3D models, animations, UI glyphs.
 - Low-resolution monochrome video panels.
 
