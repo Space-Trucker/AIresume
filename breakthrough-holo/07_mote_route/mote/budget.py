@@ -59,7 +59,7 @@ def intercept(a, w):
 def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitter="phosphor:cyan_BaSi2O2N2",
            lam_trap=1550, pump_lam=405, throw=1.5, R_head=0.05, T_max=450.0, u_air=0.3, f=30.0, duty=0.7,
            w_s=1e-3, C_ph=1.0, A_trap=0.9, rho_p=1500.0, albedo=0.8, g_side=0.5, scatter_lam=488,
-           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4, eta_single=0.5, B_focus=None):
+           whitener_gain=1.0, field=1.0, M2=1.3, interlock_s=1e-4, eta_single=0.5, B_focus=None, R_ft=None, eta_shape=0.8):
     L, S = CONTENT[content] if isinstance(content, str) else content
     A = ARCH[arch]
     w_t = waist(lam_trap, throw, R_head, M2)
@@ -150,7 +150,12 @@ def design(content="film_density", a=2.5e-6, kp=0.1, v=1.0, arch="push4", emitte
     elif arch == "single":
         P_beam = P_abs_beam / (A_trap * intercept(a, w_t))
     else:
-        P_beam = max(I_mote * math.pi * w_t ** 2 / 2 * FLATTOP_PENALTY, P_abs_beam / A_trap)
+        # push beams: flat-top of radius R_ft (M2b/M2c: R_ft ~ 15-20 um is needed for gust rejection when the
+        # photophoretic force lags by tau_F ~ a^2/alpha_p). Default (R_ft=None): Gaussian-equivalent, P = I pi w^2.
+        if R_ft:
+            P_beam = max(I_mote * math.pi * max(R_ft, w_t) ** 2 / eta_shape, P_abs_beam / A_trap)
+        else:
+            P_beam = max(I_mote * math.pi * w_t ** 2 / 2 * FLATTOP_PENALTY, P_abs_beam / A_trap)
     trap_W_per_mote = (2 * P_beam if arch == "lateral2" else P_beam * A["h_mean"] / A["single"])
     P_trap_total = N * trap_W_per_mote
     P_head = P_trap_total / A["heads"]
