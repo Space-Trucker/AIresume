@@ -21,6 +21,7 @@ SCRIPTS = [
     "sim_e11_plasma_color.py",
     "sim_e10b_redteam_corrected.py",
     "sim_e12_etendue_budget.py",
+    "sim_e13_multi_projector.py",
 ]
 
 if __name__ == "__main__":

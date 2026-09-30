@@ -216,3 +216,34 @@ The red team found 3 critical, 11 major and 5 minor problems (`05_reviews/red_te
 **Regrade:** 4 MET / 4 PARTIAL / 2 NOT MET (R8 safety, R10 buildability). Not solved; no ping. FINAL_VERDICT rewritten as v2.
 
 **Lesson for the protocol:** my v1 engineering claims were graded before an adversarial review. Next time the red team runs *before* any verdict draft is written.
+
+---
+
+## 2026-09-30 · Entry 8: Owner question: "how about multiple projectors?"
+
+**Rule 11 check.** Multiple heads were already in the design (3 heads) and in E12 (tiling K = 1–25 for étendue). New question: does the number of projectors change the power, and so the chemistry, UV and noise budget?
+
+**E13 result.**
+1. **The incident laser power floor for a quiet, room-scale display is independent of K.** P_min = π I_th τ f_min F² / (4N²).
+   - 22.5 W with 30 mm galvos; 14.7 W with 50 mm galvos.
+   - Analytic and numeric agree exactly for K = 1–25. Only bigger scanner étendue N lowers it.
+2. **More projectors do not change the absorbed power.** Sparks just above threshold absorb 0.2–3 % (E3 model) and are far too dim. Absorbed power is therefore set by the light wanted, P_abs = lumens/η. That is a per-room quantity, and chemistry, UV and the noise floor scale with it.
+3. **Spreading the same light over more, smaller sparks is a trade, not a win.**
+   - Heat-release noise ∝ P_abs·E_spark gives −3 dB per halving of spark energy.
+   - The η model gives 0.154 → 0.134 → 0.117 lm/W for 5 → 2.5 → 1.25 µJ, so each halving costs +15 % absorbed power and hence more NO₂/UV. The binding constraint gets worse.
+
+**What multiple projectors do help:**
+- The étendue problem (E12).
+- Hand and body shadowing (R7).
+- The single-pulse hazard per beam: √E/NA, with higher NA per head.
+
+**What they don't:** light per joule, air, UV, and Class 4. Every head is another open Class 4 beam.
+
+**Other multi-projector variants (reasoning, not simulated):**
+- **Surround the room with projectors aimed at eyes:** this is the light-field room. It fails the touch lemma (a hand erases the hologram in front of it) and it is a screen room (R3/R4).
+- **Crossed beams from two projectors** (spark only where they cross, each beam at ~½ threshold intensity, since ionisation ∝ I⁸):
+  - Gains: sharper voxels at low NA, and each beam's hazard zone ×0.7.
+  - Costs: the same light per joule; ps-level timing (~0.1 mm path match) across metres; two clear paths per voxel.
+  - Worth a resolution bench test (add to X-series); it does not change the verdict.
+
+**Scorecard unchanged: 4 MET / 4 PARTIAL / 2 NOT MET.**
