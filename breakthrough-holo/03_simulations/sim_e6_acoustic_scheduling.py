@@ -169,7 +169,7 @@ if __name__ == "__main__":
     from display_budget import energy_per_flash
     E = energy_per_flash(5.0)
     base = float(audible_spl_random(rate, E))
-    print(f"  reference: E={E*1e6:.2f} uJ/flash, random-order level {base:.1f} dB(A) (analytic incoherent floor)")
+    print(f"  reference: E={E*1e6:.2f} uJ/flash, random-order FREE-FIELD+reverb level {base:.1f} dB(A) (analytic incoherent floor, r=1 m, A=20 m2)")
     summary = {}
     for name, per_l in res.items():
         summary[name] = {}
@@ -187,8 +187,13 @@ if __name__ == "__main__":
                 num += w * ratio
                 den += w
             d = 10 * math.log10(num / den)
-            summary[name][lname] = dict(delta_dB=d, dBA=base + d)
-            print(f"  {name:16s} {lname:24s}  {d:+6.1f} dB  ->  {base + d:5.1f} dB(A)")
+            from display_budget import audible_spl_random as _spl
+            tot20 = float(_spl(rate, E, r=1.2, room_absorption_m2=20.0, direct_gain_db=d))
+            tot60 = float(_spl(rate, E, r=1.2, room_absorption_m2=60.0, direct_gain_db=d))
+            summary[name][lname] = dict(direct_delta_dB=d, dBA_free_field=base + d,
+                                        dBA_room_A20=tot20, dBA_room_A60=tot60)
+            print(f"  {name:16s} {lname:24s} direct-field {d:+6.1f} dB -> free-field {base + d:5.1f} dB(A); "
+                  f"in a room (reflections uncontrolled) {tot20:5.1f} dB(A) [A=20 m2], {tot60:5.1f} [A=60 m2]")
     save_json("e6_acoustic_scheduling.json", dict(voxels_per_frame=n, voxel_rate=rate, E_flash=E,
                                                    random_dBA=base, results=res, summary=summary))
     # plot
@@ -197,12 +202,12 @@ if __name__ == "__main__":
     lnames = list(listeners.keys())
     wbar = 0.2
     for j, ln in enumerate(lnames):
-        ax.bar(np.arange(len(names)) + (j - 1.5) * wbar, [summary[nm][ln]["dBA"] for nm in names], wbar, label=ln)
+        ax.bar(np.arange(len(names)) + (j - 1.5) * wbar, [summary[nm][ln]["dBA_free_field"] for nm in names], wbar, label=ln)
     ax.axhline(35, color="k", ls="--", lw=1)
     ax.text(len(names) - 0.6, 36, "home limit 35 dB(A)", ha="right", fontsize=8)
     ax.set_xticks(range(len(names))); ax.set_xticklabels(names)
     ax.set_ylabel("audible noise, dB(A)")
-    ax.set_title(f"Plasma display noise vs spark scheduling ({n} voxels/frame, 5 cd/m² strokes)")
+    ax.set_title(f"Direct-field noise vs spark scheduling ({n} voxels/frame, 5 cd/m²)\n(room reflections add ~52-57 dB(A) regardless of scheduling)", fontsize=9)
     ax.legend(fontsize=7)
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e6_acoustic_scheduling.png", dpi=120); plt.close()
     print("  saved results/e6_acoustic_scheduling.json/.png")

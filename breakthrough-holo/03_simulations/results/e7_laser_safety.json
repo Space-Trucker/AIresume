@@ -7,6 +7,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 8.83052443531793,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.5606439910794194,
+      "skin_zone_IEC_mm": 10.28023401211788,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -17,6 +19,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 4.424981688839614,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.2809390781551097,
+      "skin_zone_IEC_mm": 5.133665966409571,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -27,6 +31,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 19.956070004966765,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.126582344319892,
+      "skin_zone_IEC_mm": 20.586304608715896,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -37,6 +43,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 9.965512194277267,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.5625842206097258,
+      "skin_zone_IEC_mm": 10.28023401211788,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -47,6 +55,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 32.145988255043996,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.777511638908403,
+      "skin_zone_IEC_mm": 32.48088897238732,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -57,6 +67,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 16.052821916990858,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.8907122687312725,
+      "skin_zone_IEC_mm": 16.276195144787216,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 1000.0
     },
@@ -67,6 +79,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 0.0,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.5606439910794194,
+      "skin_zone_IEC_mm": 3.2537043993392203,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -77,6 +91,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 0.0,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.2809390781551097,
+      "skin_zone_IEC_mm": 1.6248104391354876,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -87,6 +103,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 0.0,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.126582344319892,
+      "skin_zone_IEC_mm": 6.493115276868176,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -97,6 +115,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 0.0,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.5625842206097258,
+      "skin_zone_IEC_mm": 3.2537043993392203,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -107,6 +127,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 8.83052443531793,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.777511638908403,
+      "skin_zone_IEC_mm": 10.28023401211788,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -117,6 +139,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 4.424981688839614,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.8907122687312725,
+      "skin_zone_IEC_mm": 5.133665966409571,
       "mpe_IEC": 30.0,
       "mpe_ANSI": 1000.0
     },
@@ -127,6 +151,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 32.145988255043996,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.777511638908403,
+      "skin_zone_IEC_mm": 32.48088897238732,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -137,6 +163,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 16.052821916990858,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.8907122687312725,
+      "skin_zone_IEC_mm": 16.276195144787216,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -147,6 +175,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 64.81908941565145,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 3.559490572001836,
+      "skin_zone_IEC_mm": 65.04340986394456,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -157,6 +187,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 32.36886951352922,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.7836631015605455,
+      "skin_zone_IEC_mm": 32.48088897238732,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -167,6 +199,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 102.62491565784943,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 5.635568518930692,
+      "skin_zone_IEC_mm": 102.98007132717402,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -177,6 +211,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 51.42541373742807,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 2.814247834524094,
+      "skin_zone_IEC_mm": 51.42541373742807,
       "mpe_IEC": 0.3,
       "mpe_ANSI": 100.0
     },
@@ -187,6 +223,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 8.83052443531793,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.777511638908403,
+      "skin_zone_IEC_mm": 10.28023401211788,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     },
@@ -197,6 +235,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 4.424981688839614,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 0.8907122687312725,
+      "skin_zone_IEC_mm": 5.133665966409571,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     },
@@ -207,6 +247,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 19.956070004966765,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 3.559490572001836,
+      "skin_zone_IEC_mm": 20.586304608715896,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     },
@@ -217,6 +259,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 9.965512194277267,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 1.7836631015605455,
+      "skin_zone_IEC_mm": 10.28023401211788,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     },
@@ -227,6 +271,8 @@
       "NA": 0.1,
       "zone_IEC_mm": 32.145988255043996,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 5.635568518930692,
+      "skin_zone_IEC_mm": 32.48088897238732,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     },
@@ -237,6 +283,8 @@
       "NA": 0.2,
       "zone_IEC_mm": 16.052821916990858,
       "zone_ANSI_mm": 0.0,
+      "skin_zone_ANSI_mm": 2.814247834524094,
+      "skin_zone_IEC_mm": 16.276195144787216,
       "mpe_IEC": 3.0,
       "mpe_ANSI": 100.0
     }
@@ -294,5 +342,12 @@
       "margin_mm": 40.0,
       "blanked_fraction": 0.04135298483723889
     }
-  ]
+  ],
+  "uv": {
+    "P_uv_W": 0.027,
+    "uva_irradiance_W_m2": 0.008594366926962348,
+    "actinic_8h_J_m2": 0.07920568559888501,
+    "uva_limit_W_m2": 10.0,
+    "actinic_limit_J_m2": 30.0
+  }
 }

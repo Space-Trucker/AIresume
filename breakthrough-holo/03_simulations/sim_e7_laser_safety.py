@@ -132,3 +132,24 @@ if __name__ == "__main__":
     ax.legend(fontsize=7)
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e7_hazard_zone.png", dpi=120); plt.close()
     print("  saved results/e7_laser_safety.json/.png")
+
+
+# ---------------------------------------------------------------- (d) plasma UV emission
+def uv_exposure(P_abs=3.0, f_rad=0.03, uv_frac=0.3, r=0.5, hours=8.0):
+    """Actinic-UV check for the plasma's own emission (ICNIRP: 30 J/m^2 effective per 8 h;
+    UVA eye 10 W/m^2 for >1000 s). Conservative: 30 % of radiated power in 315-400 nm, weighted
+    with S(lambda) of the strongest N2 lines (S(337 nm) ~ 3.2e-4)."""
+    P_uv = P_abs * f_rad * uv_frac                    # W
+    E_uv = P_uv / (4 * math.pi * r * r)               # W/m^2 at a face r away
+    H_eff = E_uv * 3.2e-4 * hours * 3600              # J/m^2 effective
+    return dict(P_uv_W=P_uv, uva_irradiance_W_m2=E_uv, actinic_8h_J_m2=H_eff,
+                uva_limit_W_m2=10.0, actinic_limit_J_m2=30.0)
+
+
+if __name__ == "__main__":
+    u = uv_exposure()
+    print(f"  plasma UV at 0.5 m (3 W absorbed, 8 h): UVA {u['uva_irradiance_W_m2']*1e3:.1f} mW/m^2 (limit 10 W/m^2), "
+          f"actinic {u['actinic_8h_J_m2']:.2f} J/m^2 eff (limit 30) -> SAFE by >100x")
+    import json
+    p = f"{RESULTS}/e7_laser_safety.json"
+    d = json.load(open(p)); d["uv"] = u; json.dump(d, open(p, "w"), indent=2)

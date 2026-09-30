@@ -92,7 +92,7 @@ A_WEIGHT_TABLE = {  # IEC 61672 A-weighting (dB) at 1/3-octave centres
     6300: -0.1, 8000: -1.1, 10000: -2.5, 12500: -4.3, 16000: -6.6, 20000: -9.3}
 
 
-def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None):
+def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None, direct_gain_db=0.0, parts=False):
     """A-weighted SPL (dB(A)) at distance r from a random-order voxel cloud.
 
     Incoherent sum (Campbell's theorem): power spectral density = rate * |P1(f)|^2.
@@ -105,15 +105,42 @@ def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None):
     from scipy.special import gammainc
     fc = 1.0 / (math.pi * T)
     total = 0.0
+    tot_d = tot_r = 0.0
+    g = 10 ** (direct_gain_db / 10)
     for fcen, aw in A_WEIGHT_TABLE.items():
         f1, f2 = fcen / 2 ** (1 / 6), fcen * 2 ** (1 / 6)
         frac = gammainc(1.5, (f2 / fc) ** 2) - gammainc(1.5, (f1 / fc) ** 2)
         Wband = N_dot * E_ac * frac                       # acoustic power in band (W)
         I_dir = Wband / (4 * math.pi * r * r)
         I_rev = 4 * Wband / room_absorption_m2            # diffuse-field intensity-equivalent
-        I = I_dir + I_rev
-        total = total + I * 10 ** (aw / 10)
-    return 10 * np.log10(np.maximum(total, 1e-30) / 1e-12)
+        w = 10 ** (aw / 10)
+        # acoustic phase scheduling can only shape the DIRECT path to tracked ears; reflections
+        # arrive scrambled and the reverberant level follows total radiated audible power
+        total = total + (g * I_dir + I_rev) * w
+        tot_d = tot_d + g * I_dir * w
+        tot_r = tot_r + I_rev * w
+    L = 10 * np.log10(np.maximum(total, 1e-30) / 1e-12)
+    if parts:
+        return L, 10 * np.log10(max(float(tot_d), 1e-30) / 1e-12), 10 * np.log10(max(float(tot_r), 1e-30) / 1e-12)
+    return L
+
+
+def ultrasound_band_spl(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None, bands=(25e3, 31.5e3, 40e3, 50e3, 63e3, 80e3, 100e3)):
+    """Max 1/3-octave SPL (dB re 20 uPa) in the 25-100 kHz bands regulated for airborne ultrasound
+    (IRPA 1984 public limit 100 dB). Air absorption over r included (ISO 9613-1)."""
+    from scipy.special import gammainc
+    from holo_common import iso9613_alpha_db_per_m
+    sc = sc or {}
+    E_ac = sc.get("f_ac", P("f_ac")) * np.asarray(E, dtype=float)
+    fc = 1.0 / (math.pi * nwave_duration(E_ac, sc.get("k_T")))
+    worst = -300.0
+    for fcen in bands:
+        f1, f2 = fcen / 2 ** (1 / 6), fcen * 2 ** (1 / 6)
+        W = N_dot * E_ac * (gammainc(1.5, (f2 / fc) ** 2) - gammainc(1.5, (f1 / fc) ** 2))
+        att = 10 ** (-float(iso9613_alpha_db_per_m(fcen)) * r / 10)
+        I = W / (4 * math.pi * r * r) * att + 4 * W / room_absorption_m2
+        worst = max(worst, 10 * math.log10(max(I, 1e-30) / 1e-12))
+    return worst
 
 
 # ---------------- chemistry ----------------
@@ -165,7 +192,8 @@ def energy_per_flash(L_stroke, frame_hz=60.0, focal_radius=5e-6, sc=None):
     return math.sqrt(lo * hi)
 
 
-def display_budget(L_stroke, n_points, frame_hz=60.0, focal_radius=5e-6, sc=None, room=None):
+def display_budget(L_stroke, n_points, frame_hz=60.0, focal_radius=5e-6, sc=None, room=None,
+                   direct_gain_db=0.0, room_absorption_m2=20.0, r_listener=1.0):
     """Everything for one operating point: E per flash, rate, absorbed power, lm, ppb, dB(A)."""
     sc = sc or {}
     room = room or {}
@@ -174,6 +202,10 @@ def display_budget(L_stroke, n_points, frame_hz=60.0, focal_radius=5e-6, sc=None
     P_abs = N_dot * E
     Phi = 4 * math.pi * point_intensity_needed(L_stroke) * n_points
     ppb = float(breathing_zone_ppb(P_abs, Y=sc.get("Y_react"), **room))
-    dBA = float(audible_spl_random(N_dot, E, sc=sc))
-    return dict(L=L_stroke, n_points=n_points, E_flash=E, voxel_rate=N_dot, P_abs=P_abs, lumens=Phi,
+    dBA = float(audible_spl_random(N_dot, E, r=r_listener, room_absorption_m2=room_absorption_m2, sc=sc))
+    dBA_s, dBA_d, dBA_r = audible_spl_random(N_dot, E, r=r_listener, room_absorption_m2=room_absorption_m2, sc=sc,
+                                            direct_gain_db=direct_gain_db, parts=True)
+    us = float(ultrasound_band_spl(N_dot, E, sc=sc))
+    return dict(ultrasound_band_dB=us, dBA_sched=float(dBA_s), dBA_direct_sched=float(dBA_d),
+                dBA_reverb=float(dBA_r), L=L_stroke, n_points=n_points, E_flash=E, voxel_rate=N_dot, P_abs=P_abs, lumens=Phi,
                 eta=float(luminous_efficacy(E, focal_radius, sc)), ppb=ppb, dBA=dBA)

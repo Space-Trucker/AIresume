@@ -52,3 +52,48 @@ Dated entries: hypothesis → test → result → decision. Newest at the bottom
 - Status: probably NOT MET by 10–1000×.
 
 To test H1 quantitatively: E4 (luminous efficacy vs spark size), E5 (room chemistry), E6 (audible noise), E7 (laser safety). In parallel, run an idea round with other models to attack each bottleneck.
+
+---
+
+## 2026-09-30 · Entry 3: Budget model, safety, noise correction, colour, feasibility
+
+**Budget model** (`display_budget.py`), calibrated against literature:
+- A 50 mJ ns spark gives 2.1 lm/W (literature 0.7–6) and an acoustic peak at 55 kHz (literature 50–100 kHz).
+- Micro-sparks (1–100 µJ) come out at 0.1–0.4 lm/W, because small kernels are quenched by expansion before they radiate.
+
+**E5 air chemistry.**
+- The near-field plume at a face 0.5 m away dominates the well-mixed room term.
+- Without source capture, even 1 W absorbed gives 64 ppb.
+- With a built-in push–pull capture airflow (90 %) and a 900 m³/h scrubber, ≤ 2–3 W absorbed stays ≤ 20 ppb.
+
+**E7 laser safety at 1550 nm.**
+- Single-pulse eye hazard zone: 4–16 mm around each focus (IEC-derived, conservative).
+- Average exposure elsewhere: ≤ 10 mW/cm², against a 100 mW/cm² limit.
+- Hand interlock (22 mm margin) blanks 1.3–4 % of the hologram.
+- The plasma's own UV is safe by more than 100×.
+- 2 µm is worse than 1550 nm (10× lower MPE).
+
+**E6 / E6b acoustic phase scheduling (new idea).**
+- Timing sparks so clicks arrive evenly at tracked ears cuts the DIRECT-field audible noise by 26 dB (sorted, 1 listener) and 35–40 dB (L-BFGS, up to 8 tracked listeners at once).
+- Untracked positions are unchanged, and the random-order baseline reproduces the analytic Campbell floor within 0.4 dB.
+- **Self-caught error:** I first applied the gain to the total level. Room reflections arrive scrambled, and the reverberant level follows *total radiated* audible power, which timing cannot reduce at 5–20 kHz (radiating modes ≫ free parameters).
+- Corrected real-room benefit: 1–10 dB depending on room absorption.
+- Path-order drawing is 6–10 dB *worse* (supersonic voxel strings make coherent Mach waves).
+
+**E9 particle swarms (grey zone):** film-scale content needs 30–450 fast beads and 123–142 dB of room ultrasound (public limit 100 dB). Not safe; even a 1–5 bead colour accent gives 114–126 dB.
+
+**E11 colour:** calibration passes to within 0.1 %. The air-plasma palette runs violet → blue-white → white → greenish-white, plus a dim red-pink (H-α and O I in humid air). Film cyan (0.206, 0.262) and orange are outside the gamut.
+
+**E10 feasibility** (Monte Carlo over literature bands; engineered air handling; SAFE means ≤ 50 ppb, ≤ 85 dB(A) and ultrasound ≤ 100 dB):
+
+| Target | P(safe) | Noise | Air |
+|---|---|---|---|
+| Film-exact, lit lab (50 cd/m², 30k points) | 0.09 | 79 dB(A) | 505 ppb |
+| Film density, dim lab (10 cd/m², 10k points) | 0.64 | 64 dB(A) | at the 50 ppb limit |
+| **Iron Man style, dim lab (3 cd/m², 5k points)** | **0.95** | 53 dB(A) | 10 ppb |
+
+Quiet (≤ 45 dB(A)) holds only for sparse content or treated rooms.
+
+**Key perceptual point:** in a dim lab (0.5 cd/m² background), 3–4 cd/m² strokes have the film's own contrast ratio (4.5–12× background). The eye adapts, so the film *look* is reproduced in a dark room, just not the absolute brightness of a lit room.
+
+**Decision:** the pure-air plasma engine is the design line. Film-exact quality (lit room, cyan/orange) is graded NOT MET by physics. Still pending: the idea round (3 models) and the red team.

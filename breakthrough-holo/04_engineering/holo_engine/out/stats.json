@@ -1,9 +1,9 @@
 {
   "points_per_frame": 23845,
-  "stroke_luminance": 5.0,
-  "room_background": 1.0,
-  "point_intensity_cd": 1.5e-05,
-  "total_lumens": 4.494676609490917,
+  "stroke_luminance": 4.0,
+  "room_background": 0.5,
+  "point_intensity_cd": 1.2e-05,
+  "total_lumens": 3.5957412875927335,
   "interlock_margin_mm": 22.5,
   "blanked_fraction": 0.011155378486055745,
   "aperture_use": [

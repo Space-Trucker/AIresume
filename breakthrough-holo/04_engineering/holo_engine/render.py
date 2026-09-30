@@ -74,15 +74,15 @@ def render(P, intensity_cd, eye, target, W=640, H=720, fov_deg=58, background=0.
     tot = bg + img
     # tone curve: compress relative to background adaptation level
     adapt = max(background, 0.5)
-    v = exposure * tot / (tot + 6 * adapt)
+    v = exposure * tot / (tot + 3 * adapt)
     rgb = np.stack([v * c for c in color], -1)
-    skin = np.array([0.55, 0.42, 0.36]) * (background / (background + 6 * adapt) + 0.08)
+    skin = np.array([0.55, 0.42, 0.36]) * (background / (background + 3 * adapt) + 0.08)
     rgb[sil] = skin + np.stack([v * c for c in color], -1)[sil] * 0.0
     # voxels in front of the hand drawn on top (in-volume emission)
     if len(capsules):
         front = np.zeros((H, W))
         np.add.at(front, (yi[keep], xi[keep]), L[keep])
         front = gaussian_filter(front, psf_px)
-        fv = exposure * front / (front + 6 * adapt)
+        fv = exposure * front / (front + 3 * adapt)
         rgb[sil] = np.clip(rgb[sil] + np.stack([fv * c for c in color], -1)[sil], 0, 1)
     return np.clip(rgb, 0, 1)
