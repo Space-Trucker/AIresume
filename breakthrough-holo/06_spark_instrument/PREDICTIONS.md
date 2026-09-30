@@ -61,3 +61,6 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 - Line focus (cylindrical, matched peak ε and r₀): η ×2.95–3.02 vs sphere, while reactive gases, O₃ and actinic UV **per lumen** are unchanged (ratio 0.98–1.14).
 - Mixing on/off does not change micro-spark η (light is emitted in the first ns) and lowers NO by 20–25 %.
 - **Lumen-locked pollution law** (T4): actinic UV per lm·s = 1.8–2.3×10⁻³ J_eff and reactive molecules per lm·s = 1.8–3.7×10¹⁷ across all 30 efficient designs. Post hoc, so it is registered now as a prediction for the bench (X1/X2): **P14**. Any spark format measured on the bench will give actinic UV/lm·s within 1–4.6×10⁻³ J_eff and reactive/lm·s within 1–7×10¹⁷.
+
+### P14 corrected after red team 3 (appended; earlier text left as written)
+P14 as registered ("any spark format") is **already violated inside SPARK** by its inefficient formats: reactive/lm·s spans 22× and follows Y_ph + Y_th/η. It is re-registered for the bench in a well-posed form. **P14b:** for spark formats with η ≥ 0.05 lm/W, the actinic UV per lm·s measured with a calibrated 180–900 nm spectroradiometer lies within 0.6–4×10⁻³ J_eff, and O₃ plus NO₂ after 10 s of titration lies within 0.4–4×10¹⁷ molecules per lm·s.

@@ -370,3 +370,26 @@ For the sketch, the binding constraints are air (80 % of draws fail), noise (76 
 **Lumen-locked pollution law (T4).** UV and reactive gases per lumen are fixed by the plasma's spectral shape and VUV lines, not by spark design.
 - The UV cap alone limits a continuous display to Φ ≤ 1 lm with the user at 0.4 m. Film density needs 1.5 lm; the film itself needs 19 lm.
 - Registered as P14 for the bench.
+
+---
+
+## 2026-09-30 · Entry 12: Red team 3 on T4 and E10c: the "law" is withdrawn
+
+Red team 3 (`05_reviews/red_team_3_T4.md`): 3 critical, 9 major, 7 minor. It reproduced the atlas and E10c exactly. I re-checked its key claims (rule 12):
+
+1. **"UV per lumen invariant" is a property of my continuum model — CONFIRMED.** The emission table alone gives act/lm 1.1–2.2×10⁻³ over 9–40 kK and 0.01–1.17 kg/m³, so the hydro can't change it. Model-form range ×0.3–2.
+2. **The ad hoc EUV rule supplies 30–54 % of reactive per lumen — CONFIRMED** (29–67 % of NO) across the atlas.
+3. **The UV cap "Φ ≤ 1 lm whatever the air handling" held only for a viewer at 0.4 m for 8 h/day** (arithmetic confirmed). At 1.5 m, 2 h/day the cap is ~51–62 lm, so UV does not bind at normal distances.
+4. **E10c does not implement lumen locking** (η, yields and UV were sampled independently), and **its P(home) = 0 is driven by noise:** the 48 dB(A) fan alone exceeds 35 dB(A). Venue probability for the sketch ranges 0–0.64 across defensible variants:
+   - 0 without the untested subsonic-tracing gain;
+   - 0.40 with capture fixed at 0.9;
+   - 0.64 for realistic viewing with hazard-consistent air metrics.
+5. **The +5.4 dB noise correction partly double-counts** (+0.1 to +7.1 dB by format; +2.5 dB for the most-used format). V16 is ill-conditioned (probe record cut ~3 µs after arrival).
+6. **All light, UV and VUV come out within ~50 ns**, at high density and 20–40 kK: exactly where the untested instantaneous-LTE deposition assumption rules.
+
+**Actions:**
+- T4 rewritten as "SPARK per-lumen scaling (model result; hypothesis P14b)", with scenario tables.
+- P14 declared violated as posed; P14b registered for the bench.
+- The verdict is re-worded (v3): home is ruled out by spark noise and regulation; venue feasibility is an open question the bench must settle; UV binds only for lamp-standard certification at 0.2 m.
+
+**Lesson (workflow).** Calling a model regularity a "law" before checking whether it is baked into an input table was an overclaim. New sub-rule for rule 5: before claiming an invariant, test it on the input tables alone.
