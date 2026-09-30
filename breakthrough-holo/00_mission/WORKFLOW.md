@@ -18,3 +18,7 @@ This is v1, written at lab setup. It gets revised once the literature review of 
 8. **One question at a time.** Finish, validate and log each simulation before starting the next dependent one. Independent research runs in parallel.
 9. **When stuck, run a structured idea round:** list physical effects exhaustively (emission, scattering, refraction, nonlinear, acoustic, thermal, electrical, chemical, biological/perceptual), estimate each in one line, and pursue the survivors. Include ideas the literature has not tried.
 10. **Report honestly.** The final verdict grades each requirement MET / PARTIAL / NOT MET, with evidence.
+
+## Owner rules added mid-run
+11. **Check before simulating.** Before any new simulation, search `03_simulations/`, `results/` and `NOTEBOOK.md` for an existing run of the same question. Re-run only if inputs changed, and say why.
+12. **Double-validate every result, mine or an agent's.** A number counts only after (a) a calibration check against a published value and (b) an independent cross-check: a second model, a hand calculation, or a separate agent re-deriving it. Agent claims are treated as unverified until checked this way. Discrepancies go in the notebook.
