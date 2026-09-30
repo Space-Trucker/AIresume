@@ -12,7 +12,14 @@ The room-safe light budget therefore allows only sparse glowing sketches:
 - **P(safe in a home) = 0.**
 - **Supervised venue:** 0.71 for sparse accents, 0.36 for a ~5 m "Iron-Man sketch", 0.08 for film density, 0 for film-exact (E10b).
 
-The solid contributions are the impossibility theorem, the governing budget, a new quiet-drawing law (subsonic multi-channel tracing), and a list of seven experiments that decide the rest.
+The solid contributions are:
+- the impossibility theorem;
+- the governing budget;
+- a new quiet-drawing method (subsonic multi-channel tracing);
+- **SPARK** (`06_spark_instrument/`): a laser-spark physics instrument built and validated here (22/24 tests), after the owner asked for Buehler's "AI builds its own instrument" workflow (fact-check in `06_buehler_factcheck/`);
+- a bench plan ranked by which measurement would change the answer most.
+
+Verdict v3: home use is ruled out by spark noise and regulation; a supervised dim-venue "sketch" has an open probability of 0–0.6 that only a bench can settle.
 
 Full grading: [`05_reviews/FINAL_VERDICT.md`](05_reviews/FINAL_VERDICT.md).
 
@@ -24,6 +31,8 @@ Full grading: [`05_reviews/FINAL_VERDICT.md`](05_reviews/FINAL_VERDICT.md).
 | [`03_simulations/`](03_simulations) | 15 simulation scripts. Every model is calibrated against a published number where one exists; the red-team corrections are in E10b (`python3 run_all.py --fast`) |
 | [`04_engineering/`](04_engineering) | Aether-1 architecture, roadmap and experiments, and the runnable `holo_engine` pipeline |
 | [`05_reviews/`](05_reviews) | Independent idea rounds (three other models), red team, final verdict |
+| [`06_spark_instrument/`](06_spark_instrument) | SPARK: EOS, radiation, hydro and chemistry; validation suite; prediction registry; 40-format atlas |
+| [`06_buehler_factcheck/`](06_buehler_factcheck) | Claim-by-claim fact-check of the post the owner shared |
 | [`01_research/`](01_research) | Literature notes with sources: plasma displays, particle displays and haptics, safety limits, film analysis, research methods |
 
 ## Key figures (`03_simulations/results/`)
