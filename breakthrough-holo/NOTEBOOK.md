@@ -505,3 +505,20 @@ Predictions: 8 ✓, 3 partial, 1 inconclusive (RESULTS.md §5). Red team 4 is ru
 - a new safety argument.
 
 Scorecard: 4 MET / 5 PARTIAL / 1 NOT MET, up from 4 / 4 / 2 in v3.
+
+## 2026-09-30 · Entry 16: Owner asked "working?"; the mote becomes a recipe
+
+**M6 (my own analysis).** How opaque must the engineered mote's absorber skin be? J₁/A ≥ 0.43 needs optical depth ≥ 2 at 1550 nm (≥ 86 % single pass), in a non-percolating skin of ≲ 0.1–0.2 a.
+
+**R9 (materials search).** Two concrete recipes that clear the FOM gate on paper, both with a silica overcoat:
+- aerogel body + Cs_xWO₃ island skin + Eu-nitride phosphor (FOM ≈ 5);
+- core–shell with a BaSi₂O₂N₂:Eu core (FOM ≈ 4.1, bright).
+
+Supporting findings:
+- ITO is rejected on inhalation toxicity.
+- QDs and dyes are rejected on temperature.
+- Micron aerogel is makeable (spray-gel, d₅₀ ≈ 2.4 µm), but its conductivity at that size is unmeasured.
+
+**Double-check of R9's calibration claim.** Lewittes 1982 at 30 Torr is "within 10 %" only for an assumed k_p = 0.3 and an unknown J₁, near the Kn ≈ 1 maximum. I downgrade it to order-of-magnitude consistency. There is still no absolute 1 atm micron force measurement, so bench item 1 is unchanged.
+
+The route's first question is now concrete: make recipe A or B at 1–4 µm, then measure k_eff, skin optical depth, α₄₀₅ and force per absorbed watt.

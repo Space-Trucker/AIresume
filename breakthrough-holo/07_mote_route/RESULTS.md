@@ -31,6 +31,39 @@ Figure of merit: FOM = (J₁/A)/(k_eff + 2k_g) in m·K/W. Speed, force per kelvi
 
 **None of these has been made or measured.** The v1 headline mote had FOM 6.1, which was optimistic but not absurd. It was inconsistent because it combined a low-k body with skin-deep absorption and 70 % pump absorption.
 
+### 2a. Concrete recipes (R9 materials search, plus my M6 skin analysis)
+
+**Skin requirement (M6).** J₁/A ≥ 0.43 needs the absorber skin to reach optical depth ≥ 2 at 1550 nm, i.e. ≥ 86 % single-pass absorption at normal incidence. The skin must be non-percolating and thin (≲ 0.1–0.2 a).
+- At 63 % absorption, J₁/A = 0.30.
+- At 26 %, J₁/A = 0.11.
+
+**Recipe A, "engineered" (a ≈ 1.5 µm).**
+- Body: silica-aerogel sphere, k ≈ 0.03.
+- Emitter: dispersed Eu²⁺-nitride nanophosphor.
+- Skin: Cs_xWO₃ tungsten-bronze nanocrystal islands (visible-transparent, stable to about 470 °C), under a thin silica overcoat.
+- Expected: FOM ≈ 5.0, but 405 nm absorptance only ≈ 25–40 %.
+
+**Recipe B, "core–shell" (a ≈ 2.5–4 µm).**
+- Core: heavily doped BaSi₂O₂N₂:Eu (0.6 a).
+- Shell: aerogel.
+- Skin: Cs_xWO₃ islands with a silica overcoat.
+- Expected: FOM ≈ 4.1 and 405 nm absorptance ≈ 60–90 %. This is the bright variant.
+
+**Rejected materials.**
+- ITO is a strong absorber, but inhaled indium causes lung disease.
+- TiN and carbon are opaque in the visible.
+- QDs, perovskites and dyes die above ~150–200 °C.
+
+**Manufacturability.**
+- Emulsion aerogel spheres bottom out near 7 µm diameter.
+- Pharmaceutical spray-gel aerogels reach d₅₀ ≈ 2.4 µm, so micron aerogel is makeable.
+- Its conductivity at 1–4 µm has not been measured. This is the #1 FOM risk.
+
+**Force calibration.** No absolute force-per-absorbed-watt measurement exists for micron particles at 1 atm.
+- The continuum formula is routinely inverted in levitated-droplet photophoretic spectroscopy (Bluvshtein et al. 2020), with ±25–60 % retrievals.
+- R9 reports Lewittes 1982 (30 Torr) within ~10 % of our model. My own check: this depends on the assumed particle conductivity (k = 0.3 gives 1.5×10⁻⁵ against 1.6×10⁻⁵ N/W; k = 0.1 gives 3.5×10⁻⁵). The droplet's J₁ is unknown, and 30 Torr is near the Kn ≈ 1 force maximum where the continuum form is not valid.
+- **I count Lewittes as order-of-magnitude consistency, not calibration. Bench item 1 stands.**
+
 ## 3. Heat-limited speed, corrected
 
 Mote speed relative to the air, with the hot face held at T_face ≤ 450 K, before any draft margin:
