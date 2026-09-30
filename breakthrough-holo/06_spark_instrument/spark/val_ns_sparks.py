@@ -11,12 +11,15 @@ from chemistry import spark_products
 from run_spark import to_json
 
 E, r0, tag = float(sys.argv[1]), float(sys.argv[2]), sys.argv[3]
+mix = len(sys.argv) > 4 and sys.argv[4] == "mix"
+tv = float(sys.argv[5]) if len(sys.argv) > 5 else 0.35
+tm = float(sys.argv[6]) if len(sys.argv) > 6 else 0.10
 eos, rad = fast(), load_rad()
-s = Spark(eos, E, r0, rad=rad, kappa_fn=conductivity, n_core=48, growth=1.04)
+s = Spark(eos, E, r0, rad=rad, kappa_fn=conductivity, n_core=48, growth=1.04, mix=mix, mix_tv=tv, mix_tau=tm)
 s.r_probe = 3 * s.rc
 s.probe_j = int(np.argmin(np.abs(s.r - s.r_probe)))
 # kernel diagnostics at the literature times
-marks = {1e-6: None, 10e-6: None, 21e-6: None}
+marks = {1e-6: None, 10e-6: None, 20e-6: None, 21e-6: None}
 while s.t < 5e-3:
     if s.phase == 1:
         T = s.step_compressible()

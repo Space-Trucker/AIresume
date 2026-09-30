@@ -17,13 +17,15 @@ _EOS = _RAD = None
 
 
 def run_case(E_abs, r0, kappa_mult=1.0, n_core=48, growth=1.03, cfl=0.3, chem=True, t_end=5e-3, rad_on=True,
-             profile="gauss", label=None, shell_R=None, pulses=None):
+             profile="gauss", label=None, shell_R=None, pulses=None, geometry="spherical", mix=False,
+             mix_tv=0.35, mix_tau=0.10):
     global _EOS, _RAD
     if _EOS is None:
         _EOS, _RAD = fast(), load_rad()
     t0 = time.time()
     s = Spark(_EOS, E_abs, r0, rad=_RAD if rad_on else None, kappa_fn=conductivity, kappa_mult=kappa_mult,
-              n_core=n_core, growth=growth, cfl=cfl, profile=profile, shell_R=shell_R, pulses=pulses)
+              n_core=n_core, growth=growth, cfl=cfl, profile=profile, shell_R=shell_R, pulses=pulses,
+              geometry=geometry, mix=mix, mix_tv=mix_tv, mix_tau=mix_tau)
     E0 = s.total_energy()
     res = s.run(t_end=t_end)
     res["energy_drift_phase1"] = float("nan")

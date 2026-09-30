@@ -28,7 +28,7 @@ X_N2, X_O2 = 0.79, 0.21                      # same mixture as Cantera compositi
 P0, T0 = 101325.0, 300.0
 
 # ionisation energies (eV) and low-lying levels (g, E eV) per charge state (NIST ASD, rounded)
-ION = {"N": [14.534, 29.601, 47.445], "O": [13.618, 35.121, 54.936]}
+ION = {"N": [14.534, 29.601, 47.445, 77.474, 97.890, 552.07], "O": [13.618, 35.121, 54.936, 77.414, 113.90, 138.12, 739.29]}
 LEVELS = {
     ("N", 0): [(4, 0.0), (10, 2.384), (6, 3.576)],
     ("N", 1): [(1, 0.0), (3, 0.006), (5, 0.016), (5, 1.899), (1, 4.053), (5, 5.85)],
@@ -38,7 +38,10 @@ LEVELS = {
     ("O", 1): [(4, 0.0), (10, 3.325), (6, 5.017)],
     ("O", 2): [(1, 0.0), (3, 0.014), (5, 0.038), (5, 2.51), (1, 5.35)],
     ("O", 3): [(2, 0.0), (4, 0.048), (12, 8.86)],
+    ("N", 4): [(2, 0.0), (6, 10.0)], ("N", 5): [(1, 0.0)], ("N", 6): [(2, 0.0)],
+    ("O", 4): [(1, 0.0), (9, 10.2)], ("O", 5): [(2, 0.0), (6, 12.0)], ("O", 6): [(1, 0.0)], ("O", 7): [(2, 0.0)],
 }
+NZ = {el: len(ION[el]) + 1 for el in ION}      # number of charge states tracked per element
 H0_ATOM = {"N": 466.48e3 / NA, "O": 242.46e3 / NA}   # J per atom at 0 K relative to N2/O2 at 298 K
 
 
@@ -61,21 +64,23 @@ def saha_state(T, rho):
     def fractions(ne):
         out = {}
         for el in ("N", "O"):
-            Zs, Es = zip(*[part_fn(el, z, T) for z in range(4)])
-            r = [1.0]
-            for z in range(3):
-                S = 2 * Zs[z + 1] / Zs[z] / lam3 * math.exp(-ION[el][z] * eV / (kB * T)) / ne
-                r.append(r[-1] * S)
-            r = np.array(r)
+            nz = NZ[el]
+            Zs, Es = zip(*[part_fn(el, z, T) for z in range(nz)])
+            lr = [0.0]
+            for z in range(nz - 1):
+                lS = (math.log(2 * Zs[z + 1] / Zs[z] / lam3 / ne) - ION[el][z] * eV / (kB * T))
+                lr.append(lr[-1] + lS)
+            lr = np.array(lr)
+            r = np.exp(lr - lr.max())
             out[el] = (r / r.sum(), np.array(Es))
         return out
 
     # charge neutrality: solve ne = sum_z z n_z by bisection in log space
-    lo, hi = 1e10, 4 * (nuc["N"] + nuc["O"])
+    lo, hi = 1e10, 8 * (nuc["N"] + nuc["O"])
     for _ in range(200):
         ne = math.sqrt(lo * hi)
         f = fractions(ne)
-        charge = sum(nuc[el] * float((f[el][0] * np.arange(4)).sum()) for el in ("N", "O"))
+        charge = sum(nuc[el] * float((f[el][0] * np.arange(NZ[el])).sum()) for el in ("N", "O"))
         if charge > ne:
             lo = ne
         else:
@@ -88,7 +93,7 @@ def saha_state(T, rho):
     for el in ("N", "O"):
         fr, Es = f[el]
         cum_ion = np.concatenate([[0.0], np.cumsum(ION[el])]) * eV
-        U += nuc[el] * float((fr * (Es + cum_ion[:4] + H0_ATOM[el])).sum())
+        U += nuc[el] * float((fr * (Es + cum_ion[:NZ[el]] + H0_ATOM[el])).sum())
     return dict(P=P, u=U / rho, ne=ne, fN=f["N"][0], fO=f["O"][0])
 
 
@@ -103,7 +108,7 @@ def build_table(nT=170, nrho=70):
     import cantera as ct
     gas = ct.Solution("airNASA9.yaml")
     gas.X = {"N2": X_N2, "O2": X_O2}
-    Ts = np.unique(np.concatenate([np.geomspace(250.0, 18000.0, 110), np.geomspace(14000.0, 3.0e5, 70)]))
+    Ts = np.unique(np.concatenate([np.geomspace(250.0, 18000.0, 110), np.geomspace(14000.0, 1.0e6, 90)]))
     rhos = np.geomspace(1e-5, 30.0, nrho)
     P = np.zeros((len(rhos), len(Ts)))
     U = np.zeros_like(P)
@@ -216,7 +221,8 @@ class FastEOS:
     def __init__(self, eos: EOS, ns=900):
         self.base = eos
         self.lr = eos.lr
-        self.s = np.linspace(math.asinh(-2e5 / self.E_S), math.asinh(3.0e9 / self.E_S), ns)
+        self.e_max = float(eos.U[:, -1].min())          # largest e covered at every density
+        self.s = np.linspace(math.asinh(-2e5 / self.E_S), math.asinh(self.e_max / self.E_S), ns)
         es = self.E_S * np.sinh(self.s)
         self.lTt = np.zeros((len(self.lr), ns))
         self.lPt = np.zeros_like(self.lTt)

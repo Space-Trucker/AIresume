@@ -66,18 +66,35 @@ def g0_RT(T):
 
 
 # reactions: (reactants dict, products dict, third_body, k(T) forward in molecule-cm-s units)
+def _k_o3_rec(T):
+    """O + O2 + M -> O3 + M. JPL k0 below 600 K; above, derived from the measured O3 + M -> O + O2 + M
+    decomposition rate 7.16e-10 exp(-11200/T) cm^3/s [Heimerl & Coffee 1979, MEMORY-flagged] through K_c,
+    blended smoothly (review finding 11: extrapolated JPL makes O3 decomposition 2-9x too slow above 1000 K)."""
+    k_jpl = 6.0e-34 * (T / 300) ** -2.4
+    if T <= 600:
+        return k_jpl
+    g = g0_RT(T)
+    c0 = 1e5 / (1.380649e-23 * T) * 1e-6
+    dG = g[IDX["O3"]] - g[IDX["O"]] - g[IDX["O2"]]
+    Kc = math.exp(-dG) / c0                                    # cm^3 (association)
+    k_hi = 7.16e-10 * math.exp(-11200 / T) * Kc
+    w = min(1.0, (T - 600) / 600)
+    return (1 - w) * k_jpl + w * k_hi
+
+
 def _rxns():
+    # third-body flag: "M" (all equal), "MA" (atoms N, O count 5x, Park-style enhanced efficiency)
     return [
-        ({"N2": 1, "O": 1}, {"NO": 1, "N": 1}, False, lambda T: 3.0e-10 * math.exp(-38370 / T)),
-        ({"N": 1, "O2": 1}, {"NO": 1, "O": 1}, False, lambda T: 1.06e-14 * T * math.exp(-3160 / T)),
-        ({"O": 2}, {"O2": 1}, True, lambda T: 3.31e-31 / T * (2.5 if T >= 1000 else 1.0)),
-        ({"N": 2}, {"N2": 1}, True, lambda T: 8.3e-34 * math.exp(500 / T)),
-        ({"N": 1, "O": 1}, {"NO": 1}, True, lambda T: 1.76e-31 * T ** -0.5),
-        ({"O": 1, "O2": 1}, {"O3": 1}, True, lambda T: 6.0e-34 * (T / 300) ** -2.4),
-        ({"O": 1, "O3": 1}, {"O2": 2}, False, lambda T: 8.0e-12 * math.exp(-2060 / T)),
-        ({"NO": 1, "O3": 1}, {"NO2": 1, "O2": 1}, False, lambda T: 3.0e-12 * math.exp(-1500 / T)),
-        ({"O": 1, "NO": 1}, {"NO2": 1}, True, lambda T: 9.0e-32 * (T / 300) ** -1.5),
-        ({"NO2": 1, "O": 1}, {"NO": 1, "O2": 1}, False, lambda T: 5.1e-12 * math.exp(210 / T)),
+        ({"N2": 1, "O": 1}, {"NO": 1, "N": 1}, None, lambda T: 3.0e-10 * math.exp(-38370 / T)),
+        ({"N": 1, "O2": 1}, {"NO": 1, "O": 1}, None, lambda T: 1.06e-14 * T * math.exp(-3160 / T)),
+        ({"O": 2}, {"O2": 1}, "MA", lambda T: 2.45e-31 * T ** -0.63),
+        ({"N": 2}, {"N2": 1}, "MA", lambda T: 8.3e-34 * math.exp(500 / T)),
+        ({"N": 1, "O": 1}, {"NO": 1}, "MA", lambda T: 1.76e-31 * T ** -0.5),
+        ({"O": 1, "O2": 1}, {"O3": 1}, "M", _k_o3_rec),
+        ({"O": 1, "O3": 1}, {"O2": 2}, None, lambda T: 8.0e-12 * math.exp(-2060 / T)),
+        ({"NO": 1, "O3": 1}, {"NO2": 1, "O2": 1}, None, lambda T: 3.0e-12 * math.exp(-1500 / T)),
+        ({"O": 1, "NO": 1}, {"NO2": 1}, "M", lambda T: 9.0e-32 * (T / 300) ** -1.5),
+        ({"NO2": 1, "O": 1}, {"NO": 1, "O2": 1}, None, lambda T: 5.1e-12 * math.exp(210 / T)),
     ]
 
 
@@ -94,11 +111,12 @@ def rates(T, n):
     """Net production rates dn/dt (cm^-3 s^-1) for number densities n (cm^-3)."""
     T = float(min(max(T, 250.0), 8000.0))
     M = n.sum()
+    MA = M + 4.0 * (n[IDX["N"]] + n[IDX["O"]])
     g = g0_RT(T)
     c0 = 1e5 / (kB_cgs * 1e-7 * T) * 1e-6       # standard concentration (1 bar) in cm^-3
     w = np.zeros(len(SP))
     for k, (re, pr, tb, kf) in enumerate(RX):
-        kfor = kf(T) * (M if tb else 1.0)
+        kfor = kf(T) * (M if tb == "M" else (MA if tb == "MA" else 1.0))
         dG = float(NU[k] @ g)
         dn = int(NU[k].sum())
         Kc = math.exp(-dG) * c0 ** dn             # concentration-based equilibrium constant
@@ -150,28 +168,52 @@ def equilibrium_fractions(T, P):
     return gas.X
 
 
-def spark_products(spark, T_start=1800.0, max_cells=160):
-    """Molecules of NO, NO2, O3 produced by a SPARK run (thermal kernel chemistry + photochemistry)."""
+T_EQ = 7000.0
+
+
+def _eq_init(T, P):
+    """Equilibrium composition at (T, P) on the per-parent-molecule basis (N atoms = 1.58 per parent)."""
+    xe = equilibrium_fractions(T, P)
+    n_N = 2 * xe[IDX["N2"]] + xe[IDX["N"]] + xe[IDX["NO"]] + xe[IDX["NO2"]]
+    return xe * 1.58 / n_N
+
+
+def spark_products(spark, T_start=1800.0, max_cells=160, t_mix=1e-3):
+    """Molecules of NO, NO2, O3 from a SPARK run.
+
+    Thermal chemistry: cells whose peak T exceeds T_EQ start from LTE composition at the first time after
+    their peak when T <= T_EQ (atomised/ionised air recombines through this point; review finding 1);
+    cooler cells start from ambient air at t = 0. No temperature clamp is used.
+    Photochemistry: VUV photons 120-200 nm are absorbed by O2 in the surrounding air (O2 -> 2 O -> 2 O3);
+    EUV (< 102 nm) photons ionise N2/O2: 1 NO + 1.5 O3 each (ad hoc, ledger)."""
     ht = np.array(spark.hist_t)
     HT = np.array(spark.hist_T)
     HP = np.array(spark.hist_P)
     Tmax = HT.max(0)
     hot = np.where(Tmax > T_start)[0]
+    weight = 1.0
     if len(hot) > max_cells:
+        weight = len(hot) / max_cells
         hot = hot[np.linspace(0, len(hot) - 1, max_cells).astype(int)]
-        weight = (Tmax > T_start).sum() / len(hot)
-    else:
-        weight = 1.0
     AMU = 1.66053907e-27
     m_mol = 0.79 * 28.014 * AMU + 0.21 * 31.998 * AMU
     tot = {"NO": 0.0, "NO2": 0.0, "O3": 0.0, "N": 0.0, "O": 0.0}
     for i in hot:
-        # clamp: above 6000 K treat as 6000 K (equilibrium is fast there; avoids ionised regime)
-        Ti = np.minimum(HT[:, i], 6000.0)
-        x = integrate_history(ht, Ti, np.maximum(HP[:, i], 1e3))
-        n_molec = spark.m[i] / m_mol          # parent air molecules in this Lagrangian cell (~conserved)
-        for s in tot:
-            tot[s] += weight * x[IDX[s]] * n_molec
+        Ti = HT[:, i]
+        Pi = np.maximum(HP[:, i], 1e3)
+        if Tmax[i] > T_EQ:
+            kpk = int(np.argmax(Ti))
+            after = np.where(Ti[kpk:] <= T_EQ)[0]
+            if len(after) == 0:
+                continue                      # still hotter than T_EQ at the end: no frozen products
+            k0 = kpk + int(after[0])
+            y0 = _eq_init(float(Ti[k0]), float(Pi[k0]))
+            y = integrate_history(ht[k0:], Ti[k0:], Pi[k0:], n_init=y0, t_mix=t_mix) if k0 < len(ht) - 1 else y0
+        else:
+            y = integrate_history(ht, Ti, Pi, t_mix=t_mix)
+        n_molec = spark.m[i] / m_mol
+        for sname in tot:
+            tot[sname] += weight * y[IDX[sname]] * n_molec
     photo_O3 = 2.0 * spark.ph_o2 + 1.5 * spark.ph_ion
     photo_NO = 1.0 * spark.ph_ion
     return dict(thermal=tot, photo_O3=photo_O3, photo_NO=photo_NO,

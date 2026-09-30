@@ -20,7 +20,7 @@ import os
 
 import numpy as np
 
-from eos import (ION, LEVELS, NA, P0, X_N2, X_O2, cantera_state, kB, h, eV, saha_state, M_N, M_O)
+from eos import (ION, LEVELS, NA, NZ, P0, X_N2, X_O2, cantera_state, kB, h, eV, saha_state, M_N, M_O)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "rad_table.npz")
@@ -45,7 +45,28 @@ LINES = [
     ("O", 1, 441.5, 8.0e8, 26.25), ("O", 1, 464.9, 3.0e9, 25.66), ("O", 1, 434.9, 1.0e9, 25.85),
     ("O", 1, 407.2, 2.0e9, 28.80), ("O", 1, 391.9, 5.0e8, 26.30),
 ]
-CHI_G = {1: 4.0, 2: 11.0, 3: 20.0}       # eV, lowest merged level of the recombined species, by ion charge
+CHI_G = {1: 4.0, 2: 11.0, 3: 20.0, 4: 30.0, 5: 45.0, 6: 60.0, 7: 80.0}   # eV, lowest merged level, by ion charge
+
+# Vacuum-UV lines (review finding 2). (element, charge, lambda nm, g_u, g_l, E_u eV, E_l eV, A s^-1),
+# multiplet-averaged, rounded from NIST ASD [MEMORY-flagged, +-3x]. Emission escapes through Voigt wings.
+VUV_LINES = [
+    ("N", 0, 120.0, 12, 4, 10.33, 0.0, 4.0e8), ("N", 0, 113.4, 12, 4, 10.93, 0.0, 1.5e8),
+    ("N", 0, 149.3, 6, 10, 10.69, 2.38, 2.6e8), ("N", 0, 174.3, 6, 6, 10.69, 3.58, 5.0e7),
+    ("O", 0, 130.4, 3, 9, 9.52, 0.0, 2.0e8), ("O", 0, 102.7, 15, 9, 12.08, 0.0, 4.0e7),
+    ("N", 1, 108.5, 15, 9, 11.44, 0.0, 3.7e8), ("N", 1, 91.6, 9, 9, 13.54, 0.0, 1.2e9),
+    ("O", 1, 83.4, 12, 4, 14.87, 0.0, 8.0e8),
+]
+STARK_REF_NM = 0.01      # Stark FWHM (nm) at n_e = 1e23 m^-3 for these lines; uncertain x0.3-3 (ledger)
+AMU_ = 1.66053907e-27
+
+# Molecular band systems in LTE (review finding 9): (molecule, T_e eV, g_u/g_x, A s^-1, [(l0,l1,share)...])
+MOL_BANDS = [
+    ("N2", 11.03, 6.0, 2.5e7, [(295, 320, 0.2), (330, 340, 0.35), (350, 360, 0.25), (370, 405, 0.2)]),   # N2 2+
+    ("N2", 7.39, 6.0, 1.5e5, [(580, 700, 0.25), (700, 1050, 0.75)]),                                  # N2 1+
+    ("N2+", 3.17, 1.0, 1.6e7, [(385, 395, 0.4), (420, 432, 0.3), (455, 480, 0.3)]),                   # N2+ 1-
+    ("NO", 5.48, 0.5, 5.0e6, [(200, 240, 0.5), (240, 300, 0.5)]),                                     # NO gamma
+    ("NO", 5.69, 1.0, 3.0e5, [(220, 300, 0.6), (300, 380, 0.4)]),                                     # NO beta
+]
 
 
 def _V():
@@ -56,13 +77,13 @@ def _V():
 
 
 def _S():
-    tab = {200: 0.03, 210: 0.075, 220: 0.12, 230: 0.19, 240: 0.30, 250: 0.43, 254: 0.5, 260: 0.65, 270: 1.0,
+    tab = {180: 0.012, 190: 0.019, 200: 0.03, 210: 0.075, 220: 0.12, 230: 0.19, 240: 0.30, 250: 0.43, 254: 0.5, 260: 0.65, 270: 1.0,
            280: 0.88, 290: 0.64, 297: 0.46, 300: 0.30, 305: 0.06, 310: 0.015, 315: 0.003, 320: 0.001,
            330: 0.00041, 340: 0.00028, 350: 0.0002, 360: 0.00013, 370: 0.000093, 380: 0.000064,
            390: 0.000045, 400: 0.00003}
     l = LAM * 1e9
     s = np.exp(np.interp(l, list(tab), np.log(list(tab.values()))))
-    s[(l < 200) | (l > 400)] = 0.0
+    s[(l < 180) | (l > 400)] = 0.0
     return s
 
 
@@ -73,14 +94,18 @@ def composition(T, rho, gas):
         n = st["X"] * st["P"] / (kB * T)
         idx = {s: gas.species_index(s) for s in gas.species_names}
         comp = {("N", 0): n[idx["N"]], ("O", 0): n[idx["O"]], ("N", 1): n[idx["N+"]], ("O", 1): n[idx["O+"]],
-                ("N", 2): 0.0, ("O", 2): 0.0, ("N", 3): 0.0, ("O", 3): 0.0,
-                ("mol", 1): n[idx["NO+"]] + n[idx["N2+"]] + n[idx["O2+"]]}
+                ("mol", 1): n[idx["NO+"]] + n[idx["N2+"]] + n[idx["O2+"]],
+                "N2": n[idx["N2"]], "NO": n[idx["NO"]], "N2+": n[idx["N2+"]]}
+        for el in ("N", "O"):
+            for z in range(2, NZ[el]):
+                comp[(el, z)] = 0.0
         return st["ne"], comp
     s = saha_state(T, rho)
     n_mol = rho / (X_N2 * 2 * M_N + X_O2 * 2 * M_O)
     nuc = {"N": 2 * X_N2 * n_mol, "O": 2 * X_O2 * n_mol}
-    comp = {(el, z): nuc[el] * s["f" + el][z] for el in ("N", "O") for z in range(4)}
+    comp = {(el, z): nuc[el] * s["f" + el][z] for el in ("N", "O") for z in range(NZ[el])}
     comp[("mol", 1)] = 0.0
+    comp["N2"] = comp["NO"] = comp["N2+"] = 0.0
     return s["ne"], comp
 
 
@@ -89,7 +114,7 @@ def spectrum(T, ne, comp):
     kT = kB * T
     hnu = h * NU
     jnu = np.zeros_like(NU)
-    for z in (1, 2, 3):
+    for z in range(1, max(NZ.values())):
         nz = sum(comp.get((el, z), 0.0) for el in ("N", "O")) + (comp[("mol", 1)] if z == 1 else 0.0)
         if nz <= 0:
             continue
@@ -98,6 +123,8 @@ def spectrum(T, ne, comp):
         term = 1.0 + XI * (np.exp(np.minimum(hnu, chig) / kT) - 1.0)
         # explicit ground-state edges of the recombined species (charge z-1), weight by element share
         for el in ("N", "O"):
+            if z - 1 >= len(ION[el]):
+                continue
             share = comp.get((el, z), 0.0) / nz if nz > 0 else 0.0
             chi = ION[el][z - 1] * eV
             w = share * 0.5
@@ -115,10 +142,88 @@ def spectrum(T, ne, comp):
         k = int(np.argmin(np.abs(LAM - lam_nm * 1e-9)))
         dl = (LAM[min(k + 1, len(LAM) - 1)] - LAM[max(k - 1, 0)]) / 2
         jlam[k] += power / dl
-    # Kirchhoff absorption of the continuum: kappa_nu = j_nu / (4 pi B_nu) (j_nu is 4pi-integrated)
+    # molecular bands (LTE upper-state populations, rovibrational partition ratio taken as 1: ledger +-2x)
+    for mol, Te, gr, A, parts in MOL_BANDS:
+        nm_ = comp.get(mol, 0.0)
+        if nm_ <= 0:
+            continue
+        nu_pop = nm_ * gr * math.exp(-Te * eV / kT)
+        for l0, l1, share in parts:
+            lam_c = 0.5 * (l0 + l1) * 1e-9
+            P = nu_pop * A * h * c / lam_c * share                 # W/m^3
+            m = (LAM >= l0 * 1e-9) & (LAM < l1 * 1e-9)
+            if m.any():
+                jlam[m] += P / (l1 - l0) / 1e-9
+    # Kirchhoff absorption of the continuum. j_nu (4 pi, spontaneous) = 4 pi kappa' B_nu with kappa' the
+    # absorption coefficient corrected for stimulated emission, which is what governs escape.
+    # (v1 multiplied by an extra (1-exp(-h nu/kT))^-1: review finding 7, fixed.)
     Bnu = 2 * h * NU ** 3 / c ** 2 / np.expm1(np.minimum(hnu / kT, 700.0))
-    kappa = jnu / (4 * math.pi * np.maximum(Bnu, 1e-300)) * (1 - np.exp(-np.minimum(hnu / kT, 700.0))) ** -1
+    kappa = jnu / (4 * math.pi * np.maximum(Bnu, 1e-300))
     return jlam, kappa
+
+
+def vuv_line_data(T, ne, comp, stark_nm=None):
+    """Per VUV line: emissivity (W/m^3, 4 pi), line-centre absorption coefficient k0 (1/m), damping a."""
+    from eos import part_fn
+    stark_nm = STARK_REF_NM if stark_nm is None else stark_nm
+    kT = kB * T
+    out = []
+    for el, z, lam_nm, gu, gl, Eu, El, A in VUV_LINES:
+        n = comp.get((el, z), 0.0)
+        lam = lam_nm * 1e-9
+        nu0 = c / lam
+        if n <= 0:
+            out.append((0.0, 0.0, 1e-3))
+            continue
+        Z, _ = part_fn(el, z, T)
+        nu_ = n * gu * math.exp(-Eu * eV / kT) / Z
+        nl_ = n * gl * math.exp(-El * eV / kT) / Z
+        j = nu_ * A * h * nu0
+        m_at = (14.0067 if el == "N" else 15.999) * AMU_
+        dnuD = nu0 / c * math.sqrt(2 * kT / m_at)                  # Doppler 1/e half-width (Hz)
+        fwhm_stark = c * (stark_nm * 1e-9 * ne / 1e23) / lam ** 2   # Hz
+        gamma = A + 2 * math.pi * fwhm_stark                         # angular damping (s^-1)
+        a = gamma / (4 * math.pi * dnuD)
+        from scipy.special import wofz
+        H0 = float(wofz(1j * a).real)
+        phi0 = H0 / (math.sqrt(math.pi) * dnuD)
+        k0 = lam ** 2 / (8 * math.pi) * (gu / gl) * A * nl_ * phi0 * (1 - math.exp(-h * nu0 / kT))
+        out.append((j, k0, a))
+    return out
+
+
+_BETA = None
+
+
+def voigt_escape(tau0, a):
+    """Mean escape probability for a Voigt line of centre optical depth tau0 and damping a
+    (per-frequency escape (1-e^-tau)/tau, profile-weighted). Tabulated, vectorised."""
+    global _BETA
+    if _BETA is None:
+        from scipy.special import wofz
+        lt = np.linspace(-3, 12, 121)
+        la = np.linspace(-5, 1, 61)
+        x = np.concatenate([-np.logspace(4, -3, 400), np.logspace(-3, 4, 400)])
+        B = np.zeros((len(lt), len(la)))
+        for j, lav in enumerate(la):
+            av = 10 ** lav
+            H = wofz(x + 1j * av).real
+            w = H / H.max()
+            dx = np.gradient(x)
+            for i, ltv in enumerate(lt):
+                t = 10 ** ltv * w
+                pe = np.where(t > 1e-8, -np.expm1(-t) / np.maximum(t, 1e-300), 1.0)
+                B[i, j] = float((H * pe * dx).sum() / (H * dx).sum())
+        _BETA = (lt, la, np.log(B))
+    lt, la, LB = _BETA
+    x = np.clip(np.log10(np.maximum(tau0, 1e-3)), lt[0], lt[-1])
+    y = np.clip(np.log10(np.maximum(a, 1e-5)), la[0], la[-1])
+    i = np.clip(((x - lt[0]) / (lt[1] - lt[0])).astype(int), 0, len(lt) - 2)
+    j = np.clip(((y - la[0]) / (la[1] - la[0])).astype(int), 0, len(la) - 2)
+    u = (x - lt[i]) / (lt[1] - lt[0])
+    v = (y - la[j]) / (la[1] - la[0])
+    r = (1 - u) * ((1 - v) * LB[i, j] + v * LB[i, j + 1]) + u * ((1 - v) * LB[i + 1, j] + v * LB[i + 1, j + 1])
+    return np.exp(r)
 
 
 def band_integrals(jlam, kappa, V, S):
@@ -147,6 +252,10 @@ def build_table():
     keys = list(BANDS) + ["lm", "act", "ph_o2", "ph_ion"]
     tab = {k: np.zeros((len(rhos), len(Ts))) for k in keys}
     kap = np.zeros((len(rhos), len(Ts), len(PROBES)))
+    nl = len(VUV_LINES)
+    vj = np.zeros((len(rhos), len(Ts), nl))
+    vk = np.zeros_like(vj)
+    va = np.full_like(vj, 1e-3)
     for i, rho in enumerate(rhos):
         for j, T in enumerate(Ts):
             if T < 1500:
@@ -157,7 +266,9 @@ def build_table():
             for kk in keys:
                 tab[kk][i, j] = b[kk]
             kap[i, j] = b["kappa"]
-    np.savez(CACHE, Ts=Ts, rhos=rhos, kap=kap, **tab)
+            for q, (jj, kk, aa) in enumerate(vuv_line_data(T, ne, comp)):
+                vj[i, j, q], vk[i, j, q], va[i, j, q] = jj, kk, aa
+    np.savez(CACHE, Ts=Ts, rhos=rhos, kap=kap, vj=vj, vk=vk, va=va, **tab)
     return RadTable(np.load(CACHE))
 
 
@@ -167,6 +278,8 @@ class RadTable:
     def __init__(self, d):
         self.d = {k: d[k] for k in self.KEYS}
         self.kap = d["kap"]
+        self.vj, self.vk, self.va = d["vj"], d["vk"], d["va"]
+        self.vlam = np.array([l[2] for l in VUV_LINES])
         self.lT, self.lr = np.log(d["Ts"]), np.log(d["rhos"])
 
     def _idx(self, rho, T):
@@ -189,6 +302,11 @@ class RadTable:
         r = ((1 - w)[:, None] * ((1 - v)[:, None] * A[i, j] + v[:, None] * A[i, j + 1])
              + w[:, None] * ((1 - v)[:, None] * A[i + 1, j] + v[:, None] * A[i + 1, j + 1]))
         out["kappa"] = np.where(r < -600, 0.0, np.exp(r))
+        for key, tab in (("vj", self.vj), ("vk", self.vk), ("va", self.va)):
+            A = np.log(np.maximum(tab, 1e-300))
+            r = ((1 - w)[:, None] * ((1 - v)[:, None] * A[i, j] + v[:, None] * A[i, j + 1])
+                 + w[:, None] * ((1 - v)[:, None] * A[i + 1, j] + v[:, None] * A[i + 1, j + 1]))
+            out[key] = np.where(r < -600, 0.0, np.exp(r))
         return out
 
 

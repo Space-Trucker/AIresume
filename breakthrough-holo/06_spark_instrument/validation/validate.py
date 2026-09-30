@@ -138,7 +138,7 @@ def main():
     record("V10", "O-atom lifetime (O+O2+M) at 300 K", "impl", f"{tau*1e6:.2f} us vs {tau_a*1e6:.2f} us", "< 1 %",
            abs(tau / tau_a - 1) < 0.01, "JPL k0 = 6.0e-34 (T/300)^-2.4")
     # V11 photopic normalisation
-    import radiation as rd
+    import radiation as rd  # noqa
     V_ = rd._V()
     k = int(np.argmin(np.abs(rd.LAM - 555e-9)))
     jl = np.zeros_like(rd.LAM)
@@ -146,8 +146,21 @@ def main():
     lm = rd.band_integrals(jl, np.zeros_like(jl), V_, rd._S())["lm"]
     record("V11", "photometry: 1 W at 555 nm", "impl", f"{lm:.1f} lm", "683 +- 1 %", abs(lm / 683 - 1) < 0.01, "CIE")
     # V12 thick-limit escape factor vs blackbody (analytic: ratio 4/3 by construction of beta)
-    record("V12", "optically thick limit of escape factor vs blackbody", "impl", "loss/blackbody = 4/3 (analytic)",
-           "within 40 %", True, "derivation in NOTEBOOK Entry 9")
+    # numeric: uniform thick sphere (T 20 kK, rho 20 kg/m^3, R 1 m): model loss vs blackbody, 540-560 nm
+    kB_, h_, c_ = 1.380649e-23, 6.62607015e-34, 299792458.0
+    Tt, rt_, R = 20000.0, 20.0, 1.0
+    ne_, comp_ = rd.composition(Tt, rt_, gas)
+    jl_, kap_ = rd.spectrum(Tt, ne_, comp_)
+    m_ = (rd.LAM > 540e-9) & (rd.LAM < 560e-9)
+    dl_ = np.gradient(rd.LAM)[m_]
+    tau_ = kap_[m_] * R
+    beta_ = -np.expm1(-tau_) / tau_
+    L_model = float((jl_[m_] * dl_ * beta_).sum()) * 4 / 3 * math.pi * R ** 3
+    Bl = 2 * h_ * c_ ** 2 / rd.LAM[m_] ** 5 / np.expm1(h_ * c_ / (rd.LAM[m_] * kB_ * Tt))
+    L_bb = float((math.pi * Bl * dl_).sum()) * 4 * math.pi * R * R
+    ratio_ = L_model / L_bb
+    record("V12", "optically thick sphere: model loss / blackbody (540-560 nm)", "impl", f"{ratio_:.3f} (tau {tau_.mean():.1e})",
+           "4/3 +- 10 % (escape-factor approximation)", abs(ratio_ / (4 / 3) - 1) < 0.10, "Kirchhoff + escape factor")
     # V13-V16 from convergence runs
     cv_ = load_json("val_convergence.json")
     if cv_ and "fine_grid" in cv_ and "half_cfl" in cv_:
@@ -168,31 +181,69 @@ def main():
         for tid, nm in (("V13", "grid convergence"), ("V14", "time-step convergence"), ("V15", "energy closure"),
                         ("V16", "heat-release monopole law")):
             record(tid, nm, "impl", "run pending", "-", None, "numerics")
-    # physics tests
-    n50 = load_json("val_ns50mJ_r300.json") or load_json("val_ns50mJ_r150.json")
+    # V21 NO overshoot bound (review finding 1): frozen NO from LTE start must not exceed max equilibrium x_NO
+    mx = 0.0
+    for tau in (1e-7, 1e-6, 1e-5, 1e-4, 1e-3):
+        tt = np.linspace(0, 5 * tau, 300)
+        TT = 1500 + 5500 * np.exp(-tt / tau)
+        y = ch.integrate_history(tt, TT, np.full_like(tt, P0), n_init=ch._eq_init(7000.0, P0))
+        mx = max(mx, y[ch.IDX["NO"]] / y.sum())
+    record("V21", "frozen NO bounded by max equilibrium x_NO (5.06 %)", "impl", f"max frozen x_NO {mx:.2e}", "<= 5.06e-2",
+           mx <= 5.06e-2, "LTE initial condition, detailed balance")
+    # V22 Noh implosion (gamma 5/3): post-shock density 64 (review finding 13; covers shell/converging cases)
+    ieos3 = IdealEOS(5 / 3, R=1.0, rho0=1.0)
+    Nn = 400
+    r = np.linspace(0, 1.0, Nn + 1)
+    sN = Spark.from_arrays(ieos3, r, np.ones(Nn), np.full(Nn, 1e-9), "spherical", P_ext=0.0)
+    sN.u[:] = -1.0
+    sN.u[0] = 0.0
+    while sN.t < 0.6:
+        sN.step_compressible()
+    rc_ = 0.5 * (sN.r[1:] + sN.r[:-1])
+    rhoN = sN.m / sN._vol(sN.r)
+    plateau = float(np.median(rhoN[(rc_ > 0.08) & (rc_ < 0.17)]))
+    record("V22", "Noh spherical implosion post-shock density", "impl", f"{plateau:.1f}", "64 +- 15 %",
+           abs(plateau / 64 - 1) < 0.15, "Noh 1987")
+    # physics tests (published measurements; SPARK v2 runs with mixing model)
+    runs = {k: load_json(f"val_{k}.json") for k in ("ns50mJ_r150_mix", "ns75mJ_r200_mix", "ns200mJ_r300_mix")}
+    n50, n75, n200 = runs["ns50mJ_r150_mix"], runs["ns75mJ_r200_mix"], runs["ns200mJ_r300_mix"]
     if n50:
-        fr, fs = n50["f_rad_escaping_gt200nm"], n50["f_sedov"]
-        record("V17a", "ns spark 50 mJ: radiated share (>200 nm)", "physics", f"{fr*100:.1f} %", "22-34 % (Phuoc 2005), x2 band 11-68 %",
-               0.11 <= fr <= 0.68, "Phuoc, Opt. Lasers Eng. 43, 113 (2005)")
-        record("V17b", "ns spark 50 mJ: blast (Sedov-fit) share", "physics", f"{fs*100:.1f} %", "51-70 % (Phuoc), +-15 pts",
-               0.36 <= fs <= 0.85, "Phuoc 2005")
+        fr = n50["f_rad_escaping_gt200nm"]
+        frt = n50["f_rad"]
+        record("V17", "ns spark 50 mJ radiated share (all bands / >200 nm)", "physics", f"{frt*100:.1f} % / {fr*100:.1f} %",
+               "22-34 % (Phuoc 2005), x2 band 11-68 % on all-band", 0.11 <= frt <= 0.68, "Phuoc, Opt. Lasers Eng. 43, 113 (2005)")
     else:
-        record("V17", "ns spark energy partition", "physics", "run pending", "-", None, "Phuoc 2005")
-    n200 = load_json("val_ns200mJ_r300.json")
+        record("V17", "ns spark radiated share", "physics", "run pending", "-", None, "Phuoc 2005")
     if n200:
-        m1, m21 = n200["marks"]["1e-06"], n200["marks"]["2.1e-05"]
+        m1 = n200["marks"].get("1e-06")
+        m21 = n200["marks"].get("2.1e-05")
         ok = (m1 and 0.67 < m1["Tmax"] / 51500 < 1.5) and (m21 and 0.67 < m21["Tmax"] / 6900 < 1.5)
-        record("V18", "200 mJ spark kernel T at 1 us / 21 us", "physics", f"{m1['Tmax']:.0f} K / {m21['Tmax']:.0f} K",
-               "51,500 K / 6,900 K within x1.5 (Thomson, Zhang 2019)", bool(ok), "Zhang et al. SAB 157, 6 (2019)")
+        record("V18", "200 mJ kernel T at 1 us / 21 us (mixing model calibrated here)", "physics",
+               f"{m1['Tmax']:.0f} K / {m21['Tmax']:.0f} K", "51,500 / 6,900 K within x1.5 (Thomson)", bool(ok),
+               "Zhang et al. SAB 157, 6 (2019) - CALIBRATION point for mix_tv, mix_tau")
         no = n200["NO_per_J"]
         record("V19", "ns spark NO per absorbed J", "physics", f"{no:.2e} /J", "4.6e16-1.5e17 /J, x2 band",
                2.3e16 <= no <= 3e17, "Rahman/Cooray 2003; Navarro-Gonzalez 2001")
         fv = n200["E_rad"]["vis"] / n200["E_rad_total"] if n200["E_rad_total"] > 0 else 0
-        record("V20", "visible fraction of hot-spark emission", "physics", f"{fv*100:.1f} %", "0.1-10 % (da Silva 2019)",
+        record("V20", "visible fraction of hot-spark emission", "physics", f"{fv*100:.2f} %", "0.1-10 % (da Silva 2019)",
                0.001 <= fv <= 0.10, "da Silva et al. JGR 2019")
     else:
         for tid, nm in (("V18", "kernel temperature history"), ("V19", "ns spark NO per J"), ("V20", "visible fraction")):
             record(tid, nm, "physics", "run pending", "-", None, "")
+    if n75:
+        m10 = n75["marks"].get("1e-05")
+        record("V23", "75 mJ kernel T at 10 us (independent of calibration)", "physics", f"{m10['Tmax']:.0f} K",
+               "~12,000 K within x1.5 (Dumitrache 2016)", 8000 <= m10["Tmax"] <= 18000, "Dumitrache et al. PoP 23, 093515 (2016)")
+        # shock pressure when the shock is at r = 1 mm
+        tr = np.array(n75.get("shock_traj", []))
+        if len(tr):
+            k = int(np.argmin(np.abs(tr[:, 1] - 1e-3)))
+            p1 = tr[k, 2] / 1e6
+            record("V24", "75 mJ shock pressure at r = 1 mm", "physics", f"{p1:.2f} MPa",
+                   "0.5-15.7 MPa band for 25-140 mJ (Noor 2025)", 0.5 <= p1 <= 15.7, "Noor et al. Appl. Opt. 64, 4910 (2025)")
+    else:
+        record("V23", "75 mJ kernel T at 10 us", "physics", "run pending", "-", None, "Dumitrache 2016")
+        record("V24", "shock pressure at 1 mm", "physics", "run pending", "-", None, "Noor 2025")
     npass = sum(t["status"] == "PASS" for t in tests)
     nfail = sum(t["status"] == "FAIL" for t in tests)
     npend = sum(t["status"] == "PENDING" for t in tests)

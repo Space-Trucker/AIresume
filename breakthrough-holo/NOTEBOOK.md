@@ -300,3 +300,40 @@ The red team found 3 critical, 11 major and 5 minor problems (`05_reviews/red_te
 | All reactive species | 1.4×10¹⁶ /J (3.5× below the display budget's nominal) |
 
 **Analytic law from the SPARK tables.** For isochoric deposition, visible light per joule ≈ lm(ρ₀,T)·(r₀/c_s)/ε, which peaks at 40–60 kK. It gives η ≈ 5.5×10³ lm W⁻¹ m⁻¹ × r₀: efficiency is proportional to spark radius. That is a resolution–efficiency trade-off, and fine strokes force small, inefficient sparks (registered as P10).
+
+---
+
+## 2026-09-30 · Entry 10: Red team 2 on SPARK; fixes; v1 results withdrawn
+
+Independent review (`05_reviews/red_team_2_spark.md`): 4 critical, 10 major, 8 minor findings. I re-checked the critical ones (rule 12) before adopting them.
+
+1. **NO chemistry artefact — CONFIRMED by my own test.** Starting cells from ambient air clamped at 6000 K inflates frozen NO 9–180× against starting from the LTE composition. Held at 6000 K from ambient, NO overshoots to 11 % (14× equilibrium).
+   - **All v1 NO/NO₂/O₃/"reactive per J" numbers are withdrawn**, including the "3.5× below the display budget" I reported to the owner.
+   - Fix: LTE start below 7000 K, no clamp, Kossyi O+O+M, 5× atom third-body efficiency, and a high-T O₃ decomposition rate.
+   - New test V21: frozen NO ≤ the maximum equilibrium value. Frozen NO is now 2×10⁻³ to 1.4×10⁻² per air molecule.
+2. **VUV lines were dropped as "trapped" — CONFIRMED.** The rebuilt tables show thin VUV-line emission 10–20× the rest.
+   - 9 N/O VUV lines added (NIST-type data, flagged ±3×), with Voigt escape (tabulated β(τ₀, a); Stark width 0.01 nm at 10²³ m⁻³, ×0.3–3).
+   - Their photons feed O₂ photolysis, making O₃.
+3. **Late cooling had no vortex mixing — CONFIRMED against data** (200 mJ at 21 µs: 15.0 kK vs 6.9 kK measured).
+   - Added an entrainment model: onset 0.35 r_c/c₀, time constant 0.10 r_c/c₀, calibrated on the 200 mJ data (so V18 is now a calibration, not a test).
+   - Independent check: V23 (75 mJ at 10 µs vs Dumitrache).
+   - For micro-sparks (low Reynolds number) mixing is uncertain, so it is run as an on/off bracket.
+4. **Validation state was over-reported — CONFIRMED.**
+   - V12 was hard-coded; it is now a real test.
+   - V16 (monopole law) FAILS in the reference run with a ratio of 1.85: the display budget's noise model is ~3–5 dB optimistic.
+   - V17a and V18 failed on v1 runs. All results are now published as they are.
+
+**Other fixes:**
+- Kirchhoff κ extra-factor bug.
+- EOS extended to N⁶⁺/O⁷⁺ and 1 MK, with a loud error when out of range (was a silent clamp).
+- Molecular bands (N₂ 1+/2+, N₂⁺ 1−, NO γ/β).
+- Actinic S(λ) from 180 nm.
+- Cylindrical geometry, to bracket elongated foci (sphere vs line).
+- Noh implosion test (V22: 61 vs 64) for converging-shock cases.
+
+**Not claimable from SPARK (red team 2 list, adopted):**
+- The "~50 % blast share": the Sedov estimator returns ~0.5 by construction for real-gas Γ.
+- Any ε ≥ 10⁹ J/m³ result, until the EOS extension is re-validated.
+- Absolute micro-spark η better than about ×3, given the Biberman factor, conductivity table and geometry.
+
+v1 runs are archived in `results/v1_superseded/`.

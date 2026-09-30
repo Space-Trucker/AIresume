@@ -38,12 +38,13 @@ class Spark:
     def __init__(self, eos, E_abs, r0, rad=None, geometry="spherical", R_out=None, n_core=48, growth=1.03,
                  kappa_fn=None, kappa_mult=1.0, cfl=0.3, rho_amb=None, e_amb=None, r_probe=None,
                  profile="gauss", record_every=40, dr_max=None, isobaric_switch=True, shell_R=None,
-                 pulses=None):
+                 pulses=None, mix=False, mix_tv=0.35, mix_tau=0.10):
         self.eos, self.rad, self.geo = eos, rad, geometry
         self.kfn, self.kmult, self.cfl = kappa_fn, kappa_mult, cfl
         self.rho_amb = rho_amb if rho_amb is not None else eos.rho0
         self.e_amb = e_amb if e_amb is not None else float(eos.e_of(np.array([self.rho_amb]), np.array([300.0]))[0])
-        self.rc = (E_abs / P0) ** (1 / 3) if geometry == "spherical" else E_abs / P0
+        self.rc = ((E_abs / P0) ** (1 / 3) if geometry == "spherical"
+                   else (math.sqrt(E_abs / (math.pi * P0)) if geometry == "cylindrical" else E_abs / P0))
         self.R_out = R_out or 40 * self.rc
         self.r_probe = r_probe or 8 * self.rc
         self.r = make_grid(r0, self.R_out, n_core, growth=growth, dr_max=dr_max or self.rc / 25)
@@ -53,6 +54,12 @@ class Spark:
         self.m = self.rho_amb * V
         self.e = np.full(N, self.e_amb)
         rcell = 0.5 * (self.r[1:] + self.r[:-1])
+        # vortex/turbulent mixing (review finding 3): after t_v = mix_tv * r_c/c0 hot cells lose heat to entrained
+        # ambient air with time constant mix_tau * r_c/c0 (constants calibrated on the 200 mJ Thomson data, V18)
+        self.mix = mix
+        self.t_v = mix_tv * self.rc / 343.0
+        self.tau_mix = mix_tau * self.rc / 343.0
+        self.E_mix = 0.0
         self.pulses = []
         E_first = E_abs
         if pulses:
@@ -117,6 +124,8 @@ class Spark:
         obj.record_every, obj.phase, obj.isobaric_switch = 10 ** 9, 1, False
         obj.step, obj.dt = 0, 1e-13
         obj.rc = obj.r[-1]
+        obj.pulses, obj.mix, obj.E_mix = [], False, 0.0
+        obj.V_init = V.copy()
         return obj
 
     def total_energy(self):
@@ -129,10 +138,16 @@ class Spark:
     def _vol(self, r):
         if self.geo == "spherical":
             return 4.0 / 3.0 * math.pi * (r[1:] ** 3 - r[:-1] ** 3)
+        if self.geo == "cylindrical":                      # per unit length (E_abs is then J/m)
+            return math.pi * (r[1:] ** 2 - r[:-1] ** 2)
         return r[1:] - r[:-1]
 
     def _area(self, r):
-        return 4 * math.pi * r * r if self.geo == "spherical" else np.ones_like(r)
+        if self.geo == "spherical":
+            return 4 * math.pi * r * r
+        if self.geo == "cylindrical":
+            return 2 * math.pi * r
+        return np.ones_like(r)
 
     # ---------------------------------------------------------------- physics pieces
     def _conduction(self, T, rho, dt, isobaric=False):
@@ -178,6 +193,20 @@ class Spark:
             p = g[b] * beta[KAPPA_PROBE[b]] * Vh
             loss += p
             self.E_rad[b] += float(p.sum()) * dt
+        # VUV/EUV lines with Voigt escape (review finding 2): per line, tau0 over the hot region
+        from radiation import voigt_escape
+        tau0 = (g["vk"] * dr[:, None]).sum(0)
+        for q, lam_nm in enumerate(self.rad.vlam):
+            bq = voigt_escape(np.full(hot.sum(), tau0[q]), g["va"][:, q])
+            p = g["vj"][:, q] * bq * Vh
+            loss += p
+            band = "euv" if lam_nm < 102 else "vuv"
+            self.E_rad[band] += float(p.sum()) * dt
+            nph = float(p.sum()) * dt * lam_nm * 1e-9 / (6.62607015e-34 * 299792458.0)
+            if lam_nm < 102:
+                self.ph_ion += nph
+            else:
+                self.ph_o2 += nph
         bv, bu = beta[3], beta[2]
         self.lm_s += float((g["lm"] * Vh).sum()) * bv * dt
         self.act_J += float((g["act"] * Vh).sum()) * bu * dt
@@ -219,10 +248,18 @@ class Spark:
         self.W_out += self.P_ext * float(Vn.sum() - V.sum())
         self.r, self.u, self.e = rn, un, en
         rho_n = m / Vn
+        if hasattr(self.eos, "e_max") and float(en.max()) > self.eos.e_max:
+            raise ValueError(f"EOS range exceeded: e = {en.max():.3e} J/kg > {self.eos.e_max:.3e} (review finding 5)")
         Tn = self.eos.T(rho_n, en)
         dEc = self._conduction(Tn, rho_n, dt)
         dEr = self._radiation(Tn, rho_n, Vn, dt)
         self.e = self.e + (dEc - dEr) / m
+        if self.mix and self.t > self.t_v:
+            e_ref = self.eos.e_of(rho_n, np.full_like(rho_n, 300.0))
+            de = np.maximum(self.e - e_ref, 0.0) * (-np.expm1(-dt / self.tau_mix))
+            de = np.where(Tn > 600.0, de, 0.0)
+            self.e = self.e - de
+            self.E_mix += float((m * de).sum())
         self.t += dt
         self.dt = dt
         # probe: acoustic energy flux through the probe sphere
@@ -269,7 +306,7 @@ class Spark:
         rcell = 0.5 * (self.r[1:] + self.r[:-1])
         inside = rcell < self.r_probe
         un = 0.5 * (self.u[1:] + self.u[:-1])
-        self.E_heat_kernel = float((self.m[inside] * (self.e[inside] - self.e_amb)).sum()
+        self.E_heat_kernel = float(getattr(self, "E_mix", 0.0) + (self.m[inside] * (self.e[inside] - self.e_amb)).sum()
                                    + (0.5 * self.m[inside] * un[inside] ** 2).sum()
                                    + self.P_ext * (V[inside].sum() - self.V_init[inside].sum()))
         hot = T > 400.0
@@ -283,12 +320,21 @@ class Spark:
         T = self.Tiso
         rho = self.eos.iso_rho(T)
         V = self.m / rho
-        self.r = np.concatenate([[0.0], np.cbrt(np.cumsum(V) * 3 / (4 * math.pi))]) if self.geo == "spherical" \
-            else np.concatenate([[0.0], np.cumsum(V)])
+        if self.geo == "spherical":
+            self.r = np.concatenate([[0.0], np.cbrt(np.cumsum(V) * 3 / (4 * math.pi))])
+        elif self.geo == "cylindrical":
+            self.r = np.concatenate([[0.0], np.sqrt(np.cumsum(V) / math.pi)])
+        else:
+            self.r = np.concatenate([[0.0], np.cumsum(V)])
         h0 = self.eos.iso_hT(T)
         dEc = self._conduction(T, rho, dt, isobaric=True)
         dEr = self._radiation(T, rho, V, dt)
         h1 = h0 + (dEc - dEr) / self.m
+        if self.mix and self.t > self.t_v:
+            h_ref = self.eos.iso_hT(np.full_like(T, 300.0))
+            dh = np.where(T > 600.0, np.maximum(h1 - h_ref, 0.0) * (-np.expm1(-dt / self.tau_mix)), 0.0)
+            h1 = h1 - dh
+            self.E_mix += float((self.m * dh).sum())
         self.Tiso = np.maximum(self.eos.iso_T_of_h(h1), 250.0)
         self.t += dt
         if self.step % max(1, self.record_every // 8) == 0:
@@ -376,4 +422,6 @@ class Spark:
                     closure_at_switch=(getattr(self, "E_heat_kernel", float("nan")) + self.E_ac
                                        + getattr(self, "E_rad_at_switch", 0.0)) / self.E_abs if self.E_abs else 0.0,
                     dV_hot=getattr(self, "dV_hot", float("nan")), t_switch=getattr(self, "t_switch", float("nan")),
+                    E_mix=getattr(self, "E_mix", 0.0), geometry=self.geo, mix=getattr(self, "mix", False),
+                    shock_traj=[list(x) for x in self.shock[::max(1, len(self.shock) // 400)]],
                     audible=self.audible())
