@@ -92,7 +92,24 @@ A_WEIGHT_TABLE = {  # IEC 61672 A-weighting (dB) at 1/3-octave centres
     6300: -0.1, 8000: -1.1, 10000: -2.5, 12500: -4.3, 16000: -6.6, 20000: -9.3}
 
 
-def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None, direct_gain_db=0.0, parts=False):
+def heat_release_band_p2(N_dot, E, f1, f2, r, sc=None):
+    """Mean-square pressure in [f1,f2] at distance r from random clicks, heat-release model.
+
+    Each spark's non-radiated energy ends up as heat within ~us, a permanent volume change
+    dV = (gamma-1)/(gamma p0) * E_heat. Far field p = rho * d2V/dt2 / (4 pi r), so below the
+    MHz expansion rate |P(f)| = rho * 2 pi f * dV / (4 pi r). Poisson train (Campbell):
+    <p^2>_band = 2 N_dot * (rho dV / (2 r))^2 * (f2^3 - f1^3) / 3.
+    (Adopted after the idea-round review: this sets the audible floor, not the shock wave.)
+    """
+    sc = sc or {}
+    from holo_common import GAMMA_AIR
+    E_heat = np.asarray(E, dtype=float) * (1 - 0.05)
+    dV = (GAMMA_AIR - 1) / (GAMMA_AIR * P_ATM) * E_heat
+    return 2 * N_dot * (RHO_AIR * dV / (2 * r)) ** 2 * (f2 ** 3 - f1 ** 3) / 3
+
+
+def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None, direct_gain_db=0.0, parts=False,
+                       total_gain_db=0.0, model="max"):
     """A-weighted SPL (dB(A)) at distance r from a random-order voxel cloud.
 
     Incoherent sum (Campbell's theorem): power spectral density = rate * |P1(f)|^2.
@@ -110,7 +127,12 @@ def audible_spl_random(N_dot, E, r=1.0, room_absorption_m2=20.0, sc=None, direct
     for fcen, aw in A_WEIGHT_TABLE.items():
         f1, f2 = fcen / 2 ** (1 / 6), fcen * 2 ** (1 / 6)
         frac = gammainc(1.5, (f2 / fc) ** 2) - gammainc(1.5, (f1 / fc) ** 2)
-        Wband = N_dot * E_ac * frac                       # acoustic power in band (W)
+        Wband = N_dot * E_ac * frac                       # acoustic power in band (W), N-wave model
+        if model in ("max", "heat"):
+            p2 = heat_release_band_p2(N_dot, E, f1, f2, 1.0, sc)          # at 1 m
+            W_heat = p2 / (RHO_AIR * C_SOUND) * 4 * math.pi               # acoustic power (W)
+            Wband = W_heat if model == "heat" else np.maximum(Wband, W_heat)
+        Wband = Wband * 10 ** (total_gain_db / 10)        # e.g. subsonic multi-channel tracing (E6c)
         I_dir = Wband / (4 * math.pi * r * r)
         I_rev = 4 * Wband / room_absorption_m2            # diffuse-field intensity-equivalent
         w = 10 ** (aw / 10)
@@ -193,7 +215,7 @@ def energy_per_flash(L_stroke, frame_hz=60.0, focal_radius=5e-6, sc=None):
 
 
 def display_budget(L_stroke, n_points, frame_hz=60.0, focal_radius=5e-6, sc=None, room=None,
-                   direct_gain_db=0.0, room_absorption_m2=20.0, r_listener=1.0):
+                   direct_gain_db=0.0, room_absorption_m2=20.0, r_listener=1.0, total_gain_db=0.0):
     """Everything for one operating point: E per flash, rate, absorbed power, lm, ppb, dB(A)."""
     sc = sc or {}
     room = room or {}
@@ -204,7 +226,7 @@ def display_budget(L_stroke, n_points, frame_hz=60.0, focal_radius=5e-6, sc=None
     ppb = float(breathing_zone_ppb(P_abs, Y=sc.get("Y_react"), **room))
     dBA = float(audible_spl_random(N_dot, E, r=r_listener, room_absorption_m2=room_absorption_m2, sc=sc))
     dBA_s, dBA_d, dBA_r = audible_spl_random(N_dot, E, r=r_listener, room_absorption_m2=room_absorption_m2, sc=sc,
-                                            direct_gain_db=direct_gain_db, parts=True)
+                                            direct_gain_db=direct_gain_db, parts=True, total_gain_db=total_gain_db)
     us = float(ultrasound_band_spl(N_dot, E, sc=sc))
     return dict(ultrasound_band_dB=us, dBA_sched=float(dBA_s), dBA_direct_sched=float(dBA_d),
                 dBA_reverb=float(dBA_r), L=L_stroke, n_points=n_points, E_flash=E, voxel_rate=N_dot, P_abs=P_abs, lumens=Phi,

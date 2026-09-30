@@ -44,15 +44,21 @@ def sample_params():
     return sc
 
 
+SUBSONIC_GAIN_DB = -15.0   # E6c: K=12 subsonic tracing, WORST far-field direction (total radiated: -19.5 dB)
+
+
 def evaluate(L, n, room, sched_db, sc=None, A=20.0):
-    """sched_db applies to the DIRECT field only (reflections are not controllable)."""
-    return display_budget(L, n, sc=sc, room=room, direct_gain_db=sched_db, room_absorption_m2=A)
+    """Engineered case: subsonic multi-channel tracing lowers TOTAL radiated audible power (all
+    directions, reverberation included). Listener-locked scheduling (direct field only) is not
+    combined with it here (not simulated jointly)."""
+    return display_budget(L, n, sc=sc, room=room, direct_gain_db=0.0, room_absorption_m2=A,
+                          total_gain_db=(SUBSONIC_GAIN_DB if sched_db else 0.0))
 
 
 if __name__ == "__main__":
     print("E10 feasibility map")
     sched = scheduling_gain_db()
-    print(f"  acoustic phase-scheduling gain used: {sched:+.1f} dB (worst tracked listener, 4 tracked)")
+    print(f"  engineered noise: subsonic multi-channel tracing {SUBSONIC_GAIN_DB:+.0f} dB on total radiated power (E6c, worst direction)")
     Ls = np.logspace(0, np.log10(200), 40)
     ns = np.logspace(2, 5, 40)
     maps = {}
@@ -70,6 +76,7 @@ if __name__ == "__main__":
 
     # Monte Carlo at targets
     targets = {
+        "Film-density dim lab, stroke-matched (4 cd/m2, 9e3 pts = 9 m)": (4.0, 9e3),
         "Iron Man lit lab (50 cd/m2, 3e4 pts)": (50.0, 3e4),
         "Iron Man dim lab (10 cd/m2, 1e4 pts)": (10.0, 1e4),
         "Iron-Man-style dim (3 cd/m2, 5e3 pts)": (3.0, 5e3),
@@ -77,40 +84,41 @@ if __name__ == "__main__":
     }
     mc = {}
     for name, (L, n) in targets.items():
-        ok_b = ok_e = safe_e = 0
+        ok_b = ok_e = safe_e = strict_e = 0
         rows = []
         for _ in range(400):
             sc = sample_params()
             b1 = evaluate(L, n, ROOM_BASE, 0.0, sc)
             b2 = evaluate(L, n, ROOM_ENG, sched, sc)
-            ok_b += (b1["ppb"] <= 20) and (b1["dBA_sched"] <= 45)
-            ok_e += (b2["ppb"] <= 20) and (b2["dBA_sched"] <= 45)
+            ok_b += (b1["ppb"] <= 13) and (b1["dBA_sched"] <= 40)
+            ok_e += (b2["ppb"] <= 13) and (b2["dBA_sched"] <= 40)
             safe_e += (b2["ppb"] <= 50) and (b2["dBA"] <= 85) and (b2["ultrasound_band_dB"] <= 100)
+            strict_e += (b2["ppb"] <= 13) and (b2["dBA_sched"] <= 85) and (b2["ultrasound_band_dB"] <= 100)
             rows.append((b2["ppb"], b2["dBA_sched"], b2["P_abs"]))
         rows = np.array(rows)
         nom_b = evaluate(L, n, ROOM_BASE, 0.0)
         nom_e = evaluate(L, n, ROOM_ENG, sched)
         mc[name] = dict(L=L, n=n, P_feasible_baseline=ok_b / 400, P_feasible_engineered=ok_e / 400,
-                        P_safe_engineered=safe_e / 400,
+                        P_safe_engineered=safe_e / 400, P_safe_strict_engineered=strict_e / 400,
                         nominal_baseline=nom_b, nominal_engineered=nom_e,
                         engineered_ppb_p10_p50_p90=np.percentile(rows[:, 0], [10, 50, 90]).tolist(),
                         engineered_dBA_p10_p50_p90=np.percentile(rows[:, 1], [10, 50, 90]).tolist(),
                         engineered_Pabs_p10_p50_p90=np.percentile(rows[:, 2], [10, 50, 90]).tolist())
         print(f"  {name:42s} nominal: P_abs={nom_e['P_abs']:.2f} W, lm={nom_e['lumens']:.2f}, "
               f"baseline {nom_b['ppb']:.0f} ppb/{nom_b['dBA']:.0f} dB(A); engineered {nom_e['ppb']:.1f} ppb/"
-              f"{nom_e['dBA_sched']:.0f} dB(A), US {nom_e['ultrasound_band_dB']:.0f} dB | P(QUIET: <=20 ppb, <=45 dB(A)) base {ok_b/400:.2f}, "
-              f"eng {ok_e/400:.2f} | P(SAFE: <=50 ppb, <=85 dB(A), US<=100 dB) eng {safe_e/400:.2f}")
+              f"{nom_e['dBA_sched']:.0f} dB(A), US {nom_e['ultrasound_band_dB']:.0f} dB | P(QUIET&CLEAN: <=13 ppb, <=40 dB(A)) base {ok_b/400:.2f}, "
+              f"eng {ok_e/400:.2f} | P(SAFE <=50 ppb) eng {safe_e/400:.2f} | P(SAFE strict <=13 ppb NO2-WHO-24h) eng {strict_e/400:.2f}")
     save_json("e10_feasibility.json", dict(scheduling_gain_dB=sched, monte_carlo=mc))
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True)
     for ax, tag in zip(axes, ("baseline", "engineered")):
         ppb, dba, pw = maps[tag]
         X, Y = np.meshgrid(ns, Ls)
-        ok = (ppb <= 50) & (dba <= 85)
+        ok = (ppb <= 13) & (dba <= 85)
         ax.contourf(X, Y, ok.astype(float), levels=[-0.5, 0.5, 1.5], colors=["#f3d9d9", "#d4ecd4"])
         c1 = ax.contour(X, Y, ppb, levels=[20, 50], colors="#b03030", linestyles=["-", "--"])
         ax.clabel(c1, fmt=lambda v: f"{v:.0f} ppb", fontsize=7)
-        c2 = ax.contour(X, Y, dba, levels=[45, 55, 85], colors="#3050b0", linestyles=[":", "--", "-"])
+        c2 = ax.contour(X, Y, dba, levels=[40, 55, 85], colors="#3050b0", linestyles=[":", "--", "-"])
         ax.clabel(c2, fmt=lambda v: f"{v:.0f} dB(A)", fontsize=7)
         ax.add_patch(plt.Rectangle((1e4, 25), 9e4, 155, fill=False, ec="k", lw=1.5))
         ax.text(1.1e4, 150, "Iron Man\n(film, lit lab)", fontsize=8)
@@ -118,7 +126,7 @@ if __name__ == "__main__":
         ax.text(3.1e3, 1.3, "dim-lab style", fontsize=7)
         ax.set_xscale("log"); ax.set_yscale("log")
         ax.set_xlabel("points per frame (60 Hz)")
-        ax.set_title(f"{tag}: green = SAFE (<=50 ppb, <=85 dB(A))", fontsize=9)
+        ax.set_title(f"{tag}: green = SAFE, strict air (<=13 ppb, <=85 dB(A))", fontsize=9)
     axes[0].set_ylabel("stroke luminance (cd/m²)")
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e10_feasibility_map.png", dpi=120); plt.close()
     print("  saved results/e10_feasibility.json and e10_feasibility_map.png")

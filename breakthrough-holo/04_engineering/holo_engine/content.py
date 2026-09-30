@@ -167,3 +167,46 @@ def video_panel_points(frame_gray: np.ndarray, origin, u_vec, v_vec, pitch):
     ys, xs = np.nonzero(on)
     origin = np.asarray(origin, float)
     return origin + np.outer(xs * pitch, u_vec) + np.outer((h - 1 - ys) * pitch, v_vec)
+
+
+# ---------------------------------------------------------------- physics-budget fitting
+def stroke_length(st):
+    st = np.asarray(st, float)
+    return float(np.linalg.norm(np.diff(st, axis=0), axis=1).sum())
+
+
+def fit_to_budget(strokes, max_length_m, priority=None):
+    """Keep the most important strokes until the stroke-length budget (set by air chemistry and
+    noise, E10) is used up. Default priority: long closed silhouettes first, then the rest by length."""
+    idx = list(range(len(strokes)))
+    if priority is None:
+        priority = [stroke_length(s) for s in strokes]
+    idx.sort(key=lambda i: -priority[i])
+    kept, used = [], 0.0
+    for i in idx:
+        L = stroke_length(strokes[i])
+        if used + L <= max_length_m:
+            kept.append(strokes[i])
+            used += L
+    return kept, used
+
+
+def procedural_armor_budget(max_length_m=9.0, height=1.8):
+    """Armor hologram restricted to a stroke budget: front silhouettes of every part are kept first
+    (they carry the recognisable shape), then the arc reactor and eyes, then contour slices."""
+    full = procedural_armor(height=height, slice_step=0.06)
+    pri = []
+    for st in full:
+        st = np.asarray(st)
+        flat_y = np.ptp(st[:, 1]) < 1e-6          # xz-plane silhouette
+        flat_z = np.ptp(st[:, 2]) < 1e-6          # horizontal slice
+        L = stroke_length(st)
+        if flat_y:
+            pri.append(1000 + L)                   # silhouettes first
+        elif L < 0.3:
+            pri.append(900 + L)                    # small features (arc reactor, eyes)
+        elif flat_z:
+            pri.append(L)                          # slices last
+        else:
+            pri.append(100 + L)                    # side profiles
+    return fit_to_budget(full, max_length_m, pri)

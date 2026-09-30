@@ -97,3 +97,31 @@ Quiet (≤ 45 dB(A)) holds only for sparse content or treated rooms.
 **Key perceptual point:** in a dim lab (0.5 cd/m² background), 3–4 cd/m² strokes have the film's own contrast ratio (4.5–12× background). The eye adapts, so the film *look* is reproduced in a dark room, just not the absolute brightness of a lit room.
 
 **Decision:** the pure-air plasma engine is the design line. Film-exact quality (lit room, cyan/orange) is graded NOT MET by physics. Still pending: the idea round (3 models) and the red team.
+
+---
+
+## 2026-09-30 · Entry 4: Idea round (Opus) and the subsonic-tracing breakthrough
+
+**Independent convergence.** The Opus idea-round reviewer and I both reached "draw like a subsonic pen" as the #1 noise lever, independently.
+
+**E6c** confirms it. K parallel beam channels each trace their strokes with regular 40 kHz clicks at trace Mach 0.22–0.35. This cuts **TOTAL radiated audible power by 19.5–26.5 dB in all 96 far-field directions** (worst direction −14.5 to −19.5 dB), so reverberation is reduced too. A supersonic single path is +7.6 dB (Mach-wave booms). Physics: a steady source moving slower than sound radiates no audio except at ends, jumps and turns.
+
+**Corrections adopted from the review.**
+1. **Heat-release noise model** (the permanent expansion ΔV of each spark sets the audible floor). It agrees with my shock-wave N-wave model within 0.2 dB, and with the reviewer's closed form within ~6 dB (theirs is free-field only). Noise estimates are robust.
+2. **Strict air criterion:** ≤ 13 ppb (WHO 2021 24-h NO₂ = 25 µg/m³, assuming worst-case all NOx ends as NO₂); lenient 50 ppb. Speciation (NO vs NO₂ vs O₃) is unmeasured (experiment X2).
+3. **Colour:** checked the reviewer's "warm room makes it cyan" claim.
+   - The simple dominant-wavelength-vs-adapting-white method gives 483 nm, purity 0.42 (film cyan: 484 nm, 0.45).
+   - A proper Bradford chromatic-adaptation model gives **hue 202–213° (azure), against the film's 181–199°**.
+   - So: a blue/near-cyan look, not an exact match. The optimistic method was rejected.
+4. **Budget by stroke length × luminance** (not point count). A life-size armor outline alone is ~15 m of stroke.
+   - `holo_engine/content.fit_to_budget` now selects strokes by priority to fit the chemistry budget.
+   - Demo: 9 m of strokes at 4 cd/m² (film contrast in a 0.5 cd/m² dim room) → 3.1 W absorbed, 22.6 ppb, 44 dB(A).
+
+**E10 (updated: subsonic tracing −15 dB worst-direction, heat-release noise, strict air):**
+
+| Target | Air | Noise | P(safe, ≤ 50 ppb) | P(safe, ≤ 13 ppb) |
+|---|---|---|---|---|
+| Iron-Man style, dim (3 cd/m², 5 m of strokes) | 10 ppb | 40 dB(A) | 0.96 | 0.75 |
+| Film contrast, dim (4 cd/m², 9 m) | 22.5 ppb | 44 dB(A) | 0.82 | 0.58 |
+| Film density, dim (10 cd/m², 10 m) | — | 50 dB(A) | 0.64 | 0.30 |
+| Film-exact lit lab | — | — | 0.11 | 0.01 |

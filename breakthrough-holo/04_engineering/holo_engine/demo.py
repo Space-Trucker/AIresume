@@ -17,7 +17,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from content import procedural_armor, strokes_to_points, video_panel_points  # noqa: E402
+from content import procedural_armor, procedural_armor_budget, strokes_to_points, video_panel_points  # noqa: E402
 from kernel import Capsule, SafetyParams, safety_gate, glove_contacts          # noqa: E402
 from render import render                                                     # noqa: E402
 
@@ -30,8 +30,12 @@ def save_png(rgb, path):
     Image.fromarray((rgb * 255).astype(np.uint8)).save(path)
 
 
-def main(L_stroke=5.0, background=1.0, spacing=3e-3):
-    strokes = procedural_armor(height=1.8, slice_step=0.035)
+PERCEIVED_AZURE = (0.07, 0.55, 1.0)   # E11: plasma continuum seen in a 2700 K-lit room (Bradford)
+
+
+def main(L_stroke=4.0, background=0.5, spacing=2e-3, budget_m=9.0, height=1.8):
+    """Budget-compliant content (E10): <= budget_m of strokes at L_stroke (film contrast in a dim lab)."""
+    strokes, _ = procedural_armor_budget(budget_m, height)
     P, sid = strokes_to_points(strokes, spacing)
     P = P + np.array([0.0, 0.0, 0.1])       # stand the armor on a 10 cm plinth
     n = len(P)
@@ -39,8 +43,15 @@ def main(L_stroke=5.0, background=1.0, spacing=3e-3):
     I_pt = L_stroke * 1e-3 * spacing           # cd  (stroke width 1 mm)
     intensity = np.full(n, I_pt)
     centre = P.mean(0)
-    stats = dict(points_per_frame=n, stroke_luminance=L_stroke, room_background=background,
-                 point_intensity_cd=I_pt, total_lumens=4 * math.pi * I_pt * n)
+    stroke_m = n * spacing
+    stats = dict(points_per_frame=n, stroke_length_m=stroke_m, stroke_luminance=L_stroke,
+                 room_background=background, point_intensity_cd=I_pt, total_lumens=4 * math.pi * I_pt * n)
+    # physics budget check for this content (display_budget, engineered air + subsonic tracing)
+    sys.path.insert(0, os.path.join(HERE, "..", "..", "03_simulations"))
+    from display_budget import display_budget
+    b = display_budget(L_stroke, stroke_m / 1e-3, room=dict(room_m3=50.0, ach=0.5, cadr_m3h=900.0, scrub_eff=0.85,
+                                                           capture=0.9, decay_per_h=0.5), total_gain_db=-15.0)
+    stats["budget"] = {k: b[k] for k in ("P_abs", "lumens", "ppb", "dBA_sched", "ultrasound_band_dB", "voxel_rate")}
 
     views = {
         "front": centre + np.array([0.0, -2.0, 0.25]),
@@ -49,7 +60,7 @@ def main(L_stroke=5.0, background=1.0, spacing=3e-3):
         "from_above": centre + np.array([0.6, -1.2, 1.4]),
     }
     for name, eye in views.items():
-        img = render(P, intensity, eye, centre, background=background)
+        img = render(P, intensity, eye, centre, background=background, color=PERCEIVED_AZURE, warm_room=True)
         save_png(img, os.path.join(OUT, f"view_{name}.png"))
 
     # ---- interaction: right hand reaching into the chest, tracked head nearby
@@ -70,7 +81,8 @@ def main(L_stroke=5.0, background=1.0, spacing=3e-3):
     fingertips["index"] = P[np.argmin(d)] + np.array([0, 0, 0.004])
     stats["glove_events"] = glove_contacts(fingertips, P)   # touch is tested against the virtual geometry, not the (interlock-blanked) lit voxels
     eye = centre + np.array([-0.9, -1.8, 0.35])
-    img = render(P[fire], intensity[fire], eye, centre, background=background, capsules=capsules[:2])
+    img = render(P[fire], intensity[fire], eye, centre, background=background, capsules=capsules[:2],
+                 color=PERCEIVED_AZURE, warm_room=True)
     save_png(img, os.path.join(OUT, "interaction_hand_in_hologram.png"))
 
     # ---- floating video panel (procedural 'globe' frame), dithered to points
@@ -87,13 +99,16 @@ def main(L_stroke=5.0, background=1.0, spacing=3e-3):
     Pall = np.concatenate([P, Pv])
     Iall = np.concatenate([intensity, np.full(len(Pv), I_pt)])
     stats["video_panel_points"] = int(len(Pv))
-    img = render(Pall, Iall, centre + np.array([-0.4, -2.1, 0.25]), centre, background=background)
+    img = render(Pall, Iall, centre + np.array([-0.4, -2.1, 0.25]), centre, background=background,
+                 color=PERCEIVED_AZURE, warm_room=True)
     save_png(img, os.path.join(OUT, "armor_plus_video_panel.png"))
     json.dump(stats, open(os.path.join(OUT, "stats.json"), "w"), indent=2)
     return stats
 
 
 if __name__ == "__main__":
-    L = float(sys.argv[1]) if len(sys.argv) > 1 else 5.0
-    B = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
-    print(json.dumps(main(L, B), indent=2))
+    L = float(sys.argv[1]) if len(sys.argv) > 1 else 4.0
+    B = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
+    budget = float(sys.argv[3]) if len(sys.argv) > 3 else 9.0
+    height = float(sys.argv[4]) if len(sys.argv) > 4 else 1.8
+    print(json.dumps(main(L, B, budget_m=budget, height=height), indent=2))

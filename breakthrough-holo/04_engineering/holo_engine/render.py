@@ -33,7 +33,7 @@ def project(P, eye, R, f_px, W, H):
 
 
 def render(P, intensity_cd, eye, target, W=640, H=720, fov_deg=58, background=0.5, capsules=(),
-           color=(0.72, 0.84, 1.0), exposure=1.0, psf_px=1.1):
+           color=(0.72, 0.84, 1.0), exposure=1.0, psf_px=1.1, warm_room=False):
     """Return an RGB float image (0..1)."""
     eye, R = look_at(eye, target)
     f_px = (W / 2) / math.tan(math.radians(fov_deg / 2))
@@ -51,6 +51,10 @@ def render(P, intensity_cd, eye, target, W=640, H=720, fov_deg=58, background=0.
     # pixel solid angle -> convert illuminance into equivalent pixel luminance
     pix_sr = (1.0 / f_px) ** 2
     L = Ev / pix_sr                                       # cd/m^2 if spread over one pixel
+    # acuity correction: a 1 mm stroke is thinner than a preview pixel at these distances, but the eye
+    # resolves ~1 arcmin; scale so the stroke shows its true luminance instead of the pixel average
+    pix_m = np.maximum(z, 0.05) / f_px
+    L = L * np.clip(pix_m / 1e-3, 1.0, None) * 0.5
     xi, yi = np.round(x).astype(int), np.round(y).astype(int)
     keep = vis & (xi >= 1) & (xi < W - 1) & (yi >= 1) & (yi < H - 1)
     np.add.at(img, (yi[keep], xi[keep]), L[keep])
@@ -75,7 +79,10 @@ def render(P, intensity_cd, eye, target, W=640, H=720, fov_deg=58, background=0.
     # tone curve: compress relative to background adaptation level
     adapt = max(background, 0.5)
     v = exposure * tot / (tot + 3 * adapt)
-    rgb = np.stack([v * c for c in color], -1)
+    denom = tot + 3 * adapt
+    bg_col = np.array([0.95, 0.82, 0.62]) if warm_room else np.array(color)
+    rgb = (exposure * bg / denom)[..., None] * bg_col + (exposure * img / denom)[..., None] * np.array(color)
+    rgb = np.clip(rgb, 0, 1)
     skin = np.array([0.55, 0.42, 0.36]) * (background / (background + 3 * adapt) + 0.08)
     rgb[sil] = skin + np.stack([v * c for c in color], -1)[sil] * 0.0
     # voxels in front of the hand drawn on top (in-volume emission)

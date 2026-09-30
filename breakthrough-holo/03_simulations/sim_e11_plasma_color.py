@@ -127,3 +127,63 @@ if __name__ == "__main__":
     ax.legend(fontsize=7, loc="upper right"); ax.set_title("Colours an air-plasma display can mix")
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e11_plasma_color.png", dpi=120); plt.close()
     print("  saved results/e11_plasma_color.json/.png")
+
+
+# ---------------------------------------------------------------- chromatic adaptation
+def dominant_wavelength(xy_c, xy_w):
+    """Dominant wavelength (nm) and excitation purity of colour xy_c seen against white point xy_w."""
+    locus = np.array([xy(np.exp(-0.5 * ((FINE - l) / 0.5) ** 2))[:2] for l in range(400, 700)])
+    lams = np.arange(400, 700)
+    d = np.array(xy_c) - np.array(xy_w)
+    best, bl, bp = 1e9, None, None
+    for l, p in zip(lams, locus):
+        v = p - np.array(xy_w)
+        cross = abs(d[0] * v[1] - d[1] * v[0]) / (np.linalg.norm(v) + 1e-12)
+        if np.dot(d, v) > 0 and cross < best:
+            best, bl, bp = cross, l, np.linalg.norm(d) / np.linalg.norm(v)
+    return int(bl), float(bp)
+
+
+if __name__ == "__main__":
+    whites = {"warm 2700 K room": xy(planck(2700.0))[:2], "3000 K room": xy(planck(3000.0))[:2],
+              "D65 daylight": (0.3127, 0.329)}
+    print("  hue seen after chromatic adaptation to the room light (dominant wavelength, purity):")
+    ad = {}
+    for sname in ("S2 hot continuum 3 eV", "S3 ionic lines + 2 eV"):
+        for wname, w in whites.items():
+            lam_d, pur = dominant_wavelength(res["states"][sname], w)
+            ad[f"{sname} | {wname}"] = dict(dominant_nm=lam_d, purity=pur)
+            print(f"    {sname:24s} in {wname:17s}: {lam_d} nm, purity {pur:.2f}")
+    lam_f, pur_f = dominant_wavelength(targets["film cyan"], whites["D65 daylight"])
+    print(f"    film cyan (reference, D65): {lam_f} nm, purity {pur_f:.2f}")
+    import json
+    p = f"{RESULTS}/e11_plasma_color.json"
+    d = json.load(open(p)); d["adaptation"] = ad; d["film_cyan_dominant"] = dict(nm=lam_f, purity=pur_f)
+    json.dump(d, open(p, "w"), indent=2)
+
+
+# ---------------------------------------------------------------- Bradford adaptation (stricter)
+if __name__ == "__main__":
+    import colorsys
+    Mb = np.array([[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]])
+    Msr = np.array([[3.2406, -1.5372, -0.4986], [-0.9689, 1.8758, 0.0415], [0.0557, -0.2040, 1.0570]])
+
+    def XYZ(x, y):
+        return np.array([x / y, 1.0, (1 - x - y) / y])
+    dst = XYZ(0.3127, 0.3290)
+    wx, wy, _ = xy(planck(2700.0))
+    src = XYZ(wx, wy)
+    brad = {}
+    print("  Bradford chromatic adaptation (2700 K room -> perceived, shown as D65 sRGB); film hue 181-199 deg:")
+    for f in (0.0, 0.5, 1.0):
+        s = normalise((1 - f) * STATES["S2 hot continuum 3 eV"] + f * STATES["S3' N II-dominated (line phase, weak continuum)"])
+        x, y, _ = xy(s)
+        a = np.linalg.inv(Mb) @ np.diag((Mb @ dst) / (Mb @ src)) @ Mb @ XYZ(x, y)
+        rgb = np.clip(Msr @ a / np.max(Msr @ a), 0, 1)
+        g = np.where(rgb <= 0.0031308, 12.92 * rgb, 1.055 * rgb ** (1 / 2.4) - 0.055)
+        hue = colorsys.rgb_to_hsv(*g)[0] * 360
+        brad[f"N II line fraction {f}"] = dict(srgb=g.tolist(), hue_deg=hue)
+        print(f"    N II line-phase fraction {f:.1f}: sRGB {np.round(g, 2)}, hue {hue:.0f} deg (azure; film cyan 181-199)")
+    p = f"{RESULTS}/e11_plasma_color.json"
+    import json
+    d = json.load(open(p)); d["bradford_2700K"] = brad; json.dump(d, open(p, "w"), indent=2)
