@@ -22,7 +22,7 @@
    "id": "V03",
    "name": "EOS inversion round trip",
    "kind": "impl",
-   "value": "0.012 %",
+   "value": "0.014 %",
    "criterion": "< 0.1 %",
    "status": "PASS",
    "source": "self-consistency"
@@ -67,16 +67,16 @@
    "id": "V08",
    "name": "implicit conduction vs analytic 3D diffusion",
    "kind": "impl",
-   "value": "max err 3437.67 % of peak",
+   "value": "max err 0.35 % of peak",
    "criterion": "< 3 %",
-   "status": "FAIL",
+   "status": "PASS",
    "source": "Carslaw & Jaeger"
   },
   {
    "id": "V09",
    "name": "kinetics relax to Cantera equilibrium NO (3-6 kK)",
    "kind": "impl",
-   "value": "max dev 0.77 %",
+   "value": "max dev 0.78 %",
    "criterion": "< 2 %",
    "status": "PASS",
    "source": "detailed balance"
@@ -101,87 +101,123 @@
   },
   {
    "id": "V12",
-   "name": "optically thick limit of escape factor vs blackbody",
+   "name": "optically thick sphere: model loss / blackbody (540-560 nm)",
    "kind": "impl",
-   "value": "loss/blackbody = 4/3 (analytic)",
-   "criterion": "within 40 %",
+   "value": "1.333 (tau 1.9e+04)",
+   "criterion": "4/3 +- 10 % (escape-factor approximation)",
    "status": "PASS",
-   "source": "derivation in NOTEBOOK Entry 9"
+   "source": "Kirchhoff + escape factor"
   },
   {
    "id": "V13",
-   "name": "grid convergence",
+   "name": "grid convergence (eta, blast, NO) 48 vs 96 core cells",
    "kind": "impl",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
+   "value": "max dev 4.6 %",
+   "criterion": "< 10 %",
+   "status": "PASS",
    "source": "numerics"
   },
   {
    "id": "V14",
-   "name": "time-step convergence",
+   "name": "time-step convergence (CFL 0.3 vs 0.15)",
    "kind": "impl",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
+   "value": "max dev 4.4 %",
+   "criterion": "< 5 %",
+   "status": "PASS",
    "source": "numerics"
   },
   {
    "id": "V15",
-   "name": "energy closure",
+   "name": "energy closure (heat + sound + light = absorbed)",
    "kind": "impl",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": "numerics"
+   "value": "0.9960",
+   "criterion": "0.97-1.03",
+   "status": "PASS",
+   "source": "conservation"
   },
   {
    "id": "V16",
-   "name": "heat-release monopole law",
+   "name": "heat-release monopole law (noise model) vs simulated waveform, 2-15 kHz",
    "kind": "impl",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": "numerics"
+   "value": "measured/predicted 1.86",
+   "criterion": "0.67-1.5",
+   "status": "FAIL",
+   "source": "display_budget.heat_release_band_p2"
+  },
+  {
+   "id": "V21",
+   "name": "frozen NO bounded by max equilibrium x_NO (5.06 %)",
+   "kind": "impl",
+   "value": "max frozen x_NO 3.39e-02",
+   "criterion": "<= 5.06e-2",
+   "status": "PASS",
+   "source": "LTE initial condition, detailed balance"
+  },
+  {
+   "id": "V22",
+   "name": "Noh spherical implosion post-shock density",
+   "kind": "impl",
+   "value": "61.0",
+   "criterion": "64 +- 15 %",
+   "status": "PASS",
+   "source": "Noh 1987"
   },
   {
    "id": "V17",
-   "name": "ns spark energy partition",
+   "name": "ns spark 50 mJ radiated share (all bands / >200 nm)",
    "kind": "physics",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": "Phuoc 2005"
+   "value": "25.1 % / 2.2 %",
+   "criterion": "22-34 % (Phuoc 2005), x2 band 11-68 % on all-band",
+   "status": "PASS",
+   "source": "Phuoc, Opt. Lasers Eng. 43, 113 (2005)"
   },
   {
    "id": "V18",
-   "name": "kernel temperature history",
+   "name": "200 mJ kernel T at 1 us / 21 us (mixing model calibrated here)",
    "kind": "physics",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": ""
+   "value": "30826 K / 5734 K",
+   "criterion": "51,500 / 6,900 K within x1.5 (Thomson)",
+   "status": "FAIL",
+   "source": "Zhang et al. SAB 157, 6 (2019) - CALIBRATION point for mix_tv, mix_tau"
   },
   {
    "id": "V19",
-   "name": "ns spark NO per J",
+   "name": "ns spark NO per absorbed J",
    "kind": "physics",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": ""
+   "value": "7.88e+16 /J",
+   "criterion": "4.6e16-1.5e17 /J, x2 band",
+   "status": "PASS",
+   "source": "Rahman/Cooray 2003; Navarro-Gonzalez 2001"
   },
   {
    "id": "V20",
-   "name": "visible fraction",
+   "name": "visible fraction of hot-spark emission",
    "kind": "physics",
-   "value": "run pending",
-   "criterion": "-",
-   "status": "PENDING",
-   "source": ""
+   "value": "2.83 %",
+   "criterion": "0.1-10 % (da Silva 2019)",
+   "status": "PASS",
+   "source": "da Silva et al. JGR 2019"
+  },
+  {
+   "id": "V23",
+   "name": "75 mJ kernel T at 10 us (independent of calibration)",
+   "kind": "physics",
+   "value": "12919 K",
+   "criterion": "~12,000 K within x1.5 (Dumitrache 2016)",
+   "status": "PASS",
+   "source": "Dumitrache et al. PoP 23, 093515 (2016)"
+  },
+  {
+   "id": "V24",
+   "name": "75 mJ shock pressure at r = 1 mm",
+   "kind": "physics",
+   "value": "4.86 MPa",
+   "criterion": "0.5-15.7 MPa band for 25-140 mJ (Noor 2025)",
+   "status": "PASS",
+   "source": "Noor et al. Appl. Opt. 64, 4910 (2025)"
   }
  ],
- "n_pass": 11,
- "n_fail": 1,
- "n_pending": 8
+ "n_pass": 22,
+ "n_fail": 2,
+ "n_pending": 0
 }

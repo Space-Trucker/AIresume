@@ -36,3 +36,12 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 | P6 | NO 1.1×10¹⁶ /J (µJ) vs 3.4×10¹⁶ /J (50 mJ) | **PASS** |
 | P7 | O₃ from VUV/EUV = 2.5×10¹⁵ /J (18 % of all reactive species, not "comparable") | **PARTIAL** |
 | P8 | Sedov-fit blast share 52 % (µJ) | **PASS** under the literature definition; the far-field acoustic share is only 3.9 % |
+
+### Scores, round 1b (SPARK v2, after red team 2 fixes)
+
+| ID | v2 result | Score |
+|---|---|---|
+| P2 | 50 mJ ns spark radiated 25.1 % (literature 22–34 %) | **PASS on v2.** The v1 miss (3.9 %) pointed at the missing mechanism: VUV line wings escaping. The blast-share half of P2 is withdrawn, because the Sedov estimator gives ~0.5 by construction for real-gas Γ (red team 2 #6). |
+| P6 | NO: 1.1×10¹⁶ /J (10 µJ) vs 7.4–7.9×10¹⁶ /J (50–200 mJ) | **PASS** |
+| P7 | O₃ from VUV/EUV photolysis: 2.0×10¹⁶ /J (10 µJ) and 1.8×10¹⁷ /J (ns), i.e. larger than NO | **PASS** (exceeds "comparable") |
+| P8 | withdrawn (estimator artefact) | — |

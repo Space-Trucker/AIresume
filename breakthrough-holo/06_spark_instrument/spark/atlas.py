@@ -28,6 +28,14 @@ def cases():
         for Rs_um in (30, 100):
             cs.append(dict(label=f"C_shell_E{E*1e6:g}uJ_R{Rs_um}um", E_abs=E, r0=r0_for(E, 3e8), profile="shell",
                            shell_R=Rs_um * 1e-6))
+    # geometry bracket: line focus (cylindrical, per unit length) at matched peak energy density and radius
+    for E_sph, eps in ((10e-6, 3e8), (100e-6, 3e8)):
+        r0 = r0_for(E_sph, eps)
+        E_L = eps * math.pi * r0 * r0            # J/m for a 2D Gaussian with the same peak energy density
+        cs.append(dict(label=f"D_cyl_matched_E{E_sph*1e6:g}uJ_eps{eps:.0e}", E_abs=E_L, r0=r0, geometry="cylindrical"))
+    # mixing on (upper bound on cooling) for micro-sparks
+    for E in (3e-6, 10e-6, 100e-6):
+        cs.append(dict(label=f"M_mix_E{E*1e6:g}uJ_eps3e+08", E_abs=E, r0=r0_for(E, 3e8), mix=True))
     return cs
 
 
