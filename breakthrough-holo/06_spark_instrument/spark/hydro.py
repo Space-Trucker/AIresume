@@ -37,7 +37,8 @@ def make_grid(r0, R_out, n_core=48, core_extent=3.0, growth=1.03, dr_max=None):
 class Spark:
     def __init__(self, eos, E_abs, r0, rad=None, geometry="spherical", R_out=None, n_core=48, growth=1.03,
                  kappa_fn=None, kappa_mult=1.0, cfl=0.3, rho_amb=None, e_amb=None, r_probe=None,
-                 profile="gauss", record_every=40, dr_max=None, isobaric_switch=True):
+                 profile="gauss", record_every=40, dr_max=None, isobaric_switch=True, shell_R=None,
+                 pulses=None):
         self.eos, self.rad, self.geo = eos, rad, geometry
         self.kfn, self.kmult, self.cfl = kappa_fn, kappa_mult, cfl
         self.rho_amb = rho_amb if rho_amb is not None else eos.rho0
@@ -52,13 +53,25 @@ class Spark:
         self.m = self.rho_amb * V
         self.e = np.full(N, self.e_amb)
         rcell = 0.5 * (self.r[1:] + self.r[:-1])
-        if E_abs > 0:
+        self.pulses = []
+        E_first = E_abs
+        if pulses:
+            # extra pulses: list of (t, E, r_dep); energies are part of E_abs; deposited into the
+            # Lagrangian cells that started within r_dep (the original kernel material)
+            for (tp, Ep, rp) in pulses:
+                wp = np.exp(-(rcell / rp) ** 2) * V
+                self.pulses.append([tp, Ep, wp / wp.sum()])
+            E_first = E_abs - sum(p[1] for p in pulses)
+        if E_first > 0:
             if profile == "gauss":
                 w = np.exp(-(rcell / r0) ** 2) * V
+            elif profile == "shell":
+                Rs = shell_R
+                w = np.exp(-((rcell - Rs) / (0.2 * Rs)) ** 2) * V
             else:
                 w = (rcell <= r0) * V
             w = w / w.sum()
-            self.e += E_abs * w / self.m
+            self.e += E_first * w / self.m
         self.u = np.zeros(N + 1)
         self.V_init = V.copy()
         self.P_ext = float(np.atleast_1d(eos.P(np.array([self.rho_amb]), np.array([self.e_amb])))[0])
@@ -176,6 +189,10 @@ class Spark:
 
     # ---------------------------------------------------------------- phase 1
     def step_compressible(self):
+        for p in self.pulses:
+            if p[1] > 0 and self.t >= p[0]:
+                self.e = self.e + p[1] * p[2] / self.m
+                p[1] = 0.0
         r, u, m, e = self.r, self.u, self.m, self.e
         V = self._vol(r)
         rho = m / V
@@ -229,7 +246,7 @@ class Spark:
         self.hist_P.append(np.asarray(P, np.float32).copy())
 
     def ready_for_isobaric(self):
-        if not self.isobaric_switch:
+        if not self.isobaric_switch or any(p[1] > 0 for p in getattr(self, "pulses", [])):
             return False
         rho = self.m / self._vol(self.r)
         T, P, _ = self.eos.state(rho, self.e)

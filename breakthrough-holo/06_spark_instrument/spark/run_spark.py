@@ -17,13 +17,13 @@ _EOS = _RAD = None
 
 
 def run_case(E_abs, r0, kappa_mult=1.0, n_core=48, growth=1.03, cfl=0.3, chem=True, t_end=5e-3, rad_on=True,
-             profile="gauss", label=None):
+             profile="gauss", label=None, shell_R=None, pulses=None):
     global _EOS, _RAD
     if _EOS is None:
         _EOS, _RAD = fast(), load_rad()
     t0 = time.time()
     s = Spark(_EOS, E_abs, r0, rad=_RAD if rad_on else None, kappa_fn=conductivity, kappa_mult=kappa_mult,
-              n_core=n_core, growth=growth, cfl=cfl, profile=profile)
+              n_core=n_core, growth=growth, cfl=cfl, profile=profile, shell_R=shell_R, pulses=pulses)
     E0 = s.total_energy()
     res = s.run(t_end=t_end)
     res["energy_drift_phase1"] = float("nan")
@@ -36,7 +36,7 @@ def run_case(E_abs, r0, kappa_mult=1.0, n_core=48, growth=1.03, cfl=0.3, chem=Tr
         res["NO2_per_J"] = c["NO2_total"] / E_abs
         res["O3_per_J"] = c["O3_total"] / E_abs
         res["reactive_per_J"] = c["NOx_plus_O3"] / E_abs
-    res.update(dict(r0=r0, kappa_mult=kappa_mult, n_core=n_core, cfl=cfl, wall_s=time.time() - t0, label=label,
+    res.update(dict(profile=profile, shell_R=shell_R, pulses=pulses, r0=r0, kappa_mult=kappa_mult, n_core=n_core, cfl=cfl, wall_s=time.time() - t0, label=label,
                     act_per_J=res["act_J"] / E_abs))
     return res
 

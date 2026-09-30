@@ -247,3 +247,56 @@ The red team found 3 critical, 11 major and 5 minor problems (`05_reviews/red_te
   - Worth a resolution bench test (add to X-series); it does not change the verdict.
 
 **Scorecard unchanged: 4 MET / 4 PARTIAL / 2 NOT MET.**
+
+---
+
+## 2026-09-30 · Entry 9: Buehler fact-check → workflow v2 → building the SPARK instrument
+
+**Fact-check** (`06_buehler_factcheck/FACTCHECK.md`; primary source github.com/lamm-mit/graphene-agent, README lines verified by me).
+- The underlying work is real and unusually transparent: Claude Fable 5.1 built and validated a REBO2 atomistic instrument, with 20 tests and hashed predictions.
+- The post overstates it:
+  - "first-principles / quantum ground truth" is really an empirical classical potential;
+  - "multiple days" was 30 h autonomous;
+  - "far better material" contradicts "no claim is made about real materials";
+  - the "25 % stronger" figure contradicts the repo's own headline, "Hierarchy is not a free lunch".
+- 10⁻¹³ eV/atom proves code correctness, not physics. We adopt the workflow (`WORKFLOW_v2.md`) and require physics tests as well as code tests.
+
+**Why an instrument.** The verdict's decisive unknowns are the spark's light per joule (η, ±30×), reactive molecules per joule, UV and noise. They were literature guesses. SPARK computes them from physics:
+- `eos.py`: Cantera airNASA9 equilibrium below 18 kK plus my own Saha solver for N/O up to 3+ ions (to 300 kK). The two agree within 2.4 % in their 14–18 kK overlap.
+- `radiation.py`: Kramers–Unsöld continuum, 24 N/O line multiplets, escape factors.
+- `hydro.py`: 1D Lagrangian spherical hydro with artificial viscosity, implicit conduction and radiative loss, plus an isobaric late phase.
+- `chemistry.py`: Zeldovich/ozone/NO₂ kinetics with detailed balance on NASA thermo, and VUV/EUV photochemistry.
+
+**Validation so far (11/12 fast tests pass; 8 pending on long runs):**
+- Sod shock tube L1 error 0.23 %.
+- Sedov ξ₀ = 1.0356 against 1.0328 (**P1 PASS**).
+- Energy conservation 7×10⁻⁵ (Sod) and 5.5×10⁻³ (Sedov).
+- Kinetics reach Cantera equilibrium within 0.8 %.
+- O-atom lifetime exact (13.26 µs).
+- Photometry 679.6 lm for 1 W at 555 nm (0.5 %).
+
+**Errors caught.**
+- (a) My kinetics first assumed a fixed molecule count; dissociation broke equilibrium by 20–33 %. Fixed with a per-parent-molecule basis.
+- (b) V08 first "failed" at 3400 % because the test let heat diffuse past the domain edge; the solver itself is fine (0.35 %, converging).
+- (c) The first "residual heat" number double-counted the outgoing sound wave. Replaced with a probe-bounded closure: 99.6 %.
+
+**V12 derivation (escape factor, thick limit).**
+- In the optically thick limit, β = 1/τ with τ = κR.
+- The loss is then j·(4/3)πR³/(κR) with j = 4πκB, giving (16π²/3)R²B.
+- A blackbody surface loses 4π²R²B, so the ratio is 4/3.
+- The approximation over-predicts thick emission by 33 %. Micro-kernels are thin in the visible, so this bites only in the VUV.
+
+**First physics result: 10 µJ micro-spark in a 10 µm kernel.**
+
+| Quantity | Result |
+|---|---|
+| Radiated | 0.53 % (P3 ✓) |
+| η | 0.085 lm/W (P4 ✓) |
+| Blast energy (Sedov fit) | 52 % (P8 ✓ under the literature definition) |
+| Far-field sound | only 3.9 % |
+| NO | 1.1×10¹⁶ /J |
+| O₃ | 2.6×10¹⁵ /J, mostly from VUV photolysis |
+| NO₂ | 1.8×10¹⁴ /J |
+| All reactive species | 1.4×10¹⁶ /J (3.5× below the display budget's nominal) |
+
+**Analytic law from the SPARK tables.** For isochoric deposition, visible light per joule ≈ lm(ρ₀,T)·(r₀/c_s)/ε, which peaks at 40–60 kK. It gives η ≈ 5.5×10³ lm W⁻¹ m⁻¹ × r₀: efficiency is proportional to spark radius. That is a resolution–efficiency trade-off, and fine strokes force small, inefficient sparks (registered as P10).
