@@ -15,3 +15,12 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 | P9 | Double pulse (reheat the expanded kernel at ~1 atm) raises η vs a single pulse of the same total energy | > 1.5× | reheating a larger, isobaric kernel avoids the hydro quench |
 
 ## Scores (appended after runs)
+
+## Round 2 predictions (committed before the design-atlas campaign)
+
+| ID | Prediction | Interval | Basis |
+|---|---|---|---|
+| P10 | At fixed deposition energy density ε = 3×10⁸ J/m³, η is proportional to kernel radius r₀ | η/r₀ = (5.5 ± 2.5)×10³ lm W⁻¹ m⁻¹ | isochoric figure of merit from the SPARK tables (lm·τ_exp/ε, peak at 40–60 kK) |
+| P11 | NO per J rises with spark energy (bigger kernels cool more slowly) | 10 µJ ≈ 1×10¹⁶ /J → 1 mJ ≥ 3×10¹⁶ /J | Zeldovich freeze-out vs conduction time r²/χ |
+| P12 | Double pulse (5 + 5 µJ, delay 3–300 ns) gives < 1.2× the η of a single 10 µJ pulse (i.e. P9 will FAIL) | η ratio < 1.2 | reheated kernel is at low density; emission ∝ n² |
+| P13 | Shell deposition (converging shock, 1D spherical upper bound) raises η > 3× vs the same-energy Gaussian | η ratio > 3 | Guderley implosion compresses and heats the centre |

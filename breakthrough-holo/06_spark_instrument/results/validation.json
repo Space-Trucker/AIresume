@@ -1,0 +1,187 @@
+{
+ "tests": [
+  {
+   "id": "V01",
+   "name": "EOS ambient pressure",
+   "kind": "impl",
+   "value": "101325.0 Pa",
+   "criterion": "101325 +-0.2 %",
+   "status": "PASS",
+   "source": "definition"
+  },
+  {
+   "id": "V02",
+   "name": "Cantera vs own Saha solver at 16 kK (P, n_e)",
+   "kind": "impl",
+   "value": "max dev 2.42 %",
+   "criterion": "< 3 %",
+   "status": "PASS",
+   "source": "independent implementations"
+  },
+  {
+   "id": "V03",
+   "name": "EOS inversion round trip",
+   "kind": "impl",
+   "value": "0.012 %",
+   "criterion": "< 0.1 %",
+   "status": "PASS",
+   "source": "self-consistency"
+  },
+  {
+   "id": "V04",
+   "name": "isobaric density table vs Cantera at 10 kK, 1 atm",
+   "kind": "impl",
+   "value": "0.00 %",
+   "criterion": "< 2 %",
+   "status": "PASS",
+   "source": "Cantera airNASA9 (NASA CEA data)"
+  },
+  {
+   "id": "V05",
+   "name": "Sod shock tube vs exact Riemann solution",
+   "kind": "impl",
+   "value": "L1 0.23 %",
+   "criterion": "< 1 %",
+   "status": "PASS",
+   "source": "Toro ch. 4"
+  },
+  {
+   "id": "V06",
+   "name": "Sedov-Taylor constant xi0 (gamma 1.4)",
+   "kind": "impl",
+   "value": "1.0356",
+   "criterion": "1.0328 +- 3 % (prediction P1)",
+   "status": "PASS",
+   "source": "Sedov 1959; Diaz & Rigby 2022"
+  },
+  {
+   "id": "V07",
+   "name": "energy conservation (Sod / Sedov)",
+   "kind": "impl",
+   "value": "7.4e-05 / 5.5e-03",
+   "criterion": "< 1e-3 / < 1e-2",
+   "status": "PASS",
+   "source": "conservation law"
+  },
+  {
+   "id": "V08",
+   "name": "implicit conduction vs analytic 3D diffusion",
+   "kind": "impl",
+   "value": "max err 3437.67 % of peak",
+   "criterion": "< 3 %",
+   "status": "FAIL",
+   "source": "Carslaw & Jaeger"
+  },
+  {
+   "id": "V09",
+   "name": "kinetics relax to Cantera equilibrium NO (3-6 kK)",
+   "kind": "impl",
+   "value": "max dev 0.77 %",
+   "criterion": "< 2 %",
+   "status": "PASS",
+   "source": "detailed balance"
+  },
+  {
+   "id": "V10",
+   "name": "O-atom lifetime (O+O2+M) at 300 K",
+   "kind": "impl",
+   "value": "13.26 us vs 13.26 us",
+   "criterion": "< 1 %",
+   "status": "PASS",
+   "source": "JPL k0 = 6.0e-34 (T/300)^-2.4"
+  },
+  {
+   "id": "V11",
+   "name": "photometry: 1 W at 555 nm",
+   "kind": "impl",
+   "value": "679.6 lm",
+   "criterion": "683 +- 1 %",
+   "status": "PASS",
+   "source": "CIE"
+  },
+  {
+   "id": "V12",
+   "name": "optically thick limit of escape factor vs blackbody",
+   "kind": "impl",
+   "value": "loss/blackbody = 4/3 (analytic)",
+   "criterion": "within 40 %",
+   "status": "PASS",
+   "source": "derivation in NOTEBOOK Entry 9"
+  },
+  {
+   "id": "V13",
+   "name": "grid convergence",
+   "kind": "impl",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": "numerics"
+  },
+  {
+   "id": "V14",
+   "name": "time-step convergence",
+   "kind": "impl",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": "numerics"
+  },
+  {
+   "id": "V15",
+   "name": "energy closure",
+   "kind": "impl",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": "numerics"
+  },
+  {
+   "id": "V16",
+   "name": "heat-release monopole law",
+   "kind": "impl",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": "numerics"
+  },
+  {
+   "id": "V17",
+   "name": "ns spark energy partition",
+   "kind": "physics",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": "Phuoc 2005"
+  },
+  {
+   "id": "V18",
+   "name": "kernel temperature history",
+   "kind": "physics",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": ""
+  },
+  {
+   "id": "V19",
+   "name": "ns spark NO per J",
+   "kind": "physics",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": ""
+  },
+  {
+   "id": "V20",
+   "name": "visible fraction",
+   "kind": "physics",
+   "value": "run pending",
+   "criterion": "-",
+   "status": "PENDING",
+   "source": ""
+  }
+ ],
+ "n_pass": 11,
+ "n_fail": 1,
+ "n_pending": 8
+}

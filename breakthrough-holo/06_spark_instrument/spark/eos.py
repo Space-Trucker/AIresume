@@ -206,3 +206,95 @@ if __name__ == "__main__":
     t = time.time()
     eos = build_table()
     print(f"table built in {time.time()-t:.0f}s: {eos.P.shape}")
+
+
+class FastEOS:
+    """Vectorised (rho, e) -> T, P lookups on a regular (log rho, asinh(e/E_S)) grid, built from EOS.
+    Also provides isobaric (P0) tables rho(T), h(T) for the late, low-Mach phase."""
+    E_S = 1.0e4
+
+    def __init__(self, eos: EOS, ns=900):
+        self.base = eos
+        self.lr = eos.lr
+        self.s = np.linspace(math.asinh(-2e5 / self.E_S), math.asinh(3.0e9 / self.E_S), ns)
+        es = self.E_S * np.sinh(self.s)
+        self.lTt = np.zeros((len(self.lr), ns))
+        self.lPt = np.zeros_like(self.lTt)
+        for i in range(len(self.lr)):
+            lt = np.interp(es, eos.Um[i], eos.lT)
+            self.lTt[i] = lt
+            self.lPt[i] = np.interp(lt, eos.lT, np.log(eos.P[i]))
+        self.rho0 = eos.rho0
+        # isobaric tables at P0
+        lP0 = math.log(P0)
+        self.iso_lT = eos.lT
+        lrho = np.empty(len(eos.lT))
+        for j in range(len(eos.lT)):
+            col = np.log(eos.P[:, j])
+            lrho[j] = np.interp(lP0, col, eos.lr)
+        self.iso_lrho = lrho
+        rho_iso = np.exp(lrho)
+        u_iso = np.array([np.interp(lrho[j], eos.lr, eos.U[:, j]) for j in range(len(eos.lT))])
+        self.iso_h = u_iso + P0 / rho_iso
+
+    def _bil(self, tab, rho, e):
+        x = np.clip(np.log(rho), self.lr[0], self.lr[-1])
+        i = np.clip(np.searchsorted(self.lr, x) - 1, 0, len(self.lr) - 2)
+        w = (x - self.lr[i]) / (self.lr[i + 1] - self.lr[i])
+        y = np.clip(np.arcsinh(e / self.E_S), self.s[0], self.s[-1])
+        ds = self.s[1] - self.s[0]
+        k = np.clip(((y - self.s[0]) / ds).astype(int), 0, len(self.s) - 2)
+        v = (y - self.s[k]) / ds
+        return (1 - w) * ((1 - v) * tab[i, k] + v * tab[i, k + 1]) + w * ((1 - v) * tab[i + 1, k] + v * tab[i + 1, k + 1])
+
+    def T(self, rho, e):
+        return np.exp(self._bil(self.lTt, rho, e))
+
+    def P(self, rho, e):
+        return np.exp(self._bil(self.lPt, rho, e))
+
+    def state(self, rho, e):
+        P = self.P(rho, e)
+        de = np.maximum(1e-3 * np.abs(e), 200.0)
+        Pr = self.P(rho * 1.001, e)
+        Pe = self.P(rho, e + de)
+        c2 = (Pr - P) / (rho * 0.001) + P / rho ** 2 * (Pe - P) / de
+        return self.T(rho, e), P, np.sqrt(np.maximum(c2, 100.0))
+
+    def e_of(self, rho, T):
+        return self.base.e_of_T(rho, T)
+
+    def iso_rho(self, T):
+        return np.exp(np.interp(np.log(T), self.iso_lT, self.iso_lrho))
+
+    def iso_hT(self, T):
+        return np.interp(np.log(T), self.iso_lT, self.iso_h)
+
+    def iso_T_of_h(self, hh):
+        hm = np.maximum.accumulate(self.iso_h)
+        return np.exp(np.interp(hh, hm, self.iso_lT))
+
+
+class IdealEOS:
+    """Ideal gas (gamma) with the same interface, for analytic validation tests."""
+
+    def __init__(self, gamma=1.4, R=287.0, rho0=1.2):
+        self.g, self.R, self.rho0 = gamma, R, rho0
+        self.cv = R / (gamma - 1)
+
+    def T(self, rho, e):
+        return np.maximum(e, 1e-12) / self.cv
+
+    def P(self, rho, e):
+        return (self.g - 1) * rho * np.maximum(e, 0.0)
+
+    def state(self, rho, e):
+        P = self.P(rho, e)
+        return self.T(rho, e), P, np.sqrt(np.maximum(self.g * P / rho, 1e-6))
+
+    def e_of(self, rho, T):
+        return self.cv * np.asarray(T, float)
+
+
+def fast():
+    return FastEOS(load())
