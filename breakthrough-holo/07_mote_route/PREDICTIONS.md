@@ -19,3 +19,17 @@ First-principles basis (NOTEBOOK Entry 13):
 | P19 | A 5 µm mote at ≥ 0.7 m/s can be held with ≤ 10 mW per beam (the IEC Class 1 CW limit at 1550 nm) | yes |
 | P20 | A room draft of 0.2 m/s causes > 1 %/s mote loss unless the trap force margin is ≥ 2× the drag at 0.2 m/s | yes |
 | P21 | Film-exact brightness (50 cd/m², 30 m of strokes, lit lab) needs < 5 W of absorbed emitter power in total, zero reactive gases and zero audible noise from the motes | yes |
+
+## Addendum A: registered after R5–R7 reported, before MOTE instrument v1 runs (2026-09-30)
+
+R5–R7 changed the question. First, room throw (1–3 m) makes the trap focus much wider than the mote (w ≈ λd/(πR)). Second, published single-beam photophoretic traps have only worked at 80–160 mm. Third, US/EU consumer rules require Class 1 for an IR display. So the instrument v1 compares two trap architectures:
+- **Single-head lateral trap.** Lateral restoring force comes from the intensity gradient across the mote; efficiency is taken to scale as a/w.
+- **Multi-head push trap.** Four or more heads, each beam pushing along its own axis, stabilised by active position feedback.
+
+| ID | Prediction | Interval |
+|---|---|---|
+| P22 | Single-head lateral trap, 1.5 m throw, 100 mm aperture, 1550 nm: best speed at ΔT ≤ 200 K over a = 1–5 µm and k_p ≥ 0.02 W/m/K | 0.1–0.5 m/s |
+| P23 | Four-head push trap with feedback, tracing at 1 m/s in a 0.1 m/s draft with 0.1 m/s gusts: control-loop rate needed for < 1 %/min mote loss | 2–20 kHz |
+| P24 | Film density (30 m, 4 cd/m², 30 Hz) with a 1550 nm trap and a violet/blue-pumped phosphor: Class 1 per beam **and** at every head's exit aperture, with head apertures ≤ 300 mm; total 1550 nm power | yes; 2–15 W |
+| P25 | Same film density with a Yb-rich UC emitter pumped at 980 nm: Class 1 at 980 nm (per beam and exit aperture) needs a head aperture | ≥ 200 mm |
+| P26 | BYU's 1.83 m/s record (a ≈ 5 µm char particle), run through our force model at η = 1 with slip corrections: implied mean mote heating ΔT | 250–700 K |
