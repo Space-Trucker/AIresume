@@ -33,3 +33,12 @@ R5–R7 changed the question. First, room throw (1–3 m) makes the trap focus m
 | P24 | Film density (30 m, 4 cd/m², 30 Hz) with a 1550 nm trap and a violet/blue-pumped phosphor: Class 1 per beam **and** at every head's exit aperture, with head apertures ≤ 300 mm; total 1550 nm power | yes; 2–15 W |
 | P25 | Same film density with a Yb-rich UC emitter pumped at 980 nm: Class 1 at 980 nm (per beam and exit aperture) needs a head aperture | ≥ 200 mm |
 | P26 | BYU's 1.83 m/s record (a ≈ 5 µm char particle), run through our force model at η = 1 with slip corrections: implied mean mote heating ΔT | 250–700 K |
+
+## Scores (after instrument v2 = v1 + red team 4 corrections; full table in RESULTS.md §8)
+
+- **✓ (2):** P21, P22.
+- **Partial (2):** P15, P26.
+- **✗ (6):** P16, P17, P18, P19, P23, P24.
+- **Inconclusive (2):** P20, P25.
+
+The v1 scores (8 ✓) rested on model errors found by red team 4, and are withdrawn.

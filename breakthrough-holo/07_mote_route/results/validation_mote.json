@@ -1,6 +1,6 @@
 {
- "passed": 26,
- "total": 26,
+ "passed": 31,
+ "total": 32,
  "tests": [
   {
    "id": "M01",
@@ -210,14 +210,14 @@
   },
   {
    "id": "M22",
-   "name": "BYU 1.83 m/s (Nature 2018) reproducible below char/ignition (dT < 700 K) at eta = 1",
+   "name": "BYU 1.83 m/s (Nature 2018, lateral) reproducible below char/ignition (dT < 700 K) at eta = 1 [one-sided]",
    "kind": "C",
    "value": {
-    "min": 162.20059960400715,
-    "max": 403.12748303806904
+    "min": 272.98212450692483,
+    "max": 744.9787121074675
    },
    "criterion": "100 K < dT < 700 K for all cases",
-   "status": "PASS",
+   "status": "FAIL",
    "source": "R5: Smalley et al. Nature 553, 486 (2018)"
   },
   {
@@ -252,12 +252,83 @@
    "name": "budget: solved T within heat balance (trap heat <= loss at T)",
    "kind": "I",
    "value": {
-    "heat_in_trap": 2.2345401097038897e-05,
-    "loss": 2.406969157164849e-05
+    "heat_in_trap": 2.5193798545979817e-05,
+    "loss": 2.694825913494689e-05
    },
    "criterion": "trap heat <= loss <= 1.2 x trap+pump",
    "status": "PASS",
    "source": "self-consistency"
+  },
+  {
+   "id": "M27",
+   "name": "code prefactor = thermal creep with C_s = 9/8 (Epstein-consistent derivation)",
+   "kind": "I",
+   "value": 1.0,
+   "criterion": "1 +-1e-9",
+   "status": "PASS",
+   "source": "RT4 Major 4; T5 v2"
+  },
+  {
+   "id": "M28",
+   "name": "creep formula reproduces Epstein (1929) thermophoresis with C_s = 3/4",
+   "kind": "P",
+   "value": 1.0000000000000002,
+   "criterion": "1 +-1e-9",
+   "status": "PASS",
+   "source": "Epstein 1929; Hinds eq. 10.x"
+  },
+  {
+   "id": "M29",
+   "name": "exact LG01 restoring efficiency vs RT4 (0.247/0.372/0.118)",
+   "kind": "I",
+   "value": [
+    0.25032955163375525,
+    0.3697983361629657,
+    0.1167309398212449
+   ],
+   "criterion": "each within 0.02",
+   "status": "PASS",
+   "source": "RT4 r9_lg01.py"
+  },
+  {
+   "id": "M30",
+   "name": "J1/A(alpha a) straight-ray vs RT4 refracting ray trace",
+   "kind": "I",
+   "value": [
+    0.13370100647856437,
+    0.22933084052026964,
+    0.29263979353698644,
+    0.36322800545219697,
+    0.4278437931430405,
+    0.47522125734868675
+   ],
+   "criterion": "each within 0.08",
+   "status": "PASS",
+   "source": "RT4 r5_j1.py"
+  },
+  {
+   "id": "M31",
+   "name": "coated-sphere k_eff limits",
+   "kind": "I",
+   "value": [
+    0.02,
+    5.000000000000032
+   ],
+   "criterion": "0.02 and 5.0",
+   "status": "PASS",
+   "source": "Maxwell"
+  },
+  {
+   "id": "M32",
+   "name": "budget2 wall light <= pump power (energy)",
+   "kind": "I",
+   "value": {
+    "wall_W": 0.1296949405108716,
+    "pump_W": 0.1318387418772913
+   },
+   "criterion": "wall_W <= pump_W",
+   "status": "PASS",
+   "source": "RT4 Minor 1"
   }
  ]
 }

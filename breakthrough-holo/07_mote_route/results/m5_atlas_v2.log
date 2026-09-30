@@ -1,0 +1,121 @@
+5760 cells in 64 s
+accent | S0 baseline 60Hz u0.3 T450 | coreshell            NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 36}
+accent | S0 baseline 60Hz u0.3 T450 | engineered           NONE  {'wall_light': 48, 'heat': 30, 'trap_beam_class': 26}
+accent | S0 baseline 60Hz u0.3 T450 | optimistic           NONE  {'heat': 48, 'trap_beam_class': 48, 'wall_light': 48}
+accent | S0 baseline 60Hz u0.3 T450 | dense                NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+accent | S1 quiet-air u0.15 | coreshell                    room_push  a=4.0 R=0.1 v=0.05 N=  2400 ch=  7200 Tface=444 beam 3.1 mW trap 8.4 W pump 0.2 uW x2 wall 0.044
+accent | S1 quiet-air u0.15 | engineered                   room_push  a=4.0 R=0.1 v=0.09 N=  1389 ch=  4167 Tface=449 beam 3.0 mW trap 4.6 W pump 0.4 uW x2 wall 0.045
+accent | S1 quiet-air u0.15 | optimistic                   NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 36}
+accent | S1 quiet-air u0.15 | dense                        NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+accent | S2 hot T500 | coreshell                           NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 24}
+accent | S2 hot T500 | engineered                          NONE  {'wall_light': 48, 'trap_beam_class': 26, 'heat': 24}
+accent | S2 hot T500 | optimistic                          NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 42}
+accent | S2 hot T500 | dense                               NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+accent | S3 quiet+hot 45Hz | coreshell                     room_push  a=4.0 R=0.1 v=0.09 N=  1042 ch=  3125 Tface=468 beam 3.7 mW trap 4.3 W pump 0.6 uW x2 wall 0.049
+accent | S3 quiet+hot 45Hz | engineered                    room_push  a=4.0 R=0.1 v=0.12 N=   723 ch=  2170 Tface=470 beam 3.5 mW trap 2.8 W pump 0.9 uW x2 wall 0.049
+accent | S3 quiet+hot 45Hz | optimistic                    NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 30}
+accent | S3 quiet+hot 45Hz | dense                         NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+accent | S4 designed lab 45Hz | coreshell                  room_pairs a=2.5 R=0.15 v=0.18 N=   502 ch=  1005 Tface=490 beam 4.6 mW trap 3.5 W pump 2.2 uW x2 wall 0.023
+accent | S4 designed lab 45Hz | engineered                 room_pairs a=2.5 R=0.15 v=0.21 N=   419 ch=   837 Tface=484 beam 4.1 mW trap 2.6 W pump 2.6 uW x2 wall 0.022
+accent | S4 designed lab 45Hz | optimistic                 room_push  a=2.5 R=0.075 v=0.07 N=  1250 ch=  3750 Tface=495 beam 8.7 mW trap 12.1 W pump 1.6 uW x2 wall 0.049
+accent | S4 designed lab 45Hz | dense                      NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+accent | S5 designed lab 60Hz | coreshell                  room_pairs a=2.5 R=0.15 v=0.18 N=   670 ch=  1340 Tface=489 beam 4.6 mW trap 4.6 W pump 1.7 uW x2 wall 0.023
+accent | S5 designed lab 60Hz | engineered                 room_pairs a=2.5 R=0.15 v=0.21 N=   558 ch=  1116 Tface=484 beam 4.1 mW trap 3.4 W pump 1.9 uW x2 wall 0.022
+accent | S5 designed lab 60Hz | optimistic                 room_push  a=2.5 R=0.075 v=0.07 N=  1667 ch=  5000 Tface=495 beam 8.7 mW trap 16.2 W pump 1.2 uW x2 wall 0.049
+accent | S5 designed lab 60Hz | dense                      NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+sketch | S0 baseline 60Hz u0.3 T450 | coreshell            NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 36}
+sketch | S0 baseline 60Hz u0.3 T450 | engineered           NONE  {'wall_light': 48, 'heat': 30, 'trap_beam_class': 26}
+sketch | S0 baseline 60Hz u0.3 T450 | optimistic           NONE  {'heat': 48, 'trap_beam_class': 48, 'wall_light': 48}
+sketch | S0 baseline 60Hz u0.3 T450 | dense                NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+sketch | S1 quiet-air u0.15 | coreshell                    room_push  a=4.0 R=0.075 v=0.05 N= 10526 ch= 31579 Tface=444 beam 3.1 mW trap 36.8 W pump 0.3 uW x2 wall 0.048
+sketch | S1 quiet-air u0.15 | engineered                   room_push  a=4.0 R=0.075 v=0.09 N=  6092 ch= 18275 Tface=449 beam 3.0 mW trap 20.3 W pump 0.5 uW x2 wall 0.049
+sketch | S1 quiet-air u0.15 | optimistic                   NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 36}
+sketch | S1 quiet-air u0.15 | dense                        NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+sketch | S2 hot T500 | coreshell                           NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 24}
+sketch | S2 hot T500 | engineered                          NONE  {'wall_light': 48, 'trap_beam_class': 26, 'heat': 24}
+sketch | S2 hot T500 | optimistic                          NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 42}
+sketch | S2 hot T500 | dense                               NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+sketch | S3 quiet+hot 45Hz | coreshell                     room_push  a=4.0 R=0.1 v=0.10 N=  3807 ch= 11422 Tface=479 beam 4.0 mW trap 16.8 W pump 0.8 uW x2 wall 0.045
+sketch | S3 quiet+hot 45Hz | engineered                    room_push  a=4.0 R=0.1 v=0.15 N=  2644 ch=  7932 Tface=484 beam 3.8 mW trap 11.2 W pump 1.1 uW x2 wall 0.047
+sketch | S3 quiet+hot 45Hz | optimistic                    NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 30}
+sketch | S3 quiet+hot 45Hz | dense                         NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+sketch | S4 designed lab 45Hz | coreshell                  room_push  a=1.5 R=0.15 v=0.37 N=  1063 ch=  3188 Tface=466 beam 9.2 mW trap 10.9 W pump 9.2 uW x2 wall 0.050
+sketch | S4 designed lab 45Hz | engineered                 room_push  a=1.5 R=0.15 v=0.45 N=   885 ch=  2656 Tface=464 beam 8.4 mW trap 8.3 W pump 11.0 uW x2 wall 0.049
+sketch | S4 designed lab 45Hz | optimistic                 room_push  a=2.5 R=0.075 v=0.07 N=  5482 ch= 16447 Tface=495 beam 8.7 mW trap 53.3 W pump 1.6 uW x2 wall 0.043
+sketch | S4 designed lab 45Hz | dense                      NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+sketch | S5 designed lab 60Hz | coreshell                  room_push  a=1.5 R=0.15 v=0.37 N=  1417 ch=  4250 Tface=465 beam 9.2 mW trap 14.6 W pump 6.9 uW x2 wall 0.050
+sketch | S5 designed lab 60Hz | engineered                 room_push  a=1.5 R=0.15 v=0.45 N=  1181 ch=  3542 Tface=463 beam 8.4 mW trap 11.1 W pump 8.2 uW x2 wall 0.049
+sketch | S5 designed lab 60Hz | optimistic                 room_push  a=2.5 R=0.075 v=0.07 N=  7310 ch= 21930 Tface=495 beam 8.7 mW trap 71.0 W pump 1.2 uW x2 wall 0.043
+sketch | S5 designed lab 60Hz | dense                      NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+film_contrast | S0 baseline 60Hz u0.3 T450 | coreshell     NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 36}
+film_contrast | S0 baseline 60Hz u0.3 T450 | engineered    NONE  {'wall_light': 46, 'heat': 30, 'trap_beam_class': 26}
+film_contrast | S0 baseline 60Hz u0.3 T450 | optimistic    NONE  {'heat': 48, 'trap_beam_class': 48, 'wall_light': 48}
+film_contrast | S0 baseline 60Hz u0.3 T450 | dense         NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_contrast | S1 quiet-air u0.15 | coreshell             room_push  a=4.0 R=0.075 v=0.05 N= 15000 ch= 45000 Tface=444 beam 3.1 mW trap 52.5 W pump 0.4 uW x2 wall 0.038
+film_contrast | S1 quiet-air u0.15 | engineered            room_push  a=4.0 R=0.075 v=0.09 N=  8681 ch= 26042 Tface=449 beam 3.0 mW trap 29.0 W pump 0.6 uW x2 wall 0.039
+film_contrast | S1 quiet-air u0.15 | optimistic            NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 36}
+film_contrast | S1 quiet-air u0.15 | dense                 NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_contrast | S2 hot T500 | coreshell                    NONE  {'wall_light': 48, 'trap_beam_class': 44, 'heat': 24}
+film_contrast | S2 hot T500 | engineered                   NONE  {'wall_light': 46, 'trap_beam_class': 26, 'heat': 24}
+film_contrast | S2 hot T500 | optimistic                   NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 42}
+film_contrast | S2 hot T500 | dense                        NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_contrast | S3 quiet+hot 45Hz | coreshell              room_push  a=4.0 R=0.075 v=0.12 N=  4521 ch= 13563 Tface=491 beam 4.3 mW trap 21.6 W pump 1.5 uW x2 wall 0.050
+film_contrast | S3 quiet+hot 45Hz | engineered             room_push  a=4.0 R=0.075 v=0.15 N=  3768 ch= 11303 Tface=484 beam 3.8 mW trap 15.9 W pump 1.7 uW x2 wall 0.047
+film_contrast | S3 quiet+hot 45Hz | optimistic             NONE  {'trap_beam_class': 48, 'wall_light': 48, 'heat': 30}
+film_contrast | S3 quiet+hot 45Hz | dense                  NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+film_contrast | S4 designed lab 45Hz | coreshell           room_push  a=1.5 R=0.15 v=0.37 N=  1514 ch=  4542 Tface=466 beam 9.2 mW trap 15.6 W pump 12.3 uW x2 wall 0.040
+film_contrast | S4 designed lab 45Hz | engineered          room_push  a=1.5 R=0.15 v=0.53 N=  1051 ch=  3154 Tface=488 beam 9.7 mW trap 11.4 W pump 20.4 uW x2 wall 0.046
+film_contrast | S4 designed lab 45Hz | optimistic          room_push  a=2.5 R=0.075 v=0.07 N=  7812 ch= 23438 Tface=496 beam 8.7 mW trap 75.9 W pump 2.2 uW x2 wall 0.034
+film_contrast | S4 designed lab 45Hz | dense               NONE  {'heat': 48, 'trap_beam_class': 48, 'pump_beam_class': 48}
+film_contrast | S5 designed lab 60Hz | coreshell           room_push  a=1.5 R=0.15 v=0.37 N=  2019 ch=  6056 Tface=466 beam 9.2 mW trap 20.8 W pump 9.2 uW x2 wall 0.039
+film_contrast | S5 designed lab 60Hz | engineered          room_push  a=1.5 R=0.15 v=0.53 N=  1402 ch=  4206 Tface=487 beam 9.7 mW trap 15.1 W pump 15.2 uW x2 wall 0.045
+film_contrast | S5 designed lab 60Hz | optimistic          room_push  a=2.5 R=0.075 v=0.07 N= 10417 ch= 31250 Tface=495 beam 8.7 mW trap 101.2 W pump 1.6 uW x2 wall 0.034
+film_contrast | S5 designed lab 60Hz | dense               NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S0 baseline 60Hz u0.3 T450 | coreshell      NONE  {'wall_light': 48, 'trap_beam_class': 44, 'trap_exit_class': 36}
+film_density | S0 baseline 60Hz u0.3 T450 | engineered     NONE  {'wall_light': 44, 'trap_exit_class': 34, 'heat': 30}
+film_density | S0 baseline 60Hz u0.3 T450 | optimistic     NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S0 baseline 60Hz u0.3 T450 | dense          NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S1 quiet-air u0.15 | coreshell              room_push  a=2.5 R=0.15 v=0.06 N= 36145 ch=108434 Tface=403 beam 3.5 mW trap 139.6 W pump 0.5 uW x2 wall 0.050
+film_density | S1 quiet-air u0.15 | engineered             room_push  a=4.0 R=0.075 v=0.09 N= 25100 ch= 75301 Tface=449 beam 3.0 mW trap 83.8 W pump 0.6 uW x2 wall 0.034
+film_density | S1 quiet-air u0.15 | optimistic             NONE  {'trap_beam_class': 48, 'wall_light': 48, 'trap_exit_class': 38}
+film_density | S1 quiet-air u0.15 | dense                  NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S2 hot T500 | coreshell                     NONE  {'wall_light': 48, 'trap_beam_class': 44, 'trap_exit_class': 36}
+film_density | S2 hot T500 | engineered                    NONE  {'wall_light': 44, 'trap_exit_class': 34, 'trap_beam_class': 26}
+film_density | S2 hot T500 | optimistic                    NONE  {'trap_beam_class': 48, 'trap_exit_class': 48, 'wall_light': 48}
+film_density | S2 hot T500 | dense                         NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S3 quiet+hot 45Hz | coreshell               room_push  a=4.0 R=0.075 v=0.12 N= 13073 ch= 39219 Tface=491 beam 4.3 mW trap 62.4 W pump 1.5 uW x2 wall 0.043
+film_density | S3 quiet+hot 45Hz | engineered              room_push  a=4.0 R=0.075 v=0.15 N= 10894 ch= 32683 Tface=484 beam 3.8 mW trap 46.0 W pump 1.7 uW x2 wall 0.041
+film_density | S3 quiet+hot 45Hz | optimistic              NONE  {'trap_beam_class': 48, 'wall_light': 48, 'trap_exit_class': 36}
+film_density | S3 quiet+hot 45Hz | dense                   NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S4 designed lab 45Hz | coreshell            room_push  a=1.5 R=0.15 v=0.37 N=  4378 ch= 13134 Tface=466 beam 9.2 mW trap 45.1 W pump 12.3 uW x2 wall 0.034
+film_density | S4 designed lab 45Hz | engineered           room_push  a=1.5 R=0.15 v=0.53 N=  3040 ch=  9121 Tface=488 beam 9.7 mW trap 32.8 W pump 20.4 uW x2 wall 0.039
+film_density | S4 designed lab 45Hz | optimistic           room_push  a=2.5 R=0.15 v=0.07 N= 22590 ch= 67771 Tface=496 beam 8.7 mW trap 219.4 W pump 1.3 uW x2 wall 0.015
+film_density | S4 designed lab 45Hz | dense                NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_density | S5 designed lab 60Hz | coreshell            room_push  a=1.5 R=0.15 v=0.37 N=  5838 ch= 17513 Tface=466 beam 9.2 mW trap 60.1 W pump 9.2 uW x2 wall 0.034
+film_density | S5 designed lab 60Hz | engineered           room_push  a=1.5 R=0.15 v=0.53 N=  4054 ch= 12162 Tface=487 beam 9.7 mW trap 43.8 W pump 15.2 uW x2 wall 0.039
+film_density | S5 designed lab 60Hz | optimistic           room_push  a=2.5 R=0.15 v=0.07 N= 30120 ch= 90361 Tface=495 beam 8.7 mW trap 292.6 W pump 0.9 uW x2 wall 0.015
+film_density | S5 designed lab 60Hz | dense                NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S0 baseline 60Hz u0.3 T450 | coreshell        NONE  {'pump_exit_class': 48, 'wall_light': 48, 'trap_beam_class': 44}
+film_exact | S0 baseline 60Hz u0.3 T450 | engineered       NONE  {'pump_exit_class': 48, 'wall_light': 44, 'trap_exit_class': 34}
+film_exact | S0 baseline 60Hz u0.3 T450 | optimistic       NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S0 baseline 60Hz u0.3 T450 | dense            NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S1 quiet-air u0.15 | coreshell                room_push  a=4.0 R=0.15 v=0.05 N= 43373 ch=130120 Tface=445 beam 3.1 mW trap 151.8 W pump 4.1 uW x2 wall 0.029
+film_exact | S1 quiet-air u0.15 | engineered               room_push  a=4.0 R=0.15 v=0.09 N= 25100 ch= 75301 Tface=450 beam 3.0 mW trap 83.8 W pump 7.1 uW x2 wall 0.029
+film_exact | S1 quiet-air u0.15 | optimistic               NONE  {'trap_beam_class': 48, 'pump_exit_class': 48, 'wall_light': 48}
+film_exact | S1 quiet-air u0.15 | dense                    NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S2 hot T500 | coreshell                       NONE  {'pump_exit_class': 48, 'wall_light': 48, 'trap_beam_class': 44}
+film_exact | S2 hot T500 | engineered                      NONE  {'pump_exit_class': 48, 'wall_light': 44, 'trap_exit_class': 34}
+film_exact | S2 hot T500 | optimistic                      NONE  {'trap_beam_class': 48, 'trap_exit_class': 48, 'pump_exit_class': 48}
+film_exact | S2 hot T500 | dense                           NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S3 quiet+hot 45Hz | coreshell                 room_push  a=4.0 R=0.15 v=0.10 N= 15688 ch= 47063 Tface=481 beam 4.0 mW trap 69.3 W pump 13.4 uW x2 wall 0.034
+film_exact | S3 quiet+hot 45Hz | engineered                room_push  a=4.0 R=0.15 v=0.12 N= 13073 ch= 39219 Tface=474 beam 3.5 mW trap 50.6 W pump 15.3 uW x2 wall 0.033
+film_exact | S3 quiet+hot 45Hz | optimistic                NONE  {'trap_beam_class': 48, 'pump_exit_class': 48, 'wall_light': 48}
+film_exact | S3 quiet+hot 45Hz | dense                     NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S4 designed lab 45Hz | coreshell              room_push  a=4.0 R=0.15 v=0.10 N= 15688 ch= 47063 Tface=481 beam 4.0 mW trap 69.3 W pump 13.4 uW x2 wall 0.007
+film_exact | S4 designed lab 45Hz | engineered             room_push  a=4.0 R=0.15 v=0.12 N= 13073 ch= 39219 Tface=474 beam 3.5 mW trap 50.6 W pump 15.3 uW x2 wall 0.007
+film_exact | S4 designed lab 45Hz | optimistic             NONE  {'pump_exit_class': 48, 'trap_exit_class': 36, 'heat': 30}
+film_exact | S4 designed lab 45Hz | dense                  NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}
+film_exact | S5 designed lab 60Hz | coreshell              room_push  a=4.0 R=0.15 v=0.10 N= 20917 ch= 62751 Tface=481 beam 4.0 mW trap 92.4 W pump 10.0 uW x2 wall 0.007
+film_exact | S5 designed lab 60Hz | engineered             room_push  a=4.0 R=0.15 v=0.12 N= 17431 ch= 52293 Tface=473 beam 3.5 mW trap 67.5 W pump 11.4 uW x2 wall 0.006
+film_exact | S5 designed lab 60Hz | optimistic             NONE  {'pump_exit_class': 48, 'trap_exit_class': 38, 'heat': 30}
+film_exact | S5 designed lab 60Hz | dense                  NONE  {'heat': 48, 'trap_beam_class': 48, 'trap_exit_class': 48}

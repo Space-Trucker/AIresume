@@ -72,7 +72,7 @@ record("M08", "air conductivity at 600 K", "P", kt, "0.0469 W/m/K +-5 %", rel(kt
 # --- photophoresis ----------------------------------------------------------------------------------------
 Fc = ph.photophoretic_force(a, 1e7, 0.1, slip=False)
 mu, rho, kg = ph.mu_air(ph.T0), ph.rho_air(ph.T0), ph.k_air(ph.T0)
-Fref = 9 * math.pi * mu ** 2 * a * 1e7 * 0.5 / (2 * rho * ph.T0 * (0.1 + 2 * kg))
+Fref = 9 * math.pi * mu ** 2 * a * 1e7 * 0.5 / (2 * (ph.P0 / ph.R_AIR) * (0.1 + 2 * kg))   # rho*T = p/R (RT4 Major 1)
 record("M09", "continuum photophoretic force = Yalamov/Reed formula", "I", Fc, "exact", rel(Fc, Fref) < 1e-12,
        "Reed 1977 eq.; Horvath 2014 review")
 s_big = ph.pp_slip(1e-3, 0.1)
@@ -156,14 +156,14 @@ record("M21", "dynamic loss threshold brackets static F_max/drag on a circle (0.
 dTs = []
 for aa in (4e-6, 5e-6):
     for kp in (0.05, 0.1, 0.2):
-        for C in (1.0, 1.56):
+        for C in (0.67, 1.04):
             T = ph.T0 + 100
             for _ in range(100):
                 F = ph.drag(aa, 1.83, 0.5 * (ph.T0 + T))
                 P = F / ph.force_per_absorbed_watt(aa, kp, T, C)
                 T = 0.5 * T + 0.5 * ph.mote_temperature(P, aa, v_rel=1.83)
             dTs.append(T - ph.T0)
-record("M22", "BYU 1.83 m/s (Nature 2018) reproducible below char/ignition (dT < 700 K) at eta = 1", "C",
+record("M22", "BYU 1.83 m/s (Nature 2018, lateral) reproducible below char/ignition (dT < 700 K) at eta = 1 [one-sided]", "C",
        dict(min=min(dTs), max=max(dTs)), "100 K < dT < 700 K for all cases", 100 < min(dTs) and max(dTs) < 700,
        "R5: Smalley et al. Nature 553, 486 (2018)")
 # Shvedov 2009: carbon agglomerates guided at up to 1 cm/s with < 1 mW in a w = 8.4 um vortex
@@ -186,6 +186,42 @@ T_chk = ph.heat_loss(dsg["Tm"], 1e-6, v_rel=1.0)
 record("M26", "budget: solved T within heat balance (trap heat <= loss at T)", "I",
        dict(heat_in_trap=dsg["P_abs_force"] * math.sqrt(3), loss=T_chk), "trap heat <= loss <= 1.2 x trap+pump",
        dsg["P_abs_force"] * math.sqrt(3) <= T_chk * 1.0001, "self-consistency")
+
+# --- v2 tests (after red team 4) -------------------------------------------------------------------------
+# M27: prefactor <-> creep coefficient. F = 4 pi C_s mu^2 T1/(rho T) with T1 = |J1| I a/(k_p + 2 k_g) (Epstein-consistent);
+# the code's 9 pi/2 form must equal C_s = 9/8 at C_ph = 1.
+Tt = ph.T0
+T1 = 0.5 * 1e7 * a / (0.1 + 2 * ph.k_air(Tt))
+F_creep = 4 * math.pi * (9 / 8) * ph.mu_air(Tt) ** 2 * T1 / (ph.P0 / ph.R_AIR)
+record("M27", "code prefactor = thermal creep with C_s = 9/8 (Epstein-consistent derivation)", "I",
+       ph.photophoretic_force(a, 1e7, 0.1, slip=False) / F_creep, "1 +-1e-9",
+       abs(ph.photophoretic_force(a, 1e7, 0.1, slip=False) / F_creep - 1) < 1e-9, "RT4 Major 4; T5 v2")
+# M28: Epstein thermophoresis limit from the same creep formula (independent textbook form)
+G = 1000.0
+T1_th = 3 * ph.k_air(Tt) * G * a / (2 * ph.k_air(Tt) + 0.1)
+F_ep = 9 * math.pi * ph.mu_air(Tt) ** 2 * a * ph.k_air(Tt) * G / ((ph.P0 / ph.R_AIR) * (2 * ph.k_air(Tt) + 0.1))
+F_cr = 4 * math.pi * 0.75 * ph.mu_air(Tt) ** 2 * T1_th / (ph.P0 / ph.R_AIR)
+record("M28", "creep formula reproduces Epstein (1929) thermophoresis with C_s = 3/4", "P", F_cr / F_ep, "1 +-1e-9",
+       abs(F_cr / F_ep - 1) < 1e-9, "Epstein 1929; Hinds eq. 10.x")
+# M29: exact LG01 trap vs red team 4's independent integration (0.247 / 0.372 / 0.118 at a/w = 1, 2.5, 5 / 6.4)
+lg = [ph.lg01_trap(x * 1e-6, 6.4e-6)[0] for x in (1.0, 2.5, 5.0)]
+record("M29", "exact LG01 restoring efficiency vs RT4 (0.247/0.372/0.118)", "I", lg, "each within 0.02",
+       all(abs(u - v) < 0.02 for u, v in zip(lg, (0.247, 0.372, 0.118))), "RT4 r9_lg01.py")
+# M30: J1/A(alpha a) vs RT4 refracting ray trace (0.06/0.20/0.29/0.38/0.45/0.49 at 1/2/3/5/10/30), within 0.08
+jj = [ph.j1_over_A(x) for x in (1, 2, 3, 5, 10, 30)]
+record("M30", "J1/A(alpha a) straight-ray vs RT4 refracting ray trace", "I", jj, "each within 0.08",
+       all(abs(u - v) < 0.08 for u, v in zip(jj, (0.06, 0.20, 0.29, 0.38, 0.45, 0.49))), "RT4 r5_j1.py")
+# M31: coated-sphere conductivity limits (phi=0 -> shell; phi=1 -> core)
+record("M31", "coated-sphere k_eff limits", "I", [ph.k_coated_sphere(5, 0.02, 0.0), ph.k_coated_sphere(5, 0.02, 1.0)],
+       "0.02 and 5.0", abs(ph.k_coated_sphere(5, 0.02, 0.0) - 0.02) < 1e-12 and abs(ph.k_coated_sphere(5, 0.02, 1.0) - 5) < 1e-9,
+       "Maxwell")
+# M32: budget2 wall light never exceeds the pump power sent (energy conservation, RT4 Minor 1)
+import budget2 as b2  # noqa: E402
+d2 = b2.design(content="sketch", a=1e-6, v=0.3, mote="engineered", arch="room_push", whitener_gain=1.0)
+wall_W = d2["wall_ratio"] * d2["P_pump_total_mW"] * 0 + d2["wall_ratio"] * (4 * math.pi * 3.0 * 1e-3 * 5.0) / (683 * ph.V(405))
+record("M32", "budget2 wall light <= pump power (energy)", "I", dict(wall_W=wall_W, pump_W=d2["P_pump_total_mW"] / 1e3),
+       "wall_W <= pump_W", wall_W <= d2["P_pump_total_mW"] / 1e3 * (1 + 1e-9), "RT4 Minor 1")
+
 
 if __name__ == "__main__":
     n_pass = sum(t["status"] == "PASS" for t in tests)

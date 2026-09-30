@@ -16,9 +16,13 @@ Photophoretic force (Delta-T type):
 * continuum form (Yalamov 1976; Reed 1977):
       F = C_ph * 9 pi mu^2 a I J1 / (2 rho T0 (k_p + 2 k_g));
 * slip correction: [(1 + 3 c_m Kn)(1 + 2 c_t Kn k_p / (k_p + 2 k_g))]^-1, with c_m = 1.14, c_t = 2.18 (Talbot 1980 coefficients);
-* the 9 pi/2 prefactor carries Maxwell's creep coefficient c_s = 3/4. Kinetic theory gives c_s ~ 1.17, i.e. C_ph up to 1.56.
-  The default is C_ph = 1 (conservative); the validation reports both.
-* J1 = 0.5 * A: absorptance A, all heat deposited on the lit face. This is the maximum asymmetry for an opaque sphere.
+* prefactor (red team 4, Major 4; re-derived here): thermal creep gives F = 4 pi C_s mu nu T1/T with surface dipole
+  T1 = |J1| I a / (k_p + 2 k_g), so the 9 pi/2 form corresponds to C_s = 9/8. C_ph = C_s/(9/8) spans 0.67 (Maxwell 3/4)
+  to 1.04 (Talbot 1.17). Default C_ph = 1.0.
+* the creep coefficient is nu/T = mu R/p, so rho and T are taken at the same state (v1 mixed rho(T_f) with T0, which
+  inflated the force by T_f/T0; red team 4, Major 1).
+* J1: J1 = 0.5 A only for skin-deep absorption (alpha a >~ 30). For finite alpha a, j1_over_A(alpha a) from a
+  straight-ray Beer-Lambert model (checked against red team 4's refracting ray trace, within ~0.07).
 
 Force in terms of absorbed power: with P_abs = A pi a^2 I,
     F = C_ph * 9 mu^2 * 0.5 * P_abs / (2 rho T0 a (k_p + 2k_g)) * slip,
@@ -119,12 +123,55 @@ def photophoretic_force(a, I, kp, J1=0.5, Tm=T0, C_ph=1.0, slip=True):
     Tf = 0.5 * (T0 + Tm)
     mu, rho, kg = mu_air(Tf), rho_air(Tf), k_air(Tf)
     s = pp_slip(a, kp, Tf) if slip else 1.0
-    return C_ph * 9 * math.pi * mu ** 2 * a * I * J1 / (2 * rho * T0 * (kp + 2 * kg)) * s
+    return C_ph * 9 * math.pi * mu ** 2 * a * I * J1 / (2 * rho * Tf * (kp + 2 * kg)) * s
 
 
-def force_per_absorbed_watt(a, kp, Tm=T0, C_ph=1.0, slip=True):
-    """F / P_abs (N/W) for an opaque mote (J1 = 0.5 A, P_abs = A pi a^2 I)."""
-    return photophoretic_force(a, 1.0, kp, J1=0.5, Tm=Tm, C_ph=C_ph, slip=slip) / (math.pi * a * a)
+def force_per_absorbed_watt(a, kp, Tm=T0, C_ph=1.0, slip=True, j1A=0.5):
+    """F / P_abs (N/W): J1 = j1A * A, P_abs = A pi a^2 I. j1A = 0.5 for skin-deep absorption."""
+    return photophoretic_force(a, 1.0, kp, J1=j1A, Tm=Tm, C_ph=C_ph, slip=slip) / (math.pi * a * a)
+
+
+def j1_over_A(alpha_a):
+    """|J1|/A for a sphere absorbing with coefficient alpha, lit along z (straight rays, Beer-Lambert, J1 = (3/4) M1/(P a))."""
+    if alpha_a > 200:
+        return 0.5
+    n = 800
+    b = (np.arange(n) + 0.5) / n
+    L = 2 * np.sqrt(1 - b * b)
+    Ab = 1 - np.exp(-alpha_a * L)
+    s_mean = 1 / alpha_a - L * np.exp(-alpha_a * L) / np.maximum(Ab, 1e-300)
+    P = np.sum(Ab * b)
+    M1 = np.sum(Ab * (-L / 2 + s_mean) * b)
+    return float(-0.75 * M1 / P)
+
+
+def absorptance(alpha_a):
+    n = 800
+    b = (np.arange(n) + 0.5) / n
+    return float(np.sum((1 - np.exp(-alpha_a * 2 * np.sqrt(1 - b * b))) * 2 * b) / n)
+
+
+def mote_material(a, alpha_trap, k_core, k_skin=0.0, skin="none"):
+    """Consistent mote: returns (A_trap, J1/A, k_eff).
+    skin='none': absorber dispersed through the mote (alpha = volume absorption).
+    skin='continuous': thin absorbing shell (depth ~ 2/alpha) of conductivity k_skin, which spreads the heat dipole:
+      k_eff = k_core + 4 k_skin / (alpha a)   (red team 4, C1).
+    skin='islands': discontinuous absorber layer (no lateral conduction): k_eff = k_core."""
+    aa = alpha_trap * a
+    k_eff = k_core + (4 * k_skin / aa if skin == "continuous" else 0.0)
+    return absorptance(aa), j1_over_A(aa), k_eff
+
+
+def k_coated_sphere(k_core, k_shell, core_frac):
+    """Effective conductivity of a sphere with a core of radius core_frac*a inside a shell (Maxwell-Garnett /
+    coated-sphere result): k_s [(k_c+2k_s) + 2 phi (k_c-k_s)] / [(k_c+2k_s) - phi (k_c-k_s)], phi = core_frac^3."""
+    phi = core_frac ** 3
+    return k_shell * ((k_core + 2 * k_shell) + 2 * phi * (k_core - k_shell)) / ((k_core + 2 * k_shell) - phi * (k_core - k_shell))
+
+
+def figure_of_merit(j1A, k_eff, T=T0):
+    """(J1/A)/(k_p + 2 k_g) in m K / W: speed, force per kelvin and heat budget all scale with it."""
+    return j1A / (k_eff + 2 * k_air(T))
 
 
 def drag(a, v, T=T0, slip=True):
@@ -144,8 +191,39 @@ def brownian_rms(a, t, T=T0):
 
 
 def eta_lateral(a, w, kappa=0.75):
-    """Lateral/axial force efficiency of a gradient (doughnut-wall) trap: (3/8) g a with g = 2/w, capped at 1."""
+    """v1 linear law (3/8) g a with g = 2/w. Valid only for a << w; kept for reference. Use lg01_trap()."""
     return min(1.0, kappa * a / w)
+
+
+_LG_CACHE = {}
+
+
+def lg01_trap(a, w, n=61):
+    """Exact passive LG01 (doughnut) trap for an opaque sphere lit along z (red team 4, Major 2; checked here).
+    Surface-flux dipole integrated over the lit hemisphere, maximised over mote position (restoring side only).
+    Returns (eta, f_I): eta = lateral restoring force per absorbed watt relative to the ideal axial force per absorbed
+    watt; f_I = mean intensity on the mote at that position, as a fraction of the ring peak 2P/(e pi w^2)."""
+    key = round(a / w, 3)
+    if key in _LG_CACHE:
+        return _LG_CACHE[key]
+    r = a / w
+    th = np.linspace(0, math.pi / 2, n)
+    ph = np.linspace(0, 2 * math.pi, 2 * n)
+    TH, PH = np.meshgrid(th, ph, indexing="ij")
+    sx, sy, cz = np.sin(TH) * np.cos(PH), np.sin(TH) * np.sin(PH), np.cos(TH)
+    dA = np.sin(TH)
+    best_Mx, res = 0.0, (0.0, 0.0)
+    for x0 in np.linspace(0.01, 1.2, 120):
+        X, Y = x0 + r * sx, r * sy
+        r2 = X * X + Y * Y
+        q = 2 * r2 * np.exp(-2 * r2) * cz          # LG01 in units of 2P/(pi w^2), times cos(theta)
+        Mx = np.trapezoid(np.trapezoid(q * sx * dA, ph, axis=1), th)
+        Pq = np.trapezoid(np.trapezoid(q * dA, ph, axis=1), th)
+        if Mx > best_Mx:                            # hot side at +x -> force toward the axis (restoring)
+            best_Mx = Mx
+            res = (float(Mx / (Pq * 2 / 3)), float(Pq / (math.pi * 2 / math.e)))
+    _LG_CACHE[key] = res
+    return res
 
 
 # --- photometry ------------------------------------------------------------------------------
@@ -199,7 +277,7 @@ def uc_lumens(P_abs_pump, I_pump, Tm, emitter="Er_green_red", params=None):
     if params:
         p.update(params)
     s = I_pump / p["I_sat"]
-    q = 1.0 / (1.0 + math.exp((Tm - p["T_q"]) / p["dT_q"]))
+    q = 1.0 / (1.0 + math.exp(min((Tm - p["T_q"]) / p["dT_q"], 700.0)))
     qy = p["QY_max"] * s / (1 + s) * q
     lm = 0.0
     vis_W = 0.0
@@ -214,7 +292,7 @@ def uc_lumens(P_abs_pump, I_pump, Tm, emitter="Er_green_red", params=None):
 def phosphor_lumens(P_abs_pump, lam_pump, Tm, name="cyan_BaSi2O2N2"):
     """Lumens and emitted power of a down-converting phosphor mote; returns (lm, W_out, heat_W)."""
     p = PHOSPHOR[name]
-    q = 1.0 / (1.0 + math.exp((Tm - p["T50"]) / p["dT_q"]))
+    q = 1.0 / (1.0 + math.exp(min((Tm - p["T50"]) / p["dT_q"], 700.0)))
     W_out = P_abs_pump * p["QY"] * q * lam_pump / p["lam_em"]
     return 683 * band_V(p["lam_em"], p["fwhm"]) * W_out, W_out, P_abs_pump - W_out
 
