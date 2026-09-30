@@ -74,6 +74,7 @@ if __name__ == "__main__":
     res = {}
     for name, (L, S) in targets.items():
         home = venue = venue_strict = 0
+        fail = {"air (strict 13 ppb)": 0, "ozone > 20 ppb": 0, "UV 8-h dose": 0, "noise > 55 dB(A)": 0, "no valid format": 0}
         best = {}
         n = 800
         for _ in range(n):
@@ -81,11 +82,16 @@ if __name__ == "__main__":
             cands = [(f, evaluate(f, L, S, u)) for f in fmts]
             cands = [(f, r) for f, r in cands if r]
             if not cands:
+                fail["no valid format"] += 1
                 continue
             def margin(r):
                 return min(13 / max(r["ppb_all"], 1e-9), 30 / max(r["uv"], 1e-9), 10 ** ((55 - r["dBA"]) / 20))
             f, r = max(cands, key=lambda fr: margin(fr[1]))
             best[f["label"]] = best.get(f["label"], 0) + 1
+            fail["air (strict 13 ppb)"] += r["ppb_all"] > 13
+            fail["ozone > 20 ppb"] += r["ppb_o3"] > 20
+            fail["UV 8-h dose"] += r["uv"] > 30
+            fail["noise > 55 dB(A)"] += r["dBA"] > 55
             air_len = r["ppb_all"] <= 50 and r["ppb_o3"] <= 20
             air_str = r["ppb_all"] <= 13
             uv_ok = r["uv"] <= 30
@@ -94,7 +100,8 @@ if __name__ == "__main__":
             venue_strict += air_str and uv_ok and r["dBA"] <= 55
         top = max(best, key=best.get) if best else None
         res[name] = dict(P_home=home / n, P_venue_lenient_air=venue / n, P_venue_strict_air=venue_strict / n,
-                         most_chosen_format=top)
+                         most_chosen_format=top, fail_fraction={k: v / n for k, v in fail.items()})
         print(f"  {name:36s} P(home) {home/n:.2f} | P(venue, lenient air) {venue/n:.2f} | "
               f"P(venue, strict air) {venue_strict/n:.2f} | best format {top}")
+        print("      fails (fraction of draws): " + ", ".join(f"{k} {v/n:.2f}" for k, v in fail.items()))
     save_json("e10c_spark_regrade.json", dict(formats=fmts, results=res))

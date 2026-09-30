@@ -18,7 +18,7 @@ _EOS = _RAD = None
 
 def run_case(E_abs, r0, kappa_mult=1.0, n_core=48, growth=1.03, cfl=0.3, chem=True, t_end=5e-3, rad_on=True,
              profile="gauss", label=None, shell_R=None, pulses=None, geometry="spherical", mix=False,
-             mix_tv=0.35, mix_tau=0.10):
+             mix_tv=0.35, mix_tau=0.10, max_wall=None):
     global _EOS, _RAD
     if _EOS is None:
         _EOS, _RAD = fast(), load_rad()
@@ -27,7 +27,7 @@ def run_case(E_abs, r0, kappa_mult=1.0, n_core=48, growth=1.03, cfl=0.3, chem=Tr
               n_core=n_core, growth=growth, cfl=cfl, profile=profile, shell_R=shell_R, pulses=pulses,
               geometry=geometry, mix=mix, mix_tv=mix_tv, mix_tau=mix_tau)
     E0 = s.total_energy()
-    res = s.run(t_end=t_end)
+    res = s.run(t_end=t_end, max_wall=max_wall)
     res["energy_drift_phase1"] = float("nan")
     if s.phase == 1:
         res["energy_drift_phase1"] = (s.total_energy() + s.W_out + sum(s.E_rad.values()) - E0) / E_abs

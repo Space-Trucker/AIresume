@@ -45,7 +45,7 @@ def work(c):
         return c["label"], "skipped (exists)"
     kw = {k: v for k, v in c.items() if k not in ("label", "E_abs", "r0")}
     try:
-        res = run_case(c["E_abs"], c["r0"], label=c["label"], **kw)
+        res = run_case(c["E_abs"], c["r0"], label=c["label"], max_wall=1500, **kw)
         open(path, "w").write(to_json(res))
         return c["label"], f"eta={res['eta_lm_per_W']:.3g} NO/J={res.get('NO_per_J', float('nan')):.2e} wall={res['wall_s']:.0f}s"
     except Exception as ex:  # record failures, never hide them

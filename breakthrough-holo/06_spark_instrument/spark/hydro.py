@@ -342,8 +342,14 @@ class Spark:
         self.step += 1
 
     # ---------------------------------------------------------------- driver
-    def run(self, t_end=2e-3, T_stop=1200.0, max_steps=3_000_000, verbose=False):
+    def run(self, t_end=2e-3, T_stop=1200.0, max_steps=3_000_000, verbose=False, max_wall=None):
+        import time as _time
+        t_wall0 = _time.time()
+        self.completed = True
         while self.t < t_end and self.step < max_steps:
+            if max_wall and self.step % 500 == 0 and _time.time() - t_wall0 > max_wall:
+                self.completed = False          # recorded, never silently treated as a full run
+                break
             if self.phase == 1:
                 T = self.step_compressible()
                 if self.step % 200 == 0 and self.ready_for_isobaric():
@@ -423,5 +429,6 @@ class Spark:
                                        + getattr(self, "E_rad_at_switch", 0.0)) / self.E_abs if self.E_abs else 0.0,
                     dV_hot=getattr(self, "dV_hot", float("nan")), t_switch=getattr(self, "t_switch", float("nan")),
                     E_mix=getattr(self, "E_mix", 0.0), geometry=self.geo, mix=getattr(self, "mix", False),
+                    completed=getattr(self, "completed", True), last_dt=float(getattr(self, "dt", 0.0)),
                     shock_traj=[list(x) for x in self.shock[::max(1, len(self.shock) // 400)]],
                     audible=self.audible())
