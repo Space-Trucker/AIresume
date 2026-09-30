@@ -45,3 +45,13 @@ Rule: each prediction is committed to git before the run that tests it. Scores a
 | P6 | NO: 1.1×10¹⁶ /J (10 µJ) vs 7.4–7.9×10¹⁶ /J (50–200 mJ) | **PASS** |
 | P7 | O₃ from VUV/EUV photolysis: 2.0×10¹⁶ /J (10 µJ) and 1.8×10¹⁷ /J (ns), i.e. larger than NO | **PASS** (exceeds "comparable") |
 | P8 | withdrawn (estimator artefact) | — |
+
+### Scores, round 2 (atlas, SPARK v2)
+
+| ID | Result | Score |
+|---|---|---|
+| P5 | η rises monotonically with r₀ at fixed ε for every ε (e.g. ε = 10⁹: 0.034 → 0.052 → 0.081 → 0.12 → 0.18 → 0.27 → 0.39 lm/W for r₀ 5.6 → 56 µm) | **PASS** |
+| P9 | Double pulse 5 + 5 µJ: η 0.028 / 0.013 / 0.006 lm/W at 3 / 30 / 300 ns vs 0.038 single (ratio 0.73 / 0.35 / 0.15) | **FAIL**. Mechanism: the reheated kernel is expanded and dilute; emission ∝ n². |
+| P10 | η ∝ r₀ holds, but η/r₀ = 1.9–2.25×10³ lm W⁻¹ m⁻¹ at ε = 3×10⁸ (predicted 3–8×10³) | **FAIL** (proportionality ✓, coefficient 2.5× lower). Mechanism: the isochoric figure of merit ignored the energy that escapes as VUV lines and the time spent cooling below the visible-emitting temperature. |
+| P11 | NO/J: 10 µJ 4.9–10×10¹⁵; 1 mJ 1.7–4.0×10¹⁶ (≥ 3×10¹⁶ only for ε ≥ 10⁹) | **PARTIAL** |
+| P12 | double pulse < 1.2× | **PASS** |
