@@ -110,6 +110,8 @@ Every number below comes from a simulation in `03_simulations/` or a cited sourc
 - Outer layer opaque and non-ablating at 1550 nm (aluminised aramid). It adds a passive safety layer, although the kernel never relies on it.
 - **Touch** is computed against the *virtual geometry*, not the lit voxels: the interlock blanks voxels within 22 mm of the hand, but the finger still "feels" the surface (`holo_engine/demo.py`).
 - **Gestures:** pinch/grab to move, two-hand spread to scale, flick to throw away, poke for buttons. These are the film's interactions (R4 DR-12).
+- **Conformal emitters (optional, idea round):** a sparse grid of flexible micro-LEDs in the glove shows hologram content that lies *on* the hand, such as the film's gauntlet scene. A surface point emitting isotropically is correct for every viewer. The glove is also the one place where the film's **orange accents** can appear.
+- **Known perceptual artefact:** ns point flashes smear into "phantom arrays" during eye saccades, as with PWM LEDs. Splitting each point into 2–4 sub-flashes per frame reduces it, at some cost in efficacy.
 
 ### 3.6b Room setting (part of the product spec)
 
