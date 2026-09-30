@@ -1,0 +1,42 @@
+{
+  "worst: all NO2": {
+    "allowed_P_abs_W": 1.7532710983543702,
+    "multiplier": 1.0,
+    "at_limit": {
+      "NO": 0.0,
+      "NO2": 12.99999999994853,
+      "O3_increment": 0.0,
+      "O3_background": 1.0638297872340423
+    }
+  },
+  "cold-plasma-like (filament data): 70% O3, 25% NO2, 5% NO": {
+    "allowed_P_abs_W": 4.029092815268492,
+    "multiplier": 2.2980432512976576,
+    "at_limit": {
+      "NO": 1.5867477275749144,
+      "NO2": 7.589390764045895,
+      "O3_increment": 19.999999999999996,
+      "O3_background": 1.0638297872340423
+    }
+  },
+  "mixed: 50% NO, 20% NO2, 30% O3": {
+    "allowed_P_abs_W": 7.659027946180987,
+    "multiplier": 4.368421947621102,
+    "at_limit": {
+      "NO": 32.329942903171656,
+      "NO2": 12.999999999999929,
+      "O3_increment": 15.176954820360642,
+      "O3_background": 1.0638297872340423
+    }
+  },
+  "hot-spark-like: 90% NO, 7% NO2, 3% O3": {
+    "allowed_P_abs_W": 21.523210394304837,
+    "multiplier": 12.276031022530765,
+    "at_limit": {
+      "NO": 185.02124412982837,
+      "NO2": 12.999999997655161,
+      "O3_increment": 3.275841890201177,
+      "O3_background": 1.0638297872340423
+    }
+  }
+}

@@ -125,3 +125,32 @@ Quiet (≤ 45 dB(A)) holds only for sparse content or treated rooms.
 | Film contrast, dim (4 cd/m², 9 m) | 22.5 ppb | 44 dB(A) | 0.82 | 0.58 |
 | Film density, dim (10 cd/m², 10 m) | — | 50 dB(A) | 0.64 | 0.30 |
 | Film-exact lit lab | — | — | 0.11 | 0.01 |
+
+---
+
+## 2026-09-30 · Entry 5: Idea round (Sonnet) and the chemistry-speciation lever
+
+**Sonnet idea round.**
+- Same overall verdict: film-exact is impossible; the closest option is a dim-room sparse plasma display.
+- It judged noise unrecoverable ("35–45 dB over") because it lacked subsonic tracing (E6c recovers 15–26 dB in all directions).
+- Its grey-zone pick is a levitated-bead tabletop display; E9 shows 114–142 dB of room ultrasound, so it was rejected.
+- Its nanoparticle-aerosol idea is recorded in T3.
+
+**E5b speciation lever** (from both reviewers). Indoor NO converts to NO₂ only by reacting with O₃, which the projector's MnO₂ stage scrubs. Kinetic box model (k(NO+O₃) = 1.9×10⁻¹⁴ cm³/s, 40 ppb outdoor O₃), limits NO₂ ≤ 13 ppb, O₃ ≤ 20 ppb and NO ≤ 300 ppb:
+
+| Products | Allowed absorbed power |
+|---|---|
+| All NO₂ | 1.75 W |
+| Cold-filament-like (70 % O₃) | 4.0 W (×2.3) |
+| Mixed | 7.7 W (×4.4) |
+| Hot-spark-like (90 % NO) | 21.5 W (×12.3) |
+
+**Consequence (E10 speciation-aware Monte Carlo, K = 24 subsonic tracing, −19.5 dB):** film stroke density at film contrast in a dim lab (4 cd/m²):
+
+| Strokes | P(safe) | P(safe and ≤ 50 dB(A)) |
+|---|---|---|
+| 15 m | 0.81 | 0.66 |
+| 30 m | 0.64 | 0.48 |
+| 57 m | 0.45 | 0.31 |
+
+Film *density* in a dim lab is therefore plausible, and the product tier is decided by two bench measurements: X1 (lm per J) and X2 (NO/NO₂/O₃ speciation per J). A lit-room film match stays out of reach.

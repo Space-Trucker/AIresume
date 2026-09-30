@@ -10,6 +10,7 @@ SCRIPTS = [
     "sim_e1_clean_air_bounds.py",
     "sim_e2_acoustooptic_air.py",
     "sim_e5_air_chemistry.py",
+    "sim_e5b_nox_speciation.py",
     "sim_e6_acoustic_scheduling.py",
     "sim_e6b_multilistener_phase_scheduling.py",
     "sim_e6c_subsonic_tracing.py",

@@ -130,3 +130,26 @@ if __name__ == "__main__":
     axes[0].set_ylabel("stroke luminance (cd/m²)")
     plt.tight_layout(); plt.savefig(f"{RESULTS}/e10_feasibility_map.png", dpi=120); plt.close()
     print("  saved results/e10_feasibility.json and e10_feasibility_map.png")
+
+
+# ---------------------------------------------------------------- speciation-aware Monte Carlo (E5b)
+if __name__ == "__main__":
+    print("  speciation-aware (E5b: NO-rich vs O3-rich products multiply the strict 13-ppb budget by 2.3-12.3x):")
+    spec_targets = {"film density, dim lab (4 cd/m2, 30 m)": (4.0, 3e4),
+                    "film density low end (4 cd/m2, 15 m)": (4.0, 1.5e4),
+                    "film max density (4 cd/m2, 57 m)": (4.0, 5.7e4)}
+    spec = {}
+    for name, (L, n) in spec_targets.items():
+        ok_safe = ok_quiet50 = 0
+        for _ in range(600):
+            sc = sample_params()
+            m = math.exp(rng.uniform(math.log(2.3), math.log(12.3)))
+            b = display_budget(L, n, sc=sc, room=ROOM_ENG, total_gain_db=-19.5)
+            air_ok = b["ppb"] / m <= 13.0
+            ok_safe += air_ok and b["dBA_sched"] <= 85 and b["ultrasound_band_dB"] <= 100
+            ok_quiet50 += air_ok and b["dBA_sched"] <= 50
+        spec[name] = dict(P_safe=ok_safe / 600, P_safe_and_le50dBA=ok_quiet50 / 600)
+        print(f"    {name:40s} P(safe) {ok_safe/600:.2f} | P(safe and <=50 dB(A)) {ok_quiet50/600:.2f}")
+    import json as _j
+    _p = f"{RESULTS}/e10_feasibility.json"
+    _d = _j.load(open(_p)); _d["speciation_aware"] = spec; _j.dump(_d, open(_p, "w"), indent=2)

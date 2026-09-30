@@ -266,5 +266,19 @@
         0.7573173292972404
       ]
     }
+  },
+  "speciation_aware": {
+    "film density, dim lab (4 cd/m2, 30 m)": {
+      "P_safe": 0.6383333333333333,
+      "P_safe_and_le50dBA": 0.4816666666666667
+    },
+    "film density low end (4 cd/m2, 15 m)": {
+      "P_safe": 0.805,
+      "P_safe_and_le50dBA": 0.6633333333333333
+    },
+    "film max density (4 cd/m2, 57 m)": {
+      "P_safe": 0.4533333333333333,
+      "P_safe_and_le50dBA": 0.30833333333333335
+    }
   }
 }
