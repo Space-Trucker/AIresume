@@ -393,3 +393,28 @@ Red team 3 (`05_reviews/red_team_3_T4.md`): 3 critical, 9 major, 7 minor. It rep
 - The verdict is re-worded (v3): home is ruled out by spark noise and regulation; venue feasibility is an open question the bench must settle; UV binds only for lamp-standard certification at 0.2 m.
 
 **Lesson (workflow).** Calling a model regularity a "law" before checking whether it is baked into an input table was an overclaim. New sub-rule for rule 5: before claiming an invariant, test it on the input tables alone.
+
+---
+
+## 2026-09-30 · Entry 13: Owner: "no giving up". Phase 3 opens: the MOTE route
+
+**Why this route.** T1 leaves exactly two doors: light made at the point by air plasma, or by matter at the point. Plasma was pushed to its limit (Entries 9–12). Its walls (ozone, UV, noise, low lm/W) all come from making light by *burning air*. The matter door was only screened, with acoustic beads (E9: ultrasound too loud) and violet optical traps (T3: Class 4).
+
+The new combination has not been analysed in the literature I know. The projector dispenses and holds its own microscopic motes:
+- **trap:** infrared photophoretic traps (the BYU optical-trap display physics, scaled);
+- **light:** the motes emit visible light themselves by upconversion, pumped by the trapping or a co-aligned IR beam, so no visible laser beams cross the room.
+
+**First-principles scaling** (continuum photophoresis; Stokes drag; J₁ = 0.5; k_p = 0.2 W/m/K):
+- v_max ≈ 7.4×10⁻⁸ m/s per W/m² of intensity, independent of mote radius: 0.74 m/s at 1 kW/cm², 2.2 m/s at 3 kW/cm².
+- Mean mote heating ΔT ≈ 16 K per (µm radius × kW/cm²): 5 µm motes run ~150 K hot at 1 kW/cm², 10 µm motes ~310 K.
+- **Light budget** (Φ = 4π L w S; N = S f / v): at ~60 lm per absorbed W (green upconversion), a 5 m sketch needs ~0.02 mW per mote, and **film-exact (lit lab)** needs ~0.35 mW per mote × 900 motes, about 0.3 W absorbed. Plasma needed 50–1000 W with ozone, UV and noise.
+- A 5 µm mote lost to a draft settles at ~1 mm/s. 1000 lost per hour is ~0.3 µg/h, negligible next to room dust.
+
+**New binding questions** (for a MOTE instrument, predictions P15–P21):
+- the heating vs upconversion thermal-quenching trade;
+- trace speed and mote count;
+- robustness to drafts and hand wakes;
+- étendue and optics for hundreds to thousands of traps;
+- per-beam laser class. At 1550 nm the Class 1 CW limit is ~10 mW, which could make each beam Class 1: a consumer route that plasma never had.
+
+Research agents launched: R5 (optical-trap display state of the art), R6 (emitter materials), R7 (CW-IR and particle safety).
