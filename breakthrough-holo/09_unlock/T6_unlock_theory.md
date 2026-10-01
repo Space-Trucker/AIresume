@@ -2,6 +2,29 @@
 
 *Status: theory draft, written 2026-10-01 before idea round 2 reports. Every claim is tagged [DERIVED], [MODEL] (computed in `m15_lightcurtain_static.py` with the validated MOTE physics) or [ASSUMPTION].*
 
+> **Red team 6 correction box (2026-10-01, `05_reviews/red_team_6_lcsv.md`; main-session checks in brackets).** The sections below are kept as written, so the record shows what was claimed. These corrections override them:
+> 1. **C1, gust authority.** The force must cover the instantaneous air speed: authority ≥ U + 5–5.75σ_u for < 10⁻⁴ losses per mote per second. My models used 1.3·drag(U).
+>    - "Quiet 0.1 m/s" therefore means a **still room** (σ_u ≲ 0.03 m/s). Real offices have TI 20–80 %.
+>    - [Checked: the Rice rate ν₀·exp(−A²/2σ²) for 10⁻⁴/s at ν₀ = 1–20 Hz gives A ≈ 4.3–4.9σ per axis, ~5σ for 3 axes.]
+>    - [Open nuance: gust-peak heating lasts ms. The *transient* limits of ITO annealing and carbon oxidation may be far above the steady T_max. This needs measuring (bench).]
+> 2. **C2, modes and the fast plane.** A flat-top of radius r_c with η_shape 0.8 needs NA ≈ 3.6λ/r_c, i.e. ~150× my mode count. At η 0.56 it needs ~12×.
+>    - [Checked: a Gaussian spot of 1/e² radius r_c has NA = λ/(π r_c); a plateau of ρ·λ/NA has NA = ρλ/r_c, so the mode ratio is ≈ π²ρ².]
+>    - The "one DMD per head at an intermediate field plane" fast control is **refuted**: 75–5,800 DMDs per head by étendue, and 72–99 % of motes share footprints across depth.
+> 3. **C3, side scatter.** Aerogel motes (n ≈ 1.04) scatter q(90°) ≈ 10⁻³, not 0.05–0.3. [Physically evident: aerogels are transparent.]
+>    - Terminated scattering illumination needs a white coat (~0.5 µm dense TiO₂, R ≈ 0.35). That costs FOM (ITO 5.3 → ~4.1) and needs two illumination beams per mote.
+>    - **A 1 µm mote cannot carry a coat**, so LCSV-P's light source is unsolved.
+> 4. **Corrected outlook** (RT6 table):
+>    - LCSV-H reaches the **sketch only in a still room**, with a coated ITO-class mote and ~1.4–2.7×10¹⁰ modes.
+>    - **Film density does not fit 100 W in any room.**
+>    - Carbon motes fail on heat at gust peaks.
+>    - LCSV-P keeps a **~3.5× beam reduction vs v4 in quiet rooms**: 6–7 beams per mote, diffraction-limited spots at H10 throws (P_IR ×4.5). This holds only if a 1 µm mote can be made side-visible. Normal rooms fail at gust peaks.
+> 5. **My misreading (M7).** §3c's "✓ hand-occluded" for normal rooms contradicted m16's own output: every normal-room row overheats when a head is blocked. Corrected in §3c.
+> 6. **What survives.**
+>    - The curtain arithmetic, and the curtain as defence in depth.
+>    - Passive Class 1 with a stacking field checker (M17).
+>    - Pinning error is small with integral action (σ_turb 1–2 µm at σ_u 0.1), so authority and diffraction bind, not jitter.
+>    - The content-speed bound B8; tiling + MEMS (I7) as a cost lever; coded-quadrant sensing (I6), which needs ≤ 20–50 µs latency for kHz loops.
+
 ## 1. What cannot be avoided
 
 **Theorem T1 (from T1).** A free-space image visible from all around needs light made or scattered **at the image point**. Air alone cannot do it without plasma. So the image needs **matter at the point**: motes or beads. That matter must be held, positioned and lit. [DERIVED, T1]
@@ -309,9 +332,9 @@ With I1 (curtain) and I3 (terminated visible scattering, a tracked spot per mote
 | Content, room | Mote a, speed v | Motes | Steered beams (3 push + 1 light) | IR / visible | Hand-occluded |
 |---|---|---|---|---|---|
 | Sketch, quiet / calm | 1–1.5 µm, **1.0 m/s** | 526 | **2,105** (v4: 12,200) | 4–8 W / 0.2–0.7 W | overheats near the hand |
-| Sketch, quiet / calm / **normal** | 1–2.5 µm, **0.5 m/s** | 1,053 | 4,211 | 3–38 W / 0.05–2.4 W | ✓ at 1–1.5 µm |
+| Sketch, quiet / calm / **normal** | 1–2.5 µm, **0.5 m/s** | 1,053 | 4,211 | 3–38 W / 0.05–2.4 W | ✓ quiet (1–1.5 µm) and calm (1 µm) only; **normal overheats** (corrected, RT6 M7) |
 | Film density, quiet / calm | 1–1.5 µm, 1.0 m/s | 2,169 | **8,675** (v4: ~50,000) | 15–34 W / 0.9–4 W | overheats near the hand |
-| Film density, **normal** | 1.5–2.5 µm, 0.5 m/s | 4,337 | 17,349 | 133–144 W / 2–6 W | ✓ at 1.5 µm |
+| Film density, **normal** | 1.5–2.5 µm, 0.5 m/s | 4,337 | 17,349 | 133–144 W / 2–6 W | **overheats** (corrected, RT6 M7) |
 
 **Reading.**
 - The curtain plus terminated scattering cut v4's beam count **~6×** at the same content.
