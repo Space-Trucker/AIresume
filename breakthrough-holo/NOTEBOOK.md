@@ -559,3 +559,10 @@ Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. T
 - **B4:** first glowing stroke.
 
 `analyze_b1.py` is self-tested: it recovers a synthetic C_ph = 0.9 after background subtraction. The safety section comes first: Class 3B/4 lasers enclosed and interlocked; nanopowders sealed.
+
+**Entry 18, addendum.**
+- **M8b (owner rule 12).** An independent recomputation of the sketch floor point from physics primitives, without `budget2.design`, gives T_face 495 K and 1 850 channels, against M8's 488 K and 1 845.
+- **M8c corrects my M8 "film-exact: none".** That result came from restricting a ≤ 2.5 µm and 2 pump beams per mote. With a = 2.5–4 µm and 4–6 pump beams per mote from different heads (each ≤ 39 µW), lit-room film-exact is feasible:
+  - green (β-SiAlON) motes: ~6 100 trap beams;
+  - cyan motes: ~10 500.
+- 450/470 nm pumps fail on visible stray light; 405 nm stays.

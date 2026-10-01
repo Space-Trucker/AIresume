@@ -37,9 +37,9 @@ Levers: ITO-skin mote (FOM ≈ 5.3), hot face ≤ 600 K, heat-tolerant phosphor,
 | Accents | **340–420** |
 | Iron-Man sketch | **1 500–1 800** |
 | Film density (dim lab) | **6 100–7 600** |
-| Film-exact in a lit room (50 cd/m²) | **None.** The 405 nm pump's Class 1 limit (39 µW per beam) caps brightness |
+| Film-exact in a lit room (50 cd/m²) | **6 100 (green motes) to 10 500 (cyan)**, using 2.5–4 µm motes and 4–6 µW-class 405 nm pump beams per mote from different heads (M8c). *(Corrected: M8 first reported "none" because it allowed only a ≤ 2.5 µm and 2 pump beams per mote.)* Longer pumps (450/470 nm) fail on visible stray light |
 
-These are model floors. **The bench program (`08_bench/BENCH_PLAN.md`) is now the critical path.** Its gates are:
+These are model floors. M8b, an independent recomputation of one design point without `budget2`, agrees: T_face 495 vs 488 K; channels 1 850 vs 1 845. **The bench program (`08_bench/BENCH_PLAN.md`) is now the critical path.** Its gates are:
 - G1: the force law (C_ph);
 - G2: the mote FOM;
 - G3: a passive pair at room distance;
