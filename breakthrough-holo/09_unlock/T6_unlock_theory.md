@@ -240,6 +240,11 @@ The question: what passes through a 3.5 mm pupil anywhere in or around a random 
   - Étendue allows it: a 10 cm head lens has ~10⁹–10¹⁰ diffraction-limited modes.
   - The mirror array has to sit in a pupil plane shared by all tiles.
 
+**Hollow-silica alternative (main-session check of opus idea 4).**
+- A 2.5 µm hollow silica sphere with an ITO island skin has k_eff = 0.09 / 0.15 / 0.25 W/m/K for 50 / 100 / 200 nm walls (coated-sphere Maxwell, bulk silica 1.38, air core). That gives **FOM 3.4 / 2.5 / 1.6**, below opus's 4.2–5.1 and below the aerogel-body ITO mote (4.0–5.3).
+- Only sub-50 nm walls would compete.
+- **The design point stays: an ITO island skin on a ~2.5 µm silica-aerogel body.** Its two unmeasured numbers are k_eff at 2.5 µm and the skin's α at 1550 nm. Bench B2 settles both.
+
 **Curtain standards analysis (opus, [MEASURED via secondary sources]).**
 - Physics and doses are sound.
 - Corrected 1550 nm cut dose: 10⁴ J/m² over a **1 mm** aperture for t < 0.35 s, i.e. 7.85 mJ. Allowed cut times are 39–157 ms at 200–50 mW, so a standard Type 4 light curtain (6–13 ms) suffices.

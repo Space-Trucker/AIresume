@@ -21,6 +21,7 @@ import json
 import math
 import os
 import sys
+import zlib
 
 import numpy as np
 from scipy import integrate, optimize, signal, special
@@ -639,7 +640,7 @@ def sec_loop(quick=False):
         q = 2 * w_max / (2 * levels)
         best = tune(tp, tf, T, d, fturb[sel][::4], Sturb[sel][::4], 1e-6, q)
         r = simulate(tp, tf, T, d, best[1], u_rms, L, u_rms, 1e-6, w_max, levels, n_motes=100 if not quick else 30,
-                     dur=6.0 if not quick else 1.0, seed=hash((mk, d, levels, kauth)) % 1000)
+                     dur=6.0 if not quick else 1.0, seed=zlib.crc32(f'{mk}{d}{levels}{kauth}{f_fr}{u_rms}{L}'.encode()) % 100000)
         r.update(mote=mk, f_frame=f_fr, latency_us=d * T * 1e6, u_rms=u_rms, L=L, k_auth=kauth, levels=levels,
                  freq_sigma_um=best[0] * 1e6)
         out["sim"].append(r)
