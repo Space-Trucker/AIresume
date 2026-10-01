@@ -1,0 +1,143 @@
+
+=== A. ray trace and wavefront spherical aberration (own trace) ===
+  flat_first  : paraxial focus at 100.7258 mm from the front vertex, BFL 97.1258 mm (EFL R/(n-1) = 97.1258; expected BFL f = 97.1258 mm)
+  curved_first: paraxial focus at 98.3733 mm from the front vertex, BFL 94.7733 mm (EFL R/(n-1) = 97.1258; expected BFL f - tc/n = 94.7733 mm)
+  w 2.5 mm flat_first   h99 3.794 mm  NA 0.0392  W(angle char.)  -0.589  W(int LA)  -0.589  Seidel thin  -0.581  thick | 0.581| waves   LA -0.619 mm (3rd order -0.612)
+  w 2.5 mm curved_first h99 3.794 mm  NA 0.0391  W(angle char.)  -0.146  W(int LA)  -0.146  Seidel thin  -0.146  thick | 0.145| waves   LA -0.154 mm (3rd order -0.153)
+  w 3.0 mm flat_first   h99 4.552 mm  NA 0.0472  W(angle char.)  -1.228  W(int LA)  -1.228  Seidel thin  -1.205  thick | 1.205| waves   LA -0.892 mm (3rd order -0.878)
+  w 3.0 mm curved_first h99 4.552 mm  NA 0.0470  W(angle char.)  -0.303  W(int LA)  -0.303  Seidel thin  -0.303  thick | 0.301| waves   LA -0.222 mm (3rd order -0.221)
+  w 3.5 mm flat_first   h99 5.311 mm  NA 0.0551  W(angle char.)  -2.291  W(int LA)  -2.291  Seidel thin  -2.232  thick | 2.232| waves   LA -1.215 mm (3rd order -1.190)
+  w 3.5 mm curved_first h99 5.311 mm  NA 0.0549  W(angle char.)  -0.564  W(int LA)  -0.564  Seidel thin  -0.561  thick | 0.557| waves   LA -0.303 mm (3rd order -0.300)
+  w 4.0 mm flat_first   h99 6.070 mm  NA 0.0632  W(angle char.)  -3.941  W(int LA)  -3.941  Seidel thin  -3.808  thick | 3.808| waves   LA -1.590 mm (3rd order -1.546)
+  w 4.0 mm curved_first h99 6.070 mm  NA 0.0628  W(angle char.)  -0.966  W(int LA)  -0.966  Seidel thin  -0.956  thick | 0.950| waves   LA -0.396 mm (3rd order -0.391)
+  w 6.0 mm flat_first   h99 9.105 mm  NA 0.0961  W(angle char.) -20.845  W(int LA) -20.845  Seidel thin -19.278  thick |19.278| waves   LA -3.606 mm (3rd order -3.384)
+  w 6.0 mm curved_first h99 9.105 mm  NA 0.0947  W(angle char.)  -4.991  W(int LA)  -4.991  Seidel thin  -4.842  thick | 4.810| waves   LA -0.895 mm (3rd order -0.869)
+  SA ratio flat/curved at h = 1.5 mm: trace 4.012, thin-lens Seidel 3.981
+
+=== B. focal region by exact angular-spectrum propagation from the real exit plane ===
+
+  propagator validation
+    Airy peak / (pi NA^2/lam^2) = 1.0000; first zero / (0.61 lam/NA) = 1.0001; power 1 mm before focus = 0.9979 W
+    disc quadrature: max rel err uniform 7.77e-16, I = r^2 5.86e-04
+  flat_first   w 3.0 mm, a = 4 um (toner-size): best stable contrast 3.10 at -0.7800 mm
+  flat_first   w 2.5 mm: best stable contrast    2.80 at z -0.776 mm (fine:    2.84 at -0.7735 mm), wall r0 6.0 um, stable run 72 um; max any 2.94 at -0.760 (stable False); power 1.0002 W; 10 s
+      P0(z) minimum at -0.7735 mm; contrast 5/10/20 um upstream of it: 2.8/2.7/2.4 (-dlnP0/dz 0.15/0.29/0.51 %/um); best with >= 1 %/um: nan
+  flat_first   w 2.8 mm: best stable contrast    6.94 at z -0.768 mm (fine:    7.04 at -0.7660 mm), wall r0 6.1 um, stable run 68 um; max any 7.13 at -0.760 (stable False); power 1.0002 W; 9 s
+      P0(z) minimum at -0.7660 mm; contrast 5/10/20 um upstream of it: 6.8/6.3/5.2 (-dlnP0/dz 0.53/0.97/1.58 %/um); best with >= 1 %/um: 6.3
+  flat_first   w 2.9 mm: best stable contrast   13.64 at z -0.768 mm (fine:   14.18 at -0.7645 mm), wall r0 6.1 um, stable run 64 um; max any 14.26 at -0.760 (stable False); power 1.0002 W; 10 s
+      P0(z) minimum at -0.7640 mm; contrast 5/10/20 um upstream of it: 13.4/12.0/8.7 (-dlnP0/dz 1.14/2.06/2.99 %/um); best with >= 1 %/um: 13.5
+  flat_first   w 3.0 mm: best stable contrast   23.18 at z -0.764 mm (fine:   23.26 at -0.7635 mm), wall r0 6.1 um, stable run 64 um; max any 23.18 at -0.764 (stable True); power 1.0002 W; 11 s
+      P0(z) minimum at -0.7635 mm; contrast 5/10/20 um upstream of it: 21.4/18.1/11.4 (-dlnP0/dz 1.99/3.36/4.26 %/um); best with >= 1 %/um: 22.6
+  flat_first   w 3.1 mm: best stable contrast   32.88 at z -0.764 mm (fine:   33.04 at -0.7635 mm), wall r0 6.1 um, stable run 60 um; max any 32.88 at -0.764 (stable True); power 1.0003 W; 10 s
+      P0(z) minimum at -0.7630 mm; contrast 5/10/20 um upstream of it: 29.9/23.9/13.3 (-dlnP0/dz 2.82/4.62/5.26 %/um); best with >= 1 %/um: 32.4
+  flat_first   w 3.2 mm: best stable contrast   28.73 at z -0.764 mm (fine:   28.88 at -0.7635 mm), wall r0 6.1 um, stable run 52 um; max any 28.73 at -0.764 (stable True); power 1.0003 W; 11 s
+      P0(z) minimum at -0.7630 mm; contrast 5/10/20 um upstream of it: 26.2/21.1/11.9 (-dlnP0/dz 2.67/4.40/5.11 %/um); best with >= 1 %/um: 28.3
+  flat_first   w 3.5 mm: best stable contrast   12.39 at z -1.112 mm (fine:   13.02 at -1.1085 mm), wall r0 4.7 um, stable run 48 um; max any 13.04 at -1.108 (stable False); power 1.0003 W; 11 s
+      P0(z) minimum at -1.1085 mm; contrast 5/10/20 um upstream of it: 11.9/9.8/5.8 (-dlnP0/dz 2.47/4.05/4.79 %/um); best with >= 1 %/um: 12.8
+  flat_first   w 4.0 mm: best stable contrast    6.83 at z -1.372 mm (fine:    7.03 at -1.3695 mm), wall r0 4.1 um, stable run 40 um; max any 7.05 at -1.368 (stable False); power 1.0004 W; 11 s
+      P0(z) minimum at -1.3690 mm; contrast 5/10/20 um upstream of it: 6.5/5.5/3.3 (-dlnP0/dz 2.09/3.56/4.41 %/um); best with >= 1 %/um: 6.9
+  flat_first   w 6.0 mm: best stable contrast    1.62 at z -2.112 mm (fine:    1.63 at -2.1095 mm), wall r0 1.8 um, stable run 40 um; max any 1.64 at -2.256 (stable False); power 1.0003 W; 14 s
+      P0(z) minimum at -2.1090 mm; contrast 5/10/20 um upstream of it: 1.6/1.5/1.3 (-dlnP0/dz 0.56/1.05/1.64 %/um); best with >= 1 %/um: 1.5
+  curved_first w 3.0 mm: no axially stable pocket; max any 1.14 at -0.384 mm; 9 s
+  curved_first w 4.0 mm: best stable contrast    3.49 at z -0.388 mm (fine:    3.52 at -0.3870 mm), wall r0 4.8 um, stable run 36 um; max any 3.60 at -0.380 (stable False); power 1.0004 W; 11 s
+      P0(z) minimum at -0.3870 mm; contrast 5/10/20 um upstream of it: 3.3/3.0/2.4 (-dlnP0/dz 0.74/1.28/1.80 %/um); best with >= 1 %/um: 3.2
+  curved_first w 6.0 mm: best stable contrast    3.41 at z -0.384 mm (fine:    3.43 at -0.3835 mm), wall r0 5.0 um, stable run 36 um; max any 3.49 at -0.380 (stable False); power 0.9940 W; 13 s
+      P0(z) minimum at -0.3830 mm; contrast 5/10/20 um upstream of it: 3.2/2.9/1.6 (-dlnP0/dz 1.10/1.96/2.70 %/um); best with >= 1 %/um: 3.2
+
+=== C. levitated drawing speed ===
+  5 um hollow carbon-coated glass (rho 400): v_settle 0.308 mm/s (Cunningham 1.0298, mfp 65.2 nm)
+    C    2.7: v =     0.21 mm/s  (burn cap C    9257, particle at  293.3 K at the wall)
+    C    6.8: v =     0.72 mm/s  (burn cap C    9257, particle at  293.6 K at the wall)
+    C   20.7: v =     2.43 mm/s  (burn cap C    9257, particle at  294.5 K at the wall)
+    C   80.0: v =     9.68 mm/s  (burn cap C    9257, particle at  298.5 K at the wall)
+    C  300.0: v =    36.01 mm/s  (burn cap C    9257, particle at  312.9 K at the wall)
+    C 1000.0: v =   114.58 mm/s  (burn cap C    9257, particle at  355.3 K at the wall)
+    C 2500.0: v =   264.39 mm/s  (burn cap C    9257, particle at  434.6 K at the wall)
+  at the burn limit (700 K, film 497 K): viscosity x1.466, slip x1.026 -> speed x0.700
+  contrast needed for 0.3 m/s at 293 K drag: 2432
+  C_opt  20.7, hollow glass + C skin  (rho 400, kp 0.1, Tmax 700 K), burn margin 1: best levitated speed 0.094 m/s at d =  38.8 um (burn cap there 20)
+  C_opt  20.7, hollow glass + C skin  (rho 400, kp 0.1, Tmax 700 K), burn margin 2: best levitated speed 0.067 m/s at d =  31.1 um (burn cap there 39)
+  C_opt  20.7, black polymer          (rho 1100, kp 0.25, Tmax 373 K), burn margin 1: best levitated speed 0.030 m/s at d =  11.4 um (burn cap there 20)
+  C_opt  20.7, black polymer          (rho 1100, kp 0.25, Tmax 373 K), burn margin 2: best levitated speed 0.020 m/s at d =   9.1 um (burn cap there 39)
+  C_opt  20.7, solid glass + C skin   (rho 2500, kp 1.1, Tmax 700 K), burn margin 1: best levitated speed 0.045 m/s at d =  10.8 um (burn cap there 19)
+  C_opt  20.7, solid glass + C skin   (rho 2500, kp 1.1, Tmax 700 K), burn margin 2: best levitated speed 0.032 m/s at d =   8.6 um (burn cap there 38)
+  C_opt  20.7, glassy carbon          (rho 1500, kp 6.3, Tmax 900 K), burn margin 1: best levitated speed 0.016 m/s at d =   8.6 um (burn cap there 20)
+  C_opt  20.7, glassy carbon          (rho 1500, kp 6.3, Tmax 900 K), burn margin 2: best levitated speed 0.011 m/s at d =   6.9 um (burn cap there 39)
+  C_opt  80.0, hollow glass + C skin  (rho 400, kp 0.1, Tmax 700 K), burn margin 1: best levitated speed 0.153 m/s at d =  24.9 um (burn cap there 76)
+  C_opt  80.0, hollow glass + C skin  (rho 400, kp 0.1, Tmax 700 K), burn margin 2: best levitated speed 0.109 m/s at d =  19.9 um (burn cap there 148)
+  C_opt  80.0, black polymer          (rho 1100, kp 0.25, Tmax 373 K), burn margin 1: best levitated speed 0.050 m/s at d =   7.3 um (burn cap there 77)
+  C_opt  80.0, black polymer          (rho 1100, kp 0.25, Tmax 373 K), burn margin 2: best levitated speed 0.033 m/s at d =   5.8 um (burn cap there 150)
+  C_opt  80.0, solid glass + C skin   (rho 2500, kp 1.1, Tmax 700 K), burn margin 1: best levitated speed 0.074 m/s at d =   6.9 um (burn cap there 74)
+  C_opt  80.0, solid glass + C skin   (rho 2500, kp 1.1, Tmax 700 K), burn margin 2: best levitated speed 0.053 m/s at d =   5.2 um (burn cap there 170)
+  C_opt  80.0, glassy carbon          (rho 1500, kp 6.3, Tmax 900 K), burn margin 1: best levitated speed 0.026 m/s at d =   5.5 um (burn cap there 75)
+  C_opt  80.0, glassy carbon          (rho 1500, kp 6.3, Tmax 900 K), burn margin 2: best levitated speed 0.019 m/s at d =   4.4 um (burn cap there 147)
+  5 um hollow sphere: P_lev 54.5 nW absorbed, P_burn 0.505 mW, burn-limited (axially balanced) bound eta fpw P_burn / drag = 0.80 m/s
+  lateral force from the (3/8) a dI/dx linear-gradient law on the computed w = 3 mm pocket: F_lat,max = 5.70 x weight vs eta (C-1) = 8.90 x weight -> equivalent eta 0.26
+
+=== D. retro-reflection geometry ===
+  corner cube e =    0 mm: M = [[+1.000, +0.0000], [+0.0000, -1.000]]  trap x0 = 5 mm -> return focus x = +5.0000 mm at z = -0.0000 mm, return cone axis slope +0.000 mrad
+  corner cube e =    5 mm: M = [[+1.000, +0.0000], [+1.0000, -1.000]]  trap x0 = 5 mm -> return focus x = +5.0000 mm at z = -0.0000 mm, return cone axis slope +5.000 mrad
+  corner cube e =   20 mm: M = [[+1.000, +0.0000], [+4.0000, -1.000]]  trap x0 = 5 mm -> return focus x = +5.0000 mm at z = -0.0000 mm, return cone axis slope +20.000 mrad
+  flat mirror e =    0 mm: M = [[-1.000, +0.0000], [+0.0000, +1.000]]  trap x0 = 5 mm -> return focus x = -5.0000 mm at z = -0.0000 mm, return cone axis slope +0.000 mrad
+  flat mirror e =    5 mm: M = [[-1.000, +0.0000], [-1.0000, +1.000]]  trap x0 = 5 mm -> return focus x = -5.0000 mm at z = -0.0000 mm, return cone axis slope -5.000 mrad
+  flat mirror e =   20 mm: M = [[-1.000, +0.0000], [-4.0000, +1.000]]  trap x0 = 5 mm -> return focus x = -5.0000 mm at z = -0.0000 mm, return cone axis slope -20.000 mrad
+  corner cube, trap +0.2 mm from L2's front focal plane: return focus at z = -0.200 mm (mirror image), x = +5.0000 mm
+  corner cube, trap -0.5 mm from L2's front focal plane: return focus at z = +0.500 mm (mirror image), x = +5.0000 mm
+  corner cube e = 10 mm and trap +0.3 mm: return focus z = -0.2998 mm, x = +4.99700 mm (second-order lateral error 3.00 um)
+  exact 3D trace: real LA1509 as L2 (flat side to the trap), ideal hollow cube, telecentric cone from the trap
+    NA 0.010 cube x0   0 mm e   0 mm: mean return x at trap plane      -0.00 um, rms   0.10 um, best focus (x     -0.0, z   +13.4) um, return cone axis +0.000 mrad
+    NA 0.010 cube x0   0 mm e  20 mm: mean return x at trap plane      -0.00 um, rms   0.10 um, best focus (x     -0.0, z   +13.4) um, return cone axis -0.000 mrad
+    NA 0.010 cube x0   2 mm e   0 mm: mean return x at trap plane   +1999.98 um, rms   2.58 um, best focus (x  +2000.0, z  +334.1) um, return cone axis +0.081 mrad
+    NA 0.010 cube x0   2 mm e  20 mm: mean return x at trap plane   +1997.33 um, rms   3.32 um, best focus (x  +2001.0, z  +427.6) um, return cone axis +8.615 mrad
+    NA 0.010 cube x0   5 mm e   0 mm: mean return x at trap plane   +4998.27 um, rms  15.82 um, best focus (x  +5000.7, z +2038.3) um, return cone axis +1.197 mrad
+    NA 0.010 cube x0   5 mm e  20 mm: mean return x at trap plane   +4955.79 um, rms  20.52 um, best focus (x  +5016.8, z +2623.9) um, return cone axis +23.235 mrad
+    NA 0.010 flat x0   0 mm e   0 mm: mean return x at trap plane      -0.00 um, rms   0.10 um, best focus (x     -0.0, z   +13.4) um, return cone axis -0.000 mrad
+    NA 0.010 flat x0   2 mm e   0 mm: mean return x at trap plane   -1999.98 um, rms   2.58 um, best focus (x  -2000.0, z  +334.1) um, return cone axis -0.081 mrad
+    NA 0.010 flat x0   5 mm e   0 mm: mean return x at trap plane   -4998.27 um, rms  15.82 um, best focus (x  -5000.7, z +2038.3) um, return cone axis -1.197 mrad
+    NA 0.047 cube x0   0 mm e   0 mm: mean return x at trap plane      -0.00 um, rms  10.44 um, best focus (x     -0.0, z  +296.1) um, return cone axis -0.000 mrad
+    NA 0.047 cube x0   0 mm e  20 mm: mean return x at trap plane      -0.00 um, rms  10.43 um, best focus (x     -0.0, z  +295.9) um, return cone axis -0.000 mrad
+    NA 0.047 cube x0   2 mm e   0 mm: mean return x at trap plane   +1999.98 um, rms  21.48 um, best focus (x  +2000.1, z  +619.5) um, return cone axis +0.252 mrad
+    NA 0.047 cube x0   2 mm e  20 mm: mean return x at trap plane   +1995.48 um, rms  24.94 um, best focus (x  +2001.8, z  +714.6) um, return cone axis +8.837 mrad
+    NA 0.047 cube x0   5 mm e   0 mm: mean return x at trap plane   +4998.36 um, rms  83.83 um, best focus (x  +5002.2, z +2338.4) um, return cone axis +1.635 mrad
+    NA 0.047 cube x0   5 mm e  20 mm: mean return x at trap plane   +4950.67 um, rms 106.33 um, best focus (x  +5020.6, z +2934.5) um, return cone axis +23.812 mrad
+    NA 0.047 flat x0   0 mm e   0 mm: mean return x at trap plane      -0.00 um, rms  10.44 um, best focus (x     -0.0, z  +296.1) um, return cone axis -0.000 mrad
+    NA 0.047 flat x0   2 mm e   0 mm: mean return x at trap plane   -1999.98 um, rms  21.48 um, best focus (x  -2000.1, z  +619.5) um, return cone axis -0.252 mrad
+    NA 0.047 flat x0   5 mm e   0 mm: mean return x at trap plane   -4998.36 um, rms  83.83 um, best focus (x  -5002.2, z +2338.4) um, return cone axis -1.635 mrad
+  polarisation through QWP-cube-QWP into a PBS (galvo mirrors ideal):
+    hollow, perfect conductor         : cube reflectance 1.000, fraction of the return sent back to the laser by the PBS 0.000 (120.0 dB isolation); on-axis return-focus factor from the sector polarisation: circular in 1.000, linear in 1.000
+    hollow, bare Al (n = 0.49 + 4.86i): cube reflectance 0.768, fraction of the return sent back to the laser by the PBS 0.000 (38.6 dB isolation); on-axis return-focus factor from the sector polarisation: circular in 0.998, linear in 0.998
+    solid N-BK7, uncoated TIR         : cube reflectance 1.000, fraction of the return sent back to the laser by the PBS 0.609 (2.2 dB isolation); on-axis return-focus factor from the sector polarisation: circular in 0.309, linear in 0.309
+
+=== E. off-axis / misalignment: exact 3D trace + 2D angular spectrum (flat first, w = 3 mm) ===
+  on axis (validation vs part B)                                : best stable 2D contrast  23.17 at z -0.7640 mm (max any  23.35)  [8 s]
+  input astigmatism 0.05 waves (rho^2 cos 2phi at h99)          : best stable 2D contrast  21.10 at z -0.7640 mm (max any  21.24)  [6 s]
+  input astigmatism 0.10 waves (rho^2 cos 2phi at h99)          : best stable 2D contrast  16.26 at z -0.7670 mm (max any  16.72)  [6 s]
+  input astigmatism 0.20 waves (rho^2 cos 2phi at h99)          : best stable 2D contrast   7.50 at z -0.7700 mm (max any   7.59)  [6 s]
+  input astigmatism 0.40 waves (rho^2 cos 2phi at h99)          : best stable 2D contrast   1.07 at z -0.6830 mm (max any   3.64)  [8 s]
+  input coma 0.10 waves (rho^3 cos phi at h99)                  : best stable 2D contrast  21.67 at z -0.7640 mm (max any  22.06)  [5 s]
+  input coma 0.20 waves (rho^3 cos phi at h99)                  : best stable 2D contrast  20.34 at z -0.7610 mm (max any  20.51)  [6 s]
+  input coma 0.40 waves (rho^3 cos phi at h99)                  : best stable 2D contrast  16.84 at z -0.7520 mm (max any  17.00)  [7 s]
+  lens decentered 0.1 mm (beam on axis)                         : best stable 2D contrast  21.74 at z -0.7640 mm (max any  21.90)  [6 s]
+  lens decentered 0.3 mm (beam on axis)                         : best stable 2D contrast  18.32 at z -0.7640 mm (max any  18.36)  [6 s]
+  scan, galvo at front focal point (telecentric), trap at 0.25 mm: best stable 2D contrast  20.78 at z -0.7640 mm (max any  20.87)  [5 s]
+  scan, galvo at the lens, trap at 0.25 mm                      : best stable 2D contrast  21.74 at z -0.7640 mm (max any  21.90)  [5 s]
+  scan, galvo at front focal point (telecentric), trap at 0.50 mm: best stable 2D contrast  17.53 at z -0.7670 mm (max any  18.04)  [6 s]
+  scan, galvo at the lens, trap at 0.50 mm                      : best stable 2D contrast  20.22 at z -0.7670 mm (max any  20.93)  [5 s]
+  scan, galvo at front focal point (telecentric), trap at 1.00 mm: best stable 2D contrast  11.92 at z -0.7700 mm (max any  12.19)  [6 s]
+  scan, galvo at the lens, trap at 1.00 mm                      : best stable 2D contrast  18.14 at z -0.7670 mm (max any  18.18)  [6 s]
+  scan, galvo at front focal point (telecentric), trap at 2.00 mm: best stable 2D contrast   3.58 at z -0.7850 mm (max any   3.72)  [7 s]
+  scan, galvo at the lens, trap at 2.00 mm                      : best stable 2D contrast  12.16 at z -0.7790 mm (max any  12.41)  [6 s]
+  scan, galvo pivot 15 mm before lens, trap at 2.00 mm          : best stable 2D contrast  17.40 at z -0.7790 mm (max any  17.75)  [5 s]
+  scan, galvo pivot 25 mm before lens, trap at 2.00 mm          : best stable 2D contrast  20.93 at z -0.7790 mm (max any  21.53)  [6 s]
+  scan, galvo pivot 35 mm before lens, trap at 2.00 mm          : best stable 2D contrast  21.46 at z -0.7790 mm (max any  22.06)  [5 s]
+  scan, galvo pivot 50 mm before lens, trap at 2.00 mm          : best stable 2D contrast  16.68 at z -0.7790 mm (max any  17.09)  [6 s]
+  scan, galvo pivot 70 mm before lens, trap at 2.00 mm          : best stable 2D contrast   9.74 at z -0.7790 mm (max any   9.82)  [6 s]
+  scan, galvo pivot 30 mm before lens, trap at 3.00 mm          : best stable 2D contrast  22.63 at z -0.7940 mm (max any  22.78)  [6 s]
+  scan, galvo pivot 30 mm before lens, trap at 4.00 mm          : best stable 2D contrast  22.28 at z -0.8180 mm (max any  22.63)  [5 s]
+  scan, galvo pivot 30 mm before lens, trap at 5.00 mm          : best stable 2D contrast  22.36 at z -0.8480 mm (max any  22.69)  [5 s]
+
+=== F. beam clipped by the galvo mirror aperture (flat first, w = 3 mm; aperture modelled at the lens) ===
+  aperture diameter  7.0 mm: best stable contrast   5.18 at -0.8805 mm (max any 5.32 at -0.868 mm)
+  aperture diameter  8.0 mm: best stable contrast   6.77 at -0.8000 mm (max any 6.90 at -0.792 mm)
+  aperture diameter 10.0 mm: best stable contrast  20.94 at -0.7590 mm (max any 21.05 at -0.756 mm)
+EXIT 0

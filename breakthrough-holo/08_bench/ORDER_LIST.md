@@ -48,18 +48,18 @@
 
 | ✓ | Item | Pick | Qty | Est. price | Where |
 |---|---|---|---|---|---|
-| ☐ | Trap laser | 405 nm, 300–500 mW module with a **separate** TTL + analog driver (OdicForce 500 mW class) | 1 | ~$60–150 | OdicForce / Laserland |
+| ☐ | Trap laser | For the simulated lens pocket: a **single-mode fibre-coupled** 405 nm source (20–100 mW) + fibre collimator (astigmatism ≤ 0.1 wave). For BYU-style empirical trapping: a 300–500 mW multimode module with a **separate** TTL + analog driver (OdicForce class) | 1 | ~$300–1,500 SM [estimate]; ~$60–150 MM | Thorlabs / Lasertack / OdicForce |
 | ☐ | Trap lens | Thorlabs **LA1509-A** (f = 100 mm, Ø1"), mounted **flat side toward the laser** | 2 (second for DIY-2c) | $39 each | Thorlabs |
-| ☐ | Expander to a **6 mm (1/e²) beam** + iris | Thorlabs lens pair (e.g. f −25 / +75 for 3×) | 1 | $60–120 | Thorlabs |
+| ☐ | **Zoom** beam expander to a 6.0–6.5 mm (1/e²) beam. **No iris in the trap beam**: clipping destroys the pocket | Variable 2–8× expander (405 nm), or a lens pair with fine-adjustable focal ratio | 1 | $60–300 | Thorlabs / AliExpress |
 | ☐ | Controller + tapper | ESP32 (original, with DAC) dev board, AO3400 MOSFET, 5–12 V push solenoid, 1N4007 diode, resistors | 1 set | $20–40 | Amazon / AliExpress |
 | ☐ | Camera filter | Long-pass ≥ 450 nm, to block 405 nm | 1 | $10–30 | AliExpress |
 | ☐ | Particles to screen | Food-grade activated charcoal powder; graphite powder; nigrosin; a toner refill; plus the DIY-1 spheres as controls | 1 each | $10–20 each | Amazon / art suppliers |
-| ☐ | Galvos (for 2b) | 20–30 kpps ILDA set, **mirrors ≥ 7 mm with a coating that reflects at 405 nm** (ask for the curve), ±15 V supply included | 1 | $95–210 | AliExpress / Amazon |
+| ☐ | Galvos (for 2b) | ILDA set with **mirrors ≥ 10 mm** (7 mm cuts the pocket contrast from 23 to 5) and a coating that reflects at 405 nm (ask for the curve), ±15 V supply included. Mount the pivot 25–35 mm before the lens | 1 | ~$200–515 (larger mirrors) | AliExpress / Amazon |
 | ☐ | DAC (for 2b) | **Helios** (12-bit; turn the galvo size trim down), or the ESP32 + MCP4922 board from `ELECTRONICS.md` | 1 | $99–114 / ~$30 | Helios store / DIY |
 | ☐ | Illumination (for 2b) | Cyan LED or a ≤ 5 mW 488–520 nm module, through the enclosure | 1 | $20–60 | AliExpress |
 
 **DIY-2c add-on (optional, estimate, not sourced by R11):**
-- a metal-coated hollow corner cube (Ø25 mm);
+- a metal-coated **hollow** corner cube (Ø25 mm, beam deviation ≤ 5 arcsec; a TIR cube will not work);
 - a 405 nm polarising beam-splitter cube and quarter-wave plate;
 - the second LA1509-A.
 

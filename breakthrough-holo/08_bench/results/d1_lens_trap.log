@@ -2,12 +2,12 @@ self-test
   PASS Airy peak / (pi NA^2/lam^2): 4.7915e+10 (want 4.7883e+10, tol 1%)
   PASS Airy first zero v: 3.832 (want 3.8317, tol 1%)
   PASS axial first zero z (2 lam/NA^2): 0.00032368 (want 0.000324, tol 2%)
-  PASS power in plane (1 W): 0.99932 (want 1, tol 2%)
+  PASS power in plane (1 W): 0.99933 (want 1, tol 2%)
   PASS BFL curved first (f - tc/n): 0.094781 (want 0.094781, tol 0%)
   PASS BFL flat first (f): 0.097133 (want 0.097133, tol 0%)
-  PASS W040 curved_first: OPD vs LA*NA^2/4: 4.5395e-09 (want 4.5421e-09, tol 3%)
-  PASS W040 flat_first: OPD vs LA*NA^2/4: 1.818e-08 (want 1.8232e-08, tol 3%)
-  PASS SA ratio flat/curved vs thin-lens Seidel: 4.005 (want 3.9813, tol 5%)
+  PASS W040 curved_first: OPD vs LA*NA^2/4: 4.5436e-09 (want 4.5421e-09, tol 3%)
+  PASS W040 flat_first: OPD vs LA*NA^2/4: 1.8245e-08 (want 1.8232e-08, tol 3%)
+  PASS SA ratio flat/curved vs thin-lens Seidel: 4.0156 (want 3.9813, tol 5%)
   PASS marginal focus short (LA -0.69 mm) and axial peak before paraxial focus (-0.40 mm)
   PASS disc average of uniform I (pi a^2), r0 = 0: 1.9635e-11 (want 1.9635e-11, tol 0%)
   PASS disc average of uniform I (pi a^2), r0 = 10 um: 1.9635e-11 (want 1.9635e-11, tol 0%)
@@ -18,44 +18,50 @@ self-test
   PASS SPP focal ring radius, Debye vs analytic: 5.45e-06 (want 5.45e-06, tol 1%)
   PASS SPP on-axis intercept (a = 2.5 um), Debye vs analytic: 0.015325 (want 0.015325, tol 1%)
   PASS vortex power in plane at 30 mm (1 W, input cut at 2.5 w): 0.99999 (want 1, tol 2%)
-  PASS two-grid contrast vs single fine grid (z = 2 mm): 81.879 (want 81.798, tol 3%)
+  PASS two-grid contrast vs single fine grid (z = 2 mm): 81.887 (want 81.806, tol 3%)
 SELF-TEST PASS
 normal (curved first), w 2 mm      NA 0.031  LA  -0.10 mm  W  -0.06 waves
     carbon-coated hollow glass, d=5 um   no axially stable on-axis pocket
     laser-printer toner, d~8 um          no axially stable on-axis pocket
-normal (curved first), w 4 mm      NA 0.063  LA  -0.40 mm  W  -0.96 waves
-    carbon-coated hollow glass, d=5 um   contrast       3.4 (burn cap    7309)  at z  -0.39 mm  run    37 um  wall r   4.8 um  beam     0.003 mW  g_lat      1.0  v_draw  0.000 m/s
-    laser-printer toner, d~8 um          contrast       1.1 (burn cap      17)  at z  -0.47 mm  run     3 um  wall r   3.1 um  beam     0.052 mW  g_lat      0.0  v_draw  0.000 m/s
-normal (curved first), w 6 mm      NA 0.095  LA  -0.90 mm  W  -4.91 waves
-    carbon-coated hollow glass, d=5 um   contrast       3.4 (burn cap    7309)  at z  -0.38 mm  run    34 um  wall r   5.0 um  beam     0.003 mW  g_lat      0.9  v_draw  0.000 m/s
-    laser-printer toner, d~8 um          contrast       1.7 (burn cap      17)  at z  -0.73 mm  run    19 um  wall r   2.8 um  beam     0.248 mW  g_lat      0.3  v_draw  0.001 m/s
+normal (curved first), w 4 mm      NA 0.063  LA  -0.40 mm  W  -0.97 waves
+    carbon-coated hollow glass, d=5 um   contrast       3.4 (burn cap    7309)  at z  -0.39 mm  run    35 um  wall r   4.9 um  beam     0.003 mW  g_lat      1.0  v_draw  0.000 m/s
+    laser-printer toner, d~8 um          contrast       1.1 (burn cap      17)  at z  -0.48 mm  run     3 um  wall r   3.0 um  beam     0.052 mW  g_lat      0.0  v_draw  0.000 m/s
+normal (curved first), w 6 mm      NA 0.095  LA  -0.90 mm  W  -5.01 waves
+    carbon-coated hollow glass, d=5 um   contrast       3.4 (burn cap    7309)  at z  -0.38 mm  run    34 um  wall r   5.0 um  beam     0.003 mW  g_lat      1.0  v_draw  0.000 m/s
+    laser-printer toner, d~8 um          contrast       1.7 (burn cap      17)  at z  -0.74 mm  run    15 um  wall r   2.8 um  beam     0.247 mW  g_lat      0.3  v_draw  0.001 m/s
 backwards (flat first), w 2 mm     NA 0.031  LA  -0.40 mm  W  -0.24 waves
     carbon-coated hollow glass, d=5 um   no axially stable on-axis pocket
     laser-printer toner, d~8 um          no axially stable on-axis pocket
-backwards (flat first), w 3 mm     NA 0.047  LA  -0.90 mm  W  -1.21 waves
-    carbon-coated hollow glass, d=5 um   contrast      20.7 (burn cap    7309)  at z  -0.76 mm  run    61 um  wall r   6.1 um  beam     0.035 mW  g_lat      7.9  v_draw  0.002 m/s
-    laser-printer toner, d~8 um          contrast       3.0 (burn cap      17)  at z  -0.77 mm  run    72 um  wall r   7.3 um  beam     0.135 mW  g_lat      0.8  v_draw  0.002 m/s
-backwards (flat first), w 3.5 mm   NA 0.055  LA  -1.23 mm  W  -2.27 waves
-    carbon-coated hollow glass, d=5 um   contrast      11.7 (burn cap    7309)  at z  -1.10 mm  run    49 um  wall r   4.7 um  beam     0.056 mW  g_lat      4.3  v_draw  0.001 m/s
-    laser-printer toner, d~8 um          contrast       3.9 (burn cap      17)  at z  -0.77 mm  run    75 um  wall r   7.4 um  beam     0.175 mW  g_lat      1.2  v_draw  0.003 m/s
-backwards (flat first), w 4 mm     NA 0.063  LA  -1.59 mm  W  -3.83 waves
-    carbon-coated hollow glass, d=5 um   contrast       6.8 (burn cap    7309)  at z  -1.35 mm  run    41 um  wall r   4.0 um  beam     0.057 mW  g_lat      2.3  v_draw  0.001 m/s
-    laser-printer toner, d~8 um          contrast       3.3 (burn cap      17)  at z  -0.77 mm  run    82 um  wall r   7.5 um  beam     0.149 mW  g_lat      0.9  v_draw  0.002 m/s
-backwards (flat first), w 6 mm     NA 0.096  LA  -3.61 mm  W -19.38 waves
-    carbon-coated hollow glass, d=5 um   contrast       1.6 (burn cap    7309)  at z  -2.06 mm  run    35 um  wall r   1.8 um  beam     0.021 mW  g_lat      0.3  v_draw  0.000 m/s
-    laser-printer toner, d~8 um          contrast       1.7 (burn cap      17)  at z  -0.77 mm  run    97 um  wall r   3.1 um  beam     0.084 mW  g_lat      0.3  v_draw  0.001 m/s
-backwards + 3 mm stop, w 4 mm      NA 0.063  LA  -1.59 mm  W  -3.83 waves
-    carbon-coated hollow glass, d=5 um   contrast       4.7 (burn cap    7309)  at z  -1.44 mm  run    36 um  wall r   3.4 um  beam     0.057 mW  g_lat      1.5  v_draw  0.000 m/s
-    laser-printer toner, d~8 um          contrast       1.9 (burn cap      17)  at z  -0.86 mm  run    82 um  wall r   3.2 um  beam     0.149 mW  g_lat      0.4  v_draw  0.001 m/s
+backwards (flat first), w 3 mm     NA 0.047  LA  -0.90 mm  W  -1.24 waves
+    carbon-coated hollow glass, d=5 um   contrast      23.2 (burn cap    7309)  at z  -0.76 mm  run    65 um  wall r   6.1 um  beam     0.039 mW  g_lat      8.9  v_draw  0.003 m/s
+    laser-printer toner, d~8 um          contrast       3.1 (burn cap      17)  at z  -0.78 mm  run    69 um  wall r   7.3 um  beam     0.141 mW  g_lat      0.8  v_draw  0.002 m/s
+backwards (flat first), w 3.1 mm   NA 0.049  LA  -0.96 mm  W  -1.44 waves
+    carbon-coated hollow glass, d=5 um   contrast      32.4 (burn cap    7309)  at z  -0.76 mm  run    59 um  wall r   6.1 um  beam     0.054 mW  g_lat     12.6  v_draw  0.004 m/s
+    laser-printer toner, d~8 um          contrast       3.4 (burn cap      17)  at z  -0.78 mm  run    71 um  wall r   7.4 um  beam     0.155 mW  g_lat      1.0  v_draw  0.002 m/s
+backwards (flat first), w 3.25 mm  NA 0.051  LA  -1.05 mm  W  -1.70 waves
+    carbon-coated hollow glass, d=5 um   contrast      28.7 (burn cap    7309)  at z  -0.76 mm  run    53 um  wall r   6.1 um  beam     0.048 mW  g_lat     11.1  v_draw  0.003 m/s
+    laser-printer toner, d~8 um          contrast       3.8 (burn cap      17)  at z  -0.78 mm  run    74 um  wall r   7.4 um  beam     0.172 mW  g_lat      1.1  v_draw  0.003 m/s
+backwards (flat first), w 3.5 mm   NA 0.055  LA  -1.23 mm  W  -2.33 waves
+    carbon-coated hollow glass, d=5 um   contrast      12.6 (burn cap    7309)  at z  -1.11 mm  run    49 um  wall r   4.7 um  beam     0.061 mW  g_lat      4.7  v_draw  0.001 m/s
+    laser-printer toner, d~8 um          contrast       4.1 (burn cap      17)  at z  -0.77 mm  run    75 um  wall r   7.4 um  beam     0.183 mW  g_lat      1.2  v_draw  0.003 m/s
+backwards (flat first), w 4 mm     NA 0.063  LA  -1.59 mm  W  -3.96 waves
+    carbon-coated hollow glass, d=5 um   contrast       6.8 (burn cap    7309)  at z  -1.37 mm  run    41 um  wall r   4.1 um  beam     0.058 mW  g_lat      2.3  v_draw  0.001 m/s
+    laser-printer toner, d~8 um          contrast       3.4 (burn cap      17)  at z  -0.77 mm  run    82 um  wall r   7.5 um  beam     0.154 mW  g_lat      0.9  v_draw  0.002 m/s
+backwards (flat first), w 6 mm     NA 0.096  LA  -3.61 mm  W -20.91 waves
+    carbon-coated hollow glass, d=5 um   contrast       1.6 (burn cap    7309)  at z  -2.26 mm  run    35 um  wall r   1.8 um  beam     0.025 mW  g_lat      0.3  v_draw  0.000 m/s
+    laser-printer toner, d~8 um          contrast       1.7 (burn cap      17)  at z  -0.78 mm  run    89 um  wall r   3.1 um  beam     0.087 mW  g_lat      0.3  v_draw  0.001 m/s
+backwards + 3 mm stop, w 4 mm      NA 0.063  LA  -1.59 mm  W  -3.96 waves
+    carbon-coated hollow glass, d=5 um   contrast       4.6 (burn cap    7309)  at z  -1.47 mm  run    36 um  wall r   3.5 um  beam     0.057 mW  g_lat      1.4  v_draw  0.000 m/s
+    laser-printer toner, d~8 um          contrast       1.9 (burn cap      17)  at z  -0.87 mm  run    82 um  wall r   3.2 um  beam     0.155 mW  g_lat      0.4  v_draw  0.001 m/s
 vortex plate, normal, w 2 mm       NA 0.031  LA  -0.10 mm  W  -0.06 waves
     carbon-coated hollow glass, d=5 um   contrast      52.5 (burn cap    7309)  at z  +1.49 mm  run  1585 um  wall r  18.9 um  beam     0.453 mW  g_lat     20.6  v_draw  0.006 m/s
     laser-printer toner, d~8 um          contrast      16.8 (burn cap      17)  at z  +1.31 mm  run  1579 um  wall r  17.3 um  beam     2.857 mW  g_lat      6.3  v_draw  0.014 m/s
-    far above focus, carbon-coated hollow g: 0.3 m/s first reached  47.7 mm above focus, dark core wall at  131 um, needs  13.33 W of 405 nm (wall absorbs 0.20 mW)
+    far above focus, carbon-coated hollow g: 0.3 m/s first reached  47.7 mm above focus, dark core wall at  131 um, needs  13.31 W of 405 nm (wall absorbs 0.20 mW)
     far above focus, laser-printer toner, d: never 0.3 m/s; best 0.014 m/s at 1.5 mm, 0.00 W (burn limit caps the contrast)
-vortex plate, normal, w 4 mm       NA 0.063  LA  -0.40 mm  W  -0.96 waves
-    carbon-coated hollow glass, d=5 um   contrast      80.9 (burn cap    7309)  at z  +1.49 mm  run  1684 um  wall r  21.7 um  beam     1.691 mW  g_lat     32.0  v_draw  0.010 m/s
-    laser-printer toner, d~8 um          contrast      16.8 (burn cap      17)  at z  +0.94 mm  run  1511 um  wall r  16.4 um  beam     3.882 mW  g_lat      6.3  v_draw  0.014 m/s
-    far above focus, carbon-coated hollow g: 0.3 m/s first reached  47.7 mm above focus, dark core wall at  131 um, needs  56.42 W of 405 nm (wall absorbs 0.22 mW)
+vortex plate, normal, w 4 mm       NA 0.063  LA  -0.40 mm  W  -0.97 waves
+    carbon-coated hollow glass, d=5 um   contrast      80.9 (burn cap    7309)  at z  +1.49 mm  run  1687 um  wall r  21.7 um  beam     1.691 mW  g_lat     32.0  v_draw  0.010 m/s
+    laser-printer toner, d~8 um          contrast      16.8 (burn cap      17)  at z  +0.94 mm  run  1514 um  wall r  16.4 um  beam     3.882 mW  g_lat      6.3  v_draw  0.014 m/s
+    far above focus, carbon-coated hollow g: 0.3 m/s first reached  47.7 mm above focus, dark core wall at  131 um, needs  53.97 W of 405 nm (wall absorbs 0.21 mW)
     far above focus, laser-printer toner, d: never 0.3 m/s; best 0.014 m/s at 0.9 mm, 0.00 W (burn limit caps the contrast)
 wrote results/d1_lens_trap.json, results/d1_best_map.png
 exit 0

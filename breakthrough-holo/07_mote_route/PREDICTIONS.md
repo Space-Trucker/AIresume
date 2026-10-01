@@ -53,3 +53,10 @@ These come from `08_bench/sim_d1_lens_trap.py` (21 self-tests) and `08_bench/diy
 | P28 | Irregular black particles (activated charcoal < 10 µm, candle soot, graphite, toner) in the same rig: at least one type traps with gravity-independent behaviour (also holds with the beam horizontal) and reaches | ≥ 0.1 m/s |
 | P29 | Adding a corner-cube return beam (DIY-2c) to the P27 rig: sphere loss speed rises by, and spheres also trap with the beam horizontal | ≥ ×5; yes |
 | P30 | Capture probability against beam 1/e² radius, LA1509 flat side first: peak location; with the curved side first at the same radius, capture is | 2.8–3.6 mm; ≤ ½ of the peak value |
+
+**Model refinement after registration (2026-10-01, independent check `08_bench/results/d1_independent_check.md`).** These do not change the registered intervals above.
+- Infinite-reference-sphere OPD: pocket contrast at w = 3 mm is 23, not 21.
+- Sharp tuning: contrast peaks at ~33 near w = 3.1 mm.
+- Galvo aperture must be ≥ 10 mm.
+- Astigmatism tolerance is 0.1 wave.
+- Optimally sized heavy spheres in a scalable dark core reach ~0.1–0.15 m/s. This sits inside P27's ≤ 2 cm/s only for the lens-pocket rig and spheres of 2–12 µm as registered.

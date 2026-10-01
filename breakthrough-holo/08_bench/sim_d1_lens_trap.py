@@ -77,20 +77,20 @@ def axis_cross(p, d):
 
 
 def pupil(orient, hs):
-    """Paraxial focus zF, and for each input height h: s = sin(theta), W(h) (OPD on the reference sphere, m), LA(h)."""
+    """Paraxial focus zF, and for each input height h: s = sin(theta), W(h), LA(h).
+    W is Hamilton's angle characteristic about F: the optical path to the foot of the perpendicular dropped from the
+    paraxial focus onto each ray, i.e. the OPD on a reference sphere of INFINITE radius, which is the phase the Debye
+    (plane-wave) integral needs. (v1 used a finite sphere through the back vertex: 0.02 wave low at the 1 % radius,
+    contrast 21 instead of 23 at w = 3 mm; found by the independent check d1b_independent_check.py.)"""
     p, d, _ = trace(1e-6, orient)
     zF = axis_cross(p, d)
-    Rr = zF - LENS["tc"]
-    C = np.array([0.0, zF])
-    opl_axis = trace(0.0, orient)[2]                            # the reference sphere passes through the back vertex
+    F = np.array([0.0, zF])
+    p0, d0, opl0 = trace(0.0, orient)
+    opl_axis = opl0 + np.dot(F - p0, d0)
     s, W, LA = [], [], []
     for h in hs:
         p, d, opl = trace(h, orient)
-        q = p - C                                               # intersect |p + t d - C| = Rr, first root t > 0
-        b = np.dot(q, d)
-        c = np.dot(q, q) - Rr * Rr
-        t = -b - math.sqrt(b * b - c)
-        W.append(opl + t - opl_axis)
+        W.append(opl + np.dot(F - p, d) - opl_axis)
         s.append(-d[0])
         LA.append(axis_cross(p, d) - zF)
     return zF, np.array(s), np.array(W), np.array(LA)
@@ -193,7 +193,14 @@ def best_trap(P0, Pw, zs, cap):
     hi = k
     while hi + 1 < len(ok) and ok[hi + 1]:
         hi += 1
+    # the argmax sits where the axial restoring force goes to zero (dP0/dz -> 0-); report the contrast 5 and 10 um
+    # upstream too, where the levitated particle has real axial stiffness (independent check, d1b)
+    up = {}
+    for du in (5e-6, 10e-6):
+        j = int(np.argmin(np.abs(zs - (zs[k] - du))))
+        up[f"contrast_{int(du * 1e6)}um_upstream"] = float(con[j]) if ok[j] else None
     return dict(k=k, contrast=float(con[k]), z_rel_mm=float(zs[k] * 1e3), stable_run_um=float((zs[hi] - zs[lo]) * 1e6),
+                **up,
                 run_hits_window_edge=bool(lo <= 3 or hi >= len(ok) - 4), best_at_edge=bool(k <= 4 or k >= len(ok) - 5))
 
 
@@ -347,6 +354,8 @@ CONFIGS = [
     dict(name="normal (curved first), w 6 mm", orient="curved_first", w=6e-3),
     dict(name="backwards (flat first), w 2 mm", orient="flat_first", w=2e-3),
     dict(name="backwards (flat first), w 3 mm", orient="flat_first", w=3e-3),
+    dict(name="backwards (flat first), w 3.1 mm", orient="flat_first", w=3.1e-3),
+    dict(name="backwards (flat first), w 3.25 mm", orient="flat_first", w=3.25e-3),
     dict(name="backwards (flat first), w 3.5 mm", orient="flat_first", w=3.5e-3),
     dict(name="backwards (flat first), w 4 mm", orient="flat_first", w=4e-3),
     dict(name="backwards (flat first), w 6 mm", orient="flat_first", w=6e-3),
@@ -393,6 +402,7 @@ def run(quick=False):
             g_lat = ETA_LAT * (con - 1)
             row["particles"][pname] = dict(
                 trap=True, contrast=b["contrast"], contrast_cap_burn=cap, z_rel_paraxial_mm=b["z_rel_mm"],
+                contrast_5um_upstream=b["contrast_5um_upstream"], contrast_10um_upstream=b["contrast_10um_upstream"],
                 axial_stable_run_um=b["stable_run_um"], run_hits_window_edge=b["run_hits_window_edge"],
                 best_at_window_edge=b["best_at_edge"], wall_radius_um=float(rs[iw[k]] * 1e6),
                 intercept_frac_axis=float(P0[k]), beam_power_mW=P_beam * 1e3, g_lat=g_lat,

@@ -28,7 +28,7 @@
 | **DIY-0 safety kit** | Eyewear, enclosure, interlock, dump, power meter | ~$750–1,650 (included in DIY-1 totals) | Eyewear, meter, dump, interlock parts |
 | **DIY-1 velocimetry** | The force law measured (gate G1) | **$1.4–2.0k** budget / **$2.6–3.6k** recommended, including DIY-0 | Reference particles, camera |
 | **DIY-2 trap display** | A particle held in air, then a 1–2 cm glyph | **+$0.6–1.5k** (reuses DIY-1 parts) | Trap lens |
-| DIY-2c retro beam (optional) | Return beam for spheres (new experiment) | +$0.3–0.9k [estimate, not sourced] | Corner cube, PBS, quarter-wave plate |
+| DIY-2c retro beam (optional) | Return beam for spheres (new experiment; static first) | +$0.3–0.9k [estimate, not sourced] | Hollow corner cube (≤ 5″), PBS, quarter-wave plate |
 | **DIY-3 glowing particles** | Phosphor and fluorescent screening | +$0.3–1.2k | – |
 | **DIY-4 1550 nm pair** | MOTE trap physics at 1–1.5 m (gate G3) | **$7–11k** (1 W) / **$10–17k** (5 W) | All fibre parts, vortex plates |
 
@@ -123,16 +123,28 @@ I ray-traced a real catalogue lens (Thorlabs LA1509-A, f = 100 mm) and computed 
 
    | Beam 1/e² radius | Spherical aberration (waves at the 1 % radius) | Pocket contrast, 5 µm particle | Pocket contrast, 8 µm particle |
    |---|---|---|---|
-   | 2.5 mm | 0.6 | 2.7 | none |
-   | **3 mm (6 mm beam)** | **1.2** | **≈ 21 (best)** | 3.0 |
-   | 3.5 mm | 2.3 | 12 | 3.9 |
-   | 4 mm | 3.8 | 7 | 3.3 |
-   | 6 mm | 19 | 1.6 | 1.7 |
+   | 2.5 mm | 0.6 | 2.8 | none |
+   | **3.0 mm** | **1.2** | **23** | 3.1 |
+   | **3.1 mm (best)** | **1.4** | **32** | 3.4 |
+   | 3.25 mm | 1.7 | 29 | 3.8 |
+   | 3.5 mm | 2.3 | 13 | 3.9 |
+   | 4 mm | 4.0 | 7 | 3.3 |
+   | 6 mm | 21 | 1.6 | 1.7 |
 
-   Contrast is the light at the pocket wall divided by the light at its centre. The sweet spot is about **1–2 waves** of spherical aberration. The pocket is ~6 µm in radius, so particles of ≤ 5 µm feel it best. The normal orientation (curved side first) gives almost no pocket at these beam sizes. **A 6 mm beam also fits standard 7 mm galvo mirrors.** Diode beams are not clean Gaussians, so treat 6 mm as the starting point and tune the beam size with an iris while watching the capture rate.
+   These numbers come from the corrected simulation (infinite-reference-sphere OPD) and agree with the independent angular-spectrum check within 3 %.
+
+   Contrast is the light at the pocket wall divided by the light at its centre. The sweet spot is about **1–2 waves** of spherical aberration. The pocket is ~6 µm in radius, so particles of ≤ 5 µm feel it best. The normal orientation (curved side first) gives almost no pocket at these beam sizes.
+
+   **The independent check (`results/d1_independent_check.md`)** used a different method (exact angular-spectrum propagation). It confirmed the pocket, at contrast ≈ 23, and found five things that matter for the build:
+   - **The pocket is sharply tuned.** Beam radius 2.9 / 3.0 / 3.1 / 3.25 mm gives contrast 14 / 23 / 33 / 29. **Tune the beam size with a zoom expander, not an iris:** clipping the beam destroys the pocket.
+   - **Galvo mirrors must be ≥ 10 mm.** A 7 mm aperture cuts the contrast from 23 to 5; 8 mm gives 7; 10 mm gives 21.
+   - **Galvo pivot position.** Put it about **25–35 mm before the lens's flat face**, the coma-free position. Contrast then stays at 21–23 out to ±5 mm of scan. Galvos at the lens's front focal plane collapse the pocket (contrast 3.6 at 2 mm off axis).
+   - **The beam must be clean.** Astigmatism ≤ 0.1 wave (contrast 16 at 0.1 wave, 7.5 at 0.2, none at 0.4). Raw diode beams are astigmatic, so use a **single-mode fibre-coupled** 405 nm source or a spatial filter. A multimode diode can still trap BYU-style in its irregular dark rings, but these numbers do not apply to it.
+   - **Axial stiffness.** At the contrast peak the axial restoring force is zero. A levitated particle sits slightly upstream, at contrast ~18–21, and the laser power must be held to about ±10 %.
 
 2. **But a smooth sphere held up by gravity alone is slow.** In one upward beam the push must equal the particle's weight, so the beam power only sets its height. The sideways force it can take is then η × (contrast − 1) × its weight, and its top drawing speed is that factor times its settling speed:
    - **≈ 1–20 mm/s** with a lens pocket or even an ideal $850+ vortex plate (contrast 20–80);
+   - the best case in this model is heavier hollow spheres (d ≈ 20–25 µm) in a dark core sized to them, at ~0.1–0.15 m/s (independent check);
    - a 1 cm glyph at 10 Hz needs **~0.3 m/s**. With a vortex plate that would take 13–56 W of 405 nm, which is impractical and unsafe.
 3. **BYU's traps reach 1.8 m/s because they are not gravity-balanced.** Their traps work the same at 0 g and 2 g (Peatross 2018), and they use **irregular** particles: cellulose "black liquor", soot. Some shape-dependent or still-unexplained force (R8 §1.1) holds them along the beam. So **for a display, use BYU-type irregular black particles, not smooth spheres.** Our sphere model cannot predict their speed; your measurement will.
 4. **New idea for spheres: a return beam.** If a second beam pushes back along the axis, the particle no longer has to balance its weight, and the sideways force can rise toward the particle's burn limit:
@@ -175,7 +187,7 @@ It polls the interlock every second, refuses powers above `--max_mW` or outside 
 ### DIY-2b: drawing (BYU replication)
 
 - **Galvos.** A hobby ILDA set ($95–210) is fine. The particle, not the galvo, limits speed (R11 §7.1). Choose on:
-  - mirror ≥ 7 mm, ideally 10 mm;
+  - **mirror ≥ 10 mm** (a 7 mm aperture destroys the pocket; see above), with the pivot 25–35 mm before the lens;
   - a coating that reflects at 405 nm (ask for the curve; silver is poor at 405 nm);
   - low overshoot.
 - **DAC.**
@@ -216,7 +228,8 @@ This is a new experiment, so the parts cost is an estimate (+$0.3–0.9k).
  before it reaches the diode.
 ```
 
-- **Corner cube:** use a metal-coated hollow one, which preserves polarisation better.
+- **Corner cube:** a metal-coated **hollow** one with beam deviation **≤ 5 arcsec**. A solid TIR cube scrambles polarisation: only 2 dB isolation, and a return-focus factor of 0.31. A 1 arcmin deviation offsets the return focus by 28 µm, far more than the 6 µm pocket.
+- **Field of view:** with a singlet as L2 the return focus shifts along the axis (+0.33 mm at 2 mm off axis, +2 mm at 5 mm), so the retro trap works only within about ±0.5 mm of the axis. Start DIY-2c **static, without galvos**. Scanning needs a flat-field, well-corrected L2, and a telecentric galvo position conflicts with the L1 pocket.
 - **Axial stiffness:** move L2 a fraction of a millimetre so the return focus sits just beyond the trap point.
 - **Feedback into the diode:** isolation is only partial, because the galvo mirrors and cube change polarisation. Measure the power at the PBS dump port. If feedback destabilises the diode, add a 405 nm Faraday isolator (~$1k+, estimate).
 - **Safety:** retro-reflected beams travel back along the path. Keep everything enclosed.
