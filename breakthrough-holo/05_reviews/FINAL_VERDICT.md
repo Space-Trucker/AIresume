@@ -1,3 +1,47 @@
+# Final verdict (v5: unlock program T6–T8 and red teams 6–8 applied; v4 below)
+
+## v5 summary (2026-10-01)
+
+**Answer: not solved. No ping.** The scorecard stays at **4 MET, 5 PARTIAL, 1 NOT MET**. The unlock program sharpened *why*.
+
+**Three architectures were tried after v4. Each was refuted or narrowed by an independent red team that the main session checked:**
+
+| Round | Architecture | Best claim | Red team verdict |
+|---|---|---|---|
+| T6 (m15–m17) | Light-curtain static voxels (holographic flat-top spots, DMD fast plane) | Film density, normal room, passive Class 1 | **RT6:** drafts need authority U + 5.4σ (still rooms only); flat-tops need 12–150× the modes; DMD plane fails on étendue and depth; aerogel motes barely scatter sideways |
+| T7 (m18) | Gaussian static voxels, forward-scatter illumination, hologram-rate (5 kHz) spot-following loop | Still-room sketch and film at 12–48 W, ~10¹⁰ IR modes | **RT7:** visible engine needs 66–220 wall emitters and 10¹¹–10¹² modes; a real thin skin gives J₁ ≈ 0.24, so the force needs twice the light; fixed-spot loop sims omitted the mean wind (spot-following fixes it). **Only the still-room sketch survives,** at w 30 µm with 5 kHz spot-following and ~2–4×10¹⁰ IR modes plus the visible engine |
+| T8 (m19) | POV motes under the crossing-rate rule (moving focus = pulse train) | Sketch in office drafts, ~3 200 channels, 4 W, passive Class 1 | **RT8:** pupil load 2.7–9.1× the AEL (beams run along strokes); the loop loses motes once the force is resolved inside the frame (confirmed by the main session); channels need a mode multiplexer. **Refuted as specified** |
+
+**New results that stand (each double-validated):**
+- **B9.** Under passive Class 1, a *static* photophoretic voxel's mean speed relative to the air is capped at ~2–10 cm/s for buildable spots. In mode terms it is ~7.5×10⁻¹¹ m/s per pixel per head (RT7). That is why static designs need still air and slow content.
+- **The crossing-rate framework.** At 1400–4000 nm a moving focus is a pulse train at any fixed aperture (rules 1 and 2; C5 does not apply). The energy per unit path is speed-independent, so B9 does not bound moving foci (opus round 3, R7, sonnet, RT8).
+- **Physics floors** (opus round 3): no light-to-force mechanism in air beats thermal creep's force per watt (~×2 headroom at best); ~10 mW per pupil is physiological at 1.4–1.8 µm; and s, h ≥ 1, plus étendue.
+- **EN 50689 (child-appealing consumer products):** skin MPE through 1 mm over 10 s, i.e. ~0.785 mW per focus. This is snippet-verified by sonnet and reproduced by RT8, and it is 12× tighter than the eye.
+- **Mote absorber:** a thin skin absorbs ≤ ~0.5–0.6 per pass, with J₁ ≈ 0.24 (RT7). The FOM 5.3 "ideal ITO skin" was optimistic.
+- **Touch stirs the air:** a moving hand clears 1–8 cm of motes. A warm hand's plume (0.1–0.4 m/s) exceeds static budgets, and an isothermal glove helps (m18d).
+
+**Requirements after v5:**
+- **R3:** unchanged, and sharper: 1 µm ITO motes are respirable, and RT8 puts indium in room air at 4–180 % of Japan's worker limit at simulated loss rates.
+- **R6:** fast animation is excluded for static voxels by B9 × B8; it is open only for POV, which needs a new loop and allocation.
+- **R8:** passive Class 1 static voxels need still air. Consumer (EN 50689) skin limits tighten everything ~4–12×.
+- **R10:** NOT MET, with 10¹⁰–10¹² hologram modes or 10³–10⁴ channels with 20–40 kHz loops.
+
+**What would move it** (value of information):
+1. Bench B2 on a real 1 µm skinned mote: A, J₁ and k_eff.
+2. A single-mote 1550 nm trap at w 25–50 µm with a fast steering stage and camera feedback, measuring the profile instability and loss rate.
+3. Draft statistics (U, σ_u) at a hologram position in a real home, with people present.
+4. A notified-body pre-opinion on the crossing-rate classification, EN 50689 skin, and the stall cut.
+
+**Where the research points next.**
+- POV remains the only route that is not bounded by B9. It needs:
+  - a stacking-aware, dose-map-governed allocation shown on real content;
+  - heads with R ≳ 0.25 m;
+  - a loop whose delay is ≪ w²/(4vδ) (passive-pair dark-core spots, idea round 3 sonnet, would remove the loop);
+  - a named mode multiplexer.
+- None of these is ruled out by physics. None is shown.
+
+---
+
 # Final verdict (v4: MOTE route added; red team 4 applied)
 
 *Graded against the requirements frozen in `00_mission/GOAL.md`. History:*

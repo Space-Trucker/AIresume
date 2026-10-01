@@ -752,3 +752,35 @@ Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and satur
 - The physics chain is closed for **slow content in still air**, pending red team 7.
 - **Fast animation and ordinary ventilated rooms are excluded by B9** under passive eye safety.
 - Red team 7 (T7) and idea round 3 ("beat B9", two models) are running.
+
+## 2026-10-01 · Entry 25: Round 3 and red teams 7–8: the static route narrows, POV is refuted as specified
+
+**What happened.**
+1. **Idea round 3, opus:** no force mechanism beats thermal creep. B9 is ~12–57× above the physics floors, so it is engineering, not physics. A moving focus is judged by its crossing rate (rule 2 over pulses), so **B9 does not bound POV**. Opus also proposed a laminar co-flow column and electrostatic common mode.
+2. **T8 (POV-X)**, my design from that:
+   - motes moving at 0.5–0.8 m/s, passive Class 1 by crossing rate;
+   - a sketch at ~3 200 channels and 4 W, holding in office drafts with 20 kHz per-channel loops;
+   - looked like the first full-vision-consistent candidate in my models.
+3. **Red team 7** (T7: 3 critical; I verified each):
+   - the visible engine does not scale (66–220 emitters, 10¹¹–10¹² modes);
+   - a real skin gives J₁ ≈ 0.24, so I_unit doubles;
+   - my fixed-spot loop sims omitted the mean wind.
+4. **Idea round 3, sonnet:**
+   - the EN 50689 child-appealing skin limit is 0.785 mW per focus;
+   - its own simulation confirms the crossing-rate rule, except for strokes that move along themselves;
+   - still-air source terms for a home.
+5. **Red team 8** (T8: 3 critical). I confirmed the loop finding myself: m19b with the force resolved inside each frame loses 16/20 motes in office air at w 35 µm, against 1/20 frame-held.
+   - The pupil load is 2.7–9.1× the AEL, because the beams run along the strokes.
+   - The profile instability grows faster than any 20 kHz loop.
+   - "No hologram engine" is inconsistent with full-field channels.
+
+**My own errors this round, all caught by red teams or by my checks:**
+- no mean wind in m18b/m18c/m19b;
+- the frame-held Gaussian force (it hid the instability);
+- an optimistic s′ for POV;
+- the A ≈ 1 skin;
+- a one-frame plan misalignment in m19b (found by my own debugging).
+
+**Status.** Not solved, and no ping.
+- **Verdict v5** keeps 4/5/1 and records B9, the crossing-rate framework, the physics floors and the EN 50689 skin rule.
+- **The only surviving consistent design** is a still-room *sketch* of static voxels: w ≈ 30 µm, a 5 kHz spot-following hologram, ~10¹⁰ IR modes plus a large visible engine, and a never-made mote. That is far from "a projector".
