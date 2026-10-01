@@ -150,6 +150,36 @@ With ≤ 100 W IR and δ = 3 mm:
 6. **Sensing.** Per-mote 3D position to ~10 µm at ≥ 20 kHz for 10³–10⁴ motes. A candidate is several event cameras with modulated illumination: ~2×10⁸ position samples per second in total. This needs design.
 4. **Safety argument.** Whether IEC 60825-1/-4 accept a monitored-beam interlock as the primary safeguard for a consumer product.
 
+## 3b. Content speed (I5), checked with the existing v4 machinery
+
+**Bound B8, content speed.** Content cannot move faster than its motes can, relative to the air. The heat-limited mote speed is v_max ≈ 0.2–0.5 m/s with today's best-estimate motes (v4/M13). [DERIVED]
+
+**Holographic static voxels are slower still.** Between hologram frames a mote can move at most ~r_c/k, so v ≤ r_c·F_holo/k:
+
+| Hologram device | Content speed |
+|---|---|
+| LCoS (360 Hz) | ≈ 1–2 cm/s |
+| PLM-class (1.44 kHz) | ≈ 4–8 cm/s |
+
+[MODEL]
+
+**Elongated "track" spots** of length ℓ along the motion raise the limit to ℓ·F_holo/k. The cost is IR power ∝ ℓ/r_c for the moving motes only. [DERIVED]
+
+**Hybrid POV channels for a grabbed object** (M13 machinery, best estimate plus certified scheduling, quiet zone):
+
+| Object stroke length | Steered beams | Mote speed |
+|---|---|---|
+| 0.3 m | ~700 | 0.21 m/s |
+| 0.5 m | ~1,160 | 0.21 m/s |
+| 1.0 m | ~2,330 | 0.21 m/s |
+
+[MODEL, `07_mote_route/sim_m13_corrected_floor.py` cell() with custom content]
+
+**Consequences.**
+- Iron-Man "flick" gestures (1–2 m/s) are **not reachable by any photophoretic-mote display**.
+- Hand-speed manipulation (0.3–0.5 m/s) is reachable only for small objects, at hundreds to thousands of steered beams.
+- The practical design treats a fast move as **"dissolve and re-form"**: the object fades or thins during the move, and the motes re-settle within ~1–2 s. This is a UX workaround, not physics, and it counts against R6/R9.
+
 ## 4. What would make the theory "complete"
 
 All of the following must hold:
