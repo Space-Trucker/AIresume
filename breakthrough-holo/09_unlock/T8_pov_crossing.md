@@ -1,6 +1,30 @@
 # T8: fast POV motes under passive Class 1 by the crossing-rate rule ("POV-X")
 
-**Status: candidate full-vision architecture, physics-consistent in my models. NOT yet validated by a red team. No ping.**
+**Status: REFUTED as a full-vision candidate by red team 8** (`05_reviews/red_team_8_pov_x.md`). The main session checked it: m19b with the force resolved inside each frame loses 16/20 motes in office air at w 35 µm, against 1/20 with a frame-held force. **What survives:** the crossing-rate framework (B9 does not bound moving foci), and POV as a research direction.
+
+> **Red team 8 verdict** (3 critical, 11 major, 8 minor; double-validated against m17, m18c, linprog and m19b's own code):
+> 1. **The pupil load is 2.7–9.1× the AEL.** The minimum-power LP pushes each mote with beams running along its stroke, so one pupil on a stroke collects every neighbour's beam within ~12 cm of divergence.
+>    - T8's waist gives 26–88 mW, and 57–88 mW on the project's own Iron-Man outline, against an AEL of 9.6 mW.
+>    - Class 1 then needs w ≈ 11–23 µm, below the diffraction floor of 0.11 m heads.
+>    - A stacking-aware allocation fixes random content, but the compact outline is still ×2.2–4.5 over.
+> 2. **The 20 kHz loop loses motes.** The force tracks the mote within ~2 µs, inside a frame, and a profile instability grows at ~4vδ/w² ≈ 10⁴ /s.
+>    - With the force resolved inside the frame: 3.6–9.9 losses/s per mote in office air and 0.2–0.7 /s in still air at w ≈ 35 µm.
+>    - It holds only with ~2 µm sensing in still air, or w ≥ 50 µm.
+> 3. **"~3 200 channels, no hologram engine" is inconsistent.**
+>    - Tour motes cross the whole field, so a channel needs 46–52 mm·rad per axis, and a 0.22 m head has the étendue of ~2 such channels.
+>    - Sharing a head therefore needs a mode multiplexer, i.e. a hologram or a positioner array. Positioners cannot animate, and they cost 4.5–6.8× the beams in use.
+> - **Majors:**
+>   - the EN 50689 skin margin is 0.75;
+>   - a strict ICNIRP reading needs a 0.6–1 ms stall cut;
+>   - a multi-focus single fault reaches 8 mJ in 5–25 ms;
+>   - IR power is 7.7 W, not 4.4 W, because every mote moves all the time;
+>   - with the realistic mote the hot face at an office gust peak is 593 K, and 655 K with one head occluded;
+>   - the farthest throw's diffraction floor is 32 µm;
+>   - visible light per RT7 C1, with a 39 µW blue photochemical limit;
+>   - 30 Hz flicker at a 4–6 % duty per point;
+>   - indium in room air reaches 4–180 % of Japan's worker limit at the simulated loss rates.
+
+**Original status line (superseded):** candidate full-vision architecture, physics-consistent in my models, not yet validated by a red team.
 
 **Files**
 - `m19_pov_crossing.py`: design model. Output in `results/m19_run.log` and `results/m19_pov_crossing.json`.

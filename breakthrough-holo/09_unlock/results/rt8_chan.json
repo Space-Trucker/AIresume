@@ -1,0 +1,60 @@
+{
+ "segments/still": {
+  "heads_per_element_mean": 4.2595953402820355,
+  "heads_per_element_p90": 5.0,
+  "heads_per_refresh_window_mean": 4.951913640824338,
+  "heads_per_refresh_window_p90": 6.0,
+  "n_el": 8155
+ },
+ "segments/office": {
+  "heads_per_element_mean": 7.551563458001226,
+  "heads_per_element_p90": 9.0,
+  "heads_per_refresh_window_mean": 9.288518155053975,
+  "heads_per_refresh_window_p90": 10.0,
+  "n_el": 8155
+ },
+ "armor/still": {
+  "heads_per_element_mean": 4.456031128404669,
+  "heads_per_element_p90": 5.0,
+  "heads_per_refresh_window_mean": 5.006230529595015,
+  "heads_per_refresh_window_p90": 5.0,
+  "n_el": 5140
+ },
+ "armor/office": {
+  "heads_per_element_mean": 7.105836575875486,
+  "heads_per_element_p90": 9.0,
+  "heads_per_refresh_window_mean": 9.06853582554517,
+  "heads_per_refresh_window_p90": 10.0,
+  "n_el": 5140
+ },
+ "armor_patch": {
+  "0.02": {
+   "uniform_grid_channels": 11994.0,
+   "motes_in_use_x_heads": 1766.4670658682637,
+   "overhead": 6.789823728813558,
+   "peak_per_cell": 23.0
+  },
+  "0.04": {
+   "uniform_grid_channels": 8017.0,
+   "motes_in_use_x_heads": 1766.4670658682637,
+   "overhead": 4.538437288135593,
+   "peak_per_cell": 32.0
+  }
+ },
+ "sensing": {
+  "weak absorber": {
+   "Qabs": 0.44392856245597434,
+   "Qback": 0.001440591835427207,
+   "photons_back_head_per_frame": 888.919887401778,
+   "sigma_back_um": 0.5869576096005943,
+   "photons_30deg_25mm_cam_1p5m": 27852.354007717135
+  },
+  "strong absorber": {
+   "Qabs": 1.0438866722975555,
+   "Qback": 0.013338992233754005,
+   "photons_back_head_per_frame": 8230.914358390764,
+   "sigma_back_um": 0.19289190722820757,
+   "photons_30deg_25mm_cam_1p5m": 148576.39264003944
+  }
+ }
+}

@@ -430,7 +430,7 @@ def contributions(probe, Pel, Lel, B, v, w, f_r=30.0):
 
 
 def expo_case(strokes, name, room, v, w, I_unit, mode="lp", theta_min=0.0, dl=0.5e-3, n_rand=1500, seed=1,
-              include_jumps=True, refine=True):
+              include_jumps=True, refine=True, h_cap=3.0):
     pieces = chain_tour(strokes)
     S = sum(float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum()) for p, lit in pieces if lit)
     J = sum(float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum()) for p, lit in pieces if not lit)
@@ -438,7 +438,7 @@ def expo_case(strokes, name, room, v, w, I_unit, mode="lp", theta_min=0.0, dl=0.
         pieces = [(p, lit) for p, lit in pieces if lit]
     Pel, Tel, Lel, LIT = elements(pieces, dl)
     rng = np.random.default_rng(seed)
-    B, hbar = beam_powers(Pel, Tel, v, w, I_unit, room, mode=mode, theta_min=theta_min, rng_heads=rng)
+    B, hbar = beam_powers(Pel, Tel, v, w, I_unit, room, mode=mode, theta_min=theta_min, rng_heads=rng, h_cap=h_cap)
     ok = np.all(np.isfinite(B), axis=1)
     B[~ok] = 0.0
     probes = np.vstack([Pel[::4], CENTER + (rng.random((n_rand, 3)) * 2 - 1) * (HALF + 0.15)])
@@ -471,7 +471,8 @@ def expo_case(strokes, name, room, v, w, I_unit, mode="lp", theta_min=0.0, dl=0.
                EL_T8_mJm=EL_T8 * 1e3, EL_local_mJm=EL_loc * 1e3,
                s_eff_vs_T8_EL=float(E.max() / (30.0 * 3.5e-3 * EL_T8)),
                ratio_to_AEL=float(E.max() / AEL_IR), w_class1_um=float(w * 1e6 * math.sqrt(AEL_IR / E.max())),
-               fallback_frac=getattr(beam_powers, "fallback_frac", 0.0) if theta_min > 0 else 0.0)
+               fallback_frac=getattr(beam_powers, "fallback_frac", 0.0) if theta_min > 0 else 0.0, h_cap=h_cap,
+               h_max_tour=float(np.nanmax(hbar)))
     return res
 
 
@@ -697,7 +698,7 @@ def cmax_dirs_f(FI, FV, FO, n=800, seed=1):
 
 def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room="office", L=0.03, sig_n=4e-6,
               n_m=100, dur=10.0, seed=0, path="circle", eulerian=False, mean_wind=True, auth=5.4, n_sub=2,
-              lost_mult=1.5, turb_every=4, R_line=0.15, verbose=False, gains=None, search3d=False):
+              lost_mult=1.5, turb_every=4, R_line=0.15, verbose=False, gains=None, search3d=False, exact_lag=False):
     """Vectorised 3D tracking of n_m motes, each carried by LP-allocated beams from the 10 H10 heads.
     path 'circle': the tightest POV loop, radius v/(2 pi f_r) (m19b); 'line': a locally straight stroke (circle of
     radius R_line, a tour-model mote). Spot centred on the plan-predicted position and swept at the plan velocity
@@ -765,6 +766,7 @@ def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room
     lost = np.zeros(n_m, bool)
     t_lost = np.full(n_m, np.inf)
     a_sub = plant_dt(T, tau_act, n_sub)
+    lag_avg = tau_act / (T / n_sub) * (1 - a_sub)
     n_fr = int(dur / T)
     w2 = w * w
     err_s, off_s = [], []
@@ -810,8 +812,13 @@ def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room
             proj = np.einsum("nij,nj->ni", K, dx)
             rho2 = np.sum(dx * dx, axis=1)[:, None] - proj ** 2
             g = np.exp(-2 * rho2 / w2)
-            A = Ac + (A - Ac) * a_sub
-            F = np.einsum("ni,nij->nj", A * g, K)
+            if exact_lag:                                 # exact mean of the exponentially relaxing amplitude
+                A_avg = Ac + (A - Ac) * lag_avg
+                A = Ac + (A - Ac) * a_sub
+                F = np.einsum("ni,nij->nj", A_avg * g, K)
+            else:                                         # end-of-substep amplitude (first runs; optimistic lag)
+                A = Ac + (A - Ac) * a_sub
+                F = np.einsum("ni,nij->nj", A * g, K)
             x = x + (F + uu) * (T / n_sub)
         off = np.linalg.norm(x - (xh + vp * T), axis=1)
         pT, _ = plan(t + T)
@@ -835,6 +842,7 @@ def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room
     lo, hi = poisson_ci(nl, t_eff)
     return dict(f_loop=f_loop, d=d, tau_act_us=tau_act * 1e6, w_um=w * 1e6, v=v, room=room, U=U, sigma=sig,
                 sig_n_um=sig_n * 1e6, path=path, eulerian=eulerian, mean_wind=mean_wind, n_m=n_m, dur=dur,
+                n_sub=n_sub, exact_lag=exact_lag,
                 gains=gains, lost=nl, mote_s=t_eff, rate=nl / max(t_eff, 1e-9), rate_lo=lo, rate_hi=hi,
                 err_p50_um=float(np.nanpercentile(Ee, 50) * 1e6), err_p999_um=float(np.nanpercentile(Ee, 99.9) * 1e6),
                 off_p999_um=float(np.nanpercentile(O, 99.9) * 1e6), sat_frac=sat / (n_fr * n_m),
@@ -895,11 +903,40 @@ def sec_loop(which="key"):
             dict(room="still", w=34e-6, sig_n=2e-6, search3d=True, **base),
             dict(room="office", w=35e-6, v=0.8, search3d=True, **base),
         ]
+    elif which == "attrib":                               # same gains and seed: what changes the loss rate?
+        g = dict(Kp=1290.3, Ki=8.3247e5, Kd=0.08, Ms=float("nan"))
+        a = dict(room="office", w=35e-6, n_m=60, dur=4.0, gains=g)
+        plan = [dict(eulerian=True, mean_wind=False, n_sub=1, **a), dict(eulerian=True, mean_wind=True, n_sub=1, **a),
+                dict(eulerian=True, mean_wind=True, n_sub=2, **a), dict(eulerian=False, mean_wind=True, n_sub=1, **a),
+                dict(eulerian=False, mean_wind=True, n_sub=2, **a), dict(eulerian=False, mean_wind=False, n_sub=1, **a)]
+    elif which == "attrib2":                              # convergence in the intra-frame force update
+        g = dict(Kp=1290.3, Ki=8.3247e5, Kd=0.08, Ms=float("nan"))
+        a = dict(room="office", w=35e-6, n_m=60, dur=4.0, gains=g, eulerian=True, mean_wind=True)
+        b = dict(room="still", w=34e-6, n_m=60, dur=6.0, gains=g, eulerian=True, mean_wind=True)
+        plan = [dict(n_sub=4, **a), dict(n_sub=8, **a), dict(n_sub=1, **b), dict(n_sub=2, **b), dict(n_sub=4, **b)]
+    elif which == "attrib3":                              # exact actuator-lag average: isolate the intra-frame force
+        g = dict(Kp=1290.3, Ki=8.3247e5, Kd=0.08, Ms=float("nan"))
+        a = dict(room="office", w=35e-6, n_m=60, dur=4.0, gains=g, eulerian=True, mean_wind=True, exact_lag=True)
+        b = dict(room="still", w=34e-6, n_m=60, dur=6.0, gains=g, eulerian=True, mean_wind=True, exact_lag=True)
+        plan = [dict(n_sub=1, **a), dict(n_sub=2, **a), dict(n_sub=4, **a), dict(n_sub=8, **a),
+                dict(n_sub=1, **b), dict(n_sub=4, **b)]
+    elif which == "conv":                                 # converged intra-frame force (16 substeps, exact lag)
+        c = dict(n_sub=16, exact_lag=True, eulerian=False, mean_wind=True, n_m=40, dur=2.5)
+        plan = [dict(room="still", w=34e-6, **c), dict(room="still", w=34e-6, sig_n=2e-6, **c),
+                dict(room="still", w=50e-6, **c), dict(room="office", w=50e-6, **c),
+                dict(room="office", w=35e-6, **c), dict(room="still", w=70e-6, **c)]
+    elif which == "upd":                                  # T8 update box (f7c83fe): 20 um spots, converged force
+        c = dict(exact_lag=True, eulerian=False, mean_wind=True, n_m=40, dur=2.0)
+        plan = [dict(room="still", w=20e-6, f_loop=40000.0, tau_act=15e-6, sig_n=2e-6, n_sub=8, **c),
+                dict(room="quiet_office", w=20e-6, f_loop=40000.0, tau_act=15e-6, sig_n=2e-6, n_sub=8, **c),
+                dict(room="still", w=20e-6, f_loop=20000.0, tau_act=30e-6, sig_n=1e-6, n_sub=16, **c),
+                dict(room="still", w=25e-6, f_loop=20000.0, tau_act=30e-6, sig_n=2e-6, n_sub=16, **c)]
     else:  # long
         plan = [dict(room="still", w=34e-6, search3d=True, n_m=200, dur=30.0)]
     for i, kw in enumerate(plan):
         t0 = time.time()
-        r = sim_track(seed=1000 + 17 * i + zlib.crc32(which.encode()) % 997, **kw)
+        sd = 4242 if which in ("attrib", "attrib2", "attrib3") else 1000 + 17 * i + zlib.crc32(which.encode()) % 997
+        r = sim_track(seed=sd, **kw)
         r["wall_s"] = time.time() - t0
         out["runs"].append(r)
         print(f"  {r['f_loop'] / 1e3:4.0f} kHz d{r['d']} {r['room']:12s} U {r['U']:.2f} w {r['w_um']:4.1f} v {r['v']} "
@@ -1088,6 +1125,39 @@ def sec_chan():
     return out
 
 
+# ======================================================================================================================
+# Section misc: indium release vs loss rate, POV flicker duty, channel totals
+# ======================================================================================================================
+def sec_misc():
+    print("== misc ==")
+    out = {}
+    # ITO skin mass per mote: shell 4 pi a^2 t, ITO volume fraction f, density 7140 kg/m^3; In mass fraction of ITO
+    # (90 wt% In2O3, In 82.7 wt% of In2O3) = 0.744
+    tox = {}
+    for t_sk in (0.10e-6, 0.15e-6):
+        m_In = 4 * math.pi * (1e-6) ** 2 * t_sk * 0.6 * 7140 * 0.744
+        for N, rate in ((526, 1e-4), (526, 1e-2), (526, 0.03), (526, 0.11), (526, 0.19), (526, 1.0)):
+            g_per_h = N * rate * m_In * 1e3 * 3600
+            # well-mixed 30 m^3 room, 0.5 air changes per hour plus 0.2 /h deposition for ~1 um particles
+            c_ss = g_per_h / (30.0 * (0.5 + 0.2)) * 1e6         # ug/m^3
+            tox[f"t{t_sk * 1e9:.0f}nm/rate{rate}"] = dict(pg_In_per_mote=m_In * 1e15, ug_In_per_h=g_per_h * 1e6,
+                                                         c_ss_ug_m3=c_ss, frac_of_JP_0p3=c_ss / 0.3)
+    out["indium"] = tox
+    for k, d in tox.items():
+        print(f"  {k:18s}: {d['pg_In_per_mote']:.1f} pg In per mote; {d['ug_In_per_h']:.3f} ug In/h; steady indoor "
+              f"{d['c_ss_ug_m3']:.4f} ug/m^3 = {d['frac_of_JP_0p3'] * 100:.2f} % of Japan's 0.3 ug In/m^3 (workers)")
+    # flicker: each point of a 1 mm wide line is lit for 1 mm / v per refresh
+    fl = {}
+    for f_r in (30.0, 60.0):
+        for v in (0.5, 0.8):
+            fl[f"{f_r:.0f}Hz/{v}"] = dict(on_ms=1e-3 / v * 1e3, duty=1e-3 / v * f_r)
+    out["flicker"] = fl
+    print("  POV point duty (1 mm line): " + "; ".join(f"{k}: {d['on_ms']:.1f} ms on, duty {d['duty'] * 100:.1f} %"
+                                                       for k, d in fl.items()))
+    dump("misc", out)
+    return out
+
+
 def sec_expo2():
     """Stacking-aware allocation (forbid beams within theta_min of the motion unless h > 3), 60 Hz, and the armor at
     T8's own random-head convention with H10, for the corrected design table."""
@@ -1112,6 +1182,123 @@ def sec_expo2():
     return out
 
 
+def armor_moved(S, rot_deg=30.0, dy=0.15):
+    """The armor sketch rotated about the vertical axis and moved off the ceiling/floor-head plane."""
+    c, s_ = math.cos(math.radians(rot_deg)), math.sin(math.radians(rot_deg))
+    Rz = np.array([[c, -s_, 0], [s_, c, 0], [0, 0, 1.0]])
+    return [(np.asarray(p) - CENTER) @ Rz.T + CENTER + np.array([0, dy, 0]) for p in armor(S)]
+
+
+def sec_expo3():
+    """Placement sensitivity: the planar armor outline contains the ceiling/floor heads' axis; rotate and offset it."""
+    print("== expo3: armor placement ==")
+    out = dict(cases=[])
+    Iu = i_unit(0.5)
+    for rot, dy in ((30.0, 0.15), (45.0, 0.3)):
+        st = armor_moved(5.0, rot, dy)
+        for mode, th in (("random", 0.0), ("lp", 0.0), ("lp", 20.0)):
+            t0 = time.time()
+            r = expo_case(st, f"armor rot{rot:.0f} dy{dy}", "still", 0.5, 34.3e-6, Iu, mode=mode, theta_min=th,
+                          include_jumps=True)
+            r["wall_s"] = time.time() - t0
+            out["cases"].append(r)
+            print(f"  armor rot {rot:.0f} dy {dy}: {mode:6s} th_min {th:2.0f}: worst pupil {r['max_mW']:6.1f} mW = "
+                  f"x{r['ratio_to_AEL']:.2f}; median on tour {r['median_on_tour_mW']:.2f}; h_mean {r['h_mean_tour']:.2f};"
+                  f" Class-1 w {r['w_class1_um']:.1f} um  [{r['wall_s']:.0f} s]", flush=True)
+            dump("expo3", out)
+    return out
+
+
+def sec_expo4():
+    """Scheduler with a looser LP-cost cap (h <= 4: hot face ~470-560 K in still air, see phys) on the hard cases."""
+    print("== expo4: scheduler with h_cap 4 ==")
+    out = dict(cases=[])
+    Iu = i_unit(0.5)
+    contents = {"armor": armor(5.0), "aligned": aligned_lines()}
+    for cname in ("armor", "aligned"):
+        for th in (20.0, 30.0):
+            t0 = time.time()
+            r = expo_case(contents[cname], cname, "still", 0.5, 34.3e-6, Iu, mode="lp", theta_min=th, h_cap=4.0)
+            r["wall_s"] = time.time() - t0
+            out["cases"].append(r)
+            print(f"  {cname:8s} th_min {th:2.0f} h_cap 4: worst pupil {r['max_mW']:6.1f} mW = x{r['ratio_to_AEL']:.2f}; "
+                  f"median on tour {r['median_on_tour_mW']:.2f}; h_mean {r['h_mean_tour']:.2f} (max {r['h_max_tour']:.2f},"
+                  f" fallback {r['fallback_frac']:.3f}); Class-1 w {r['w_class1_um']:.1f} um  [{r['wall_s']:.0f} s]",
+                  flush=True)
+            dump("expo4", out)
+    return out
+
+
+def sec_m17x():
+    """T8's own s' recipe (M17: static voxels at 3 mm, 3 random heads of H14, m17's capture) applied to the project's
+    armor sketch, against M17's random segments (XCHECK: m17 code)."""
+    import m17_exposure_field as m17                       # XCHECK
+    print("== m17x: T8's s' recipe on the project's own content ==")
+    out = {}
+    rng = np.random.default_rng(1)
+    for name, strokes in (("armor (planar, head plane)", armor(5.0)), ("armor rotated 30, dy 0.15", armor_moved(5.0)),
+                          ("m17 random segments", None)):
+        if strokes is None:
+            motes = m17.image(5.0, 3e-3, rng=rng)
+        else:
+            pts = []
+            for st in strokes:                                 # uniform arc-length resampling at 3 mm
+                st = np.asarray(st, float)
+                cum = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(st, axis=0), axis=1))])
+                if cum[-1] < 3e-3:
+                    continue
+                sq = np.arange(0.0, cum[-1], 3e-3)
+                pts.append(np.stack([np.interp(sq, cum, st[:, k]) for k in range(3)], 1))
+            motes = np.vstack(pts)
+        beams = m17.beams_for(motes, 3, rng)
+        E = m17.exposure(motes, beams, 1e-3 / 3, 34.3e-6)
+        s_static = float(E.max() / 1e-3)
+        s_prime = 1 + (s_static - 1) * 3e-3 / 3.5e-3
+        out[name] = dict(n=len(motes), s_static=s_static, s_prime=s_prime, median_s=float(np.median(E) / 1e-3))
+        print(f"  {name:28s}: N {len(motes)}  s_static {s_static:.2f} (median {np.median(E) / 1e-3:.2f})  ->  T8's s' "
+              f"{s_prime:.2f} (T8 uses 3.0 for a sketch)")
+    dump("m17x", out)
+    return out
+
+
+def sec_xm19b():
+    """XCHECK: m19b's own simulator (working-tree version with the MEAN_WIND switch) at T8's office point, 20 motes x 6 s
+    (the run in this review was made by an identical scratch script; its JSON is copied to results/rt8_xm19b.json)."""
+    import m19b_pov_track as m19b                          # XCHECK
+    import m18b_holo_loop as m18b                          # XCHECK
+    case = ("channel 20 kHz", 20000.0, 2, 0.03e-3)
+    out = []
+    for mw in (False, True):
+        for w in (35e-6, 31e-6):
+            r = m19b.simulate(case, m18b.DRAFTS[4], w, v_plan=0.5, n_motes=20, dur=6.0,
+                              seed=zlib.crc32(f"rt8x{mw}{w}".encode()) % 100000, mean_wind=mw)
+            r["mean_wind"] = mw
+            out.append(r)
+            print(f"  m19b office w {w * 1e6:.0f} mean wind {mw}: lost {r['lost']}/20 in {r['mote_seconds']:.0f} mote-s", flush=True)
+            dump("xm19b", out)
+    return out
+
+
+def sec_nsub():
+    """Integration checks for the loop: (1) no sensor noise -> 1/2/4 substeps identical; (2) loss rate vs substeps with
+    exact lag (converges by 16); results also in results/rt8_loop_nsub.json (first produced interactively, same calls)."""
+    g = dict(Kp=1290.3, Ki=8.3247e5, Kd=0.08, Ms=float("nan"))
+    out = dict(no_noise=[], nsub=[])
+    for sn in (1e-9, 4e-6):
+        for n in (1, 2, 4):
+            r = sim_track(room="office", w=35e-6, n_m=40, dur=1.5, gains=g, eulerian=True, mean_wind=True, n_sub=n,
+                          sig_n=sn, exact_lag=True, seed=77)
+            out["no_noise"].append(dict(sig_n=sn, n_sub=n, lost=r["lost"], off_p999_um=r["off_p999_um"]))
+            print(f"  noise {sn * 1e6:.3f} um n_sub {n}: lost {r['lost']}/40, offset p99.9 {r['off_p999_um']:.2f} um", flush=True)
+    for n in (4, 8, 16, 32):
+        r = sim_track(room="office", w=35e-6, n_m=40, dur=1.0, gains=g, eulerian=True, mean_wind=True, n_sub=n,
+                      exact_lag=True, seed=4242)
+        out["nsub"].append(dict(n_sub=n, lost=r["lost"], mote_s=r["mote_s"], rate=r["rate"]))
+        print(f"  n_sub {n}: lost {r['lost']}/40 in {r['mote_s']:.0f} mote-s (rate {r['rate']:.2f} /s)", flush=True)
+    dump("loop_nsub_rerun", out)
+    return out
+
+
 if __name__ == "__main__":
     secs = sys.argv[1:] or ["std"]
     for s in secs:
@@ -1121,11 +1308,23 @@ if __name__ == "__main__":
             sec_expo()
         elif s == "expoq":
             sec_expo(quick=True)
+        elif s == "misc":
+            sec_misc()
         elif s == "phys":
             sec_phys()
         elif s == "chan":
             sec_chan()
         elif s == "expo2":
             sec_expo2()
+        elif s == "expo3":
+            sec_expo3()
+        elif s == "xm19b":
+            sec_xm19b()
+        elif s == "nsub":
+            sec_nsub()
+        elif s == "m17x":
+            sec_m17x()
+        elif s == "expo4":
+            sec_expo4()
         elif s.startswith("loop"):
             sec_loop(s[5:] if len(s) > 4 else "key")

@@ -43,7 +43,10 @@ MEAN_WIND = {"still, L 3 cm": 0.0, "still, L 10 cm": 0.0, "home, L 3 cm": 0.05, 
 
 
 def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, dur=6.0, seed=0, fs_t=4000.0,
-             auth=5.4, r_lost_mult=1.5, mean_wind=True):
+             auth=5.4, r_lost_mult=1.5, mean_wind=True, n_sub=1):
+    """n_sub > 1 (red team 8 M/C2): resolve the Gaussian force inside each frame. The spot is swept along the plan
+    from x_hat during the frame, and the force follows the mote's offset at every substep (the mote responds in ~2 us).
+    n_sub = 1 is the original frame-held force."""
     cname, f_fr, d, tau_lc = case
     dname, u_rms, L, Uc = draft
     U_mean = MEAN_WIND.get(dname, 0.0) if mean_wind else 0.0
@@ -113,6 +116,8 @@ def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, 
         e_prev = e
         F_cmd = np.zeros((n_motes, 3))
         off = np.zeros(n_motes)
+        A_sel = np.zeros((n_motes, 3))
+        K_sel = np.zeros((n_motes, 3, 3))
         for i in range(n_motes):
             if lost[i]:
                 continue
@@ -131,10 +136,23 @@ def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, 
             g = np.exp(-2 * rho2 / w2)
             F_cmd[i] = (a * g) @ Kb
             off[i] = math.sqrt(np.sum(dx ** 2))
-        for ax in range(3):
-            S = np.vstack([x[:, ax], vel[:, ax], F[:, ax]])
-            S = Ad @ S + Bd[:, [0]] * uu[:, ax] + Bd[:, [1]] * F_cmd[:, ax]
-            x[:, ax], vel[:, ax], F[:, ax] = S
+            A_sel[i], K_sel[i] = a, Kb
+        if n_sub == 1:
+            for ax in range(3):
+                S = np.vstack([x[:, ax], vel[:, ax], F[:, ax]])
+                S = Ad @ S + Bd[:, [0]] * uu[:, ax] + Bd[:, [1]] * F_cmd[:, ax]
+                x[:, ax], vel[:, ax], F[:, ax] = S
+        else:                                         # overdamped mote, force re-evaluated every substep
+            h = T / n_sub
+            for j in range(n_sub):
+                c = x_hat + vp * (j * h)
+                dx = x - c
+                proj = np.einsum("nij,nj->ni", K_sel, dx)
+                rho2 = np.sum(dx * dx, axis=1)[:, None] - proj ** 2
+                Fd = np.einsum("ni,nij->nj", A_sel * np.exp(-2 * rho2 / w2), K_sel)
+                F = Fd + (F - Fd) * math.exp(-h / tau_F)
+                x = x + (F + uu) * h
+            off = np.linalg.norm(x - (x_hat + vp * T), axis=1) * ~lost
         hist = np.roll(hist, 1, axis=0)
         hist[0] = x
         phist = np.roll(phist, 1, axis=0)

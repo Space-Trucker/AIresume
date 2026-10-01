@@ -1,0 +1,247 @@
+# rt8_run.log: red team 8 console output. Fast sections rerun in one pass; long background sections appended below.
+Thu Oct  1 19:06:45 UTC 2026
+== std: standards arithmetic for T8's design rows ==
+  sketch       still   v 0.5: rule-2 ratio at 0.35/1/3/10 s 0.13 / 0.24 / 0.47 / 1.00; rule 1 margin 276x; ICNIRP strict H(0.35 s) 7762 J/m^2 (margin 1.29); EN 50689 skin 1.05 mW (margin 0.75); stall to AEL 1.65 s at P_focus 15.9 mW, 0.77 s at the authority cap 19.2 mW; strict-reading stall 0.96 ms
+  sketch       office  v 0.5: rule-2 ratio at 0.35/1/3/10 s 0.12 / 0.24 / 0.47 / 1.00; rule 1 margin 346x; ICNIRP strict H(0.35 s) 8553 J/m^2 (margin 1.17); EN 50689 skin 1.04 mW (margin 0.75); stall to AEL 1.67 s at P_focus 15.8 mW, 0.30 s at the authority cap 26.3 mW; strict-reading stall 0.57 ms
+  sketch       still   v 0.8: rule-2 ratio at 0.35/1/3/10 s 0.13 / 0.24 / 0.47 / 1.00; rule 1 margin 267x; ICNIRP strict H(0.35 s) 7611 J/m^2 (margin 1.31); EN 50689 skin 1.05 mW (margin 0.75); stall to AEL 0.31 s at P_focus 25.4 mW, 0.28 s at the authority cap 28.9 mW; strict-reading stall 0.67 ms
+  film_density still   v 0.5: rule-2 ratio at 0.35/1/3/10 s 0.13 / 0.24 / 0.47 / 1.00; rule 1 margin 423x; ICNIRP strict H(0.35 s) 6197 J/m^2 (margin 1.61); EN 50689 skin 0.68 mW (margin 1.15); stall to AEL 9.13 s at P_focus 10.4 mW, 4.28 s at the authority cap 12.5 mW; strict-reading stall 0.98 ms
+  convergence fault (K stalled/converged foci at 15.9 mW): K=2: 32 mW, 8 mJ in 252 ms; K=5: 80 mW, 8 mJ in 101 ms; K=20: 318 mW, 8 mJ in 25 ms; K=100: 1590 mW, 8 mJ in 5 ms
+  visible Class 1 per pupil (30 000 s): 450 nm 39 uW; 470 nm 98 uW; 488 nm 224 uW; 500 nm 390 uW; 520 nm 390 uW; 532 nm 390 uW
+  T8 visible per pupil 35-43 uW (sketch) / 46-59 uW (film): within the 500 nm limit (390 uW) but at/over the 450 nm photochemical limit (39 uW)
+== phys ==
+  I_unit (W/m^2 per m/s): v 0.5: m18 7.317e+06, rt7 7.336e+06 (x1.003); v 0.8: m18 7.343e+06, rt7 7.347e+06 (x1.000)
+  hot face still/0.5/T8 (h 2.14, J1/A 0.486)                       v_pk 0.66 m/s:   423 K OK
+  hot face still/0.5/scheduler h 3.0                               v_pk 0.66 m/s:   459 K OK
+  hot face still/0.5/one head occluded (h 4.47)                    v_pk 0.66 m/s:   517 K OK
+  hot face still/0.5/realistic skin J1/A 0.30, A 0.6               v_pk 0.66 m/s:   478 K OK
+  hot face still/0.5/realistic skin + occluded                     v_pk 0.66 m/s:   620 K > 573 K FAIL
+  hot face still/0.5/m18 xcheck                                    v_pk 0.66 m/s:   433 K OK
+  hot face quiet_office/0.5/T8 (h 2.14, J1/A 0.486)                v_pk 0.76 m/s:   441 K OK
+  hot face quiet_office/0.5/scheduler h 3.0                        v_pk 0.76 m/s:   482 K OK
+  hot face quiet_office/0.5/one head occluded (h 4.47)             v_pk 0.76 m/s:   547 K OK
+  hot face quiet_office/0.5/realistic skin J1/A 0.30, A 0.6        v_pk 0.76 m/s:   503 K OK
+  hot face quiet_office/0.5/realistic skin + occluded              v_pk 0.76 m/s:   662 K > 573 K FAIL
+  hot face quiet_office/0.5/m18 xcheck                             v_pk 0.76 m/s:   452 K OK
+  hot face quiet_office/0.8/T8 (h 2.14, J1/A 0.486)                v_pk 1.06 m/s:   493 K OK
+  hot face quiet_office/0.8/scheduler h 3.0                        v_pk 1.06 m/s:   547 K OK
+  hot face quiet_office/0.8/one head occluded (h 4.47)             v_pk 1.06 m/s:   633 K > 573 K FAIL
+  hot face quiet_office/0.8/realistic skin J1/A 0.30, A 0.6        v_pk 1.06 m/s:   575 K > 573 K FAIL
+  hot face quiet_office/0.8/realistic skin + occluded              v_pk 1.06 m/s:   787 K > 573 K FAIL
+  hot face quiet_office/0.8/m18 xcheck                             v_pk 1.06 m/s:   507 K OK
+  hot face office/0.5/T8 (h 2.14, J1/A 0.486)                      v_pk 1.14 m/s:   507 K OK
+  hot face office/0.5/scheduler h 3.0                              v_pk 1.14 m/s:   563 K OK
+  hot face office/0.5/one head occluded (h 4.47)                   v_pk 1.14 m/s:   655 K > 573 K FAIL
+  hot face office/0.5/realistic skin J1/A 0.30, A 0.6              v_pk 1.14 m/s:   593 K > 573 K FAIL
+  hot face office/0.5/realistic skin + occluded                    v_pk 1.14 m/s:   819 K > 573 K FAIL
+  hot face office/0.5/m18 xcheck                                   v_pk 1.14 m/s:   521 K OK
+  hot face office/0.8/T8 (h 2.14, J1/A 0.486)                      v_pk 1.44 m/s:   557 K OK
+  hot face office/0.8/scheduler h 3.0                              v_pk 1.44 m/s:   626 K > 573 K FAIL
+  hot face office/0.8/one head occluded (h 4.47)                   v_pk 1.44 m/s:   738 K > 573 K FAIL
+  hot face office/0.8/realistic skin J1/A 0.30, A 0.6              v_pk 1.44 m/s:   662 K > 573 K FAIL
+  hot face office/0.8/realistic skin + occluded                    v_pk 1.44 m/s:   940 K > 573 K FAIL
+  hot face office/0.8/m18 xcheck                                   v_pk 1.44 m/s:   573 K OK
+  q_iso(theta) [rt6 BHMIE, +-2.5 deg]: a 0.9 um 8 deg 27.4; a 0.9 um 10 deg 20.0; a 0.9 um 12 deg 13.3; a 1.0 um 8 deg 36.4; a 1.0 um 10 deg 24.5; a 1.0 um 12 deg 14.6; a 1.1 um 8 deg 45.6; a 1.1 um 10 deg 28.0; a 1.1 um 12 deg 14.7
+  IR power: m19 counts motes only while lit (x duty); all motes move all the time: sketch 4.4 -> 7.7 W, film 17.1 -> 20.6 W
+  full-field channel w 31 um: aperture D 189 mm at the head; D*theta(full field) 52.3 mm rad, D*theta(half) 26.2 (m19 prints 26.2); T8's '25 mm, +-0.5 rad' mirror = 12.5 mm rad (half) -> x2.1 short
+  full-field channel w 35 um: aperture D 167 mm at the head; D*theta(full field) 46.3 mm rad, D*theta(half) 23.2 (m19 prints 23.2); T8's '25 mm, +-0.5 rad' mirror = 12.5 mm rad (half) -> x1.9 short
+  diffraction floor R_head 0.11: centre throw 3.95 m -> 26.6 um; farthest head-to-volume 4.75 m -> 32.0 um
+  diffraction floor R_head 0.15: centre throw 3.95 m -> 19.5 um; farthest head-to-volume 4.75 m -> 23.4 um
+== chan ==
+  segments still : heads with nonzero LP push over gust-level drafts: per element mean 4.3 (p90 5); per refresh window (1.67 cm of tour) mean 5.0 (p90 6)
+  segments office: heads with nonzero LP push over gust-level drafts: per element mean 7.6 (p90 9); per refresh window (1.67 cm of tour) mean 9.3 (p90 10)
+  armor    still : heads with nonzero LP push over gust-level drafts: per element mean 4.5 (p90 5); per refresh window (1.67 cm of tour) mean 5.0 (p90 5)
+  armor    office: heads with nonzero LP push over gust-level drafts: per element mean 7.1 (p90 9); per refresh window (1.67 cm of tour) mean 9.1 (p90 10)
+  armor patch cells 2 cm: peak channels needed per cell per head 23; a uniform grid sized for the peak needs 11994 IR channels vs 1766 beams in use (overhead x6.8)
+  armor patch cells 4 cm: peak channels needed per cell per head 32; a uniform grid sized for the peak needs 8017 IR channels vs 1766 beams in use (overhead x4.5)
+  sensing (weak absorber, m (1.04+0.05j)): Q_abs 0.44; descanned backscatter into the 0.22 m head aperture 889 photons per 50 us frame (5 mW beam, w 35 um) -> sigma ~ 0.6 um (shot-noise floor, before detector noise); 30 deg scatter into a 25 mm lens at 1.5 m 27852 photons
+  sensing (strong absorber, m (1.1+0.2j)): Q_abs 1.04; descanned backscatter into the 0.22 m head aperture 8231 photons per 50 us frame (5 mW beam, w 35 um) -> sigma ~ 0.2 um (shot-noise floor, before detector noise); 30 deg scatter into a 25 mm lens at 1.5 m 148576 photons
+== misc ==
+  t100nm/rate0.0001 : 4.0 pg In per mote; 0.001 ug In/h; steady indoor 0.0000 ug/m^3 = 0.01 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.01   : 4.0 pg In per mote; 0.076 ug In/h; steady indoor 0.0036 ug/m^3 = 1.20 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.11   : 4.0 pg In per mote; 0.834 ug In/h; steady indoor 0.0397 ug/m^3 = 13.24 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.19   : 4.0 pg In per mote; 1.441 ug In/h; steady indoor 0.0686 ug/m^3 = 22.87 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.0001 : 6.0 pg In per mote; 0.001 ug In/h; steady indoor 0.0001 ug/m^3 = 0.02 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.01   : 6.0 pg In per mote; 0.114 ug In/h; steady indoor 0.0054 ug/m^3 = 1.81 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.11   : 6.0 pg In per mote; 1.251 ug In/h; steady indoor 0.0596 ug/m^3 = 19.86 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.19   : 6.0 pg In per mote; 2.162 ug In/h; steady indoor 0.1029 ug/m^3 = 34.31 % of Japan's 0.3 ug In/m^3 (workers)
+  POV point duty (1 mm line): 30Hz/0.5: 2.0 ms on, duty 6.0 %; 30Hz/0.8: 1.2 ms on, duty 3.8 %; 60Hz/0.5: 2.0 ms on, duty 12.0 %; 60Hz/0.8: 1.2 ms on, duty 7.5 %
+== m17x: T8's s' recipe on the project's own content ==
+  armor (planar, head plane)  : N 1667  s_static 12.09 (median 5.18)  ->  T8's s' 10.51 (T8 uses 3.0 for a sketch)
+  armor rotated 30, dy 0.15   : N 1667  s_static 4.25 (median 1.90)  ->  T8's s' 3.79 (T8 uses 3.0 for a sketch)
+  m17 random segments         : N 1650  s_static 3.02 (median 1.49)  ->  T8's s' 2.73 (T8 uses 3.0 for a sketch)
+
+######## background section: expo (python3 rt8_check.py expo) ########
+== expo: POV exposure field, LP-chosen heads, tours with jumps ==
+  self-test: capture closed form vs exact max |err| 0.621; perpendicular crossing / (f_r d E/L) 1.000 (expect ~1); beam at 20 deg to the stroke 2.92 (narrow-beam 1/sin = 2.92); own exposure vs m17.exposure on identical static beams max rel dev 1.06e-09; worst static pupil exact/m17 form 1.013
+  LP self-test: own vs linprog max rel dev 5.0e-16, residual 3.6e-16, vs m18c facets 2.8e-16; h_worst at centre 1.664, h_mean 1.322
+  segments still  v 0.5 w 34.3 random th_min  0 jumps False: duty 0.31; worst pupil   11.1 mW (m17 form    9.1; AEL 9.62) = x1.15; s'_eff (vs T8 E/L) 3.64; median on tour 4.19 mW; <5 mm share 0.37; h_mean 2.14; Class-1 w 32.0 um  [7 s]
+  segments still  v 0.5 w 34.3 lp     th_min  0 jumps False: duty 0.31; worst pupil   39.0 mW (m17 form   38.6; AEL 9.62) = x4.06; s'_eff (vs T8 E/L) 12.85; median on tour 3.45 mW; <5 mm share 0.10; h_mean 1.33; Class-1 w 17.0 um  [13 s]
+  segments still  v 0.5 w 34.3 lp     th_min  0 jumps True : duty 0.31; worst pupil   44.6 mW (m17 form   39.4; AEL 9.62) = x4.63; s'_eff (vs T8 E/L) 14.67; median on tour 3.96 mW; <5 mm share 0.12; h_mean 1.32; Class-1 w 15.9 um  [81 s]
+  segments office v 0.5 w 31.0 lp     th_min  0 jumps True : duty 0.31; worst pupil   32.8 mW (m17 form   29.0; AEL 9.62) = x3.41; s'_eff (vs T8 E/L) 13.23; median on tour 3.20 mW; <5 mm share 0.15; h_mean 1.34; Class-1 w 16.8 um  [131 s]
+  segments still  v 0.5 w 34.3 lp     th_min 30 jumps True : duty 0.31; worst pupil 30550.7 mW (m17 form 17283.2; AEL 9.62) = x3175.37; s'_eff (vs T8 E/L) 10054.72; median on tour 3.41 mW; <5 mm share 1.00; h_mean 8.57; Class-1 w 0.6 um  [55 s]
+  arcs     still  v 0.5 w 34.3 random th_min  0 jumps False: duty 0.61; worst pupil   13.6 mW (m17 form   11.3; AEL 9.62) = x1.41; s'_eff (vs T8 E/L) 4.47; median on tour 4.30 mW; <5 mm share 0.42; h_mean 2.14; Class-1 w 28.9 um  [9 s]
+  arcs     still  v 0.5 w 34.3 lp     th_min  0 jumps False: duty 0.61; worst pupil   26.1 mW (m17 form   19.3; AEL 9.62) = x2.72; s'_eff (vs T8 E/L) 8.61; median on tour 3.43 mW; <5 mm share 0.15; h_mean 1.37; Class-1 w 20.8 um  [16 s]
+  arcs     still  v 0.5 w 34.3 lp     th_min  0 jumps True : duty 0.61; worst pupil   31.4 mW (m17 form   29.5; AEL 9.62) = x3.27; s'_eff (vs T8 E/L) 10.34; median on tour 3.32 mW; <5 mm share 0.12; h_mean 1.38; Class-1 w 19.0 um  [31 s]
+  arcs     office v 0.5 w 31.0 lp     th_min  0 jumps True : duty 0.61; worst pupil   20.9 mW (m17 form   19.2; AEL 9.62) = x2.17; s'_eff (vs T8 E/L) 8.42; median on tour 2.86 mW; <5 mm share 0.15; h_mean 1.37; Class-1 w 21.0 um  [39 s]
+  arcs     still  v 0.5 w 34.3 lp     th_min 30 jumps True : duty 0.61; worst pupil   50.1 mW (m17 form   39.9; AEL 9.62) = x5.21; s'_eff (vs T8 E/L) 16.49; median on tour 3.21 mW; <5 mm share 1.00; h_mean 1.92; Class-1 w 15.0 um  [28 s]
+  armor    still  v 0.5 w 34.3 random th_min  0 jumps False: duty 0.67; worst pupil   29.4 mW (m17 form   27.0; AEL 9.62) = x3.05; s'_eff (vs T8 E/L) 9.67; median on tour 12.09 mW; <5 mm share 0.15; h_mean 2.14; Class-1 w 19.6 um  [8 s]
+  armor    still  v 0.5 w 34.3 lp     th_min  0 jumps False: duty 0.67; worst pupil   57.1 mW (m17 form   50.6; AEL 9.62) = x5.94; s'_eff (vs T8 E/L) 18.80; median on tour 14.15 mW; <5 mm share 0.07; h_mean 1.23; Class-1 w 14.1 um  [16 s]
+  armor    still  v 0.5 w 34.3 lp     th_min  0 jumps True : duty 0.67; worst pupil   87.9 mW (m17 form   81.2; AEL 9.62) = x9.14; s'_eff (vs T8 E/L) 28.93; median on tour 20.35 mW; <5 mm share 0.13; h_mean 1.22; Class-1 w 11.3 um  [26 s]
+  armor    office v 0.5 w 31.0 lp     th_min  0 jumps True : duty 0.67; worst pupil   64.7 mW (m17 form   59.6; AEL 9.62) = x6.72; s'_eff (vs T8 E/L) 26.06; median on tour 15.34 mW; <5 mm share 0.15; h_mean 1.26; Class-1 w 12.0 um  [30 s]
+  armor    still  v 0.5 w 34.3 lp     th_min 30 jumps True : duty 0.67; worst pupil   15.8 mW (m17 form   13.8; AEL 9.62) = x1.64; s'_eff (vs T8 E/L) 5.19; median on tour 5.12 mW; <5 mm share 0.89; h_mean 2.46; Class-1 w 26.8 um  [23 s]
+  aligned  still  v 0.5 w 34.3 random th_min  0 jumps False: duty 0.35; worst pupil   35.7 mW (m17 form   32.1; AEL 9.62) = x3.71; s'_eff (vs T8 E/L) 11.75; median on tour 4.26 mW; <5 mm share 0.14; h_mean 2.14; Class-1 w 17.8 um  [6 s]
+  aligned  still  v 0.5 w 34.3 lp     th_min  0 jumps False: duty 0.35; worst pupil   61.4 mW (m17 form   57.8; AEL 9.62) = x6.38; s'_eff (vs T8 E/L) 20.21; median on tour 3.37 mW; <5 mm share 0.06; h_mean 1.31; Class-1 w 13.6 um  [12 s]
+  aligned  still  v 0.5 w 34.3 lp     th_min  0 jumps True : duty 0.35; worst pupil   61.5 mW (m17 form   58.0; AEL 9.62) = x6.39; s'_eff (vs T8 E/L) 20.23; median on tour 3.63 mW; <5 mm share 0.06; h_mean 1.31; Class-1 w 13.6 um  [55 s]
+  aligned  office v 0.5 w 31.0 lp     th_min  0 jumps True : duty 0.35; worst pupil   45.3 mW (m17 form   43.0; AEL 9.62) = x4.71; s'_eff (vs T8 E/L) 18.24; median on tour 3.09 mW; <5 mm share 0.08; h_mean 1.32; Class-1 w 14.3 um  [69 s]
+  aligned  still  v 0.5 w 34.3 lp     th_min 30 jumps True : duty 0.35; worst pupil 3159.5 mW (m17 form 1780.4; AEL 9.62) = x328.39; s'_eff (vs T8 E/L) 1039.83; median on tour 3.32 mW; <5 mm share 1.00; h_mean 2.70; Class-1 w 1.9 um  [45 s]
+
+######## background section: expo2 (python3 rt8_check.py expo2) ########
+== expo2: scheduler variants ==
+  segments still  v 0.5 w 34.3 lp     th_min 20: worst pupil    9.9 mW = x1.03; median on tour 3.53; <5 mm share 0.22; h_mean 1.58 (fallback 0.040); Class-1 w 33.9 um  [68 s]
+  segments still  v 0.5 w 34.3 lp     th_min 40: worst pupil   32.9 mW = x3.42; median on tour 3.73; <5 mm share 0.14; h_mean 1.79 (fallback 0.309); Class-1 w 18.5 um  [68 s]
+  armor    still  v 0.5 w 34.3 lp     th_min 20: worst pupil   62.8 mW = x6.53; median on tour 11.30; <5 mm share 0.18; h_mean 1.61 (fallback 0.263); Class-1 w 13.4 um  [28 s]
+  armor    still  v 0.5 w 34.3 lp     th_min 40: worst pupil   62.7 mW = x6.51; median on tour 11.74; <5 mm share 0.18; h_mean 1.87 (fallback 0.319); Class-1 w 13.4 um  [41 s]
+  aligned  still  v 0.5 w 34.3 lp     th_min 20: worst pupil   60.0 mW = x6.23; median on tour 3.43; <5 mm share 0.07; h_mean 1.56 (fallback 0.030); Class-1 w 13.7 um  [140 s]
+  aligned  still  v 0.5 w 34.3 lp     th_min 40: worst pupil   59.9 mW = x6.23; median on tour 3.59; <5 mm share 0.07; h_mean 1.82 (fallback 0.254); Class-1 w 13.7 um  [129 s]
+  arcs     still  v 0.5 w 34.3 lp     th_min 20: worst pupil    8.3 mW = x0.86; median on tour 3.26; <5 mm share 0.44; h_mean 1.54 (fallback 0.002); Class-1 w 37.0 um  [59 s]
+  arcs     still  v 0.5 w 34.3 lp     th_min 40: worst pupil   20.1 mW = x2.09; median on tour 3.56; <5 mm share 0.19; h_mean 1.80 (fallback 0.242); Class-1 w 23.7 um  [74 s]
+  armor    still  v 0.5 w 26.6 lp     th_min 40: worst pupil   35.3 mW = x3.67; median on tour 6.62; <5 mm share 0.20; h_mean 1.87 (fallback 0.319); Class-1 w 13.9 um  [80 s]
+  armor    still  v 0.5 w 20.0 lp     th_min 40: worst pupil   18.5 mW = x1.92; median on tour 3.46; <5 mm share 0.21; h_mean 1.87 (fallback 0.319); Class-1 w 14.4 um  [64 s]
+
+######## background section: expo3 (python3 rt8_check.py expo3) ########
+== expo3: armor placement ==
+  armor rot 30 dy 0.15: random th_min  0: worst pupil   21.6 mW = x2.24; median on tour 6.87; h_mean 2.14; Class-1 w 22.9 um  [13 s]
+  armor rot 30 dy 0.15: lp     th_min  0: worst pupil   32.0 mW = x3.33; median on tour 8.26; h_mean 1.19; Class-1 w 18.8 um  [46 s]
+  armor rot 30 dy 0.15: lp     th_min 20: worst pupil   23.5 mW = x2.44; median on tour 6.02; h_mean 1.68; Class-1 w 22.0 um  [50 s]
+  armor rot 45 dy 0.3: random th_min  0: worst pupil   19.9 mW = x2.06; median on tour 7.49; h_mean 2.14; Class-1 w 23.9 um  [17 s]
+  armor rot 45 dy 0.3: lp     th_min  0: worst pupil   22.4 mW = x2.33; median on tour 7.50; h_mean 1.25; Class-1 w 22.5 um  [56 s]
+  armor rot 45 dy 0.3: lp     th_min 20: worst pupil   21.4 mW = x2.22; median on tour 7.03; h_mean 1.79; Class-1 w 23.0 um  [32 s]
+
+######## background section: expo4 (python3 rt8_check.py expo4) ########
+== expo4: scheduler with h_cap 4 ==
+  armor    th_min 20 h_cap 4: worst pupil   43.3 mW = x4.51; median on tour 7.07; h_mean 2.11 (max 3.95, fallback 0.037); Class-1 w 16.2 um  [62 s]
+  armor    th_min 30 h_cap 4: worst pupil   40.2 mW = x4.18; median on tour 5.35; h_mean 2.26 (max 3.95, fallback 0.047); Class-1 w 16.8 um  [59 s]
+  aligned  th_min 20 h_cap 4: worst pupil    8.6 mW = x0.90; median on tour 3.44; h_mean 1.63 (max 3.87, fallback 0.001); Class-1 w 36.2 um  [110 s]
+  aligned  th_min 30 h_cap 4: worst pupil    8.5 mW = x0.88; median on tour 3.36; h_mean 1.79 (max 3.87, fallback 0.043); Class-1 w 36.5 um  [144 s]
+
+######## background section: loop_key (python3 rt8_check.py loop_key) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 office       U 0.00 w 35.0 v 0.5 circle euler noise 4: lost 64/100 in 605 mote-s (rate 1.1e-01/s, 95% CI 8.1e-02-1.4e-01); draw err p50 8.5 p99.9 32.4 um; offset p99.9 20.3; sat 2.0e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 404/s; Kp 645 Ms 1.88 n_sub 1 mean wind False  [123 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 79/100 in 415 mote-s (rate 1.9e-01/s, 95% CI 1.5e-01-2.4e-01); draw err p50 5.2 p99.9 28.5 um; offset p99.9 21.3; sat 1.8e-01; heads/rev mean 9.3 p90 10 max 10; new-head events 679/s; Kp 1290 Ms 1.73 n_sub 1 mean wind True  [124 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle moving noise 4: lost 97/100 in 174 mote-s (rate 5.6e-01/s, 95% CI 4.5e-01-6.8e-01); draw err p50 9.1 p99.9 32.1 um; offset p99.9 22.8; sat 5.1e-01; heads/rev mean 9.6 p90 10 max 10; new-head events 985/s; Kp 1613 Ms 1.75 3D n_sub 2 mean wind True  [187 s]
+    20 kHz d2 office       U 0.10 w 31.0 v 0.5 circle moving noise 4: lost 100/100 in 16 mote-s (rate 6.4e+00/s, 95% CI 5.2e+00-7.8e+00); draw err p50 10.1 p99.9 54.5 um; offset p99.9 29.3; sat 9.2e-01; heads/rev mean 9.0 p90 10 max 10; new-head events 193/s; Kp 1613 Ms 1.75 3D n_sub 2 mean wind True  [213 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 4: lost 32/100 in 801 mote-s (rate 4.0e-02/s, 95% CI 2.7e-02-5.6e-02); draw err p50 19.6 p99.9 43.7 um; offset p99.9 19.5; sat 1.4e-01; heads/rev mean 9.7 p90 10 max 10; new-head events 310/s; Kp 452 Ms 1.77 3D n_sub 2 mean wind True  [227 s]
+    20 kHz d2 quiet_office U 0.10 w 35.0 v 0.5 circle moving noise 4: lost 47/100 in 673 mote-s (rate 7.0e-02/s, 95% CI 5.1e-02-9.3e-02); draw err p50 5.7 p99.9 22.1 um; offset p99.9 22.1; sat 1.3e-01; heads/rev mean 9.8 p90 10 max 10; new-head events 2001/s; Kp 1806 Ms 1.61 3D n_sub 2 mean wind True  [208 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 line   moving noise 4: lost 98/100 in 145 mote-s (rate 6.8e-01/s, 95% CI 5.5e-01-8.2e-01); draw err p50 12.4 p99.9 41.1 um; offset p99.9 22.3; sat 6.2e-01; heads/rev mean 3.9 p90 5 max 7; new-head events 545/s; Kp 1129 Ms 1.75 3D n_sub 2 mean wind True  [212 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 line   moving noise 4: lost 44/100 in 682 mote-s (rate 6.5e-02/s, 95% CI 4.7e-02-8.7e-02); draw err p50 6.7 p99.9 27.0 um; offset p99.9 20.5; sat 1.0e-01; heads/rev mean 3.3 p90 4 max 7; new-head events 782/s; Kp 677 Ms 1.26 3D n_sub 2 mean wind True  [196 s]
+
+######## background section: loop_sens (python3 rt8_check.py loop_sens) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 6: lost 98/100 in 112 mote-s (rate 8.8e-01/s, 95% CI 7.1e-01-1.1e+00); draw err p50 66.7 p99.9 122.4 um; offset p99.9 34.2; sat 4.2e-01; heads/rev mean 9.6 p90 10 max 10; new-head events 443/s; Kp 645 Ms 1.22 3D n_sub 2 mean wind True  [198 s]
+    20 kHz d3 still        U 0.00 w 34.0 v 0.5 circle moving noise 4: lost 99/100 in 52 mote-s (rate 1.9e+00/s, 95% CI 1.5e+00-2.3e+00); draw err p50 36.7 p99.9 78.9 um; offset p99.9 21.5; sat 9.3e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 72/s; Kp 341 Ms 1.70 3D n_sub 2 mean wind True  [218 s]
+    10 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 4: lost 100/100 in 0 mote-s (rate 1.0e+04/s, 95% CI 8.1e+03-1.2e+04); draw err p50 nan p99.9 nan um; offset p99.9 nan; sat 1.0e+00; heads/rev mean 6.2 p90 9 max 10; new-head events 30/s; Kp 467 Ms 1.40 3D n_sub 2 mean wind True  [138 s]
+    20 kHz d2 office       U 0.10 w 50.0 v 0.5 circle moving noise 4: lost 0/100 in 980 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-3.8e-03); draw err p50 11.3 p99.9 33.1 um; offset p99.9 18.6; sat 0.0e+00; heads/rev mean 9.5 p90 10 max 10; new-head events 1434/s; Kp 1129 Ms 1.75 3D n_sub 2 mean wind True  [194 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 2: lost 0/100 in 980 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-3.8e-03); draw err p50 4.7 p99.9 12.1 um; offset p99.9 8.7; sat 0.0e+00; heads/rev mean 9.6 p90 10 max 10; new-head events 360/s; Kp 677 Ms 1.95 3D n_sub 2 mean wind True  [215 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.8 circle moving noise 4: lost 100/100 in 0 mote-s (rate 1.9e+03/s, 95% CI 1.5e+03-2.3e+03); draw err p50 20.5 p99.9 35.0 um; offset p99.9 22.0; sat 1.0e+00; heads/rev mean 6.3 p90 10 max 10; new-head events 17/s; Kp 1129 Ms 1.75 3D n_sub 2 mean wind True  [187 s]
+
+######## background section: loop_attrib (python3 rt8_check.py loop_attrib) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 office       U 0.00 w 35.0 v 0.5 circle euler noise 4: lost 24/60 in 181 mote-s (rate 1.3e-01/s, 95% CI 8.5e-02-2.0e-01); draw err p50 7.7 p99.9 25.2 um; offset p99.9 21.4; sat 3.2e-02; heads/rev mean 9.4 p90 10 max 10; new-head events 1595/s; Kp 1290 Ms nan n_sub 1 mean wind False  [47 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 23/60 in 168 mote-s (rate 1.4e-01/s, 95% CI 8.7e-02-2.1e-01); draw err p50 8.5 p99.9 27.2 um; offset p99.9 21.6; sat 7.0e-02; heads/rev mean 9.4 p90 10 max 10; new-head events 1542/s; Kp 1290 Ms nan n_sub 1 mean wind True  [48 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 55/60 in 77 mote-s (rate 7.2e-01/s, 95% CI 5.4e-01-9.3e-01); draw err p50 8.8 p99.9 33.8 um; offset p99.9 22.5; sat 3.2e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 1148/s; Kp 1290 Ms nan n_sub 2 mean wind True  [55 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle moving noise 4: lost 26/60 in 167 mote-s (rate 1.6e-01/s, 95% CI 1.0e-01-2.3e-01); draw err p50 18.5 p99.9 53.8 um; offset p99.9 22.2; sat 6.2e-02; heads/rev mean 9.4 p90 10 max 10; new-head events 1559/s; Kp 1290 Ms nan n_sub 1 mean wind True  [34 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle moving noise 4: lost 53/60 in 84 mote-s (rate 6.3e-01/s, 95% CI 4.7e-01-8.2e-01); draw err p50 18.9 p99.9 57.1 um; offset p99.9 23.0; sat 3.0e-01; heads/rev mean 9.5 p90 10 max 10; new-head events 1176/s; Kp 1290 Ms nan n_sub 2 mean wind True  [38 s]
+    20 kHz d2 office       U 0.00 w 35.0 v 0.5 circle moving noise 4: lost 21/60 in 183 mote-s (rate 1.1e-01/s, 95% CI 7.1e-02-1.8e-01); draw err p50 18.9 p99.9 51.9 um; offset p99.9 21.7; sat 2.7e-02; heads/rev mean 9.5 p90 10 max 10; new-head events 1609/s; Kp 1290 Ms nan n_sub 1 mean wind False  [34 s]
+
+######## background section: loop_attrib2 (python3 rt8_check.py loop_attrib2) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 58/60 in 41 mote-s (rate 1.4e+00/s, 95% CI 1.1e+00-1.8e+00); draw err p50 8.9 p99.9 40.6 um; offset p99.9 23.1; sat 6.0e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 697/s; Kp 1290 Ms nan n_sub 4 mean wind True  [47 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 59/60 in 23 mote-s (rate 2.5e+00/s, 95% CI 1.9e+00-3.3e+00); draw err p50 8.9 p99.9 38.5 um; offset p99.9 24.4; sat 7.1e-01; heads/rev mean 9.2 p90 10 max 10; new-head events 514/s; Kp 1290 Ms nan n_sub 8 mean wind True  [73 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle euler noise 4: lost 1/60 in 345 mote-s (rate 2.9e-03/s, 95% CI 7.3e-05-1.6e-02); draw err p50 7.8 p99.9 20.8 um; offset p99.9 21.0; sat 1.9e-05; heads/rev mean 9.6 p90 10 max 10; new-head events 1622/s; Kp 1290 Ms nan n_sub 1 mean wind True  [54 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle euler noise 4: lost 16/60 in 298 mote-s (rate 5.4e-02/s, 95% CI 3.1e-02-8.7e-02); draw err p50 8.2 p99.9 23.9 um; offset p99.9 21.4; sat 4.7e-02; heads/rev mean 9.6 p90 10 max 10; new-head events 1536/s; Kp 1290 Ms nan n_sub 2 mean wind True  [57 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle euler noise 4: lost 37/60 in 196 mote-s (rate 1.9e-01/s, 95% CI 1.3e-01-2.6e-01); draw err p50 8.3 p99.9 26.0 um; offset p99.9 21.6; sat 2.0e-01; heads/rev mean 9.6 p90 10 max 10; new-head events 1335/s; Kp 1290 Ms nan n_sub 4 mean wind True  [86 s]
+
+######## background section: loop_attrib3 (python3 rt8_check.py loop_attrib3) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 25/60 in 169 mote-s (rate 1.5e-01/s, 95% CI 9.6e-02-2.2e-01); draw err p50 8.5 p99.9 26.2 um; offset p99.9 21.1; sat 8.2e-02; heads/rev mean 9.4 p90 10 max 10; new-head events 1525/s; Kp 1290 Ms nan n_sub 1 mean wind True  [41 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 54/60 in 77 mote-s (rate 7.0e-01/s, 95% CI 5.2e-01-9.1e-01); draw err p50 8.7 p99.9 32.0 um; offset p99.9 22.2; sat 3.1e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 1172/s; Kp 1290 Ms nan n_sub 2 mean wind True  [39 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 57/60 in 45 mote-s (rate 1.3e+00/s, 95% CI 9.6e-01-1.6e+00); draw err p50 8.8 p99.9 36.9 um; offset p99.9 22.7; sat 6.1e-01; heads/rev mean 9.4 p90 10 max 10; new-head events 691/s; Kp 1290 Ms nan n_sub 4 mean wind True  [54 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle euler noise 4: lost 59/60 in 24 mote-s (rate 2.5e+00/s, 95% CI 1.9e+00-3.2e+00); draw err p50 8.9 p99.9 39.8 um; offset p99.9 25.1; sat 7.3e-01; heads/rev mean 9.2 p90 10 max 10; new-head events 488/s; Kp 1290 Ms nan n_sub 8 mean wind True  [93 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle euler noise 4: lost 1/60 in 347 mote-s (rate 2.9e-03/s, 95% CI 7.3e-05-1.6e-02); draw err p50 7.9 p99.9 20.4 um; offset p99.9 20.5; sat 1.7e-05; heads/rev mean 9.6 p90 10 max 10; new-head events 1619/s; Kp 1290 Ms nan n_sub 1 mean wind True  [52 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle euler noise 4: lost 37/60 in 196 mote-s (rate 1.9e-01/s, 95% CI 1.3e-01-2.6e-01); draw err p50 8.2 p99.9 25.6 um; offset p99.9 21.4; sat 2.1e-01; heads/rev mean 9.6 p90 10 max 10; new-head events 1323/s; Kp 1290 Ms nan n_sub 4 mean wind True  [72 s]
+
+######## background section: loop_conv (python3 rt8_check.py loop_conv) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 4: lost 30/40 in 43 mote-s (rate 7.0e-01/s, 95% CI 4.7e-01-1.0e+00); draw err p50 5.6 p99.9 39.5 um; offset p99.9 23.3; sat 3.2e-01; heads/rev mean 9.6 p90 10 max 10; new-head events 1214/s; Kp 1290 Ms 1.61 n_sub 16 mean wind True  [49 s]
+    20 kHz d2 still        U 0.00 w 34.0 v 0.5 circle moving noise 2: lost 0/40 in 92 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-4.0e-02); draw err p50 2.1 p99.9 5.8 um; offset p99.9 9.2; sat 0.0e+00; heads/rev mean 9.8 p90 10 max 10; new-head events 874/s; Kp 1290 Ms 1.61 n_sub 16 mean wind True  [49 s]
+    20 kHz d2 still        U 0.00 w 50.0 v 0.5 circle moving noise 4: lost 0/40 in 92 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-4.0e-02); draw err p50 3.3 p99.9 9.8 um; offset p99.9 17.9; sat 0.0e+00; heads/rev mean 9.5 p90 10 max 10; new-head events 607/s; Kp 1290 Ms 1.77 n_sub 16 mean wind True  [51 s]
+    20 kHz d2 office       U 0.10 w 50.0 v 0.5 circle moving noise 4: lost 1/40 in 92 mote-s (rate 1.1e-02/s, 95% CI 2.8e-04-6.1e-02); draw err p50 4.1 p99.9 13.9 um; offset p99.9 21.4; sat 5.0e-05; heads/rev mean 9.7 p90 10 max 10; new-head events 3892/s; Kp 3226 Ms 1.75 n_sub 16 mean wind True  [47 s]
+    20 kHz d2 office       U 0.10 w 35.0 v 0.5 circle moving noise 4: lost 40/40 in 4 mote-s (rate 9.9e+00/s, 95% CI 7.1e+00-1.4e+01); draw err p50 5.2 p99.9 47.8 um; offset p99.9 30.7; sat 7.4e-01; heads/rev mean 8.9 p90 10 max 10; new-head events 1096/s; Kp 3226 Ms 1.75 n_sub 16 mean wind True  [56 s]
+    20 kHz d2 still        U 0.00 w 70.0 v 0.5 circle moving noise 4: lost 0/40 in 92 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-4.0e-02); draw err p50 2.6 p99.9 7.0 um; offset p99.9 17.6; sat 0.0e+00; heads/rev mean 9.5 p90 10 max 10; new-head events 1311/s; Kp 1935 Ms 1.39 n_sub 16 mean wind True  [46 s]
+
+######## background section: xcheck_m19b (python3 rt8_check.py xm19b) ########
+False 3.5e-05 {'lost': 3, 'mote_seconds': 109.62979999999999, 'loss_95_upper': 0.058962997425314606, 'err_p50_um': 5.157540607447274, 'err_p999_um': 20.31251498856589, 'off_p999_um': 16.724919639494537}
+False 3.1e-05 {'lost': 15, 'mote_seconds': 55.54469999999999, 'loss_95_upper': 0.40950741821298586, 'err_p50_um': 6.263643434084797, 'err_p999_um': 32.769448004253796, 'off_p999_um': 17.572229208693674}
+True 3.5e-05 {'lost': 4, 'mote_seconds': 104.1266, 'loss_95_upper': 0.0768295517187731, 'err_p50_um': 5.1651328096401645, 'err_p999_um': 22.326771172654325, 'off_p999_um': 17.06713675080273}
+True 3.1e-05 {'lost': 17, 'mote_seconds': 45.44475, 'loss_95_upper': 0.5555363656139669, 'err_p50_um': 6.348074966097691, 'err_p999_um': 43.663548701426684, 'off_p999_um': 18.818722731474306}
+
+######## interactive integration checks (reproduced by: python3 rt8_check.py nsub) -> results/rt8_loop_nsub.json ########
+{
+ "case": "office sigma 0.1 U 0.1, w 35 um, 20 kHz, d 2, tau 30 us, noise 4 um, fixed gains Kp 1290 Ki 8.32e5 Kd 0.08, exact lag, 40 motes x 1 s, seed 4242",
+ "n_sub": [
+  4,
+  8,
+  16,
+  32
+ ],
+ "lost": [
+  29,
+  33,
+  34,
+  34
+ ],
+ "mote_s": [
+  14,
+  11,
+  9,
+  9
+ ],
+ "rate": [
+  2.12,
+  3.11,
+  3.59,
+  3.59
+ ],
+ "single_frame_check": "end-of-frame offset for initial 5/15/25 um changes by <=0.6 um between 1 and 256 substeps without noise or lag",
+ "no_noise_check": "with sensor noise 1e-9 m, n_sub 1/2/4 give identical results (0 lost, offset p99.9 0.27 um)"
+}
+
+######## misc rerun with the 0.03 and 1 /s rows ########
+== misc ==
+  t100nm/rate0.0001 : 4.0 pg In per mote; 0.001 ug In/h; steady indoor 0.0000 ug/m^3 = 0.01 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.01   : 4.0 pg In per mote; 0.076 ug In/h; steady indoor 0.0036 ug/m^3 = 1.20 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.03   : 4.0 pg In per mote; 0.228 ug In/h; steady indoor 0.0108 ug/m^3 = 3.61 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.11   : 4.0 pg In per mote; 0.834 ug In/h; steady indoor 0.0397 ug/m^3 = 13.24 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate0.19   : 4.0 pg In per mote; 1.441 ug In/h; steady indoor 0.0686 ug/m^3 = 22.87 % of Japan's 0.3 ug In/m^3 (workers)
+  t100nm/rate1.0    : 4.0 pg In per mote; 7.584 ug In/h; steady indoor 0.3612 ug/m^3 = 120.39 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.0001 : 6.0 pg In per mote; 0.001 ug In/h; steady indoor 0.0001 ug/m^3 = 0.02 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.01   : 6.0 pg In per mote; 0.114 ug In/h; steady indoor 0.0054 ug/m^3 = 1.81 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.03   : 6.0 pg In per mote; 0.341 ug In/h; steady indoor 0.0163 ug/m^3 = 5.42 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.11   : 6.0 pg In per mote; 1.251 ug In/h; steady indoor 0.0596 ug/m^3 = 19.86 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate0.19   : 6.0 pg In per mote; 2.162 ug In/h; steady indoor 0.1029 ug/m^3 = 34.31 % of Japan's 0.3 ug In/m^3 (workers)
+  t150nm/rate1.0    : 6.0 pg In per mote; 11.377 ug In/h; steady indoor 0.5417 ug/m^3 = 180.58 % of Japan's 0.3 ug In/m^3 (workers)
+  POV point duty (1 mm line): 30Hz/0.5: 2.0 ms on, duty 6.0 %; 30Hz/0.8: 1.2 ms on, duty 3.8 %; 60Hz/0.5: 2.0 ms on, duty 12.0 %; 60Hz/0.8: 1.2 ms on, duty 7.5 %
+
+######## background section: loop_upd (python3 rt8_check.py loop_upd) ########
+== loop: independent POV tracking simulation ==
+  turbulence self-test: sigma per component [0.101 0.098 0.099] (target 0.1), L11 3.2 cm (target 3), eta 0.67 mm
+    40 kHz d2 still        U 0.00 w 20.0 v 0.5 circle moving noise 2: lost 0/40 in 72 mote-s (rate 0.0e+00/s, 95% CI 0.0e+00-5.1e-02); draw err p50 1.8 p99.9 7.4 um; offset p99.9 9.5; sat 0.0e+00; heads/rev mean 9.7 p90 10 max 10; new-head events 2113/s; Kp 2581 Ms 1.69 n_sub 8 mean wind True  [63 s]
+    40 kHz d2 quiet_office U 0.10 w 20.0 v 0.5 circle moving noise 2: lost 3/40 in 69 mote-s (rate 4.4e-02/s, 95% CI 9.0e-03-1.3e-01); draw err p50 2.5 p99.9 9.7 um; offset p99.9 9.3; sat 1.8e-02; heads/rev mean 9.5 p90 10 max 10; new-head events 1110/s; Kp 1290 Ms 1.87 n_sub 8 mean wind True  [71 s]
+    20 kHz d2 still        U 0.00 w 20.0 v 0.5 circle moving noise 1: lost 19/40 in 51 mote-s (rate 3.7e-01/s, 95% CI 2.2e-01-5.8e-01); draw err p50 1.2 p99.9 5.0 um; offset p99.9 5.5; sat 2.6e-01; heads/rev mean 9.9 p90 10 max 10; new-head events 514/s; Kp 1935 Ms 1.72 n_sub 16 mean wind True  [44 s]
+    20 kHz d2 still        U 0.00 w 25.0 v 0.5 circle moving noise 2: lost 35/40 in 17 mote-s (rate 2.1e+00/s, 95% CI 1.4e+00-2.9e+00); draw err p50 2.2 p99.9 14.3 um; offset p99.9 13.0; sat 7.2e-01; heads/rev mean 9.5 p90 10 max 10; new-head events 574/s; Kp 2581 Ms 1.39 n_sub 16 mean wind True  [44 s]
