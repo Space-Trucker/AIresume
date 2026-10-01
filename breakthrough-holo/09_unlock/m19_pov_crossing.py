@@ -44,15 +44,21 @@ ETA_STEER = 0.7                                   # channel optics (fiber/relay/
 L_FIELD, D_THROW = math.sqrt(1.2), 3.95
 
 
+SKIN_AEL, SKIN_AP = 1000.0 * math.pi * 0.5e-3 ** 2, 1e-3   # EN 50689 child-appealing: skin MPE via 1 mm, 10 s
+
+
 def design(content="sketch", room="still", v=0.8, f_r=60.0, a=1.0e-6, s_prime=None, w=None, theta_s=10, n_vis=2,
-           R_head=0.07):
+           R_head=0.07, A=1.0, skin=False, s_skin=1.1):
+    """A: absorptance with J1/A fixed at 0.486. RT7 C2: a real thin skin gives J1 = A*(J1/A) ~ 0.24, which is A = 0.5
+    here (I_unit x2). skin: also apply the EN 50689 child-appealing skin criterion (0.785 mW mean through 1 mm, 10 s;
+    idea round 3 sonnet, snippets) with stacking s_skin ~ 1.1."""
     L_cd, S, duty = b2.CONTENT[content]
     U, sig = ROOMS[room]
     sp = m18.speeds(U, sig)
     u_mean = sp["v_mean"]
     v_pk = v + sp["v_pk"]                                         # gust peak on top of the stroke speed
-    pk = m18.hold(a, v_pk, h=H_WORST)                             # heat at the worst instant
-    I_unit = m18.hold(a, v, h=H_WORST)["I"] / v
+    pk = m18.hold(a, v_pk, h=H_WORST, A=A)                        # heat at the worst instant
+    I_unit = m18.hold(a, v, h=H_WORST, A=A)["I"] / v
     N = S * f_r / (v * duty)
     # eye, crossing-rate rule 2: f_r s' d_ap (1 + u/v) E/L <= AEL, E/L = h_w I_unit pi w^2/2  -> largest w
     # s' from the static-voxel stacking (M17, random heads) of the equivalent power-per-length pattern: POV deposits
@@ -64,6 +70,9 @@ def design(content="sketch", room="still", v=0.8, f_r=60.0, a=1.0e-6, s_prime=No
         load = f_r * sp_ * D_AP * (1 + u_mean / v)
         w_eye = math.sqrt(2 * AEL_IR / (load * H_WORST * I_unit * math.pi))
     s_prime = sp_
+    if skin:
+        w_skin = math.sqrt(2 * SKIN_AEL / (f_r * s_skin * SKIN_AP * (1 + u_mean / v) * H_WORST * I_unit * math.pi))
+        w_eye = min(w_eye, w_skin)
     w_diff = 1.5 * LAM * D_THROW / (math.pi * R_head)            # diffraction: head aperture radius R_head (clip 1.5)
     if w is None:
         w = min(w_eye, 60e-6)
@@ -98,7 +107,8 @@ def design(content="sketch", room="still", v=0.8, f_r=60.0, a=1.0e-6, s_prime=No
         fails.append("rule1")
     if vis_mean_pupil > AEL_VIS:
         fails.append("class1_vis")
-    return dict(content=content, room=room, v=v, f_r=f_r, s_prime=s_prime, R_head=R_head, N=N, channels=channels,
+    return dict(content=content, room=room, v=v, f_r=f_r, s_prime=s_prime, R_head=R_head, A=A, skin=skin, N=N,
+                channels=channels,
                 T_hot_peak=pk["T_hot"],
                 v_pk=v_pk, I_unit=I_unit, w_eye_um=w_eye * 1e6, w_um=w * 1e6, w_diff_um=w_diff * 1e6,
                 E_per_L_mJ_m=E_per_L * 1e3, mean_pupil_mW=mean_pupil * 1e3, E_pass_mJ=E_pass * 1e3,
@@ -108,6 +118,22 @@ def design(content="sketch", room="still", v=0.8, f_r=60.0, a=1.0e-6, s_prime=No
 
 
 LAM = 1.55e-6
+
+
+def main_rt7():
+    """RT7 C2 (realistic mote, A = 0.5) and the EN 50689 skin rule, sketch and film at 30 Hz, v 0.5 m/s."""
+    rows = []
+    print("\nRealistic mote (A 0.5) and EN 50689 skin rule, 30 Hz, v 0.5 m/s:")
+    for content in ("sketch", "film_density"):
+        for room in ("still", "quiet_office", "office"):
+            for A, skin in ((1.0, False), (0.5, False), (1.0, True), (0.5, True)):
+                for R_head in (0.11, 0.15):
+                    d = design(content, room, v=0.5, f_r=30.0, A=A, skin=skin, R_head=R_head)
+                    rows.append(d)
+                    print(f"  {content:12s} {room:12s} A {A:3.1f} skin {str(skin):5s} R {R_head:.2f}: w {d['w_um']:4.1f} um "
+                          f"(diffraction {d['w_diff_um']:4.1f}) T_hot {d['T_hot_peak']:4.0f} K  P_IR {d['P_ir_W']:5.1f} W  "
+                          f"channels {d['channels']:6.0f}  {','.join(d['fails']) or 'OK'}")
+    return rows
 
 
 def main():
@@ -129,9 +155,10 @@ def main():
                           f"{d['P_v_uW']:6.1f} {d['P_vis_W']:6.3f} {d['vis_mean_pupil_uW']:6.1f} {d['etendue_full_mrad']:5.1f} "
                           f"{R_head * 100:4.0f}  "
                           f"{','.join(d['fails']) or 'OK'}")
+    rows_rt7 = main_rt7()
     os.makedirs(os.path.join(HERE, "results"), exist_ok=True)
     with open(os.path.join(HERE, "results", "m19_pov_crossing.json"), "w") as fh:
-        json.dump(rows, fh, indent=1, default=float)
+        json.dump(dict(rows=rows, rt7_skin=rows_rt7), fh, indent=1, default=float)
 
 
 if __name__ == "__main__":

@@ -47,3 +47,53 @@ film_density office        1.0  30 4.6  1084   6506   606   27  17.5  10.00  0.0
 film_density office        0.5  60 4.6  4337  26024   521   18   7.6  10.00  0.027   5.2   1514  17.2    3.9  0.040   29.9  46.2   11  diffraction
 film_density office        0.8  60 4.6  2711  16265   573   18   8.4  10.00  0.029   8.3    946  17.2    6.2  0.040   29.9  43.9   11  diffraction
 film_density office        1.0  60 4.6  2169  13012   606   19   8.7  10.00  0.031  10.4    758  17.2    7.8  0.040   29.9  43.1   11  heat,diffraction
+
+Realistic mote (A 0.5) and EN 50689 skin rule, 30 Hz, v 0.5 m/s:
+  sketch       still        A 1.0 skin False R 0.11: w 34.3 um (diffraction 26.6) T_hot  433 K  P_IR   4.4 W  channels   3158  OK
+  sketch       still        A 1.0 skin False R 0.15: w 34.3 um (diffraction 19.5) T_hot  433 K  P_IR   4.4 W  channels   3158  OK
+  sketch       still        A 0.5 skin False R 0.11: w 24.2 um (diffraction 26.6) T_hot  413 K  P_IR   4.4 W  channels   3158  diffraction
+  sketch       still        A 0.5 skin False R 0.15: w 24.2 um (diffraction 19.5) T_hot  413 K  P_IR   4.4 W  channels   3158  OK
+  sketch       still        A 1.0 skin True  R 0.11: w 29.7 um (diffraction 26.6) T_hot  433 K  P_IR   3.3 W  channels   3158  OK
+  sketch       still        A 1.0 skin True  R 0.15: w 29.7 um (diffraction 19.5) T_hot  433 K  P_IR   3.3 W  channels   3158  OK
+  sketch       still        A 0.5 skin True  R 0.11: w 21.0 um (diffraction 26.6) T_hot  413 K  P_IR   3.3 W  channels   3158  diffraction
+  sketch       still        A 0.5 skin True  R 0.15: w 21.0 um (diffraction 19.5) T_hot  413 K  P_IR   3.3 W  channels   3158  OK
+  sketch       quiet_office A 1.0 skin False R 0.11: w 32.5 um (diffraction 26.6) T_hot  452 K  P_IR   4.4 W  channels   3158  OK
+  sketch       quiet_office A 1.0 skin False R 0.15: w 32.5 um (diffraction 19.5) T_hot  452 K  P_IR   4.4 W  channels   3158  OK
+  sketch       quiet_office A 0.5 skin False R 0.11: w 22.9 um (diffraction 26.6) T_hot  429 K  P_IR   4.4 W  channels   3158  diffraction
+  sketch       quiet_office A 0.5 skin False R 0.15: w 22.9 um (diffraction 19.5) T_hot  429 K  P_IR   4.4 W  channels   3158  OK
+  sketch       quiet_office A 1.0 skin True  R 0.11: w 28.2 um (diffraction 26.6) T_hot  452 K  P_IR   3.3 W  channels   3158  OK
+  sketch       quiet_office A 1.0 skin True  R 0.15: w 28.2 um (diffraction 19.5) T_hot  452 K  P_IR   3.3 W  channels   3158  OK
+  sketch       quiet_office A 0.5 skin True  R 0.11: w 19.9 um (diffraction 26.6) T_hot  429 K  P_IR   3.3 W  channels   3158  diffraction
+  sketch       quiet_office A 0.5 skin True  R 0.15: w 19.9 um (diffraction 19.5) T_hot  429 K  P_IR   3.3 W  channels   3158  OK
+  sketch       office       A 1.0 skin False R 0.11: w 30.7 um (diffraction 26.6) T_hot  521 K  P_IR   4.4 W  channels   3158  OK
+  sketch       office       A 1.0 skin False R 0.15: w 30.7 um (diffraction 19.5) T_hot  521 K  P_IR   4.4 W  channels   3158  OK
+  sketch       office       A 0.5 skin False R 0.11: w 21.6 um (diffraction 26.6) T_hot  488 K  P_IR   4.3 W  channels   3158  diffraction
+  sketch       office       A 0.5 skin False R 0.15: w 21.6 um (diffraction 19.5) T_hot  488 K  P_IR   4.3 W  channels   3158  OK
+  sketch       office       A 1.0 skin True  R 0.11: w 26.6 um (diffraction 26.6) T_hot  521 K  P_IR   3.3 W  channels   3158  diffraction
+  sketch       office       A 1.0 skin True  R 0.15: w 26.6 um (diffraction 19.5) T_hot  521 K  P_IR   3.3 W  channels   3158  OK
+  sketch       office       A 0.5 skin True  R 0.11: w 18.8 um (diffraction 26.6) T_hot  488 K  P_IR   3.3 W  channels   3158  diffraction
+  sketch       office       A 0.5 skin True  R 0.15: w 18.8 um (diffraction 19.5) T_hot  488 K  P_IR   3.3 W  channels   3158  diffraction
+  film_density still        A 1.0 skin False R 0.11: w 27.7 um (diffraction 26.6) T_hot  433 K  P_IR  17.1 W  channels  13012  OK
+  film_density still        A 1.0 skin False R 0.15: w 27.7 um (diffraction 19.5) T_hot  433 K  P_IR  17.1 W  channels  13012  OK
+  film_density still        A 0.5 skin False R 0.11: w 19.6 um (diffraction 26.6) T_hot  413 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density still        A 0.5 skin False R 0.15: w 19.6 um (diffraction 19.5) T_hot  413 K  P_IR  17.2 W  channels  13012  OK
+  film_density still        A 1.0 skin True  R 0.11: w 27.7 um (diffraction 26.6) T_hot  433 K  P_IR  17.1 W  channels  13012  OK
+  film_density still        A 1.0 skin True  R 0.15: w 27.7 um (diffraction 19.5) T_hot  433 K  P_IR  17.1 W  channels  13012  OK
+  film_density still        A 0.5 skin True  R 0.11: w 19.6 um (diffraction 26.6) T_hot  413 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density still        A 0.5 skin True  R 0.15: w 19.6 um (diffraction 19.5) T_hot  413 K  P_IR  17.2 W  channels  13012  OK
+  film_density quiet_office A 1.0 skin False R 0.11: w 26.3 um (diffraction 26.6) T_hot  452 K  P_IR  17.1 W  channels  13012  diffraction
+  film_density quiet_office A 1.0 skin False R 0.15: w 26.3 um (diffraction 19.5) T_hot  452 K  P_IR  17.1 W  channels  13012  OK
+  film_density quiet_office A 0.5 skin False R 0.11: w 18.6 um (diffraction 26.6) T_hot  429 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density quiet_office A 0.5 skin False R 0.15: w 18.6 um (diffraction 19.5) T_hot  429 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density quiet_office A 1.0 skin True  R 0.11: w 26.3 um (diffraction 26.6) T_hot  452 K  P_IR  17.1 W  channels  13012  diffraction
+  film_density quiet_office A 1.0 skin True  R 0.15: w 26.3 um (diffraction 19.5) T_hot  452 K  P_IR  17.1 W  channels  13012  OK
+  film_density quiet_office A 0.5 skin True  R 0.11: w 18.6 um (diffraction 26.6) T_hot  429 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density quiet_office A 0.5 skin True  R 0.15: w 18.6 um (diffraction 19.5) T_hot  429 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 1.0 skin False R 0.11: w 24.8 um (diffraction 26.6) T_hot  521 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 1.0 skin False R 0.15: w 24.8 um (diffraction 19.5) T_hot  521 K  P_IR  17.2 W  channels  13012  OK
+  film_density office       A 0.5 skin False R 0.11: w 17.5 um (diffraction 26.6) T_hot  488 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 0.5 skin False R 0.15: w 17.5 um (diffraction 19.5) T_hot  488 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 1.0 skin True  R 0.11: w 24.8 um (diffraction 26.6) T_hot  521 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 1.0 skin True  R 0.15: w 24.8 um (diffraction 19.5) T_hot  521 K  P_IR  17.2 W  channels  13012  OK
+  film_density office       A 0.5 skin True  R 0.11: w 17.5 um (diffraction 26.6) T_hot  488 K  P_IR  17.2 W  channels  13012  diffraction
+  film_density office       A 0.5 skin True  R 0.15: w 17.5 um (diffraction 19.5) T_hot  488 K  P_IR  17.2 W  channels  13012  diffraction

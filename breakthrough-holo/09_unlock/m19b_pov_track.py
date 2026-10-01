@@ -38,10 +38,15 @@ CASES = [  # name, loop rate (Hz), latency frames, actuator lag (s): steered cha
 ]
 
 
+MEAN_WIND = {"still, L 3 cm": 0.0, "still, L 10 cm": 0.0, "home, L 3 cm": 0.05, "quiet office, L 3 cm": 0.10,
+             "office sigma 0.1, L 3 cm": 0.10}       # red team 7 C3: the drafts carry a mean wind U, not only eddies
+
+
 def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, dur=6.0, seed=0, fs_t=4000.0,
-             auth=5.4, r_lost_mult=1.5):
+             auth=5.4, r_lost_mult=1.5, mean_wind=True):
     cname, f_fr, d, tau_lc = case
     dname, u_rms, L, Uc = draft
+    U_mean = MEAN_WIND.get(dname, 0.0) if mean_wind else 0.0
     tp, tfm = rt6.mote_times(m18b.A_MOTE, m18b.RHO, m18b.CP, m18b.KP)
     T = 1 / f_fr
     tau_F = tau_lc + tfm
@@ -73,12 +78,15 @@ def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, 
         beams.append(K)
         simps.append(simp)
         invs.append(inv)
-        caps.append((v_plan + auth * u_rms) * cmax)
+        caps.append((v_plan + U_mean + auth * u_rms) * cmax)
     caps = np.array(caps)
     Ad, Bd = rt6.discretise(*rt6.plant_ss(tp, tau_F), T)
     n_fr = int(dur / T)
     n_t = int(dur * fs_t) + 2
     U = rt6.synth_turb(3 * n_motes, n_t, fs_t, u_rms, L, Uc, rng).reshape(n_motes, 3, n_t)
+    if U_mean > 0:                                    # mean wind along a random horizontal direction per mote
+        phi = rng.random(n_motes) * 2 * math.pi
+        U = U + (U_mean * np.stack([np.cos(phi), np.sin(phi), np.zeros(n_motes)], axis=1))[:, :, None]
     p0, v0 = plan(0.0)
     x = p0.copy()
     vel = v0.copy()
@@ -143,7 +151,8 @@ def simulate(case, draft, w_spot, v_plan=0.8, f_r=30.0, sig_n=4e-6, n_motes=40, 
     O = np.concatenate(off_s) if off_s else np.array([np.nan])
     t_eff = float(np.sum(np.minimum(t_lost, dur) - 0.2))
     nl = int(lost.sum())
-    return dict(case=cname, draft=dname, w_um=w_spot * 1e6, v=v_plan, f_r=f_r, R_mm=R * 1e3, sig_noise_um=sig_n * 1e6,
+    return dict(case=cname, draft=dname, U_mean=U_mean, w_um=w_spot * 1e6, v=v_plan, f_r=f_r, R_mm=R * 1e3,
+                sig_noise_um=sig_n * 1e6,
                 err_p50_um=float(np.nanpercentile(E, 50) * 1e6), err_p999_um=float(np.nanpercentile(E, 99.9) * 1e6),
                 off_p999_um=float(np.nanpercentile(O, 99.9) * 1e6), lost=nl, n_motes=n_motes, mote_seconds=t_eff,
                 loss_95_upper=(3.0 if nl == 0 else nl + 2 * math.sqrt(nl)) / t_eff, sat_frac=sat / (n_fr * n_motes))
