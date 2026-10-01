@@ -162,6 +162,13 @@ This follows BYU's JoVE rig: laser-cut wood, a 30 mm lens holder, and an electro
 
 Use a 405 nm-blocking camera filter and long exposures to photograph traps.
 
+**Automate it** (`diy2_control/autotrap.py`, self-tested on a simulated rig; firmware `autotrap_esp32/` is untested on hardware):
+- the ESP32 sets the laser power, enables it and pulses the tapper;
+- the camera decides capture from a spot that persists, so falling particles are rejected, and measures hold time;
+- output: capture probability with 95 % intervals and median hold time against power, ~200+ trials an hour, like BYU's rig.
+
+It polls the interlock every second, refuses powers above `--max_mW` or outside the meter calibration, and always leaves the laser off. It is still not a safety device: the hardware interlock is.
+
 ### DIY-2b: drawing (BYU replication)
 
 - **Galvos.** A hobby ILDA set ($95–210) is fine. The particle, not the galvo, limits speed (R11 §7.1). Choose on:
