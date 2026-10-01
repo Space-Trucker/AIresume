@@ -6,7 +6,7 @@ SDK). This script uses only its documented C calls through ctypes: OpenDevices, 
 X/Y are 12-bit (0..4095). Color channels drive the ILDA colour lines; use them for the illumination laser. The TRAP laser
 must be hardware-interlocked and is not controlled from here.
 
-Usage: python3 helios_stream.py path.csv --mm_per_full_scale 30 --pps 20000
+Usage: python3 helios_stream.py path.csv --mm_per_full_scale 30 --pps 20000   (--pps must equal path_gen.py --rate)
 """
 import argparse
 import ctypes
@@ -29,6 +29,8 @@ def main():
     ap.add_argument("--rgb", default="0,180,255", help="illumination colour, e.g. Iron-Man cyan")
     a = ap.parse_args()
     d = np.loadtxt(a.csv, delimiter=",", skiprows=1)
+    if len(d) > 4096:   # HELIOS_MAX_POINTS per frame in the vendor SDK
+        raise SystemExit(f"{len(d)} points > 4096 per Helios frame: use a smaller --rate in path_gen.py (and the same --pps here)")
     xy = np.clip(np.round(2048 + d[:, :2] / a.mm_per_full_scale * 4095), 0, 4095).astype(int)
     inten = d[:, 2] if d.shape[1] > 2 else np.ones(len(d))
     r, g, b = (int(c) for c in a.rgb.split(","))

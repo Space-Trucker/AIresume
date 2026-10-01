@@ -42,6 +42,9 @@ def diy2(lam_trap=405e-9, w=8e-6):
     """Single-beam trap at ~100 mm focal length, focal spot w. Window = [P_hold, P_burn] in absorbed power, then trap power
     via intercept (spot ~ particle)."""
     print(f"\nDIY-2 trap display (405 nm, focal spot w = {w * 1e6:.0f} um; eta_lateral ~0.4 assumed, BYU regime)")
+    print("  The absorbed-power window (hold..burn) is the robust number. 'peak-intercept power' assumes the particle sits at\n"
+          "  the beam peak; in a dark-pocket trap it absorbs only edge light, so the laser power needed is higher (BYU's\n"
+          "  measured minimum hold: 18-24 mW at 405 nm). Raise power slowly; above the burn line the particle chars or melts.")
     eta = 0.4
     for name, (a, rho, kp, j1A, A, Tmax, note) in PARTICLES.items():
         weight = 4 / 3 * math.pi * a ** 3 * rho * ph.G
@@ -58,7 +61,7 @@ def diy2(lam_trap=405e-9, w=8e-6):
         v_max = eta * fpw * P_burn / (6 * math.pi * ph.mu_air(0.5 * (ph.T0 + Tmax)) * a) * ph.cunningham(a)
         ok = "OK" if P_burn > 3 * P_hold else ("marginal" if P_burn > P_hold else "CANNOT TRAP")
         print(f"  {name:38s} hold {P_hold * 1e6:8.2f} uW_abs  burn {P_burn * 1e3:6.2f} mW_abs  window x{P_burn / P_hold:8.0f} [{ok}]"
-              f"  trap power ~{P_hold / (A * icp) * 1e3:6.3f}-{P_burn / (A * icp) * 1e3:6.1f} mW  v_max {v_max:5.2f} m/s")
+              f"  peak-intercept power {P_hold / (A * icp) * 1e3:6.3f}-{P_burn / (A * icp) * 1e3:6.1f} mW  v_max {v_max:5.2f} m/s")
 
 
 def drawing(v=0.5, f=(10, 20, 30)):
