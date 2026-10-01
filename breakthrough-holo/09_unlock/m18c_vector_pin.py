@@ -64,7 +64,12 @@ def c_max_over_directions(simp, inv, n=4000, seed=0):
     return worst_single, worst_sum
 
 
-def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t=4000.0, auth=5.4, r_lost_mult=1.5):
+def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t=4000.0, auth=5.4, r_lost_mult=1.5,
+             follow=False):
+    """follow: every hologram frame re-centres each spot on the mote's latest measured position (the hologram is
+    recomputed every frame anyway), so the beams are offset only by measurement noise plus the motion during the
+    latency. The force still pushes the mote back towards its home voxel. Without follow, spots stay on the home voxel.
+    A mote is lost when its offset from its spot centre exceeds r_lost_mult * w_spot."""
     cname, f_fr, d, tau_lc = case
     dname, u_rms, L, Uc = draft
     tp, tfm = rt6.mote_times(m18b.A_MOTE, m18b.RHO, m18b.CP, m18b.KP)
@@ -114,14 +119,18 @@ def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t
         f_des = Kp * e + Ki * T * integ + Kd * (e - e_prev) / T
         e_prev = e
         F_cmd = np.zeros((n_motes, 3))
+        off = np.zeros(n_motes)
         for i in range(n_motes):
             if lost[i]:
                 continue
             K = beams[i]
             idx, c = allocate(f_des[i], simps[i], invs[i])
             Kb = K[idx]
-            # gain scheduling from the measured offset across each beam
-            rho2_m = np.sum(y[i] ** 2) - (Kb @ y[i]) ** 2
+            # spot centre: home voxel, or the latest measured position (follow); gain scheduling from the measured
+            # offset of the mote across each beam relative to the spot centre
+            c_spot = y[i] if follow else np.zeros(3)
+            dm = y[i] - c_spot
+            rho2_m = np.sum(dm ** 2) - (Kb @ dm) ** 2
             g_hat = np.maximum(np.exp(-2 * rho2_m / w2), 0.05)
             a = c / g_hat
             s = a.max() / caps[i]
@@ -130,9 +139,11 @@ def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t
                 sat += 1
             else:
                 integ[i] += e[i]                      # conditional integration (anti-windup)
-            rho2 = np.sum(x[i] ** 2) - (Kb @ x[i]) ** 2
+            dx = x[i] - c_spot
+            rho2 = np.sum(dx ** 2) - (Kb @ dx) ** 2
             g = np.exp(-2 * rho2 / w2)
             F_cmd[i] = (a * g) @ Kb
+            off[i] = math.sqrt(np.sum(dx ** 2))
         # plant, per axis: state (x, v, F) with inputs (u, F_cmd)
         for ax in range(3):
             S = np.vstack([x[:, ax], v[:, ax], F[:, ax]])
@@ -142,7 +153,8 @@ def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t
         hist[0] = x
         r = np.linalg.norm(x, axis=1)
         if t > 0.2:
-            newly = (r > r_lost_mult * w_spot) & ~lost
+            r_spot = off if follow else r
+            newly = (r_spot > r_lost_mult * w_spot) & ~lost
             t_lost[newly] = t
             lost |= newly
             if k % 10 == 0:
@@ -151,6 +163,7 @@ def simulate(case, draft, w_spot, sig_n=4e-6, n_motes=60, dur=10.0, seed=0, fs_t
     t_eff = float(np.sum(np.minimum(t_lost, dur) - 0.2))
     nl = int(lost.sum())
     return dict(case=cname, draft=dname, w_um=w_spot * 1e6, f_frame=f_fr, latency_frames=d, sig_noise_um=sig_n * 1e6,
+                follow=follow,
                 K=list(best[1]), r_p50_um=float(np.nanpercentile(R, 50) * 1e6), r_p999_um=float(np.nanpercentile(R, 99.9) * 1e6),
                 r_max_um=float(np.nanmax(R) * 1e6), lost=nl, n_motes=n_motes, mote_seconds=t_eff,
                 loss_rate=nl / t_eff, loss_rate_95_upper=(3.0 if nl == 0 else nl + 2 * math.sqrt(nl)) / t_eff,
@@ -217,8 +230,27 @@ def main_long():
             json.dump(rows, fh, indent=1, default=float)
 
 
+def main_follow():
+    """Spot-following grid: the smallest waist each modulator holds (60 motes x 20 s per point)."""
+    rows = []
+    for case in (m18b.CASES[3], m18b.CASES[4], m18b.CASES[5]):
+        for draft in (m18b.DRAFTS[0], m18b.DRAFTS[2], m18b.DRAFTS[3]):
+            for w in (25e-6, 30e-6, 35e-6, 50e-6):
+                seed = zlib.crc32(f"follow{case[0]}{draft[0]}{w}".encode()) % 100000
+                r = simulate(case, draft, w, n_motes=60, dur=20.0, seed=seed, follow=True)
+                rows.append(r)
+                print(f"  FOLLOW {case[0]:30s} {draft[0]:22s} w {w * 1e6:3.0f} um: r_p50 {r['r_p50_um']:5.1f} r_p99.9 "
+                      f"{r['r_p999_um']:5.1f} r_max {r['r_max_um']:6.1f} um  lost {r['lost']}/{r['n_motes']} in "
+                      f"{r['mote_seconds']:.0f} mote-s (95% upper {r['loss_rate_95_upper']:.1e}/s)  sat {r['sat_frac']:.1e}",
+                      flush=True)
+                with open(os.path.join(HERE, "results", "m18c_vector_pin_follow.json"), "w") as fh:
+                    json.dump(rows, fh, indent=1, default=float)
+
+
 if __name__ == "__main__":
-    if "--long" in sys.argv:
+    if "--follow" in sys.argv:
+        main_follow()
+    elif "--long" in sys.argv:
         main_long()
     else:
         main(quick="--quick" in sys.argv)

@@ -27,3 +27,6 @@ self-test: allocation error 2.9e-16; |facet cost - linprog| max 4.4e-16; worst L
   MEMS 3 kHz                     still, L 3 cm          w  40 um: r_p50   3.4 r_p99.9  14.5 r_max   58.2 um  lost 48/60 in 573 mote-s (95% upper 1.1e-01/s)  sat 2.9e-04
   MEMS 3 kHz                     still, L 3 cm          w  50 um: r_p50   3.2 r_p99.9   9.9 r_max   24.8 um  lost 2/60 in 1161 mote-s (95% upper 4.2e-03/s)  sat 1.4e-06
   MEMS 3 kHz                     still, L 3 cm          w  70 um: r_p50   3.0 r_p99.9   8.0 r_max   10.9 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  MEMS 3 kHz                     home, L 3 cm           w  35 um: r_p50   4.2 r_p99.9  34.0 r_max   51.5 um  lost 60/60 in 60 mote-s (95% upper 1.3e+00/s)  sat 1.3e-03
+  MEMS 3 kHz                     home, L 3 cm           w  40 um: r_p50   4.0 r_p99.9  23.6 r_max   59.8 um  lost 59/60 in 285 mote-s (95% upper 2.6e-01/s)  sat 2.4e-04
+  MEMS 3 kHz                     home, L 3 cm           w  50 um: r_p50   3.6 r_p99.9  12.0 r_max   68.2 um  lost 6/60 in 1121 mote-s (95% upper 9.7e-03/s)  sat 5.1e-05

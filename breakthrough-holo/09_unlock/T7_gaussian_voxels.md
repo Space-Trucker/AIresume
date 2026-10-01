@@ -139,7 +139,21 @@ Results with 4 µm noise and L = 3 cm. Quick runs are 30 motes × 3 s; the full 
 
 Long runs (60 motes × 150 s) at the candidate points are in `results/m18c_vector_pin_long.json`. **Zero losses in T mote-s only bounds the rate at 3/T.** The 10⁻⁴ /s target needs ≥ 3×10⁴ mote-s, which these runs do not reach.
 
-**Takeaway.** A **≥ 3–5 kHz phase modulator with ≤ 2 frames of total latency** holds 1 µm motes in w = 50 µm Gaussian spots in still to quiet-office air. Today's 1550 nm LCoS (60–400 Hz) cannot.
+**Takeaway (spots fixed at the home voxel).** A **≥ 3–5 kHz phase modulator with ≤ 2 frames of total latency** holds 1 µm motes in w = 50 µm Gaussian spots in still to quiet-office air. Today's 1550 nm LCoS (60–400 Hz) cannot.
+
+**Spot-following (m18c `follow=True`)** [main session; RT7 asked to check].
+- **The idea.** The hologram is recomputed every frame anyway, so each frame re-centres every spot on the mote's latest measured position. The force still points home.
+- **Why it helps.** The beams are then offset only by sensor noise plus the motion during the latency, not by the whole excursion. This removes most of the profile instability.
+- **Quick runs** (30 motes × 3 s; 0 or 1 lost in ~84 mote-s):
+
+  | Modulator (latency) | Holds |
+  |---|---|
+  | PLM 1.44 kHz (1 frame) | w = 50 µm, still and quiet office (0/30) |
+  | MEMS 3 kHz (2 frames) | w = 35 and 50 µm, still and quiet office (0/30) |
+  | PLM 1.44 kHz (2 frames) | still loses motes at w ≤ 50 µm |
+
+- The grid is in `results/m18c_follow.log`.
+- **What it implies.** A TI-PLM-class modulator (1.44 kHz, a MEMS device that exists today, though by invitation and at ~30 % efficiency at 1550 nm) may be enough for still rooms, provided the total latency fits in one frame (0.69 ms).
 
 **Physics allows it; no part does yet.**
 - MEMS piston modulators settle in ~10 µs.
