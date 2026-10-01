@@ -225,6 +225,21 @@ The question: what passes through a 3.5 mm pupil anywhere in or around a random 
 - A field checker that assigns heads to avoid stacking (heads were assigned at random here) should recover part of this. It is a certified software function either way.
 - **Curtain mode** (10–50 mW foci): the worst sums are 50–256 mW. This confirms opus's warning about summed sub-threshold intercepts. The curtain must trip on the *sum* through any eye-sized region, which per-beam monitoring cannot see. So the **curtain is defence in depth only**, as decided above.
 
+**I7: tiled sub-holograms plus a MEMS micromirror per beam** (opus idea 5, arithmetic by the main session).
+- **The idea.** Each active beam gets its own small hologram tile that addresses only a patch the size of the dot spacing, so it needs (p/r_c)² pixels. A slow MEMS micromirror points that patch anywhere in the field; it moves only when the content moves.
+- **Pixel and mirror counts** (3 beams per mote + 30 % spare tiles for hand-over):
+
+| Content | r_c | Pixels per tile | Tiles (= micromirrors) | Total pixels (4K panels) | vs full-field holography |
+|---|---|---|---|---|---|
+| Sketch (1,667 motes) | 15–25 µm | 14k–40k | ~6,500 | 0.9–2.6×10⁸ (11–31 panels) | ×20–100 fewer |
+| Film density (9,900 motes) | 10 µm (2 mW Class 1 focus) – 25 µm | 14k–90k | ~38,600 | 0.6–3.5×10⁹ (67–420 panels) | ×15–90 fewer |
+
+- **This is v4's "one channel per beam" structure with a different channel.** The v4 channel was a fast galvo with a focus loop at $0.7–5k. Here it is a quasi-static MEMS mirror in an array (~$1–10 at array scale [ESTIMATE]) plus a few ×10⁴ LCoS pixels. Fine positioning and force come from the hologram tile and the DMD gate.
+- **Per-channel cost** is ~10²× below v4 [ESTIMATE].
+- **Optics** [ASSUMPTION, needs a design]: each tile must fill the head's output aperture after expansion.
+  - Étendue allows it: a 10 cm head lens has ~10⁹–10¹⁰ diffraction-limited modes.
+  - The mirror array has to sit in a pupil plane shared by all tiles.
+
 **Curtain standards analysis (opus, [MEASURED via secondary sources]).**
 - Physics and doses are sound.
 - Corrected 1550 nm cut dose: 10⁴ J/m² over a **1 mm** aperture for t < 0.35 s, i.e. 7.85 mJ. Allowed cut times are 39–157 ms at 200–50 mW, so a standard Type 4 light curtain (6–13 ms) suffices.

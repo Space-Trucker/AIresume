@@ -168,3 +168,82 @@ HOLO flat-top plateau radius 4.00 lambda/NA: eta_eq 0.819 (target r0 4.45, edge 
   b_film_ito5: r_c 35 um -> NA 0.1586 (Airy 0.0272); aperture radius at 3.95/4.75 m 627/754 mm; modes/head 3.95e+10 vs m15 2.63e+08 (x150.1); 4K LCoS per head 4488
   c_sketch_carbonW10: r_c 61 um -> NA 0.0900 (Airy 0.0154); aperture radius at 3.95/4.75 m 356/428 mm; modes/head 1.27e+10 vs m15 8.47e+07 (x150.1); 4K LCoS per head 1445
   MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.0: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.31 min/mean 0.30 spot-to-spot 0.04 zero-order 1.1e-05
+  MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.3: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.31 min/mean 0.29 spot-to-spot 0.04 zero-order 1.8e-04
+  MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.6: eff(plateau) 0.17 eff(signal) 0.26 rms in spot 0.33 min/mean 0.21 spot-to-spot 0.39 zero-order 3.3e-01
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.0: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.24 min/mean 0.23 spot-to-spot 0.06 zero-order 1.6e-05
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.3: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.24 min/mean 0.23 spot-to-spot 0.06 zero-order 1.8e-04
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.6: eff(plateau) 0.17 eff(signal) 0.26 rms in spot 0.26 min/mean 0.18 spot-to-spot 0.37 zero-order 3.3e-01
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.0: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.39 min/mean 0.22 spot-to-spot 0.02 zero-order 1.7e-05
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.3: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.39 min/mean 0.22 spot-to-spot 0.02 zero-order 1.5e-04
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.6: eff(plateau) 0.18 eff(signal) 0.28 rms in spot 0.44 min/mean 0.02 spot-to-spot 0.38 zero-order 3.3e-01
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.0: eff(plateau) 0.51 eff(signal) 0.78 rms in spot 0.37 min/mean 0.20 spot-to-spot 0.02 zero-order 1.5e-05
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.3: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.37 min/mean 0.20 spot-to-spot 0.02 zero-order 1.6e-04
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.6: eff(plateau) 0.18 eff(signal) 0.28 rms in spot 0.41 min/mean 0.00 spot-to-spot 0.37 zero-order 3.3e-01
+MOTE alpha(1550) for 5 % carbon: n2.3_k0.8: linear 3.24e+05, MG 1.18e+05; n2.5_k1.0: linear 4.05e+05, MG 1.20e+05; n2.7_k1.2: linear 4.86e+05, MG 1.17e+05
+  white-coated carbon FOM band: a=10 um 0.99-3.44; a=5 um 0.54-2.44
+  a_sketch_ito5: T_m 367 K, T1 19 K -> hot face ~393 K; occluded mean 433 K, face ~459 K
+  b_film_ito5: T_m 367 K, T1 19 K -> hot face ~393 K; occluded mean 433 K, face ~459 K
+  c_sketch_carbonW10: T_m 521 K, T1 31 K -> hot face ~562 K; occluded mean 690 K, face ~731 K
+MIE validation: BH test Qext 3.1050 (3.1054) Qback 2.9242 (2.9253); x=300 Qext 2.044 (->2)
+  ito_aerogel_5um          m=1.040+0.0001i x=63: Qsca 2.95; q_iso(deg) 30:0.298 60:0.0301 90:0.00133 120:0.00118 150:0.000804 170:0.000235 | frac into 30-150 deg 0.0179
+  ito_aerogel_1um          m=1.040+0.0001i x=13: Qsca 0.49; q_iso(deg) 30:0.274 60:0.0149 90:0.00319 120:0.00118 150:0.00159 170:0.000518 | frac into 30-150 deg 0.0088
+  ito_aerogel_1.5um        m=1.040+0.0001i x=19: Qsca 1.03; q_iso(deg) 30:0.237 60:0.0137 90:0.00293 120:0.00105 150:0.00155 170:0.000124 | frac into 30-150 deg 0.00986
+  carbon_aerogel_MG_5um    m=1.043+0.0194i x=63: Qsca 1.22; q_iso(deg) 30:0.145 60:0.00686 90:0.00106 120:0.00059 150:0.000539 170:0.00053 | frac into 30-150 deg 0.0069
+  carbon_aerogel_MG_10um   m=1.043+0.0194i x=126: Qsca 1.05; q_iso(deg) 30:0.0887 60:0.00478 90:0.00102 120:0.000592 150:0.000539 170:0.000536 | frac into 30-150 deg 0.0045
+  dense_black_carbon_5um   m=1.950+0.7900i x=63: Qsca 1.27; q_iso(deg) 30:0.473 60:0.219 90:0.176 120:0.166 150:0.164 170:0.164 | frac into 30-150 deg 0.174
+  dense_black_carbon_10um  m=1.950+0.7900i x=126: Qsca 1.25; q_iso(deg) 30:0.415 60:0.216 90:0.176 120:0.166 150:0.164 170:0.164 | frac into 30-150 deg 0.171
+  solid_silica_1um         m=1.460+0.0000i x=13: Qsca 2.78; q_iso(deg) 30:5.39 60:1.29 90:0.331 120:0.161 150:0.845 170:1.85 | frac into 30-150 deg 0.657
+  solid_TiO2_1um           m=2.600+0.0000i x=13: Qsca 2.30; q_iso(deg) 30:1.84 60:1.36 90:0.843 120:0.719 150:0.828 170:1.84 | frac into 30-150 deg 1.06
+  Lambertian white coat q_iso vs phase angle (0 = viewer beside the illuminating head): R=0.1: 0:0.27 30:0.23 60:0.16 90:0.08 120:0.03 150:0.00 170:0.00; R=0.3: 0:0.80 30:0.70 60:0.49 90:0.25 120:0.09 150:0.01 170:0.00; R=0.6: 0:1.60 30:1.41 60:0.97 90:0.51 120:0.17 150:0.02 170:0.00
+  a_sketch_ito5: q(90deg) uncoated 1.33e-03 -> visible spot 73.6 mW (m15 0.327 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 9.00e-06 cd
+  b_film_ito5: q(90deg) uncoated 1.33e-03 -> visible spot 18.3 mW (m15 0.082 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 1.20e-05 cd
+  c_sketch_carbonW10: q(90deg) uncoated 1.02e-03 -> visible spot 73.8 mW (m15 0.250 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 9.00e-06 cd
+STRAY a_sketch_ito5: P_vis 0.91 W (200 lm) vs image 0.188 lm; leak 1e-3 -> L_wall 1.0e-03 cd/m2 (image's own flux adds 9.6e-04); old 5% rule: 106 % of image flux -> FAIL; air scatter 0.027-0.091 lm = 14-48 % of image flux; dust sparkles 1.1/11/106
+STRAY b_film_ito5: P_vis 1.36 W (300 lm) vs image 1.508 lm; leak 1e-3 -> L_wall 1.5e-03 cd/m2 (image's own flux adds 7.7e-03); old 5% rule: 20 % of image flux -> FAIL; air scatter 0.041-0.137 lm = 3-9 % of image flux; dust sparkles 0.2/2/22
+STRAY c_sketch_carbonW10: P_vis 0.69 W (153 lm) vs image 0.188 lm; leak 1e-3 -> L_wall 7.8e-04 cd/m2 (image's own flux adds 9.6e-04); old 5% rule: 81 % of image flux -> FAIL; air scatter 0.021-0.070 lm = 11-37 % of image flux; dust sparkles 9.9/99/993
+  H10 receiver landing zones (bounding box of beam ends through the volume): 2.8-8.9 m^2 per head
+SAFETY a_sketch_ito5: P_focus 48.4 mW, undetected 2% 0.97 mW (10% of 10 mW); cut dose 0.068 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.327 mW, cut 0.46 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 1.09 mW; mote's own extinction 0.5% of its beam
+SAFETY b_film_ito5: P_focus 7.9 mW, undetected 2% 0.16 mW (2% of 10 mW); cut dose 0.011 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.082 mW, cut 0.11 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 0.27 mW; mote's own extinction 3.3% of its beam
+SAFETY c_sketch_carbonW10: P_focus 48.7 mW, undetected 2% 0.97 mW (10% of 10 mW); cut dose 0.068 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.250 mW, cut 0.35 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 0.83 mW; mote's own extinction 4.3% of its beam
+  bystanders (1 people at 1.2 m): 4% of (mote, head) trap beams cut downstream of the focus, 25% of motes lose >= 1 head (NA 0.005)
+  bystanders (1 people at 1.2 m): 5% of (mote, head) trap beams cut downstream of the focus, 30% of motes lose >= 1 head (NA 0.05)
+  bystanders (2 people at 1.2 m): 8% of (mote, head) trap beams cut downstream of the focus, 55% of motes lose >= 1 head (NA 0.005)
+  bystanders (2 people at 1.2 m): 10% of (mote, head) trap beams cut downstream of the focus, 66% of motes lose >= 1 head (NA 0.05)
+  bystanders (6 people at 1.2 m): 24% of (mote, head) trap beams cut downstream of the focus, 78% of motes lose >= 1 head (NA 0.005)
+  bystanders (6 people at 1.2 m): 30% of (mote, head) trap beams cut downstream of the focus, 85% of motes lose >= 1 head (NA 0.05)
+M16 sketch_quiet_a1.0_v1.0: N 526.3/526.3 (+0.0%); dT 196.9/197.5 (+0.3%); err_um 3.82/3.82 (+0.0%); r_c_um 11.46/11.46 (+0.0%); P_focus_mW 11.64/11.87 (+1.9%); P_ir_W 3.952/4.028 (+1.9%); P_vis_spot_mW 0.6926/0.6926 (+0.0%); P_vis_W 0.3645/0.3645 (+0.0%); occluded_dT 369.5/372.2 (+0.7%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 sketch_normal_a1.0_v0.5: N 1053/1053 (+0.0%); dT 148.9/149.2 (+0.2%); err_um 9.868/9.868 (+0.0%); r_c_um 29.6/29.6 (+0.0%); P_focus_mW 56.21/57.11 (+1.6%); P_ir_W 38.16/38.76 (+1.6%); P_vis_spot_mW 2.311/2.311 (+0.0%); P_vis_W 2.433/2.433 (+0.0%); occluded_dT 282.1/283.3 (+0.4%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 film_density_normal_a1.5_v0.5: N 4337/4337 (+0.0%); dT 188.3/188.5 (+0.1%); err_um 9.868/9.868 (+0.0%); r_c_um 29.6/29.6 (+0.0%); P_focus_mW 51.54/52.37 (+1.6%); P_ir_W 144.2/146.5 (+1.6%); P_vis_spot_mW 1.369/1.369 (+0.0%); P_vis_W 5.94/5.94 (+0.0%); occluded_dT 347/348.2 (+0.4%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 film_density_quiet_a1.0_v1.0: N 2169/2169 (+0.0%); dT 196.9/197.5 (+0.3%); err_um 3.82/3.82 (+0.0%); r_c_um 11.46/11.46 (+0.0%); P_focus_mW 11.64/11.87 (+1.9%); P_ir_W 16.28/16.6 (+1.9%); P_vis_spot_mW 0.9234/0.9234 (+0.0%); P_vis_W 2.003/2.003 (+0.0%); occluded_dT 369.5/372.2 (+0.7%) | occluded heat fail rt6 True (m16 ['heat'])
+  diffraction-limited plateau radius (um), R_head 0.3 m: rc_min_rho1.0_d1.25 6, rc_min_rho1.0_d3.95 20, rc_min_rho1.0_d4.75 25, rc_min_rho3.0_d1.25 19, rc_min_rho3.0_d3.95 61, rc_min_rho3.0_d4.75 74
+  max P-loop crossover (Ms<=2) vs latency: 10us: 7355 Hz (1/8tau 10000), 20us: 4379 Hz (1/8tau 5556), 50us: 1954 Hz (1/8tau 2381), 100us: 1053 Hz (1/8tau 1220), 150us: 703 Hz (1/8tau 820), 250us: 453 Hz (1/8tau 495)
+  1-um mote loop crossover vs total latency: 10us: 1827 Hz, 20us: 1702 Hz, 50us: 1477 Hz, 100us: 789 Hz, 150us: 539 Hz, 250us: 327 Hz
+  sketch       quiet  a 1.0 v 1.0 m16_as_is             : r_c  11.5 um, T_m  491 K ok  , P_focus   11.9 mW, P_IR     4.0 W, vis spot 0.69 mW (uncoated 65 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 diffraction_rho1      : r_c  20.4 um, T_m  491 K ok  , P_focus   53.8 mW, P_IR    18.3 W, vis spot 0.69 mW (uncoated 65 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 +latency150us         : r_c  81.5 um, T_m  491 K ok  , P_focus  856.9 mW, P_IR   290.8 W, vis spot 35.00 mW (uncoated 3290 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 +turb_peaks(sigma=u)  : r_c  81.5 um, T_m  557 K ok  , P_focus  856.9 mW, P_IR   290.8 W, vis spot 35.00 mW (uncoated 3290 mW), channels 2105 -> 3421
+  sketch       normal a 1.0 v 0.5 m16_as_is             : r_c  29.6 um, T_m  442 K ok  , P_focus   57.1 mW, P_IR    38.8 W, vis spot 2.31 mW (uncoated 217 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 diffraction_rho1      : r_c  29.6 um, T_m  442 K ok  , P_focus   81.6 mW, P_IR    55.4 W, vis spot 2.31 mW (uncoated 217 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 +latency150us         : r_c 210.4 um, T_m  442 K ok  , P_focus 4122.9 mW, P_IR  2798.6 W, vis spot 116.79 mW (uncoated 10977 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 +turb_peaks(sigma=u)  : r_c 210.4 um, T_m  641 K HEAT, P_focus 4122.9 mW, P_IR  2798.6 W, vis spot 116.79 mW (uncoated 10977 mW), channels 4211 -> 6842
+  film_density normal a 1.5 v 0.5 m16_as_is             : r_c  29.6 um, T_m  482 K ok  , P_focus   52.4 mW, P_IR   146.5 W, vis spot 1.37 mW (uncoated 129 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 diffraction_rho1      : r_c  29.6 um, T_m  482 K ok  , P_focus   74.8 mW, P_IR   209.2 W, vis spot 1.37 mW (uncoated 129 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 +latency150us         : r_c 210.4 um, T_m  482 K ok  , P_focus 3780.8 mW, P_IR 10574.8 W, vis spot 69.21 mW (uncoated 6505 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 +turb_peaks(sigma=u)  : r_c 210.4 um, T_m  717 K HEAT, P_focus 3780.8 mW, P_IR 10574.8 W, vis spot 69.21 mW (uncoated 6505 mW), channels 17349 -> 28193
+  film_density quiet  a 1.0 v 1.0 m16_as_is             : r_c  11.5 um, T_m  491 K ok  , P_focus   11.9 mW, P_IR    16.6 W, vis spot 0.92 mW (uncoated 87 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 diffraction_rho1      : r_c  20.4 um, T_m  491 K ok  , P_focus   53.8 mW, P_IR    75.2 W, vis spot 0.92 mW (uncoated 87 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 +latency150us         : r_c  81.5 um, T_m  491 K ok  , P_focus  856.9 mW, P_IR  1198.4 W, vis spot 46.67 mW (uncoated 4386 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 +turb_peaks(sigma=u)  : r_c  81.5 um, T_m  557 K ok  , P_focus  856.9 mW, P_IR  1198.4 W, vis spot 46.67 mW (uncoated 4386 mW), channels 8675 -> 14096
+TABLE corrected LCSV (rt6): flat-top rho 1.0 (eta_eq 0.56), modes x11.8, DMD+relay eff 0.6, white-coated ITO (FOM 4.1, 573 K), loop floor from NIR-DMD binary model
+  a_sketch_ito5|m15 model (rt6 optimum)                          r_c    92 dT(power)   74 dT(peak)   74 P_IR   99.9 W P_vis  1.08 W px 4.4e+08 vol$     35k lab$    0.7M  OK
+  a_sketch_ito5|still (U 0, sigma 0.03)                          r_c    55 dT(power)   87 dT(peak)  139 P_IR   99.9 W P_vis  1.43 W px 1.4e+10 vol$    445k lab$   15.7M  OK
+  a_sketch_ito5|quiet office (U 0.1, sigma 0.03)                 r_c    38 dT(power)  161 dT(peak)  207 P_IR   99.9 W P_vis  1.43 W px 2.7e+10 vol$    839k lab$   30.2M  OK
+  a_sketch_ito5|turbulent quiet (U 0, sigma 0.1)                 r_c    65 dT(power)  236 dT(peak)  362 P_IR  459.8 W P_vis  1.43 W px 1.0e+10 vol$    341k lab$   11.7M  ir_power_cap,heat@peak
+  b_film_ito5|m15 model (rt6 optimum)                            r_c    38 dT(power)   74 dT(peak)   74 P_IR   99.9 W P_vis  1.43 W px 2.7e+09 vol$    102k lab$    3.1M  OK
+  b_film_ito5|still (U 0, sigma 0.03)                            r_c    23 dT(power)   87 dT(peak)  139 P_IR  106.3 W P_vis  1.43 W px 8.3e+10 vol$   2513k lab$   91.6M  ir_power_cap
+  b_film_ito5|quiet office (U 0.1, sigma 0.03)                   r_c    23 dT(power)  161 dT(peak)  207 P_IR  217.2 W P_vis  1.43 W px 8.3e+10 vol$   2516k lab$   91.6M  ir_power_cap
+  b_film_ito5|turbulent quiet (U 0, sigma 0.1)                   r_c    65 dT(power)  236 dT(peak)  362 P_IR 2759.0 W P_vis  8.57 W px 1.1e+10 vol$    402k lab$   12.7M  vis_exit_window,ir_power_cap,heat@peak
+  c_sketch_carbonW10|m15 model (rt6 optimum)                     r_c    66 dT(power)  228 dT(peak)  228 P_IR   99.9 W P_vis  1.08 W px 7.6e+08 vol$     45k lab$    1.1M  OK
+  c_sketch_carbonW10|still (U 0, sigma 0.03)                     r_c    44 dT(power)  215 dT(peak)  329 P_IR   99.9 W P_vis  1.43 W px 2.0e+10 vol$    620k lab$   22.1M  heat@peak
+  c_sketch_carbonW10|quiet office (U 0.1, sigma 0.03)            r_c    31 dT(power)  375 dT(peak)  468 P_IR   99.9 W P_vis  1.43 W px 4.0e+10 vol$   1219k lab$   44.1M  heat
+  c_sketch_carbonW10|turbulent quiet (U 0, sigma 0.1)            r_c    59 dT(power)  528 dT(peak)  779 P_IR  585.3 W P_vis  1.43 W px 1.1e+10 vol$    363k lab$   12.5M  heat,ir_power_cap
