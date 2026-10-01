@@ -199,3 +199,45 @@ The image parts around the hand like smoke and reforms. This is consistent with 
 - The flow model is crude: a sphere hand and a cartoon wake.
 - Beam occlusion by the hand is not included. M4 says the 12-head rig keeps full force authority with one head blocked in 99 % of cases.
 - Fingers moving fast (> 1 m/s) close to motes will still strip some.
+
+## 10. Steering engine (R10 survey; M10 coverage; my checks)
+
+**Every beam fills the head's window.** Focusing to w = 10 µm at 1.5 m needs a 1/e² beam diameter of ~148 mm at the head (checked: w_head = λz/(πw₀) = 74 mm radius). Beams cannot each own a patch of the window. The workable layout is one shared large objective, with each steering channel owning one cell of its intermediate field and handing motes over between cells.
+
+**Étendue floor.** A head needs steering modules ≥ f_cov · (G/E)².
+- G ≈ 166 mm·rad per axis for the trap (216 with the 405 nm pump).
+- E is one steerer's étendue. Checked for a 10 mm galvo (E ≈ 7 mm·rad): ~560 modules at f_cov = 1, against R10's 620–960.
+- Modules per film-density head:
+
+  | Steerer | Modules |
+  |---|---|
+  | 20 mm galvo pairs | 150–240 |
+  | 10 mm galvo pairs | 620–960 |
+  | 5 mm MEMS | ~15 000 |
+  | 4K LCoS | ~2 400 |
+  | 1550 nm AODs | ~155 000 |
+
+- **Neutral-atom tweezer arrays** (~10⁴ traps) address only ~10³ spots per axis, 25–300× too few.
+
+**M10 coverage.** Restricting each head of the 12-head rig to a sub-field:
+
+| Coverage f_cov | Worst-case heat factor h (p95) | Infeasible cases |
+|---|---|---|
+| 1.0 | 2.22 (1.76) | 0 % |
+| 0.75 | 3.74 (2.03) | 0 % |
+| 0.58 | 8.0 (3.39) | 0 % |
+| 0.50 | 16 (5.0) | 0.4 % |
+
+So f_cov ≈ 0.75–1. Partial coverage trades steering hardware for mote speed almost one for one.
+
+**Focus tracking is the least mature function.** ±0.25 m needs 10²–10³ waves of defocus at 0.2–5 kHz.
+- Fast devices (AO lens, KTN, deformable mirrors) lack the range.
+- Best fit: an optical-disc-pickup voice-coil objective used as a remote-focus unit (3–10 kHz). Its stroke is unverified.
+
+**Cost today** (R10 estimates, ±2–3×), per channel: DFB laser, galvo pair, pickup focus, quad-cell sensor; $0.7–5k each.
+- Accent room: $0.5–5 M.
+- Film-density room: $4–40 M, with ~1–1.5 m-square module arrays per head.
+
+**With 5–10 years of integration** (2-axis analog MEMS mirror arrays with built-in angle sensing plus integrated photonics): ~$50–250 and 0.1–0.3 W per channel, putting a film-density room at ~$0.4–2 M with ~0.3 m heads.
+
+**The single most valuable engineering development:** a 2-axis analog MEMS mirror array with 4–8× today's étendue per mirror (5–9 mm·rad per axis, ≥ 1 kHz, integrated µrad angle sensing, ideally integrated focus).

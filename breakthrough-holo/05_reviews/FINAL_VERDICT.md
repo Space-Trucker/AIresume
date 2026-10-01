@@ -60,7 +60,7 @@ Bench analysis code is ready (`08_bench/analyze_b1.py`, self-tested).
 | R7 | Touch | PARTIAL | Glove haptics. Hands shadow beams and push motes; redundant heads help (1 % of cases lose the mote with one head blocked in the 12-head rig). Motes themselves cannot be felt |
 | R8 | Safe for everyday use | **PARTIAL** | No chemistry, no noise; beams Class 1 per beam. Product Class 1 depends on scheduling and fault shutdown. Normal (drafty) rooms don't work |
 | R9 | Iron Man quality | PARTIAL | Dim-lab film density at ~10⁴ channels; sketch at ~3×10³. Cyan ✓; orange via a second phosphor |
-| R10 | Buildable by a startup | NOT MET | Needs a new mote material, then a 10³–10⁴-channel beam engine |
+| R10 | Buildable by a startup | NOT MET | Needs a new mote material, then a 10³–10⁴-channel beam engine. R10 cost estimate today: accent room $0.5–5 M, film-density room $4–40 M. With a 4–8× étendue analog MEMS mirror array plus integrated photonics (5–10 yr): film density ~$0.4–2 M |
 
 **4 MET, 5 PARTIAL, 1 NOT MET.** v3 had 4 / 4 / 2. MOTE converts R8 from NOT MET to PARTIAL, but only in a designed room, and only if the mote exists.
 

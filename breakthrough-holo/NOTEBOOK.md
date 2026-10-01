@@ -582,3 +582,20 @@ Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. T
   Both were fixed before the result was recorded.
 
 **Red team 5** is reviewing v2, M4–M8c and the bench code. **R10** is researching the steering engine.
+
+## 2026-10-01 · Entry 20: The steering engine is an étendue and cost wall
+
+**R10 survey, with my checks.**
+- **Shared window.** Each beam is ~148 mm wide at the head (checked), so every beam fills a ~150–300 mm window. The engine must be a shared objective with tiled steering cells, not a per-beam patch.
+- **Module floor.** Steering modules per head ≥ f_cov (G/E)². My check for a 10 mm galvo gives ~560, against R10's 620–960.
+- **Tweezer arrays** are 25–300× short in field.
+- **Focus tracking** is the least mature function.
+
+**M10 (R10's suggested next step).** f_cov on the 12-head rig is ≈ 0.75–1. Shrinking per-head coverage to 0.58 raises the worst heat factor from 2.2 to 8.
+
+**Cost today (R10).**
+- Accent room $0.5–5 M.
+- Film-density room $4–40 M.
+- With integration: ~$0.4–2 M.
+
+**Verdict R10 (startup-buildable) stays NOT MET today.** The path there is a fundable component: a large-étendue 2-axis analog MEMS mirror array.
