@@ -1,0 +1,56 @@
+[
+ {
+  "U": 0.3,
+  "avoid": false,
+  "N": 466,
+  "lost": 63,
+  "displaced_gt_2mm": 0,
+  "max_disp_mm": 0.9947687555909529,
+  "reform_s": 0.0003333333332262711
+ },
+ {
+  "U": 0.3,
+  "avoid": true,
+  "N": 466,
+  "lost": 0,
+  "displaced_gt_2mm": 136,
+  "max_disp_mm": 52.15235247940154,
+  "reform_s": 0.0003333333332262711
+ },
+ {
+  "U": 0.6,
+  "avoid": false,
+  "N": 466,
+  "lost": 27,
+  "displaced_gt_2mm": 0,
+  "max_disp_mm": 0.9988184281532735,
+  "reform_s": 0.0006666666665204879
+ },
+ {
+  "U": 0.6,
+  "avoid": true,
+  "N": 466,
+  "lost": 0,
+  "displaced_gt_2mm": 91,
+  "max_disp_mm": 54.9837472791137,
+  "reform_s": 0.0006666666665204879
+ },
+ {
+  "U": 1.0,
+  "avoid": false,
+  "N": 466,
+  "lost": 30,
+  "displaced_gt_2mm": 0,
+  "max_disp_mm": 1.9617192625880862,
+  "reform_s": 0.0009999999999565912
+ },
+ {
+  "U": 1.0,
+  "avoid": true,
+  "N": 466,
+  "lost": 0,
+  "displaced_gt_2mm": 97,
+  "max_disp_mm": 53.81937842456669,
+  "reform_s": 0.0009999999999565912
+ }
+]

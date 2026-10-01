@@ -566,3 +566,19 @@ Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. T
   - green (β-SiAlON) motes: ~6 100 trap beams;
   - cyan motes: ~10 500.
 - 450/470 nm pumps fail on visible stray light; 405 nm stays.
+
+## 2026-10-01 · Entry 19: Bench toolchain, touch physics, red team 5 launched
+
+**Bench B1 toolchain.** A self-contained tracker (velocity-predicted linking) plus a robust analysis (straight-line filter, medians), self-tested end to end: it recovers a synthetic 5.000 mm/s drift exactly. The self-test caught two of my mistakes:
+- a frame-rate/linking mismatch (now documented as a rule: ≤ 5 px per frame);
+- noise tracks biasing the mean (fixed by the straightness filter and medians).
+
+**M9 touch.**
+- Without avoidance, contact loses 6–14 % of the motes a hand meets.
+- With predictive avoidance, there are 0 losses: the image parts around the hand by up to 5.5 cm and reforms.
+- My first two versions of the avoidance logic were wrong:
+  - one parked motes in the hand's path;
+  - one chased schedule lag through space.
+  Both were fixed before the result was recorded.
+
+**Red team 5** is reviewing v2, M4–M8c and the bench code. **R10** is researching the steering engine.

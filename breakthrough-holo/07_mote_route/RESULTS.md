@@ -179,3 +179,23 @@ Home use in an ordinary room is ruled out by drafts.
 | P26 | BYU ΔT 270–745 K | ~ partial |
 
 **Tally v2:** 2 ✓, 2 partial, 6 ✗, 2 inconclusive. The v1 tally (8 ✓) was flattered by my own model errors, which is exactly what the red team was for.
+
+## 9. Touch (M9, `sim_m9_touch.py`)
+
+**Setup.** The sketch-density armor (466 motes, L3 push design) and a hand, modelled as a 4.5 cm sphere, sweeping through at 0.3–1 m/s. Air is potential flow plus a crude wake. The beams track the motes (closed loop).
+
+**Without hand avoidance.**
+- The hand's air wake displaces motes by ≤ 2 mm (the trap budget of 0.69 m/s copes).
+- **6–14 % of the motes it meets are lost by contact** (27–63 per pass); they hit the glove.
+
+**With avoidance.** The workload manager tracks the hand and predicts it 150 ms ahead, then pushes motes sideways out of the hand's path.
+- **0 lost.**
+- 20–30 % of motes part by up to 5.5 cm around the hand.
+- All are back on their strokes as soon as the hand has passed.
+
+The image parts around the hand like smoke and reforms. This is consistent with "touchable", with feel supplied by the haptic glove.
+
+**Caveats.**
+- The flow model is crude: a sphere hand and a cartoon wake.
+- Beam occlusion by the hand is not included. M4 says the 12-head rig keeps full force authority with one head blocked in 99 % of cases.
+- Fingers moving fast (> 1 m/s) close to motes will still strip some.
