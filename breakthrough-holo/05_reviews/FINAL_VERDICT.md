@@ -28,6 +28,25 @@ But after correcting my own errors (red team 4), it is a **conditional** design:
 | Class 1 as a product | Needs scheduler-enforced no-overlap of foci (the workload manager as a safety function) plus a certified fault shutdown. A new safety argument, not yet accepted by any notified body |
 | Ordinary home room | **Ruled out:** 0.3 m/s drafts consume the whole heat-limited speed budget; stray violet pump lights optical brighteners |
 
+## The floor: every known lever pulled together (M8, `sim_m8_levers.py`)
+
+Levers: ITO-skin mote (FOM ≈ 5.3), hot face ≤ 600 K, heat-tolerant phosphor, a laminar quiet zone whose mean flow is cancelled by feed-forward (0.05 m/s fluctuation), 45 Hz, 12-head rig.
+
+| Target | Fewest steered beams |
+|---|---|
+| Accents | **340–420** |
+| Iron-Man sketch | **1 500–1 800** |
+| Film density (dim lab) | **6 100–7 600** |
+| Film-exact in a lit room (50 cd/m²) | **None.** The 405 nm pump's Class 1 limit (39 µW per beam) caps brightness |
+
+These are model floors. **The bench program (`08_bench/BENCH_PLAN.md`) is now the critical path.** Its gates are:
+- G1: the force law (C_ph);
+- G2: the mote FOM;
+- G3: a passive pair at room distance;
+- G4: the first glowing stroke.
+
+Bench analysis code is ready (`08_bench/analyze_b1.py`, self-tested).
+
 ## Scorecard for the best route (MOTE, designed lab, engineered mote *if it can be made*)
 
 | ID | Requirement | Grade | Evidence |

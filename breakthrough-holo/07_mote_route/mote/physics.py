@@ -254,6 +254,8 @@ UC = {
 # QY = internal quantum efficiency; A_abs = absorptance of a few-micron grain at the pump wavelength; T50 = 50 % quench.
 PHOSPHOR = {
     "cyan_BaSi2O2N2": dict(lam_em=497, fwhm=35, QY=0.90, A_abs=0.7, T50=520.0, dT_q=40.0),
+    # R9 (snippet): BaSi2O2N2:Eu quench onset reported near 450 C; optimistic sensitivity case
+    "cyan_BaSi2O2N2_hiT": dict(lam_em=497, fwhm=35, QY=0.90, A_abs=0.7, T50=650.0, dT_q=40.0),
     "green_bSiAlON": dict(lam_em=540, fwhm=55, QY=0.85, A_abs=0.6, T50=600.0, dT_q=50.0),
     "red_CaAlSiN3": dict(lam_em=650, fwhm=90, QY=0.85, A_abs=0.8, T50=600.0, dT_q=50.0),
 }

@@ -541,3 +541,21 @@ The route's first question is now concrete: make recipe A or B at 1–4 µm, the
 - **This was a synthesis error in R9:** it said Cs_xWO₃ needs ~1 µm solid-equivalent, then used 0.2 µm. I had passed it on without checking; the owner's request caught it.
 
 Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. The rest of verdict v4 is unchanged.
+
+## 2026-10-01 · Entry 18: "Continue until the full vision is unlocked; I can build anything"
+
+**M8, the floor with every known lever.** Levers: ITO skin, 600 K face, hot phosphor, a laminar zone with mean-flow feed-forward, 45 Hz, 12-head rig.
+- Accents: 340–420 beams.
+- Sketch: 1 500–1 800.
+- Film density: 6 100–7 600.
+- Film-exact (lit room): infeasible. The 405 nm pump's Class 1 limit caps brightness.
+
+**This is the physics floor.** It is set by the heat-force identity: speed is limited by how hot a mote may run. The only levers left are measured materials and steering scale.
+
+**Owner can build, so the critical path moves to the bench.** `08_bench/BENCH_PLAN.md` defines four staged experiments with decision gates:
+- **B1 (photophoretic velocimetry, ~1–3 k$):** black spheres drifting in a uniform beam in a sealed cuvette. Gives force per absorbed W, so C_ph and the 1/(k_p + 2k_g) law. Predicted drifts: 0.2–10 mm/s at 10 W/cm².
+- **B2:** the ITO-skin aerogel mote with an Er thermometer gives FOM directly.
+- **B3:** passive doughnut pair at 1–1.5 m.
+- **B4:** first glowing stroke.
+
+`analyze_b1.py` is self-tested: it recovers a synthetic C_ph = 0.9 after background subtraction. The safety section comes first: Class 3B/4 lasers enclosed and interlocked; nanopowders sealed.

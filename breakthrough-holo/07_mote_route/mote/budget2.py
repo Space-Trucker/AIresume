@@ -39,6 +39,9 @@ MOTES = {  # j1A, k_eff (W/m/K), A_trap at 1550 nm; pump model
     # silica-aerogel shell (k 0.02), island (non-percolating) NIR-absorber skin (+0.01 W/m/K); pump focused on the core
     "coreshell": dict(j1A=0.43, k_eff=ph.k_coated_sphere(5.0, 0.02, 0.6) + 0.01, A=0.95, core_frac=0.6, alpha_core=5e5),
     "engineered": dict(j1A=0.43, k_eff=0.03, A=0.99),
+    # M7-validated recipes with an ITO-class plasmonic skin (alpha ~5.7e5 /cm, skin tau >> 2): J1/A from sim_m7
+    "ito_aerogel": dict(j1A=0.486, k_eff=0.04, A=1.0),
+    "ito_coreshell": dict(j1A=0.489, k_eff=ph.k_coated_sphere(5.0, 0.02, 0.6) + 0.01, A=1.0, core_frac=0.6, alpha_core=5e5),
     "optimistic": dict(j1A=0.40, k_eff=0.15, A=0.85),
     "dense": dict(j1A=0.40, k_eff=1.0, A=0.90),
 }
