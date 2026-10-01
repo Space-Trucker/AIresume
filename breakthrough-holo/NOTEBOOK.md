@@ -635,3 +635,35 @@ The binding limit moves from heat to the 10 mW Class 1 cap on trap beams. **The 
 | D4 | ~2 400 | $1.7–12 M |
 
 Red team 5, still running, reviews the pre-fix state; its findings will be applied on top.
+
+## 2026-10-01 · Entry 22: Red team 5, and the honest scale of the MOTE route
+
+**RT5: 2 critical, 10 major.** Every key item verified before acceptance:
+- **Pump beams uncounted (C1).**
+- **"Floor" was really an optimistic design point (C2).**
+- **"Laminar zone" was my physics error (M3).** Feed-forward cannot remove drag.
+- **Pair factor 1.35/η (M1).**
+- **Core–shell pump branch silently lost in an earlier patch of mine (M4).** Confirmed by inspection, then restored.
+- **Pump turbulence and focus (M5).**
+- **k_overlap not certifiable as written (M6).**
+- **60 Hz (M7).**
+- **ITO ≤ 573 K (M8).**
+- **B1 confounds C_ph with J₁/A (M10).**
+
+The cornea-sum item (M2) I had found independently an hour earlier.
+
+**M13 (budget v2.1).**
+- **Without certified safety scheduling, nothing is feasible.**
+- **With it (best estimate):** accent ~2 800, sketch ~12 200, film density ~50 000 steered beams (trap + pump).
+- **Demonstrators:** first 10 cm glyph ~455 beams ($0.3–2.3 M today); sketch ~12 200 ($8.6–61 M).
+
+Two red teams moved the film-density figure from my v1 claim of 4 500 to 50 000 (×11). Each step was a real error found and verified. This is exactly why the owner's double-validation rule exists.
+
+**Where the vision stands, factually.**
+- Physics does not forbid an open-air, silent, chemistry-free, Class-1-per-focus, touchable Iron-Man hologram. The MOTE route is that existence proof on paper.
+- But at today's best estimate, it is a 10⁴–10⁵-beam machine that needs:
+  - a mote nobody has made;
+  - a safety argument nobody has certified;
+  - a quiet room.
+- It is not a "very sophisticated projector" in the consumer sense.
+- The two measurements that could move this by large factors are cheap: B1 (force law) and B2 (mote FOM).

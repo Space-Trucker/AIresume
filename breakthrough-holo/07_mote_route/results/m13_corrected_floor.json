@@ -1,0 +1,694 @@
+[
+ {
+  "content": "accent",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "cyan",
+  "best": {
+   "total": 1507.0408950617289,
+   "trap": 1004.6939300411525,
+   "pump": 502.34696502057625,
+   "N": 502.34696502057625,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.6001520783788,
+   "P_trap_W": 3.381852038220836,
+   "P_pump_uW": 3.1376065135934548
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "green",
+  "best": {
+   "total": 1507.0408950617289,
+   "trap": 1004.6939300411525,
+   "pump": 502.34696502057625,
+   "N": 502.34696502057625,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.5245327348575,
+   "P_trap_W": 3.3818951864504747,
+   "P_pump_uW": 1.5073296859673788
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "B best estimate",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "accent",
+  "scenario": "B best estimate",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "accent",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "cyan",
+  "best": {
+   "total": 2790.816472336535,
+   "trap": 2232.653177869228,
+   "pump": 558.163294467307,
+   "N": 558.163294467307,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5312212823967,
+   "P_trap_W": 3.281311406806035,
+   "P_pump_uW": 2.4575959204377384
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "green",
+  "best": {
+   "total": 2790.816472336535,
+   "trap": 2232.653177869228,
+   "pump": 558.163294467307,
+   "N": 558.163294467307,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.4860706752488,
+   "P_trap_W": 3.2813449717095926,
+   "P_pump_uW": 1.2014725257032715
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "cyan",
+  "best": {
+   "total": 4822.530864197532,
+   "trap": 3858.0246913580254,
+   "pump": 964.5061728395063,
+   "N": 964.5061728395063,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3355291368149,
+   "P_trap_W": 5.530250426773014,
+   "P_pump_uW": 3.18557050298439
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "green",
+  "best": {
+   "total": 4822.530864197532,
+   "trap": 3858.0246913580254,
+   "pump": 964.5061728395063,
+   "N": 964.5061728395063,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3117247958432,
+   "P_trap_W": 5.530295956816923,
+   "P_pump_uW": 1.5436296886801106
+  }
+ },
+ {
+  "content": "accent",
+  "scenario": "R R9-consistent materials",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "accent",
+  "scenario": "R R9-consistent materials",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "sketch",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "cyan",
+  "best": {
+   "total": 6609.828487112845,
+   "trap": 4406.552324741897,
+   "pump": 2203.2761623709484,
+   "N": 2203.2761623709484,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.6001520783788,
+   "P_trap_W": 14.832684378161561,
+   "P_pump_uW": 3.1376065135934548
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "green",
+  "best": {
+   "total": 6609.828487112845,
+   "trap": 4406.552324741897,
+   "pump": 2203.2761623709484,
+   "N": 2203.2761623709484,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.5245327348575,
+   "P_trap_W": 14.832873624782783,
+   "P_pump_uW": 1.5073296859673788
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "B best estimate",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "sketch",
+  "scenario": "B best estimate",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "sketch",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "cyan",
+  "best": {
+   "total": 12240.42312428305,
+   "trap": 9792.33849942644,
+   "pump": 2448.08462485661,
+   "N": 2448.08462485661,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5312212823967,
+   "P_trap_W": 14.391716696517701,
+   "P_pump_uW": 2.4575959204377376
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "green",
+  "best": {
+   "total": 12240.42312428305,
+   "trap": 9792.33849942644,
+   "pump": 2448.08462485661,
+   "N": 2448.08462485661,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.4860706752488,
+   "P_trap_W": 14.391863911006988,
+   "P_pump_uW": 1.201472525703271
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "cyan",
+  "best": {
+   "total": 21151.451158761112,
+   "trap": 16921.16092700889,
+   "pump": 4230.290231752222,
+   "N": 4230.290231752222,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3355291368149,
+   "P_trap_W": 24.255484327951823,
+   "P_pump_uW": 3.185570502984389
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "green",
+  "best": {
+   "total": 21151.451158761112,
+   "trap": 16921.16092700889,
+   "pump": 4230.290231752222,
+   "N": 4230.290231752222,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3117247958432,
+   "P_trap_W": 24.255684021126864,
+   "P_pump_uW": 1.5436296886801104
+  }
+ },
+ {
+  "content": "sketch",
+  "scenario": "R R9-consistent materials",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "sketch",
+  "scenario": "R R9-consistent materials",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "cyan",
+  "best": {
+   "total": 9419.005594135804,
+   "trap": 6279.337062757203,
+   "pump": 3139.6685313786015,
+   "N": 3139.6685313786015,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.6754627872704,
+   "P_trap_W": 21.136306804487333,
+   "P_pump_uW": 4.1837275151956135
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "green",
+  "best": {
+   "total": 9419.005594135804,
+   "trap": 6279.337062757203,
+   "pump": 3139.6685313786015,
+   "N": 3139.6685313786015,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.5746135381878,
+   "P_trap_W": 21.1366663039626,
+   "P_pump_uW": 2.009896282721057
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "B best estimate",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "B best estimate",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "cyan",
+  "best": {
+   "total": 17442.60295210334,
+   "trap": 13954.082361682675,
+   "pump": 3488.5205904206687,
+   "N": 3488.5205904206687,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5761722890973,
+   "P_trap_W": 20.50798748862793,
+   "P_pump_uW": 3.2770775059291415
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "green",
+  "best": {
+   "total": 17442.60295210334,
+   "trap": 13954.082361682675,
+   "pump": 3488.5205904206687,
+   "N": 3488.5205904206687,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5159458338627,
+   "P_trap_W": 20.508267258592582,
+   "P_pump_uW": 1.6020784810296667
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "cyan",
+  "best": {
+   "total": 30140.81790123457,
+   "trap": 24112.654320987658,
+   "pump": 6028.1635802469145,
+   "N": 6028.1635802469145,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3593924268921,
+   "P_trap_W": 34.56377993204804,
+   "P_pump_uW": 4.2475544129245755
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "green",
+  "best": {
+   "total": 30140.81790123457,
+   "trap": 24112.654320987658,
+   "pump": 6028.1635802469145,
+   "N": 6028.1635802469145,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3276488983497,
+   "P_trap_W": 34.564159370231536,
+   "P_pump_uW": 2.0582298022543464
+  }
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "R R9-consistent materials",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_contrast",
+  "scenario": "R R9-consistent materials",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_density",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "cyan",
+  "best": {
+   "total": 27235.678826416784,
+   "trap": 18157.11921761119,
+   "pump": 9078.559608805595,
+   "N": 9078.559608805595,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.6754627872704,
+   "P_trap_W": 61.1170317238188,
+   "P_pump_uW": 4.183727515195614
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "green",
+  "best": {
+   "total": 27235.678826416784,
+   "trap": 18157.11921761119,
+   "pump": 9078.559608805595,
+   "N": 9078.559608805595,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 513.5746135381878,
+   "P_trap_W": 61.11807124037379,
+   "P_pump_uW": 2.009896282721057
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "B best estimate",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_density",
+  "scenario": "B best estimate",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_density",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "cyan",
+  "best": {
+   "total": 50436.44227114221,
+   "trap": 40349.153816913764,
+   "pump": 10087.288454228441,
+   "N": 10087.288454228441,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5761722890973,
+   "P_trap_W": 59.300204786394026,
+   "P_pump_uW": 3.2770775059291406
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "green",
+  "best": {
+   "total": 50436.44227114221,
+   "trap": 40349.153816913764,
+   "pump": 10087.288454228441,
+   "N": 10087.288454228441,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 550.5159458338627,
+   "P_trap_W": 59.30101375978579,
+   "P_pump_uW": 1.6020784810296662
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "cyan",
+  "best": {
+   "total": 87154.1722445337,
+   "trap": 69723.33779562697,
+   "pump": 17430.834448906742,
+   "N": 17430.834448906742,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3593924268921,
+   "P_trap_W": 99.94346004447627,
+   "P_pump_uW": 4.2475544129245755
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "green",
+  "best": {
+   "total": 87154.1722445337,
+   "trap": 69723.33779562697,
+   "pump": 17430.834448906742,
+   "N": 17430.834448906742,
+   "v": 0.12441599999999997,
+   "arch": "room_push",
+   "mote": "ito_aerogel_r9",
+   "a_um": 4.0,
+   "R": 0.075,
+   "n_pump": 1,
+   "T_face": 532.3276488983497,
+   "P_trap_W": 99.94455721512735,
+   "P_pump_uW": 2.0582298022543464
+  }
+ },
+ {
+  "content": "film_density",
+  "scenario": "R R9-consistent materials",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_density",
+  "scenario": "R R9-consistent materials",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "cyan",
+  "best": {
+   "total": 32682.814591700146,
+   "trap": 21788.54306113343,
+   "pump": 10894.271530566715,
+   "N": 10894.271530566715,
+   "v": 0.14929919999999997,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 593.0360612403507,
+   "P_trap_W": 56.521395243592714,
+   "P_pump_uW": 34.74765572433757
+  }
+ },
+ {
+  "content": "film_exact",
+  "scenario": "O optimistic (errors fixed)",
+  "color": "green",
+  "best": {
+   "total": 27235.678826416784,
+   "trap": 18157.11921761119,
+   "pump": 9078.559608805595,
+   "N": 9078.559608805595,
+   "v": 0.17915903999999996,
+   "arch": "room_pairs",
+   "mote": "ito_aerogel",
+   "a_um": 2.5,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 515.8917108888909,
+   "P_trap_W": 61.09436668256041,
+   "P_pump_uW": 25.196767836512976
+  }
+ },
+ {
+  "content": "film_exact",
+  "scenario": "B best estimate",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "B best estimate",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "cyan",
+  "best": {
+   "total": 60523.73072537063,
+   "trap": 48418.98458029651,
+   "pump": 12104.746145074127,
+   "N": 12104.746145074127,
+   "v": 0.17915903999999996,
+   "arch": "room_push",
+   "mote": "ito_coreshell",
+   "a_um": 4.0,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 539.0297014386372,
+   "P_trap_W": 67.77673236250745,
+   "P_pump_uW": 31.15696212699616
+  }
+ },
+ {
+  "content": "film_exact",
+  "scenario": "B' best estimate + certified scheduling (k=1)",
+  "color": "green",
+  "best": {
+   "total": 50436.44227114221,
+   "trap": 40349.153816913764,
+   "pump": 10087.288454228441,
+   "N": 10087.288454228441,
+   "v": 0.21499084799999993,
+   "arch": "room_push",
+   "mote": "ito_aerogel",
+   "a_um": 4.0,
+   "R": 0.15,
+   "n_pump": 1,
+   "T_face": 551.8997772024104,
+   "P_trap_W": 59.28249211718101,
+   "P_pump_uW": 24.117377845940975
+  }
+ },
+ {
+  "content": "film_exact",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "R' R9 materials + certified scheduling",
+  "color": "green",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "R R9-consistent materials",
+  "color": "cyan",
+  "best": null
+ },
+ {
+  "content": "film_exact",
+  "scenario": "R R9-consistent materials",
+  "color": "green",
+  "best": null
+ }
+]

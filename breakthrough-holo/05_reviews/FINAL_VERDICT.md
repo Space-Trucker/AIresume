@@ -28,39 +28,45 @@ But after correcting my own errors (red team 4), it is a **conditional** design:
 | Class 1 as a product | Needs scheduler-enforced no-overlap of foci (the workload manager as a safety function) plus a certified fault shutdown. A new safety argument, not yet accepted by any notified body |
 | Ordinary home room | **Ruled out:** 0.3 m/s drafts consume the whole heat-limited speed budget; stray violet pump lights optical brighteners |
 
-## The floor: every known lever pulled together (M8, corrected for summed trap beams at a focus)
+## Corrected floor after red team 5 (M13, budget v2.1). Counts trap and pump steered beams
 
-Levers: ITO-skin mote (FOM ≈ 5.3), hot face ≤ 600 K, heat-tolerant phosphor, a laminar quiet zone whose mean flow is cancelled by feed-forward (0.05 m/s fluctuation), 45 Hz, 12-head rig.
+Red team 5 found:
+- **Pump beams were left out of the counts.** They are the hardest beams to steer.
+- **The "laminar zone" lever was a physics error.** Feed-forward removes position error, not drag.
+- **The pair heat factor was too low:** 1.35/η, not 1.02/η.
+- **A regression of mine:** core–shell pump absorption had been overwritten in code.
+- **Several levers sat at their optimistic ends.**
 
-**Self-found correction.** At 1550 nm the hazard is to the cornea. The trap beams converging on one mote cross at its focus, so an eye there receives their **sum**, which must be ≤ 10 mW. Passive doughnut pairs (2 beams) now beat push (3).
+I verified each item before accepting it. The beams-sum-at-the-cornea correction I had found independently, which cross-validates it.
 
-| Target | Fewest steered trap beams |
-|---|---|
-| Accents | **~490** |
-| Iron-Man sketch | **~2 100** |
-| Film density (dim lab) | **~8 800** |
-| Film-exact, lit room (50 cd/m²) | **~8 800 (green motes) to ~10 500 (cyan)**, with 2.5–4 µm motes and 2–6 pump beams per mote at 405 nm (M8c) |
+Steered beams = trap + pump; 405 nm pump; dim lab:
 
-**Hypothetical perfect materials** (k = 0.01, 900 K; M12 before the focus-sum fix): only ~30 % fewer beams. The binding limit then becomes the 10 mW Class 1 trap cap, not heat.
-
-These are model floors, cross-checked for one design point (M8b). **The bench (`08_bench/BENCH_PLAN.md`) is the critical path**, with gates:
-- G1: the force law (C_ph);
-- G2: the mote FOM;
-- G3: a passive pair at room distance;
-- G4: the first glowing stroke.
-
-Bench code is ready and self-tested.
-
-**Demonstrator ladder (M11, corrected; passive pairs; conditional on G1–G2):**
-
-| Demo | Content | Beams | Cost today |
+| Target | Optimistic (errors fixed) | **Best estimate** (60 Hz, ≤ 573 K, C_ph 0.85, 1 µm pump jitter, 3 kHz pump focus) | R9-consistent materials |
 |---|---|---|---|
-| D1 first glyph | 10 cm circle | 79 | $0.06–0.4 M |
-| D2 arc-reactor UI | 1 m of strokes | 404 | $0.3–2 M |
-| D3 desk Jarvis panel | 3 m of strokes | ~1 100 | $0.8–5.6 M |
-| D4 Iron-Man sketch | 5 m of strokes | ~2 400 modules | $1.7–12 M |
+| Accent (1 m) | 1 500 | **2 800** | 4 800 |
+| Iron-Man sketch (5 m) | 6 600 | **12 200** | 21 000 |
+| Film density (30 m) | 27 000 | **50 000** | 87 000 |
+| Film-exact, lit room | 27 000 (green) | **50 000–60 000** | none |
 
-With integrated 2-axis MEMS arrays (R10, 5–10 yr): D3 ~$56–280 k.
+**Every column assumes certified safety scheduling**: no two foci of one head on one line of sight. Without it (overlap factor 2 on the summed focus), **nothing is feasible, not even the accent.** Holding a mote still against 0.15 m/s air already needs more than 5 mW summed at its focus.
+
+**Demonstrators (best estimate, M11 `--best`).** Motes run only ~0.2 m/s, so one mote draws only ~7 mm per frame at 30 Hz.
+
+| Demo | Content | Steered beams | Cost today | Integrated (5–10 yr) |
+|---|---|---|---|---|
+| D1 first glyph | 10 cm circle | 455 | $0.3–2.3 M | $23–114 k |
+| D2 arc-reactor UI | 1 m of strokes | 2 300 | $1.6–12 M | — |
+| D3 desk Jarvis panel | 3 m of strokes | 6 400 | $4.5–32 M | $0.3–1.6 M |
+| D4 Iron-Man sketch | 5 m of strokes | 12 200 | $8.6–61 M | — |
+
+**Hypothetical perfect materials** (k = 0.01, 900 K) cut beams by only ~30 % (M12). The Class 1 trap cap then binds.
+
+**The bench is the critical path** (`08_bench/BENCH_PLAN.md`, gates G1–G4). B1 was re-planned after red team 5:
+- skin-absorbing reference spheres;
+- a J₁/A input;
+- per-track intensity;
+- tracer convection subtraction;
+- a ΔT series.
 
 ## Scorecard for the best route (MOTE, designed lab, engineered mote *if it can be made*)
 
@@ -77,7 +83,7 @@ With integrated 2-axis MEMS arrays (R10, 5–10 yr): D3 ~$56–280 k.
 | R9 | Iron Man quality | PARTIAL | Dim-lab film density at ~10⁴ channels; sketch at ~3×10³. Cyan ✓; orange via a second phosphor |
 | R10 | Buildable by a startup | NOT MET | Needs a new mote material, then a 10³–10⁴-channel beam engine. R10 cost estimate today: accent room $0.5–5 M, film-density room $4–40 M. With a 4–8× étendue analog MEMS mirror array plus integrated photonics (5–10 yr): film density ~$0.4–2 M |
 
-**4 MET, 5 PARTIAL, 1 NOT MET.** v3 had 4 / 4 / 2. MOTE converts R8 from NOT MET to PARTIAL, but only in a designed room, and only if the mote exists.
+**4 MET, 5 PARTIAL, 1 NOT MET** (unchanged by red team 5, but R8/R9/R10 now rest on a certified safety-scheduling argument and on ~10³–10⁴-beam machines). v3 had 4 / 4 / 2. MOTE converts R8 from NOT MET to PARTIAL, but only in a designed room, and only if the mote exists.
 
 ## What would move the verdict (bench, ordered by value of information)
 

@@ -22,6 +22,8 @@ The lasers below are **Class 3B or Class 4**. They can blind instantly, includin
 - **Terminate every beam** in a beam dump (black anodised or ceramic absorber), never on a wall.
 - **Align at the lowest power** the laser allows. Raise power only with the lid closed.
 - **Particles stay sealed.** Handle powders wet or in a closed container; seal them in the cuvette. Wear a P100/FFP3 mask when handling dry powders. Nanopowders, especially ITO (indium), are an inhalation hazard.
+- **B3/B4 motes are respirable micro-particles,** possibly ITO-skinned. Run them inside a closed, filtered enclosure (glovebox or clear acrylic box with a HEPA bleed), never in open room air, until toxicology is done.
+- **Opposed-beam rigs (B3)** send each head's beam into the other's optics. Fit optical isolators in front of fibre amplifiers to prevent back-coupling damage.
 - **Check local rules** for Class 4 lasers. If you can, have someone with laser-safety training review the setup.
 
 ---
@@ -56,6 +58,12 @@ Using particles with **different known conductivities** tests the 1/(k_p + 2k_g)
    - Keep particles in the field during beam-off segments, because they are the background reference.
 6. Write `run.json`: power, beam radius, particle radius, density, absorptance, k_p, beam_direction.
 7. Run `python3 analyze_b1.py tracks.csv run.json`. It uses straight-line track filtering and medians, which resist mislinks.
+
+**Red-team-5 upgrades to B1 (implemented in `analyze_b1.py`).**
+- **Use skin-absorbing reference spheres** (glassy carbon, carbon-coated hollow glass), or give `j1A` from `physics.j1_over_A`. Dyed or carbon-loaded polymer spheres absorb through their volume; their J₁/A is 0.02–0.5, and taking it as 0.5 would falsely read as a low C_ph.
+- **Record each track's height** relative to the beam axis (`beam_center_y_m`). Drifts are normalised to the per-track Gaussian intensity.
+- **Seed non-absorbing tracer spheres** (white silica) in the same cuvette. Their drift in the beam is beam-tied convection (`tracer_drift_m_s`), which is subtracted.
+- **Run a power series** covering mote heating ΔT ≈ 2 → 100+ K. This tests how gas properties should be evaluated at design temperatures (RT5: up to +71 % at stake).
 
 **Gate G1.**
 - Implied C_ph within 0.5–1.3 for the black polymer spheres, and the ratio of glassy-carbon to polymer drift within ×2 of the model: the force law holds and the atlas stands.
@@ -102,7 +110,7 @@ Using particles with **different known conductivities** tests the 1/(k_p + 2k_g)
 
 ## B4: First glowing MOTE line (settles U4).
 
-Add a co-aligned µW 405 nm pump focused on the trapped mote, and move the trap along a 5 cm circle at 30–45 Hz. Measure luminous intensity per mote against absorbed pump.
+Add a co-aligned µW 405 nm pump focused on the trapped mote. **Correction (M13):** a mote moves only ~0.2–0.5 m/s, so a single mote at 30 Hz draws only ~7–15 mm. B4 therefore draws a **1 cm glyph** with one mote, or a 5 cm circle with ~10–25 motes. Measure luminous intensity per mote against absorbed pump.
 
 **Gate G4.** ≥ 100 lm per absorbed W, with a visible cyan line in a dim room. This is the first open-air MOTE hologram stroke.
 

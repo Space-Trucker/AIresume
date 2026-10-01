@@ -41,6 +41,9 @@ MOTES = {  # j1A, k_eff (W/m/K), A_trap at 1550 nm; pump model
     "engineered": dict(j1A=0.43, k_eff=0.03, A=0.99),
     # M7-validated recipes with an ITO-class plasmonic skin (alpha ~5.7e5 /cm, skin tau >> 2): J1/A from sim_m7
     "ito_aerogel": dict(j1A=0.486, k_eff=0.04, A=1.0),
+    # R9-consistent pessimistic-plausible variants (red team 5): k_eff +0.03; dense-core alpha_405 = 1000 /cm
+    "ito_aerogel_r9": dict(j1A=0.486, k_eff=0.07, A=1.0),
+    "ito_coreshell_r9": dict(j1A=0.489, k_eff=ph.k_coated_sphere(5.0, 0.02, 0.6) + 0.04, A=1.0, core_frac=0.6, alpha_core=1e5),
     # hypothetical ceiling: perfect skin, k_eff 0.01 (better than any known solid), survives 900 K (bound only)
     "ideal_bound": dict(j1A=0.5, k_eff=0.01, A=1.0),
     "ito_coreshell": dict(j1A=0.489, k_eff=ph.k_coated_sphere(5.0, 0.02, 0.6) + 0.01, A=1.0, core_frac=0.6, alpha_core=5e5),
@@ -48,7 +51,7 @@ MOTES = {  # j1A, k_eff (W/m/K), A_trap at 1550 nm; pump model
     "dense": dict(j1A=0.40, k_eff=1.0, A=0.90),
 }
 ROOM = {  # M4 'R12 lab rig': 6-head ceiling ring + 4-head low ring + ceiling spot + floor head; throws 1.2-2.3 m
-    "room_push": dict(h_worst=2.22, h_mean=1.33, single=1.19, beams=3, heads=12, throw=2.0),
+    "room_push": dict(h_worst=2.22, h_mean=1.33, single=1.19, beams=4, heads=12, throw=2.0),   # 3 active + 1 hand-over
     "room_pairs": dict(beams=2, heads=12, throw=2.0),
 }
 
@@ -64,7 +67,13 @@ def intercept(a, w, jitter=0.0):
 def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="room_push", f=60.0, u_air=0.3,
            T_max=450.0, C_ph=1.0, force_margin=1.3, R_head=0.075, R_ft_min=20e-6, eta_shape=0.8,
            emitter="cyan_BaSi2O2N2", pump_lam=405, alpha_pump=1.5e5, n_pump=2, pump_R_head=None, pump_throw=2.0,
-           jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0, focus_sum=True):
+           jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0, focus_sum=True, pair_factor=1.35,
+           B_focus_pump=None):
+    """u_air is the TOTAL air speed the trap must hold against (mean flow + fluctuation). Red team 5 (M3): feed-forward
+    of a known mean flow removes position error, not the drag it causes, so a 'laminar zone' does not shrink it.
+    pair_factor: worst-case pair heat factor = pair_factor/eta. 1.35 includes misaligned pairs and full pair coverage
+    (RT5 M1; v2 used 1.02). B_focus_pump: pump focus-tracking bandwidth (Hz). It sets a minimum pump waist
+    z_R >= v/(pi B) (RT5 M5; None = ideal tracking)."""
     L, S, duty = CONTENT[content] if isinstance(content, str) else content     # or a custom (L, S, duty) tuple
     Mt = MOTES[mote]
     arc = dict(ROOM[arch])
@@ -72,17 +81,25 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
     w_t = waist(1550, arc["throw"], R_head)
     if arch == "room_pairs":
         eta, f_I = ph.lg01_trap(a, w_t)
-        arc.update(h_worst=1.02 / max(eta, 1e-6), h_mean=0.5 + 0.58 / max(eta, 1e-6), single=0.5)
+        hw = pair_factor / max(eta, 1e-6)
+        arc.update(h_worst=hw, h_mean=0.5 + 0.58 / max(eta, 1e-6) * pair_factor / 1.02, single=0.5)
     else:
         eta, f_I = 1.0, 1.0
     Phi = 4 * math.pi * L * 1e-3 * S
     N = S * f / (v * duty)
     phi_m = Phi / (N * duty)
     ph_p = ph.PHOSPHOR[emitter]
-    A_pump = ph.absorptance(alpha_pump * a)
     pump_R_head = pump_R_head or R_head
     w_p = waist(pump_lam, pump_throw, pump_R_head)
-    icp = intercept(a, w_p, jitter)
+    if B_focus_pump:
+        w_p = max(w_p, math.sqrt(v * pump_lam * 1e-9 / (math.pi ** 2 * B_focus_pump)))
+    if "core_frac" in Mt:                                   # dense phosphor core: pump focused on the core
+        r_c = Mt["core_frac"] * a
+        A_pump = ph.absorptance(Mt["alpha_core"] * r_c)
+        icp = intercept(r_c, w_p, jitter)
+    else:                                                   # phosphor dispersed through the mote volume
+        A_pump = ph.absorptance(alpha_pump * a)
+        icp = intercept(a, w_p, jitter)
 
     Tm, T_face = ph.T0 + 50, ph.T0 + 60
     P_F = P_abs_pump = P_abs_beam = 0.0

@@ -5,7 +5,12 @@ Input: a CSV of tracked particles with columns
     particle_id, t_s, x_m, y_m          (x = along the beam, y = vertical; from a calibrated camera)
 plus a JSON run file:
     {"beam_power_W": 1.0, "beam_radius_1e2_m": 1.75e-3, "particle_radius_m": 2.5e-6, "particle_density": 1100,
-     "absorptance": 0.9, "k_particle": 0.25, "material": "carbon-black PMMA", "beam_direction": +1}
+     "absorptance": 0.9, "k_particle": 0.25, "material": "glassy carbon", "beam_direction": +1,
+     "beam_center_y_m": 0.0,      # vertical position of the beam axis in track coordinates (per-track intensity)
+     "j1A": 0.5,                  # asymmetry per absorbed fraction; 0.5 only for skin-deep absorbers (glassy carbon,
+                                  # carbon-coated shells). Volume-absorbing dyed/loaded polymer spheres need j1_over_A
+                                  # (red team 5, M10), otherwise C_ph is confounded with J1/A.
+     "tracer_drift_m_s": 0.0}     # drift of NON-absorbing tracer spheres in the same beam = beam-tied convection
 The run should include beam-off segments (column beam_on = 0/1), so background drift (convection) can be subtracted,
 and a reversed-beam run (beam_direction -1) to cancel any residual flow.
 
@@ -57,22 +62,32 @@ def analyze(tracks_csv, run_json):
         for r in csv.DictReader(fh):
             on = int(r.get("beam_on", 1))
             groups[r["particle_id"]][on].append((float(r["t_s"]), float(r["x_m"]), float(r["y_m"])))
-    v_on, v_off = [], []
+    v_on, v_off, I_rel = [], [], []
+    w = run["beam_radius_1e2_m"]
+    yc = run.get("beam_center_y_m", None)
     for g in groups.values():
         for on, lst in g.items():
             v = fit_velocity(sorted(lst))
             if v:
-                (v_on if on else v_off).append(v[0] * run.get("beam_direction", 1))
+                if on:
+                    v_on.append(v[0] * run.get("beam_direction", 1))
+                    # per-track intensity relative to the peak (Gaussian beam; red team 5, M10)
+                    ym = sum(r[2] for r in lst) / len(lst)
+                    I_rel.append(math.exp(-2 * (ym - yc) ** 2 / (w * w)) if yc is not None else 1.0)
+                else:
+                    v_off.append(v[0] * run.get("beam_direction", 1))
     if not v_on:
         raise SystemExit("no beam-on tracks")
     med = lambda L: sorted(L)[len(L) // 2]     # medians resist the odd mislinked track
-    vx = med(v_on) - (med(v_off) if v_off else 0.0)
+    # normalise each beam-on drift to peak intensity, then subtract beam-off drift and beam-tied convection (tracers)
+    v_norm = [v / max(r, 1e-3) for v, r in zip(v_on, I_rel)]
+    vx = med(v_norm) - (med(v_off) if v_off else 0.0) - run.get("tracer_drift_m_s", 0.0)
     a, A, kp = run["particle_radius_m"], run["absorptance"], run["k_particle"]
     w = run["beam_radius_1e2_m"]
-    I = 2 * run["beam_power_W"] / (math.pi * w * w) * run.get("intensity_fraction_at_particle", 1.0)
+    I = 2 * run["beam_power_W"] / (math.pi * w * w)          # peak intensity (drifts were normalised to the peak)
     F = 6 * math.pi * ph.mu_air(ph.T0) * a * vx / ph.cunningham(a)
     P_abs = A * math.pi * a * a * I
-    model = ph.force_per_absorbed_watt(a, kp, C_ph=1.0)
+    model = ph.force_per_absorbed_watt(a, kp, C_ph=1.0, j1A=run.get("j1A", 0.5))
     res = dict(n_tracks_on=len(v_on), n_tracks_off=len(v_off), drift_m_s=vx, intensity_W_m2=I, force_N=F,
                P_abs_W=P_abs, measured_F_per_Pabs=F / P_abs, model_F_per_Pabs_Cph1=model,
                implied_C_ph=(F / P_abs) / model)

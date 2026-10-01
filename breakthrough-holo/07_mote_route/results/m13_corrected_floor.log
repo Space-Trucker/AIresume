@@ -1,0 +1,50 @@
+accent        | O optimistic (errors fixed)  | cyan  total   1507 (trap   1005 + pump    502) N=   502 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 3 W
+accent        | O optimistic (errors fixed)  | green total   1507 (trap   1005 + pump    502) N=   502 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 3 W
+accent        | B best estimate              | cyan  none
+accent        | B best estimate              | green none
+accent        | B' best estimate + certified scheduling (k=1) | cyan  total   2791 (trap   2233 + pump    558) N=   558 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 3 W
+accent        | B' best estimate + certified scheduling (k=1) | green total   2791 (trap   2233 + pump    558) N=   558 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=550 trap 3 W
+accent        | R' R9 materials + certified scheduling | cyan  total   4823 (trap   3858 + pump    965) N=   965 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 6 W
+accent        | R' R9 materials + certified scheduling | green total   4823 (trap   3858 + pump    965) N=   965 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 6 W
+accent        | R R9-consistent materials    | cyan  none
+accent        | R R9-consistent materials    | green none
+sketch        | O optimistic (errors fixed)  | cyan  total   6610 (trap   4407 + pump   2203) N=  2203 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 15 W
+sketch        | O optimistic (errors fixed)  | green total   6610 (trap   4407 + pump   2203) N=  2203 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 15 W
+sketch        | B best estimate              | cyan  none
+sketch        | B best estimate              | green none
+sketch        | B' best estimate + certified scheduling (k=1) | cyan  total  12240 (trap   9792 + pump   2448) N=  2448 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 14 W
+sketch        | B' best estimate + certified scheduling (k=1) | green total  12240 (trap   9792 + pump   2448) N=  2448 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=550 trap 14 W
+sketch        | R' R9 materials + certified scheduling | cyan  total  21151 (trap  16921 + pump   4230) N=  4230 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 24 W
+sketch        | R' R9 materials + certified scheduling | green total  21151 (trap  16921 + pump   4230) N=  4230 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 24 W
+sketch        | R R9-consistent materials    | cyan  none
+sketch        | R R9-consistent materials    | green none
+film_contrast | O optimistic (errors fixed)  | cyan  total   9419 (trap   6279 + pump   3140) N=  3140 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 21 W
+film_contrast | O optimistic (errors fixed)  | green total   9419 (trap   6279 + pump   3140) N=  3140 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 21 W
+film_contrast | B best estimate              | cyan  none
+film_contrast | B best estimate              | green none
+film_contrast | B' best estimate + certified scheduling (k=1) | cyan  total  17443 (trap  13954 + pump   3489) N=  3489 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 21 W
+film_contrast | B' best estimate + certified scheduling (k=1) | green total  17443 (trap  13954 + pump   3489) N=  3489 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 21 W
+film_contrast | R' R9 materials + certified scheduling | cyan  total  30141 (trap  24113 + pump   6028) N=  6028 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 35 W
+film_contrast | R' R9 materials + certified scheduling | green total  30141 (trap  24113 + pump   6028) N=  6028 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 35 W
+film_contrast | R R9-consistent materials    | cyan  none
+film_contrast | R R9-consistent materials    | green none
+film_density  | O optimistic (errors fixed)  | cyan  total  27236 (trap  18157 + pump   9079) N=  9079 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 61 W
+film_density  | O optimistic (errors fixed)  | green total  27236 (trap  18157 + pump   9079) N=  9079 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=514 trap 61 W
+film_density  | B best estimate              | cyan  none
+film_density  | B best estimate              | green none
+film_density  | B' best estimate + certified scheduling (k=1) | cyan  total  50436 (trap  40349 + pump  10087) N= 10087 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 59 W
+film_density  | B' best estimate + certified scheduling (k=1) | green total  50436 (trap  40349 + pump  10087) N= 10087 v=0.21 room_push  ito_aerogel      a=4.0 R=0.075 x1 Tface=551 trap 59 W
+film_density  | R' R9 materials + certified scheduling | cyan  total  87154 (trap  69723 + pump  17431) N= 17431 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 100 W
+film_density  | R' R9 materials + certified scheduling | green total  87154 (trap  69723 + pump  17431) N= 17431 v=0.12 room_push  ito_aerogel_r9   a=4.0 R=0.075 x1 Tface=532 trap 100 W
+film_density  | R R9-consistent materials    | cyan  none
+film_density  | R R9-consistent materials    | green none
+film_exact    | O optimistic (errors fixed)  | cyan  total  32683 (trap  21789 + pump  10894) N= 10894 v=0.15 room_pairs ito_aerogel      a=4.0 R=0.15 x1 Tface=593 trap 57 W
+film_exact    | O optimistic (errors fixed)  | green total  27236 (trap  18157 + pump   9079) N=  9079 v=0.18 room_pairs ito_aerogel      a=2.5 R=0.15 x1 Tface=516 trap 61 W
+film_exact    | B best estimate              | cyan  none
+film_exact    | B best estimate              | green none
+film_exact    | B' best estimate + certified scheduling (k=1) | cyan  total  60524 (trap  48419 + pump  12105) N= 12105 v=0.18 room_push  ito_coreshell    a=4.0 R=0.15 x1 Tface=539 trap 68 W
+film_exact    | B' best estimate + certified scheduling (k=1) | green total  50436 (trap  40349 + pump  10087) N= 10087 v=0.21 room_push  ito_aerogel      a=4.0 R=0.15 x1 Tface=552 trap 59 W
+film_exact    | R' R9 materials + certified scheduling | cyan  none
+film_exact    | R' R9 materials + certified scheduling | green none
+film_exact    | R R9-consistent materials    | cyan  none
+film_exact    | R R9-consistent materials    | green none

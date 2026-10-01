@@ -276,3 +276,31 @@ Small demos are limited by mote count, not étendue. The étendue floor dominate
 **Hypothetical perfect materials** (M12, run before this fix) reduce beams by only ~30 %. The 10 mW trap cap then binds, not heat.
 
 The 405 nm pump beams from different directions image to different retinal spots and are still assessed separately. Red team 5 was asked to check this.
+
+
+## 13. Red team 5 applied (budget v2.1, M13): the corrected floor
+
+**Accepted after my own checks:**
+- pump beams count as steered beams;
+- the mean flow counts in the air margin (my "laminar zone" lever was a physics error);
+- pair heat factor 1.35/η;
+- the core–shell pump branch restored (it had silently regressed in an earlier patch of mine);
+- push needs 4 channels per mote;
+- pump focus tracking at 3 kHz and 1 µm turbulence-limited jitter;
+- defaults of 60 Hz, ≤ 573 K (ITO) and C_ph 0.85;
+- overlap factor 2 without a certified monitor.
+
+The summed-focus (cornea) correction was found independently by me and by RT5.
+
+**Result.** Without certified safety scheduling, nothing is feasible. With it:
+
+| Target | Steered beams (trap + pump), best estimate |
+|---|---|
+| Accent | ~2 800 |
+| Sketch | ~12 200 |
+| Film density | ~50 000 |
+| Film-exact | 50 000–60 000 |
+
+- **Optimistic (errors fixed):** 1 500 / 6 600 / 27 000.
+- **R9-consistent materials:** 4 800 / 21 000 / 87 000; film-exact infeasible.
+- **Demonstrators:** D1 (10 cm glyph) 455 beams, $0.3–2.3 M today. D4 (sketch) 12 200 beams, $8.6–61 M today.
