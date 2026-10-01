@@ -1,0 +1,12 @@
+PHYS: force/heat/drag ratios rt6/physics.py
+  a=5um force 0.996  dT 0.998  drag 1.0015
+  a=10um force 0.990  dT 0.998  drag 1.0008
+  a=1um force 0.991  dT 0.998  drag 1.0070
+  alpha*a=  0.5  J1/A GL 0.0713 MC 0.0717 ph 0.0713 | A GL 0.4715 MC 0.4715 ph 0.4715
+  alpha*a=  1.0  J1/A GL 0.1337 MC 0.1345 ph 0.1337 | A GL 0.7030 MC 0.7024 ph 0.7030
+  alpha*a=  1.5  J1/A GL 0.1862 MC 0.1868 ph 0.1862 | A GL 0.8220 MC 0.8213 ph 0.8221
+  alpha*a=  3.0  J1/A GL 0.2927 MC 0.2925 ph 0.2926 | A GL 0.9454 MC 0.9456 ph 0.9454
+  alpha*a=  6.0  J1/A GL 0.3838 MC 0.3839 ph 0.3838 | A GL 0.9861 MC 0.9862 ph 0.9862
+  alpha*a= 30.0  J1/A GL 0.4753 MC 0.4754 ph 0.4752 | A GL 0.9994 MC 0.9994 ph 0.9996
+  B2 closed form 7.364e+05 vs model (h=1, hot gas) 7.867e+05 ratio 1.068
+GEOM H10: h_worst 2.13 mean 1.36 occluded p95 3.70 (infeasible 0.000); active 3.00; throws 0.90-4.75 m

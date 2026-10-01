@@ -66,7 +66,10 @@ def mote_props(name, a):
     return dict(Mt, j1A=j1A, A=A)
 
 
-ROOMS = {"quiet": dict(u=0.10, u_res=0.01), "calm": dict(u=0.15, u_res=0.015), "normal": dict(u=0.30, u_res=0.03)}
+ROOMS = {"quiet": dict(u=0.10, u_res=0.01, a_E=0.6), "calm": dict(u=0.15, u_res=0.015, a_E=1.0),
+         "normal": dict(u=0.30, u_res=0.03, a_E=2.4)}
+# a_E: rms Eulerian acceleration of the air velocity at a fixed point (m/s^2) ~ U du/dx with Kolmogorov-scale gradients
+# (eps 1e-4..1e-3 m^2/s^3, eta ~1.4 mm): idea round 2 (opus) estimate, consistent with 0.4-1.3 um pinning at 200 Hz
 DEVICES = {  # hologram device: pixels, frame rate (Hz), efficiency into the spots
     "LCoS_4K": dict(px=8.8e6, rate=360.0, eff=0.6),
     "PLM_MEMS": dict(px=1.3e6, rate=1440.0, eff=0.5),
@@ -226,7 +229,7 @@ COST = {  # [ASSUMPTION] lab-today vs volume prices
 def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="quiet", f_fast=2e4, bw_frac=0.1,
             r_c=None, r_v=None, holo_rate=360.0, holo_eff=0.6, D_field=1.0, theta_det=0.02, t_cut=1.4e-3, C_ph=0.85,
             force_margin=1.3, eta_shape=0.8, R_head=0.3, leak=1e-3, lam_vis=500.0, P_ir_max=None, layout="octa6",
-            occluded=False):
+            occluded=False, jitter_model="white", bw_pin=500.0, floor=3e-6, safety="curtain", k_ov=2.0):
     """Split control (I4): spot positions from a slow hologram (holo_rate); spot force from a fast amplitude plane at
     f_fast with loop bandwidth bw_frac*f_fast. Mote jitter = u/(2 pi f_bw); r_c >= 3 jitter and >= 3a; the illumination
     spot only needs to cover the jitter (r_v = max(2 jitter, 1.5 a))."""
@@ -247,7 +250,10 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
             break
         Tm = 0.5 * (Tm + Tn)
     I_unit = P_abs_unit / (Mt["A"] * math.pi * a * a)
-    jitter = Rm["u"] / (2 * math.pi * bw_frac * f_fast)
+    if jitter_model == "white":      # v1: the full air speed treated as unpredictable at every update (pessimistic)
+        jitter = Rm["u"] / (2 * math.pi * bw_frac * f_fast)
+    else:                            # integral-action pinning: residual = a_E / w_c^2 + sensing/beam-wander floor
+        jitter = Rm["a_E"] / (2 * math.pi * bw_pin) ** 2 + floor
     r_min = max(3 * jitter, 3 * a)
     r_c = max(r_c or r_min, r_min)
     P_unit = I_unit * math.pi * r_c ** 2 / eta_shape
@@ -264,12 +270,19 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
     fails = []
     if Tm > Mt["T_max"]:
         fails.append("heat")
-    if theta_det * P_focus > sf.ael_class1(1550):
-        fails.append("trap_curtain_threshold")
-    if P_focus * t_cut > 1e3 * math.pi * (sf.meas_aperture(1550) / 2) ** 2:
-        fails.append("trap_cut_dose")
-    if P_vis_spot > sf.ael_class1(lam_vis):
-        fails.append("vis_spot_class1")
+    if safety == "class1":           # passive Class 1 per focus; k_ov foci may share one aperture (field checker)
+        if P_focus * k_ov > sf.ael_class1(1550):
+            fails.append("trap_focus_class1")
+        if P_vis_spot * k_ov > sf.ael_class1(lam_vis):
+            fails.append("vis_spot_class1")
+    else:
+        if theta_det * P_focus > sf.ael_class1(1550):
+            fails.append("trap_curtain_threshold")
+        # corrected (idea round 2): 1500-1800 nm cornea, t < 0.35 s: 1e4 J/m^2 over a 1 mm aperture = 7.85 mJ
+        if P_focus * t_cut > 1e4 * math.pi * (0.5e-3) ** 2:
+            fails.append("trap_cut_dose")
+        if P_vis_spot > sf.ael_class1(lam_vis):
+            fails.append("vis_spot_class1")
     if P_ir / G["heads"] > sf.head_power_limit(1550, R_head):
         fails.append("trap_exit_window")
     if P_vis > sf.head_power_limit(lam_vis, R_head):
@@ -381,6 +394,31 @@ def main5(P_ir_max=100.0, f_fast=12.5e3, holo_rate=180.0):
         json.dump(rows, fh, indent=1)
 
 
+def main6(P_ir_max=100.0):
+    """Integral-action pinning (idea round 2, opus) vs the v1 white-noise jitter; curtain vs passive Class 1 per focus."""
+    print(f"\nM15f pinning loop (500 Hz, a_E/w^2 + 3 um floor), real device rates, H14, <= {P_ir_max:.0f} W IR, delta 3 mm")
+    print(f"{'content':12s} {'room':6s} {'mote':12s} {'a':>4s} {'safety':7s} {'dT':>4s} {'occ':>4s} {'r_c':>5s} {'Pfoc':>6s} "
+          f"{'P_IR':>6s} {'P_vis':>6s} {'px_total':>9s} {'4K':>6s} {'vol$k':>6s} {'lab$M':>6s}  fails")
+    rows = []
+    for content in ("sketch", "film_density"):
+        for room in ("quiet", "calm", "normal"):
+            for mote, a in (("ito_aerogel", 2.5e-6), ("ito_aerogel", 5e-6), ("carbon_black", 15e-6)):
+                for safety in ("curtain", "class1"):
+                    kw = dict(content=content, room=room, mote=mote, a=a, delta=3e-3, layout="H14", f_fast=12.5e3,
+                              holo_rate=180.0, jitter_model="pinning", safety=safety)
+                    d = optimise(basis="volume", P_ir_max=P_ir_max, **kw)
+                    do = design2(occluded=True, r_c=d["r_c_um"] * 1e-6, r_v=d["r_v_um"] * 1e-6, **kw)
+                    px = LAYOUTS["H14"]["heads"] * d["M_dir"] + d["M_vis"]
+                    rows.append(dict(d, a_um=a * 1e6, safety=safety, px_total=px, occluded_dT=do["dT"],
+                                     occluded_fails=do["fails"]))
+                    print(f"{content:12s} {room:6s} {mote:12s} {a * 1e6:4.1f} {safety:7s} {d['dT']:4.0f} {do['dT']:4.0f} "
+                          f"{d['r_c_um']:5.0f} {d['P_focus_mW']:6.1f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} {px:9.1e} "
+                          f"{px / 8.3e6:6.0f} {d['cost_volume_k']:6.0f} {d['cost_lab_k'] / 1e3:6.1f}  "
+                          f"{','.join(d['fails']) or 'OK'}{' | occluded: heat' if 'heat' in do['fails'] else ''}")
+    with open(os.path.join(HERE, "results", "m15f_pinning.json"), "w") as fh:
+        json.dump(rows, fh, indent=1)
+
+
 def main3(P_ir_max=100.0):
     print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices); mote FOM from alpha*a")
     print(f"{'content':12s} {'room':6s} {'mote':20s} {'a':>3s} {'FOM':>4s} {'dT':>4s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} "
@@ -406,3 +444,4 @@ if __name__ == "__main__":
     main3()
     main4()
     main5()
+    main6()

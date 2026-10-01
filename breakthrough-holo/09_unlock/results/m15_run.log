@@ -246,3 +246,42 @@ film_density normal carbon_black        10  3.4  442  744   115   76 4257.5  41.
 film_density normal carbon_black        15  4.1  510  847   115   76 3417.6  18.47   3.0e+08    36  0.69     98  heat,vis_spot_class1,trap_exit_window,vis_exit_window,ir_power_cap,wall_light | occluded: heat
 film_density normal carbon_black_dense   5  2.9  305  526   115   76 5084.1 166.22   3.0e+08    36  0.69    139  vis_spot_class1,trap_exit_window,vis_exit_window,ir_power_cap,wall_light | occluded: heat
 film_density normal ito_aerogel          5  5.3  190  339   115   76 2703.0  11.08   3.0e+08    36  0.69     84  vis_spot_class1,trap_exit_window,vis_exit_window,ir_power_cap,wall_light | occluded: heat
+
+M15f pinning loop (500 Hz, a_E/w^2 + 3 um floor), real device rates, H14, <= 100 W IR, delta 3 mm
+content      room   mote            a safety    dT  occ   r_c   Pfoc   P_IR  P_vis  px_total     4K  vol$k  lab$M  fails
+sketch       quiet  ito_aerogel   2.5 curtain   42   70    86   51.1   84.9   0.68   1.0e+09    126     61    1.4  OK
+sketch       quiet  ito_aerogel   2.5 class1    42   70    25    4.2    7.0   0.39   8.0e+09    970    270    9.1  OK
+sketch       quiet  ito_aerogel   5.0 curtain   74  121    86   48.1   80.0   0.91   6.8e+08     82     50    1.0  OK
+sketch       quiet  ito_aerogel   5.0 class1    74  121    28    5.0    8.3   0.52   5.9e+09    716    206    6.8  OK
+sketch       quiet  carbon_black 15.0 curtain  224  344    77   48.4   80.5   0.87   9.0e+08    108     57    1.3  OK | occluded: heat
+sketch       quiet  carbon_black 15.0 class1   224  344    45   16.6   27.6   0.20   2.8e+09    341    113    3.4  trap_focus_class1 | occluded: heat
+sketch       calm   ito_aerogel   2.5 curtain   61  101    69   48.6   80.7   0.68   1.4e+09    167     71    1.8  OK
+sketch       calm   ito_aerogel   2.5 class1    61  101    20    4.0    6.7   0.39   1.2e+10   1472    395   13.7  OK
+sketch       calm   ito_aerogel   5.0 curtain  106  170    77   57.2   95.1   0.91   8.4e+08    101     55    1.2  OK
+sketch       calm   ito_aerogel   5.0 class1   106  170    22    4.7    7.9   0.52   9.3e+09   1116    306   10.5  OK
+sketch       calm   carbon_black 15.0 curtain  307  462    45   24.7   41.0   0.20   2.8e+09    341    114    3.4  heat | occluded: heat
+sketch       calm   carbon_black 15.0 class1   307  462    45   24.7   41.0   0.20   2.8e+09    341    114    3.4  heat,trap_focus_class1 | occluded: heat
+sketch       normal ito_aerogel   2.5 curtain  114  183    49   48.9   81.3   0.68   2.3e+09    278     99    2.8  OK
+sketch       normal ito_aerogel   2.5 class1   114  183    14    4.0    6.7   0.39   2.3e+10   2814    729   26.0  OK
+sketch       normal ito_aerogel   5.0 curtain  190  295    55   57.4   95.3   0.91   1.6e+09    189     77    2.0  OK
+sketch       normal ito_aerogel   5.0 class1   190  295    16    4.7    7.9   0.52   1.8e+10   2186    572   20.2  OK
+sketch       normal carbon_black 15.0 curtain  510  750    45   49.0   81.5   0.20   2.8e+09    341    115    3.4  heat | occluded: heat
+sketch       normal carbon_black 15.0 class1   510  750    45   49.0   81.5   0.20   2.8e+09    341    115    3.4  heat,trap_focus_class1 | occluded: heat
+film_density quiet  ito_aerogel   2.5 curtain   42   70    35    8.3   83.1   1.02   6.1e+09    730    212    7.0  OK
+film_density quiet  ito_aerogel   2.5 class1    42   70    25    4.2   42.1   1.02   9.6e+09   1163    318   10.9  OK
+film_density quiet  ito_aerogel   5.0 curtain   74  121    39    9.9   98.2   1.36   3.4e+09    407    131    4.0  OK
+film_density quiet  ito_aerogel   5.0 class1    74  121    28    5.0   49.8   1.36   6.2e+09    752    216    7.2  OK
+film_density quiet  carbon_black 15.0 curtain  224  344    45   16.6  165.3   1.60   2.8e+09    341    116    3.4  vis_exit_window,ir_power_cap | occluded: heat
+film_density quiet  carbon_black 15.0 class1   224  344    45   16.6  165.3   1.60   2.8e+09    341    116    3.4  trap_focus_class1,vis_exit_window,ir_power_cap | occluded: heat
+film_density calm   ito_aerogel   2.5 curtain   61  101    31    9.9   99.1   1.02   7.0e+09    843    240    8.0  OK
+film_density calm   ito_aerogel   2.5 class1    61  101    20    4.0   40.0   1.02   1.4e+10   1665    443   15.5  OK
+film_density calm   ito_aerogel   5.0 curtain  106  170    31    9.3   93.1   1.36   5.1e+09    610    182    5.9  OK
+film_density calm   ito_aerogel   5.0 class1   106  170    22    4.7   47.2   1.36   9.6e+09   1152    316   10.8  OK
+film_density calm   carbon_black 15.0 curtain  307  462    45   24.7  246.2   1.60   2.8e+09    341    118    3.4  heat,vis_exit_window,ir_power_cap | occluded: heat
+film_density calm   carbon_black 15.0 class1   307  462    45   24.7  246.2   1.60   2.8e+09    341    118    3.4  heat,trap_focus_class1,vis_exit_window,ir_power_cap | occluded: heat
+film_density normal ito_aerogel   2.5 curtain  114  183    22   10.0   99.8   1.02   1.1e+10   1385    375   12.9  OK
+film_density normal ito_aerogel   2.5 class1   114  183    14    4.0   40.3   1.02   2.5e+10   3007    778   27.7  OK
+film_density normal ito_aerogel   5.0 curtain  190  295    22    9.4   93.3   1.36   9.6e+09   1152    317   10.8  OK
+film_density normal ito_aerogel   5.0 class1   190  295    16    4.7   47.3   1.36   1.8e+10   2222    582   20.6  OK
+film_density normal carbon_black 15.0 curtain  510  750    45   49.0  488.9   1.60   2.8e+09    341    123    3.5  heat,vis_exit_window,ir_power_cap | occluded: heat
+film_density normal carbon_black 15.0 class1   510  750    45   49.0  488.9   1.60   2.8e+09    341    123    3.5  heat,trap_focus_class1,vis_exit_window,ir_power_cap | occluded: heat

@@ -185,6 +185,52 @@ With ≤ 100 W IR and δ = 3 mm:
 - Robust touch, calm rooms and film density need the better mote.
 - Normal rooms need the fast-POV mode.
 
+## 3a''. Integral-action pinning, passive Class 1, and per-mote sensing (idea round 2 opus; M15f, `results/m15f_pinning.json`)
+
+**The cubic draft law was an artifact of my jitter model** (opus, [THEORY]; independent loop simulation pending in red team 6).
+- M15b treated the full air speed as unpredictable noise at every update: jitter = u/(2π·bw).
+- A loop with integral action cancels the mean flow. Room air at a fixed point varies smoothly: the smallest eddies are ~1–2 mm and the Eulerian acceleration is a_E ≈ U·du/dx ≈ 0.6–2.4 m/s².
+- The pinning residual is therefore ≈ a_E/ω_c², about **0.4–1.3 µm at 200 Hz** loop bandwidth.
+- **Draft cost becomes linear in u**, through I_hold only. The spot radius is set by 3a and by a sensing/beam-wander floor (~3 µm), not by u/f.
+- I hand-checked a_E: ε = 10⁻³ m²/s³ gives η_K = 1.4 mm and u_η = 1.1 cm/s, so du/dx ≈ 8 s⁻¹ and a_E ≈ 2.4 m/s² at U = 0.3 m/s. That gives 1.5 µm at 200 Hz, consistent.
+
+**M15f** (pinning loop 500 Hz + 3 µm floor, H14 layout, real device rates, δ = 3 mm, ≤ 100 W IR; "hand" = one head occluded):
+
+| Content / room | Mote | Curtain: IR, pixels, cost (vol / lab) | **Passive Class 1 (no curtain)**: IR, pixels, cost (vol / lab) | Hand-occluded |
+|---|---|---|---|---|
+| Sketch, normal (0.3 m/s) | ITO 2.5 µm | 81 W, 2.3×10⁹ px, $99k / $2.8M | **6.7 W, 2.3×10¹⁰ px, $0.73M / $26M** | ✓ (ΔT 183 K) |
+| Sketch, normal | ITO 5 µm | 95 W, 1.6×10⁹ px, $77k / $2.0M | 7.9 W, 1.8×10¹⁰ px, $0.57M / $20M | ✓ (295 K, marginal) |
+| Film density, normal | ITO 2.5 µm | 100 W, 1.1×10¹⁰ px, $0.38M / $13M | **40 W, 2.5×10¹⁰ px, $0.78M / $28M** | ✓ |
+| Film density, quiet | ITO 2.5 µm | 83 W, 6.1×10⁹ px | 42 W, 9.6×10⁹ px, $0.32M / $11M | ✓ |
+| Sketch, quiet | black carbon 15 µm | 81 W, 9×10⁸ px, $57k / $1.3M | fails Class 1 | ✗ heat near hands |
+
+**Reading.**
+- With an ITO-class mote and a pinning loop, the model meets **film density, in a normal 0.3 m/s room, Class 1 per focus with no curtain, robust to a hand occluding a head**.
+- **The curtain is no longer needed for feasibility** (opus). It buys 2–10× fewer hologram pixels.
+- The remaining costs are **pixels**: 2×10¹⁰, i.e. ~2,200–3,000 4K phase panels, $0.6–0.8M at volume pricing [ASSUMPTION]. Opus's tiled steerable sub-holograms may cut this ~10× for sketches.
+- The other remaining condition is the **ITO-class mote**.
+- Passive Class 1 still needs a **field checker**: a certified software constraint that no two foci share one aperture, and an independent fast cut against an SLM fault concentrating a head's power.
+
+**Curtain standards analysis (opus, [MEASURED via secondary sources]).**
+- Physics and doses are sound.
+- Corrected 1550 nm cut dose: 10⁴ J/m² over a **1 mm** aperture for t < 0.35 s, i.e. 7.85 mJ. Allowed cut times are 39–157 ms at 200–50 mW, so a standard Type 4 light curtain (6–13 ms) suffices.
+- **Consumer Class 1 classification on an interlock basis is unprecedented.** P(accepted) ≈ 0.2–0.3 for consumer use, ≈ 0.6 as a venue/installation control.
+- My IEC 60825-4 "active guard" precedent was mis-cited: those guards detect laser hits, not people.
+- Unchecked failure modes:
+  - summed sub-threshold intercepts (~35 mW);
+  - head power balance near concave objects;
+  - mote shadows against the trip threshold;
+  - binoculars near heads;
+  - the required PL e integrity level.
+- **Decision.** Design to passive Class 1 per focus for the consumer product. Use the curtain as defence in depth, and as a pixel-saving mode for venues.
+
+**I6: per-mote sensing without cameras, by coded-quadrant shadow sensing** [DERIVED, main session].
+- **Coding.** The fast DMD plane already gates each spot. Split each flat-top spot into four quadrants and drive them with orthogonal (Walsh) on/off codes over 4–8 DMD frames, giving a 1.6–3 kHz position update.
+- **Reading.** The receiver head focuses each incoming spot beam onto its own element of a detector array, an InGaAs APD/PIN array of 64×64 to 256×256 (LiDAR class), read in parallel. The mote's extinction (≈ 2πa² against a quadrant of π r_c²/4, a 7–22 % modulation) reveals which quadrants it occupies.
+- **Shot noise is negligible:** 0.015–0.05 nm per 1 ms. Laser RIN at −140 dB/Hz gives 0.2–1.3 nm.
+- **Real limits are systematic:** beam pointing and turbulence wander (1–4 µm, but sensed relative to the very beam that pushes), crosstalk between spots, DMD transients, and mote shape asymmetry.
+- This removes the event-camera bottleneck: ~2×10⁸ samples/s becomes per-spot photodiode channels at a few kHz.
+
 ## 3b. Content speed (I5), checked with the existing v4 machinery
 
 **Bound B8, content speed.** Content cannot move faster than its motes can, relative to the air. The heat-limited mote speed is v_max ≈ 0.2–0.5 m/s with today's best-estimate motes (v4/M13). [DERIVED]
