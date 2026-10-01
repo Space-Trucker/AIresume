@@ -27,10 +27,11 @@ sys.path.insert(0, os.path.join(HERE, "..", "07_mote_route", "mote"))
 import physics as ph  # noqa: E402
 
 
-def fit_velocity(rows):
-    """Least-squares slope of x(t) and y(t)."""
+def fit_velocity(rows, max_resid_m=5e-6):
+    """Least-squares slope of x(t) and y(t). Rejects tracks that are not straight lines (noise / mislinks): the rms
+    residual of x(t) must be <= max(max_resid_m, 10 % of the track's x span)."""
     n = len(rows)
-    if n < 3:
+    if n < 8:
         return None
     t = [r[0] for r in rows]
     tm = sum(t) / n
@@ -38,7 +39,14 @@ def fit_velocity(rows):
     for k in (1, 2):
         z = [r[k] for r in rows]
         zm = sum(z) / n
-        out.append(sum((ti - tm) * (zi - zm) for ti, zi in zip(t, z)) / sum((ti - tm) ** 2 for ti in t))
+        slope = sum((ti - tm) * (zi - zm) for ti, zi in zip(t, z)) / sum((ti - tm) ** 2 for ti in t)
+        out.append(slope)
+        if k == 1:
+            res = [zi - (zm + slope * (ti - tm)) for ti, zi in zip(t, z)]
+            rms = math.sqrt(sum(r * r for r in res) / n)
+            span = max(z) - min(z)
+            if rms > max(max_resid_m, 0.1 * span):
+                return None
     return out
 
 
@@ -57,7 +65,8 @@ def analyze(tracks_csv, run_json):
                 (v_on if on else v_off).append(v[0] * run.get("beam_direction", 1))
     if not v_on:
         raise SystemExit("no beam-on tracks")
-    vx = sum(v_on) / len(v_on) - (sum(v_off) / len(v_off) if v_off else 0.0)
+    med = lambda L: sorted(L)[len(L) // 2]     # medians resist the odd mislinked track
+    vx = med(v_on) - (med(v_off) if v_off else 0.0)
     a, A, kp = run["particle_radius_m"], run["absorptance"], run["k_particle"]
     w = run["beam_radius_1e2_m"]
     I = 2 * run["beam_power_W"] / (math.pi * w * w) * run.get("intensity_fraction_at_particle", 1.0)

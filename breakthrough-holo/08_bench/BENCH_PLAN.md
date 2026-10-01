@@ -51,8 +51,11 @@ Using particles with **different known conductivities** tests the 1/(k_p + 2k_g)
 2. Beam on at three powers.
 3. Reverse the beam direction (rotate the cuvette 180°) to cancel residual convection.
 4. Repeat for each particle type.
-5. Track particles (e.g. with the `trackpy` Python package) into `tracks.csv` (columns particle_id, t_s, x_m, y_m, beam_on). Write `run.json` (power, beam radius, particle radius, density, absorptance, k_p, beam_direction).
-6. Run `python3 analyze_b1.py tracks.csv run.json`.
+5. Track particles: `python3 track_b1.py frames_dir tracks.csv --fps … --um_per_px … --beam_on_frames …`. The tracker is self-contained (numpy/scipy only) and self-tested end to end: it recovers a synthetic 5.000 mm/s drift exactly.
+   - **Frame-rate rule:** keep motion ≤ ~5 px per frame. For example, 5 mm/s at 3 µm/px needs ≥ 330 fps, or use lower magnification.
+   - Keep particles in the field during beam-off segments, because they are the background reference.
+6. Write `run.json`: power, beam radius, particle radius, density, absorptance, k_p, beam_direction.
+7. Run `python3 analyze_b1.py tracks.csv run.json`. It uses straight-line track filtering and medians, which resist mislinks.
 
 **Gate G1.**
 - Implied C_ph within 0.5–1.3 for the black polymer spheres, and the ratio of glassy-carbon to polymer drift within ×2 of the model: the force law holds and the atlas stands.
