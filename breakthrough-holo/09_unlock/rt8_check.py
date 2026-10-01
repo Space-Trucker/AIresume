@@ -345,7 +345,7 @@ def elements(pieces, dl):
     return np.vstack(P), np.vstack(T), np.concatenate(L), np.concatenate(LIT)
 
 
-def beam_powers(P, T, v, w, I_unit, room, mode="lp", n_draw=16, seed=5, theta_min=0.0, rng_heads=None):
+def beam_powers(P, T, v, w, I_unit, room, mode="lp", n_draw=16, seed=5, theta_min=0.0, rng_heads=None, h_cap=3.0):
     """Mean beam power (W) per element and head, (n, 10). mode 'lp': LP-chosen heads for f = v t - u, averaged over
     draft draws; 'random': 3 random heads per element cluster with equal split of the h_worst focus power (m17/T8)."""
     n = len(P)
@@ -358,20 +358,29 @@ def beam_powers(P, T, v, w, I_unit, room, mode="lp", n_draw=16, seed=5, theta_mi
             B[np.ix_(cl == c, rng_heads.choice(10, 3, replace=False))] = 2.14 * v * unit / 3
         return B, np.full(n, 2.14)
     K, Minv, valid = triple_inverses(P)
+    valid_c = valid
     if theta_min > 0:                                     # stacking-aware: forbid beams within theta_min of the motion
         cosang = np.einsum("nij,nj->ni", K, T)            # cos(angle between beam j and the tangent)
         bad = cosang > math.cos(math.radians(theta_min))
-        valid = valid & ~np.any(bad[:, TRIPLES], axis=2)
+        valid_c = valid & ~np.any(bad[:, TRIPLES], axis=2)
     rng = np.random.default_rng(seed)
     acc = np.zeros((n, 10))
     hsum = np.zeros(n)
+    nfb = 0
     for _ in range(n_draw):
         u = rng.normal(0, sig, size=(n, 3))
         u[:, 0] += U
         f = v * T - u
         C = lp_alloc(f, Minv, valid)
+        if theta_min > 0:                                 # constrained allocation unless it costs h > h_cap
+            Cc = lp_alloc(f, Minv, valid_c)
+            hc = Cc.sum(axis=1) / np.linalg.norm(f, axis=1)
+            use = np.isfinite(hc) & (hc <= h_cap)
+            C[use] = Cc[use]
+            nfb += int((~use).sum())
         acc += C
         hsum += C.sum(axis=1) / np.linalg.norm(f, axis=1)
+    beam_powers.fallback_frac = nfb / (n * n_draw)
     return acc / n_draw * unit, hsum / n_draw
 
 
@@ -461,7 +470,8 @@ def expo_case(strokes, name, room, v, w, I_unit, mode="lp", theta_min=0.0, dl=0.
                within_5mm_frac=float(near / C.sum()), h_mean_tour=float(np.nanmean(hbar)),
                EL_T8_mJm=EL_T8 * 1e3, EL_local_mJm=EL_loc * 1e3,
                s_eff_vs_T8_EL=float(E.max() / (30.0 * 3.5e-3 * EL_T8)),
-               ratio_to_AEL=float(E.max() / AEL_IR), w_class1_um=float(w * 1e6 * math.sqrt(AEL_IR / E.max())))
+               ratio_to_AEL=float(E.max() / AEL_IR), w_class1_um=float(w * 1e6 * math.sqrt(AEL_IR / E.max())),
+               fallback_frac=getattr(beam_powers, "fallback_frac", 0.0) if theta_min > 0 else 0.0)
     return res
 
 
@@ -687,7 +697,7 @@ def cmax_dirs_f(FI, FV, FO, n=800, seed=1):
 
 def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room="office", L=0.03, sig_n=4e-6,
               n_m=100, dur=10.0, seed=0, path="circle", eulerian=False, mean_wind=True, auth=5.4, n_sub=2,
-              lost_mult=1.5, turb_every=4, R_line=0.15, verbose=False):
+              lost_mult=1.5, turb_every=4, R_line=0.15, verbose=False, gains=None, search3d=False):
     """Vectorised 3D tracking of n_m motes, each carried by LP-allocated beams from the 10 H10 heads.
     path 'circle': the tightest POV loop, radius v/(2 pi f_r) (m19b); 'line': a locally straight stroke (circle of
     radius R_line, a tour-model mote). Spot centred on the plan-predicted position and swept at the plan velocity
@@ -728,7 +738,21 @@ def sim_track(f_loop=20000.0, d=2, tau_act=30e-6, w=35e-6, v=0.5, f_r=30.0, room
     ts = np.arange(0, nt, turb_every) * T
     useries = np.array([turb(plan(t)[0][:1] if not eulerian else centres[:1], t, udir[:1])[0] @ e1[0] for t in ts])
     useries = np.repeat(useries - useries.mean(), turb_every)[:nt]
-    gains = tune_pid(T, d, tau_act, sig_n, useries)
+    if gains is None:
+        gains = tune_pid(T, d, tau_act, sig_n, useries)
+    if search3d:                                          # pick the best of scaled gain sets in a short 3D run
+        best = None
+        for sc in (0.35, 0.5, 0.7, 1.0, 1.4):
+            for sci in (0.5, 1.0, 2.0):
+                g = dict(gains, Kp=gains["Kp"] * sc, Ki=gains["Ki"] * sc * sci, Kd=gains["Kd"] * sc)
+                r = sim_track(f_loop=f_loop, d=d, tau_act=tau_act, w=w, v=v, f_r=f_r, room=room, L=L, sig_n=sig_n,
+                              n_m=24, dur=0.6, seed=seed + 7, path=path, eulerian=eulerian, mean_wind=mean_wind,
+                              auth=auth, n_sub=n_sub, lost_mult=lost_mult, turb_every=turb_every, R_line=R_line,
+                              gains=g)
+                score = (r["lost"], r["off_p999_um"])
+                if best is None or score < best[0]:
+                    best = (score, g)
+        gains = dict(best[1], search3d=True)
     Kp, Ki, Kd = gains["Kp"], gains["Ki"], gains["Kd"]
     p0, v0 = plan(0.0)
     x = p0.copy()
@@ -850,27 +874,29 @@ def sec_loop(which="key"):
     ts = out["turb_selftest"]
     print(f"  turbulence self-test: sigma per component {np.round(ts['sigma_comp'], 3)} (target 0.1), L11 "
           f"{ts['L11'] * 100:.1f} cm (target 3), eta {ts['eta_mm']:.2f} mm")
+    base = dict(n_m=100, dur=10.0)
     if which == "key":
-        plan = [  # (kwargs)
-            dict(room="office", w=35e-6, path="circle", eulerian=True, mean_wind=False, n_m=100, dur=10.0),  # m19b as published
-            dict(room="office", w=35e-6, path="circle", n_m=100, dur=10.0),
-            dict(room="office", w=31e-6, path="circle", n_m=100, dur=10.0),
-            dict(room="still", w=35e-6, path="circle", n_m=100, dur=10.0),
-            dict(room="quiet_office", w=35e-6, path="circle", n_m=100, dur=10.0),
-            dict(room="office", w=35e-6, path="line", n_m=100, dur=10.0),
-            dict(room="still", w=34e-6, path="line", n_m=100, dur=10.0),
+        plan = [
+            dict(room="office", w=35e-6, eulerian=True, mean_wind=False, n_sub=1, **base),   # m19b as committed
+            dict(room="office", w=35e-6, eulerian=True, mean_wind=True, n_sub=1, **base),    # m19b + mean wind
+            dict(room="office", w=35e-6, search3d=True, **base),                             # moving through the field
+            dict(room="office", w=31e-6, search3d=True, **base),                             # T8's office waist
+            dict(room="still", w=34e-6, search3d=True, **base),                              # T8's still waist
+            dict(room="quiet_office", w=35e-6, search3d=True, **base),
+            dict(room="office", w=35e-6, path="line", search3d=True, **base),                # tour-model mote
+            dict(room="still", w=34e-6, path="line", search3d=True, **base),
         ]
     elif which == "sens":
         plan = [
-            dict(room="still", w=34e-6, path="circle", sig_n=6e-6, n_m=100, dur=10.0),
-            dict(room="still", w=34e-6, path="circle", d=3, n_m=100, dur=10.0),
-            dict(room="still", w=34e-6, path="circle", f_loop=10000.0, tau_act=50e-6, n_m=100, dur=10.0),
-            dict(room="office", w=35e-6, path="circle", v=0.8, n_m=100, dur=10.0),
-            dict(room="still", w=34e-6, path="circle", n_sub=1, n_m=100, dur=10.0),
+            dict(room="still", w=34e-6, sig_n=6e-6, search3d=True, **base),
+            dict(room="still", w=34e-6, d=3, search3d=True, **base),
+            dict(room="still", w=34e-6, f_loop=10000.0, tau_act=50e-6, search3d=True, **base),
+            dict(room="office", w=50e-6, search3d=True, **base),
+            dict(room="still", w=34e-6, sig_n=2e-6, search3d=True, **base),
+            dict(room="office", w=35e-6, v=0.8, search3d=True, **base),
         ]
     else:  # long
-        plan = [dict(room="still", w=34e-6, path="circle", n_m=200, dur=40.0),
-                dict(room="office", w=35e-6, path="circle", n_m=200, dur=40.0)]
+        plan = [dict(room="still", w=34e-6, search3d=True, n_m=200, dur=30.0)]
     for i, kw in enumerate(plan):
         t0 = time.time()
         r = sim_track(seed=1000 + 17 * i + zlib.crc32(which.encode()) % 997, **kw)
@@ -882,8 +908,207 @@ def sec_loop(which="key"):
               f"{r['rate_hi']:.1e}); draw err p50 {r['err_p50_um']:.1f} p99.9 {r['err_p999_um']:.1f} um; offset p99.9 "
               f"{r['off_p999_um']:.1f}; sat {r['sat_frac']:.1e}; heads/rev mean {r['heads_per_rev_mean']:.1f} p90 "
               f"{r['heads_per_rev_p90']:.0f} max {r['heads_per_rev_max']:.0f}; new-head events {r['facet_switch_per_s']:.0f}/s;"
-              f" Ms {r['gains']['Ms']:.2f}  [{r['wall_s']:.0f} s]", flush=True)
+              f" Kp {r['gains']['Kp']:.0f} Ms {r['gains']['Ms']:.2f}{' 3D' if r['gains'].get('search3d') else ''} "
+              f"n_sub {kw.get('n_sub', 2)} mean wind {kw.get('mean_wind', True)}  [{r['wall_s']:.0f} s]", flush=True)
         dump(f"loop_{which}", out)
+    return out
+
+
+# ======================================================================================================================
+# Section phys: I_unit, heat at gust peaks (h, occlusion, skin realism), Mie q fragility at 10 deg, m19 bookkeeping
+# ======================================================================================================================
+def sec_phys():
+    print("== phys ==")
+    import m18_gaussian_lcsv as m18                        # XCHECK (physics.py chain, T8's own)
+    import rt7_check as rt7                                # XCHECK (RT7's independent re-derivation)
+    import rt6_check as rt6                                # XCHECK (RT6's BHMIE)
+    out = {}
+    iu = {}
+    for v in (0.5, 0.8):
+        a1 = m18.hold(1e-6, v, h=2.14)["I"] / v
+        a2 = rt7.hold_I(1e-6, v, h=2.14)["I"] / v
+        iu[v] = dict(m18=a1, rt7=a2, ratio=a2 / a1)
+    out["I_unit"] = iu
+    print("  I_unit (W/m^2 per m/s): " + "; ".join(f"v {v}: m18 {d['m18']:.3e}, rt7 {d['rt7']:.3e} (x{d['ratio']:.3f})"
+                                              for v, d in iu.items()))
+    heat = {}
+    for room in ("still", "quiet_office", "office"):
+        U, sig = ROOMS[room]
+        for v in (0.5, 0.8):
+            vpk = v + U + 5.4 * sig
+            for label, kw in (("T8 (h 2.14, J1/A 0.486)", dict(h=2.14)),
+                              ("scheduler h 3.0", dict(h=3.0)),
+                              ("one head occluded (h 4.47)", dict(h=4.47)),
+                              ("realistic skin J1/A 0.30, A 0.6", dict(h=2.14, j1A=0.30, A=0.6)),
+                              ("realistic skin + occluded", dict(h=4.47, j1A=0.30, A=0.6))):
+                r = rt7.hold_I(1e-6, vpk, **kw)
+                heat[f"{room}/{v}/{label}"] = dict(v_pk=vpk, T_hot=r["T_hot"], ok=r["T_hot"] <= 573.0)
+            r18 = m18.hold(1e-6, vpk, h=2.14)
+            heat[f"{room}/{v}/m18 xcheck"] = dict(v_pk=vpk, T_hot=r18["T_hot"], ok=r18["T_hot"] <= 573.0)
+    out["heat"] = heat
+    for k, d in heat.items():
+        if "/0.5/" in k or "office/0.8" in k:
+            print(f"  hot face {k:55s} v_pk {d['v_pk']:.2f} m/s: {d['T_hot']:5.0f} K {'OK' if d['ok'] else '> 573 K FAIL'}")
+    # Mie fragility of the forward-scatter operating point (q at 10 deg, +-2.5 deg window as T7/T8)
+    mie = {}
+    for a in (0.9e-6, 1.0e-6, 1.1e-6):
+        for th in (8, 10, 12):
+            q6 = rt6.q_iso_profile(a, 500e-9, complex(1.04, 1e-4), angles_deg=(th,), halfwidth=2.5)["q_iso"][str(th)]
+            mie[f"{a * 1e6:.1f}/{th}"] = q6
+    out["mie_q"] = mie
+    print("  q_iso(theta) [rt6 BHMIE, +-2.5 deg]: " + "; ".join(f"a {k.split('/')[0]} um {k.split('/')[1]} deg {v:.1f}"
+                                                            for k, v in mie.items()))
+    # m19 bookkeeping
+    LAMv = LAM
+    bk = {}
+    duty = {"sketch": 0.57, "film_density": 0.83}
+    for content, P_ir_T8 in (("sketch", 4.4), ("film_density", 17.1)):
+        bk[content] = dict(P_IR_T8_W=P_ir_T8, P_IR_all_motes_move_W=P_ir_T8 / duty[content],
+                           factor=1 / duty[content])
+    # etendue per axis for a full-field channel: aperture D = 2 * 1.5 W, W = lam d / (pi w); field L at throw d
+    for w in (31e-6, 35e-6):
+        D_ap = 2 * 1.5 * LAMv * 3.95 / (math.pi * w)
+        bk[f"etendue_w{w * 1e6:.0f}"] = dict(D_mm=D_ap * 1e3, Dtheta_full_mm_rad=D_ap * math.sqrt(1.2) / 3.95 * 1e3,
+                                             Dtheta_half_mm_rad=D_ap * math.sqrt(1.2) / 3.95 / 2 * 1e3,
+                                             m19_formula=1.5 * LAMv * math.sqrt(1.2) / (math.pi * w) * 1e3)
+    # diffraction floor over the volume: farthest head-to-image distance for each head; T8 uses the 3.95 m centre throw
+    corners = np.array([[CENTER[0] + sx * HALF[0], CENTER[1] + sy * HALF[1], CENTER[2] + sz * HALF[2]]
+                        for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)])
+    dmax = float(np.max(np.linalg.norm(corners[:, None, :] - H10[None, :, :], axis=2)))
+    dcen = float(np.max(np.linalg.norm(CENTER - H10, axis=1)))
+    for R in (0.11, 0.15):
+        bk[f"w_diff_R{R}"] = dict(centre_um=1.5 * LAMv * dcen / (math.pi * R) * 1e6,
+                                  farthest_um=1.5 * LAMv * dmax / (math.pi * R) * 1e6, d_centre=dcen, d_max=dmax)
+    out["bookkeeping"] = bk
+    print(f"  IR power: m19 counts motes only while lit (x duty); all motes move all the time: sketch 4.4 -> "
+          f"{bk['sketch']['P_IR_all_motes_move_W']:.1f} W, film 17.1 -> {bk['film_density']['P_IR_all_motes_move_W']:.1f} W")
+    for w in (31, 35):
+        e = bk[f"etendue_w{w}"]
+        print(f"  full-field channel w {w} um: aperture D {e['D_mm']:.0f} mm at the head; D*theta(full field) "
+              f"{e['Dtheta_full_mm_rad']:.1f} mm rad, D*theta(half) {e['Dtheta_half_mm_rad']:.1f} (m19 prints "
+              f"{e['m19_formula']:.1f}); T8's '25 mm, +-0.5 rad' mirror = 12.5 mm rad (half) -> x"
+              f"{e['Dtheta_half_mm_rad'] / 12.5:.1f} short")
+    for R in (0.11, 0.15):
+        d = bk[f"w_diff_R{R}"]
+        print(f"  diffraction floor R_head {R}: centre throw {d['d_centre']:.2f} m -> {d['centre_um']:.1f} um; farthest "
+              f"head-to-volume {d['d_max']:.2f} m -> {d['farthest_um']:.1f} um")
+    dump("phys", out)
+    return out
+
+
+# ======================================================================================================================
+# Section chan: channels per mote (LP head usage along tours), patch-channel demand, sensing photon budget
+# ======================================================================================================================
+def sec_chan():
+    print("== chan ==")
+    out = {}
+    Iu = i_unit(0.5)
+    w = 34.3e-6
+    for cname, strokes in (("segments", random_segments(5.0, np.random.default_rng(11))), ("armor", armor(5.0))):
+        pieces = chain_tour(strokes)
+        Pel, Tel, Lel, LIT = elements(pieces, 2e-3)
+        for room in ("still", "office"):
+            K, Minv, valid = triple_inverses(Pel)
+            U, sig = ROOMS[room]
+            rng = np.random.default_rng(9)
+            used = np.zeros((len(Pel), 10), bool)
+            nd = 64
+            for _ in range(nd):                            # draft draws at gust level (authority 5.4 sigma)
+                u = rng.normal(0, sig, size=(len(Pel), 3)) * 1.8
+                u[:, 0] += U
+                C = lp_alloc(0.5 * Tel - u, Minv, valid)
+                used |= C > 0.02 * np.nanmax(C, axis=1, keepdims=True)
+            per_el = used.sum(axis=1)
+            # a tour-model mote travels 0.5 m/s: heads needed within one refresh (1.67 cm of tour)
+            seg = max(1, int(round(0.0167 / 2e-3)))
+            win = np.array([used[i:i + seg].any(axis=0).sum() for i in range(0, len(Pel) - seg, seg)])
+            out[f"{cname}/{room}"] = dict(heads_per_element_mean=float(per_el.mean()), heads_per_element_p90=float(
+                np.percentile(per_el, 90)), heads_per_refresh_window_mean=float(win.mean()),
+                heads_per_refresh_window_p90=float(np.percentile(win, 90)), n_el=len(Pel))
+            o = out[f"{cname}/{room}"]
+            print(f"  {cname:8s} {room:6s}: heads with nonzero LP push over gust-level drafts: per element mean "
+                  f"{o['heads_per_element_mean']:.1f} (p90 {o['heads_per_element_p90']:.0f}); per refresh window "
+                  f"(1.67 cm of tour) mean {o['heads_per_refresh_window_mean']:.1f} (p90 "
+                  f"{o['heads_per_refresh_window_p90']:.0f})")
+        # patch-channel demand for the armor: per head, motes (spacing v/f_r = 1.67 cm) needing that head inside each
+        # patch cell (room units, projected across the head's line of sight)
+        if cname == "armor":
+            K, Minv, valid = triple_inverses(Pel)
+            C = lp_alloc(0.5 * Tel, Minv, valid)
+            dens = {}
+            for cell in (0.02, 0.04):
+                tot_need, tot_use = 0, 0
+                peak = 0
+                for j in range(10):
+                    on = C[:, j] > 0.02 * np.nanmax(C, axis=1)
+                    if not on.any():
+                        continue
+                    D = Pel[on] - H10[j]
+                    ax = (CENTER - H10[j]) / np.linalg.norm(CENTER - H10[j])
+                    e1 = np.cross(ax, [0, 0, 1.0]) if abs(ax[2]) < 0.9 else np.cross(ax, [1.0, 0, 0])
+                    e1 /= np.linalg.norm(e1)
+                    e2 = np.cross(ax, e1)
+                    uv = np.stack([D @ e1, D @ e2], 1) / (D @ ax)[:, None] * 3.95     # room-scale coordinates
+                    cid = np.floor(uv / cell).astype(int)
+                    keys, cnt = np.unique(cid, axis=0, return_counts=True)
+                    motes = cnt * 2e-3 / 0.0167                # elements of 2 mm -> mote occupancy
+                    need = np.ceil(motes + 1)                  # +1 make-before-break per cell
+                    peak = max(peak, float(need.max()))
+                    tot_need += float(len(keys) * need.max())  # uniform grid sized for the densest cell
+                    tot_use += float(motes.sum())
+                dens[cell] = dict(uniform_grid_channels=tot_need, motes_in_use_x_heads=tot_use,
+                                  overhead=tot_need / tot_use, peak_per_cell=peak)
+                print(f"  armor patch cells {cell * 100:.0f} cm: peak channels needed per cell per head {peak:.0f}; a uniform "
+                      f"grid sized for the peak needs {tot_need:.0f} IR channels vs {tot_use:.0f} beams in use "
+                      f"(overhead x{tot_need / tot_use:.1f})")
+            out["armor_patch"] = dens
+    # sensing: per-frame photons at 20 kHz (50 us)
+    import rt6_check as rt6                                # XCHECK Mie
+    sens = {}
+    hnu = 6.626e-34 * 3e8 / 1.55e-6
+    for m_eff, lab in ((complex(1.04, 0.05), "weak absorber"), (complex(1.1, 0.2), "strong absorber")):
+        x = 2 * math.pi * 1e-6 / 1.55e-6
+        th = np.radians(np.array([179.9, 160.0, 30.0]))
+        Qe, Qs, Qb, S1, S2 = rt6.bhmie(x, m_eff, th)
+        k = 2 * math.pi / 1.55e-6
+        dsig = (np.abs(S1) ** 2 + np.abs(S2) ** 2) / 2 / k ** 2       # m^2/sr, unpolarised
+        I = 2 * 5e-3 / (math.pi * 35e-6 ** 2)
+        Om_head = math.pi * 0.11 ** 2 / 3.95 ** 2
+        Om_cam = math.pi * 0.0125 ** 2 / 1.5 ** 2
+        n_back = I * dsig[0] * Om_head / hnu * 50e-6
+        n_30 = I * dsig[2] * Om_cam / hnu * 50e-6
+        sens[lab] = dict(Qabs=Qe - Qs, Qback=Qb, photons_back_head_per_frame=n_back,
+                         sigma_back_um=35e-6 / (2 * math.sqrt(max(n_back, 1e-9))) * 1e6,
+                         photons_30deg_25mm_cam_1p5m=n_30)
+        print(f"  sensing ({lab}, m {m_eff}): Q_abs {Qe - Qs:.2f}; descanned backscatter into the 0.22 m head aperture "
+              f"{n_back:.0f} photons per 50 us frame (5 mW beam, w 35 um) -> sigma ~ {sens[lab]['sigma_back_um']:.1f} um "
+              f"(shot-noise floor, before detector noise); 30 deg scatter into a 25 mm lens at 1.5 m {n_30:.0f} photons")
+    out["sensing"] = sens
+    dump("chan", out)
+    return out
+
+
+def sec_expo2():
+    """Stacking-aware allocation (forbid beams within theta_min of the motion unless h > 3), 60 Hz, and the armor at
+    T8's own random-head convention with H10, for the corrected design table."""
+    print("== expo2: scheduler variants ==")
+    out = dict(cases=[])
+    Iu = i_unit(0.5)
+    contents = {"segments": random_segments(5.0, np.random.default_rng(11)), "armor": armor(5.0),
+                "aligned": aligned_lines(), "arcs": random_arcs(5.0, np.random.default_rng(12))}
+    plan = [(c, "still", 0.5, 34.3e-6, "lp", th, True) for c in ("segments", "armor", "aligned", "arcs")
+            for th in (20.0, 40.0)]
+    plan += [("armor", "still", 0.5, 26.6e-6, "lp", 40.0, True), ("armor", "still", 0.5, 20e-6, "lp", 40.0, True)]
+    for cname, room, v, w, mode, th, jumps in plan:
+        t0 = time.time()
+        r = expo_case(contents[cname], cname, room, v, w, Iu, mode=mode, theta_min=th, include_jumps=jumps)
+        r["wall_s"] = time.time() - t0
+        out["cases"].append(r)
+        print(f"  {cname:8s} {room:6s} v {v} w {w * 1e6:4.1f} {mode:6s} th_min {th:2.0f}: worst pupil {r['max_mW']:6.1f} mW"
+              f" = x{r['ratio_to_AEL']:.2f}; median on tour {r['median_on_tour_mW']:.2f}; <5 mm share "
+              f"{r['within_5mm_frac']:.2f}; h_mean {r['h_mean_tour']:.2f} (fallback {r['fallback_frac']:.3f}); "
+              f"Class-1 w {r['w_class1_um']:.1f} um  [{r['wall_s']:.0f} s]", flush=True)
+        dump("expo2", out)
     return out
 
 
@@ -896,5 +1121,11 @@ if __name__ == "__main__":
             sec_expo()
         elif s == "expoq":
             sec_expo(quick=True)
+        elif s == "phys":
+            sec_phys()
+        elif s == "chan":
+            sec_chan()
+        elif s == "expo2":
+            sec_expo2()
         elif s.startswith("loop"):
             sec_loop(s[5:] if len(s) > 4 else "key")

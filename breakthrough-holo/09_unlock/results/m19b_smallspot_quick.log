@@ -1,0 +1,18 @@
+channel 20 kHz  still, L 3 cm          U 0.0 w 20 noise 2: err p50 13.5 p99.9 30.7  lost 17/20 in 23 mote-s
+channel 20 kHz  still, L 3 cm          U 0.0 w 20 noise 1: err p50 2.3 p99.9 5.3  lost 0/20 in 56 mote-s
+channel 20 kHz  still, L 3 cm          U 0.0 w 25 noise 2: err p50 8.7 p99.9 14.2  lost 0/20 in 56 mote-s
+channel 20 kHz  still, L 3 cm          U 0.0 w 25 noise 1: err p50 1.9 p99.9 4.0  lost 0/20 in 56 mote-s
+channel 20 kHz  quiet office, L 3 cm   U 0.1 w 20 noise 2: err p50 5.4 p99.9 25.7  lost 19/20 in 12 mote-s
+channel 20 kHz  quiet office, L 3 cm   U 0.1 w 20 noise 1: err p50 1.2 p99.9 3.3  lost 0/20 in 56 mote-s
+channel 20 kHz  quiet office, L 3 cm   U 0.1 w 25 noise 2: err p50 3.4 p99.9 10.5  lost 0/20 in 56 mote-s
+channel 20 kHz  quiet office, L 3 cm   U 0.1 w 25 noise 1: err p50 1.0 p99.9 2.4  lost 0/20 in 56 mote-s
+channel 40 kHz  still, L 3 cm          U 0.0 w 20 noise 2: err p50 3.5 p99.9 7.9  lost 0/20 in 56 mote-s
+channel 40 kHz  still, L 3 cm          U 0.0 w 20 noise 1: err p50 1.0 p99.9 2.2  lost 0/20 in 56 mote-s
+channel 40 kHz  still, L 3 cm          U 0.0 w 25 noise 2: err p50 2.3 p99.9 5.1  lost 0/20 in 56 mote-s
+channel 40 kHz  still, L 3 cm          U 0.0 w 25 noise 1: err p50 0.7 p99.9 1.7  lost 0/20 in 56 mote-s
+channel 40 kHz  quiet office, L 3 cm   U 0.1 w 20 noise 2: err p50 3.5 p99.9 8.6  lost 0/20 in 56 mote-s
+channel 40 kHz  quiet office, L 3 cm   U 0.1 w 20 noise 1: err p50 0.7 p99.9 2.2  lost 0/20 in 56 mote-s
+channel 40 kHz  quiet office, L 3 cm   U 0.1 w 25 noise 2: err p50 2.3 p99.9 5.5  lost 0/20 in 56 mote-s
+channel 40 kHz  quiet office, L 3 cm   U 0.1 w 25 noise 1: err p50 0.6 p99.9 1.6  lost 0/20 in 56 mote-s
+
+[exited with code 0]

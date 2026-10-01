@@ -17,7 +17,15 @@
 > - **Realistic mote (RT7 C2): E/L doubles.**
 >   - With A = 0.5, the eye-limited waist is 21–24 µm for a sketch and 17.5–20 µm for film density.
 >   - Heads need an aperture radius R ≥ 0.15 m (30 cm) for diffraction. The office film case fails even then.
->   - The loop must then hold ~20 µm spots. Tests at 20/40 kHz with 1–2 µm sensing are running.
+>   - The loop must then hold ~20 µm spots (`results/m19b_smallspot_quick.log`: 20 motes × 3 s, mean wind on, v 0.5 m/s):
+>
+>     | Loop | Sensing noise | w = 20 µm | w = 25 µm | Drawing error p50 / p99.9 |
+>     |---|---|---|---|---|
+>     | 20 kHz | 2 µm | loses 17–19/20 | holds | 3–9 / 10–14 µm |
+>     | 20 kHz | 1 µm | holds | holds | 1–2 / 2–5 µm |
+>     | 40 kHz | 2 µm | holds (0/20, still and quiet office) | holds | 2–4 / 5–9 µm |
+>
+>   - **Requirement with the realistic mote:** ~40 kHz per-channel loops with ≤ 2 µm sensing, or 20 kHz with ≤ 1 µm. These are short runs only (56 mote-s each), so loss rates are not yet bounded below 5×10⁻²/s.
 > - **EN 50689 child-appealing skin rule** (sonnet, snippet-verified): 0.785 mW mean through 1 mm over 10 s. With the realistic mote this caps the waist at ~19–21 µm (sketch). A strict ICNIRP small-beam reading would also need a ~0.7 ms stall cut, against T8's ≤ 100 ms.
 > - **Visible illumination (RT7 C1)** applies to T8 too. Free-standing viewers all round the image need 66–220 wall emitters, and the direct beams reach the audience. Restricting viewers to a front zone (~15–20 emitters), or using an isotropically scattering mote, are the alternatives. Neither is solved.
 > - **Strokes that move along themselves** (sonnet's moving-beam sim) put 11–25× the limit through a pupil on the stroke. The content planner must assign motes so that no pupil is swept repeatedly, using an Eulerian assignment and a space-time dose map.

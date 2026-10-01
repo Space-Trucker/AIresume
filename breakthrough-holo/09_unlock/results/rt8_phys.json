@@ -1,0 +1,243 @@
+{
+ "I_unit": {
+  "0.5": {
+   "m18": 7317113.581000381,
+   "rt7": 7335955.992215715,
+   "ratio": 1.0025751153110785
+  },
+  "0.8": {
+   "m18": 7343453.447164713,
+   "rt7": 7346607.058450864,
+   "ratio": 1.0004294452615299
+  }
+ },
+ "heat": {
+  "still/0.5/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 0.662,
+   "T_hot": 423.23207564391413,
+   "ok": true
+  },
+  "still/0.5/scheduler h 3.0": {
+   "v_pk": 0.662,
+   "T_hot": 459.2491457218439,
+   "ok": true
+  },
+  "still/0.5/one head occluded (h 4.47)": {
+   "v_pk": 0.662,
+   "T_hot": 517.4183696040495,
+   "ok": true
+  },
+  "still/0.5/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 0.662,
+   "T_hot": 478.12421189186705,
+   "ok": true
+  },
+  "still/0.5/realistic skin + occluded": {
+   "v_pk": 0.662,
+   "T_hot": 619.6755756516535,
+   "ok": false
+  },
+  "still/0.5/m18 xcheck": {
+   "v_pk": 0.662,
+   "T_hot": 433.11113765666204,
+   "ok": true
+  },
+  "still/0.8/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 476.2957058117828,
+   "ok": true
+  },
+  "still/0.8/scheduler h 3.0": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 525.5607098109331,
+   "ok": true
+  },
+  "still/0.8/one head occluded (h 4.47)": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 605.058429470571,
+   "ok": false
+  },
+  "still/0.8/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 551.3454481891117,
+   "ok": true
+  },
+  "still/0.8/realistic skin + occluded": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 745.7662417777557,
+   "ok": false
+  },
+  "still/0.8/m18 xcheck": {
+   "v_pk": 0.9620000000000001,
+   "T_hot": 489.109512963887,
+   "ok": true
+  },
+  "quiet_office/0.5/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 0.762,
+   "T_hot": 441.2077888076569,
+   "ok": true
+  },
+  "quiet_office/0.5/scheduler h 3.0": {
+   "v_pk": 0.762,
+   "T_hot": 481.7509134451992,
+   "ok": true
+  },
+  "quiet_office/0.5/one head occluded (h 4.47)": {
+   "v_pk": 0.762,
+   "T_hot": 547.1687206619184,
+   "ok": true
+  },
+  "quiet_office/0.5/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 0.762,
+   "T_hot": 502.97983992821787,
+   "ok": true
+  },
+  "quiet_office/0.5/realistic skin + occluded": {
+   "v_pk": 0.762,
+   "T_hot": 662.3458314908632,
+   "ok": false
+  },
+  "quiet_office/0.5/m18 xcheck": {
+   "v_pk": 0.762,
+   "T_hot": 452.15654640291984,
+   "ok": true
+  },
+  "quiet_office/0.8/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 1.062,
+   "T_hot": 493.46501242920914,
+   "ok": true
+  },
+  "quiet_office/0.8/scheduler h 3.0": {
+   "v_pk": 1.062,
+   "T_hot": 546.965065635982,
+   "ok": true
+  },
+  "quiet_office/0.8/one head occluded (h 4.47)": {
+   "v_pk": 1.062,
+   "T_hot": 633.3599055820562,
+   "ok": false
+  },
+  "quiet_office/0.8/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 1.062,
+   "T_hot": 574.9719061520227,
+   "ok": false
+  },
+  "quiet_office/0.8/realistic skin + occluded": {
+   "v_pk": 1.062,
+   "T_hot": 786.7927905742545,
+   "ok": false
+  },
+  "quiet_office/0.8/m18 xcheck": {
+   "v_pk": 1.062,
+   "T_hot": 507.08766689254446,
+   "ok": true
+  },
+  "office/0.5/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 506.7049123623264,
+   "ok": true
+  },
+  "office/0.5/scheduler h 3.0": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 563.4624177302036,
+   "ok": true
+  },
+  "office/0.5/one head occluded (h 4.47)": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 655.1938009801167,
+   "ok": false
+  },
+  "office/0.5/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 593.1843935702751,
+   "ok": false
+  },
+  "office/0.5/realistic skin + occluded": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 818.5703412361678,
+   "ok": false
+  },
+  "office/0.5/m18 xcheck": {
+   "v_pk": 1.1400000000000001,
+   "T_hot": 520.9048408354505,
+   "ok": true
+  },
+  "office/0.8/T8 (h 2.14, J1/A 0.486)": {
+   "v_pk": 1.44,
+   "T_hot": 556.5589870416273,
+   "ok": true
+  },
+  "office/0.8/scheduler h 3.0": {
+   "v_pk": 1.44,
+   "T_hot": 625.5718260539603,
+   "ok": false
+  },
+  "office/0.8/one head occluded (h 4.47)": {
+   "v_pk": 1.44,
+   "T_hot": 737.6260962826241,
+   "ok": false
+  },
+  "office/0.8/realistic skin J1/A 0.30, A 0.6": {
+   "v_pk": 1.44,
+   "T_hot": 661.7925035944193,
+   "ok": false
+  },
+  "office/0.8/realistic skin + occluded": {
+   "v_pk": 1.44,
+   "T_hot": 939.6719459232195,
+   "ok": false
+  },
+  "office/0.8/m18 xcheck": {
+   "v_pk": 1.44,
+   "T_hot": 572.5766884769567,
+   "ok": true
+  }
+ },
+ "mie_q": {
+  "0.9/8": 27.43041195876135,
+  "0.9/10": 20.015855015331507,
+  "0.9/12": 13.339453175282499,
+  "1.0/8": 36.3643738012545,
+  "1.0/10": 24.495339813739406,
+  "1.0/12": 14.610611598790886,
+  "1.1/8": 45.59251986582567,
+  "1.1/10": 28.02086821947963,
+  "1.1/12": 14.655150079334554
+ },
+ "bookkeeping": {
+  "sketch": {
+   "P_IR_T8_W": 4.4,
+   "P_IR_all_motes_move_W": 7.719298245614036,
+   "factor": 1.7543859649122808
+  },
+  "film_density": {
+   "P_IR_T8_W": 17.1,
+   "P_IR_all_motes_move_W": 20.60240963855422,
+   "factor": 1.2048192771084338
+  },
+  "etendue_w31": {
+   "D_mm": 188.59860756389597,
+   "Dtheta_full_mm_rad": 52.303651481929236,
+   "Dtheta_half_mm_rad": 26.151825740964618,
+   "m19_formula": 26.151825740964618
+  },
+  "etendue_w35": {
+   "D_mm": 167.04448098516502,
+   "Dtheta_full_mm_rad": 46.32609131256591,
+   "Dtheta_half_mm_rad": 23.163045656282954,
+   "m19_formula": 23.16304565628295
+  },
+  "w_diff_R0.11": {
+   "centre_um": 26.577387339821257,
+   "farthest_um": 31.973519702656446,
+   "d_centre": 3.9503164430207365,
+   "d_max": 4.752367830881781
+  },
+  "w_diff_R0.15": {
+   "centre_um": 19.490084049202256,
+   "farthest_um": 23.44724778194806,
+   "d_centre": 3.9503164430207365,
+   "d_max": 4.752367830881781
+  }
+ }
+}
