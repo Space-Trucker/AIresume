@@ -25,8 +25,8 @@
 | J₁/A: three methods | ≤ 0.6 % |
 | Own BHMIE vs Bohren–Huffman test case | Q_ext 3.1050 vs 3.1054; Q_back 2.9242 vs 2.9253 |
 | H10 push LP re-derived from the M4 head coordinates | h_worst 2.13 vs 2.14; h_mean 1.355 vs 1.38 |
-| Loop model: frequency domain vs time-domain simulation | within 2–16 % on 9 configurations |
-| Max loop bandwidth: numeric vs analytic 1/(8τ) | within 10–25 % |
+| Loop model: frequency domain vs time-domain simulation | σ within 1–20 % on the 6 unsaturated configurations |
+| Max loop bandwidth: numeric vs analytic 1/(8τ) | within 8–26 % |
 
 Facts from recall are marked **[memory]**. Web sources are listed at the end.
 
@@ -44,8 +44,8 @@ Facts from recall are marked **[memory]**. Web sources are listed at the end.
    - In simulation, motes with 1.3× or 2× authority are lost within seconds.
    - m15's "quiet 0.1 m/s" therefore describes a *still* room, σ_u ≲ 0.024 m/s.
    - At σ_u = 0.1 m/s the heat at gust peaks breaks both motes:
-     - white carbon reaches 780 K;
-     - ITO reaches 655 K.
+     - white carbon: ΔT 779 K;
+     - coated ITO: ΔT 362 K, i.e. 655 K, above its 573 K limit.
 2. **The split-control optics do not exist as specified.**
    - **Mode count.** M = A_f/(πr_c²) under-counts the modes a flat-top spot needs by 12× (ρ = 1 λ/NA, η_shape 0.56) to 150× (η_shape 0.8, as m15 assumes).
    - **One DMD per head.** This falls short of the étendue by 75–5 800×.
@@ -168,8 +168,11 @@ The loss target is per mote. At 10⁴ motes, 10⁻⁴ /s per mote is still one m
 | Authority | Frames saturated | Mote motion |
 |---|---|---|
 | 1.3 σ | 34 % | Wander of tens of mm (lost) |
-| 2 σ | 8 % | Lost |
-| 4.5 σ | 2×10⁻⁵ | Held. One 150 µm excursion in 580 mote-s, matching the Rice prediction of ≈ 0.6 events |
+| 2 σ | 7.8 % | Wander up to 34 mm (lost) |
+| 3 σ | 0.44 % | ~12 % of motes per second pass 100 µm (lost) |
+| 4.5 σ | ≤ 3×10⁻⁵ | Held: maximum radial error 6 µm (64 levels) / 55 µm (binary) over 580 mote-s |
+
+An earlier, non-deterministic seed showed one 150–440 µm excursion per 580 mote-s at 4.5σ. This is consistent with the per-axis Rice rate, ≈ 0.6 expected events.
 
 **What m15's "quiet 0.10 m/s" can hold.**
 - Its authority, 0.13 m/s, holds a draft of σ ≤ 0.024 m/s with zero mean.
@@ -212,15 +215,13 @@ The loss target is per mote. At 10⁴ motes, 10⁻⁴ /s per mote is still one m
 | Carbon | 0.36–0.43 m |
 | Film | 0.63–0.75 m (larger than the 0.3 m head) |
 
-- **4K LCoS panels per head** at η 0.8:
+- **4K LCoS panels (8.8 Mpx), all ten heads, trap holograms only:**
 
-| Case | m15 (all heads) | RT6 (per head) |
-|---|---|---|
-| Sketch | ~58 | 730 |
-| Carbon | — | 1 450 |
-| Film | ~330 | 4 500 |
-
-  At ρ 1 the RT6 count is 1/12.7 of these.
+| Case | m15 | RT6 at ρ = 1 (η 0.56) | RT6 at ρ = 3.6 (η 0.8) |
+|---|---|---|---|
+| Sketch, ITO | ~58 | ~580 | ~7 300 |
+| Carbon sketch | ~100 | ~1 140 | ~14 500 |
+| Film | ~350 | ~3 500 | ~45 000 |
 
 **(b) One DMD per head cannot carry the étendue.**
 - The DLP650LNIR is 1280×800 at 10.8 µm with ±12° tilt, so NA ≈ 0.2 and its étendue is 1.6×10⁻⁵ m²·sr.
@@ -274,7 +275,7 @@ The loss target is per mote. At 10⁴ motes, 10⁻⁴ /s per mote is still one m
 
 **Consequences.**
 - Keeping m15's luminance with the uncoated ITO mote needs visible spots of **74 mW (sketch) / 18 mW (film)** each, 50–190× the 0.39 mW Class 1 limit.
-- The visible totals then reach tens of watts, failing the exit window and the wall-light criterion.
+- The visible totals then reach **~200–300 W** (1 667 × 74 mW or 10 000 × 18 mW, divided by efficiency 0.6), failing the exit window and the wall-light criterion by two orders of magnitude.
 
 **The white coat.**
 - A diffuse coat of albedo R gives a Lambertian-sphere phase function:
@@ -305,7 +306,7 @@ The loop model *[RT6 `loop`]*:
 - **Actuator:** ternary or 64-level DMD force with first-order error feedback, saturating at 4.5σ.
 - **Turbulence:** von Kármán + Pao drafts.
 
-The frequency-domain result is checked by a time-domain simulation (100 motes × 3 axes × 6 s per case; σ agrees within 2–16 %).
+The frequency-domain result is checked by a time-domain simulation (100 motes × 3 axes × 6 s per case; σ agrees within 1–20 %).
 
 **Findings.**
 
@@ -323,7 +324,8 @@ The frequency-domain result is checked by a time-domain simulation (100 motes ×
 | Case | 20 kHz binary | 12.5 kHz NIR DMD, binary | 64 levels | m15 |
 |---|---|---|---|---|
 | ITO 5 µm, σ_u 0.1 | 30–34 µm | 50–55 µm | 8–17 µm | 24 µm |
-| σ_u 0.3 | — | 90–250 µm | 17–220 µm | 72 µm |
+| ITO 5 µm, σ_u 0.3 | 91–206 µm | 159–245 µm | 17–193 µm | 72 µm |
+| White carbon 10 µm, σ_u 0.1 | 28–34 µm | 45–51 µm | 13–25 µm | 30 µm |
 
 **Verdict.** The jitter formula is wrong in mechanism. Its σ_u 0.1 number happens to fall within 2× of the binary-DMD result. The real limits are authority (C1), quantisation and diffraction (C2).
 
@@ -489,7 +491,7 @@ Both exceed 573 K. Heat does bind here, and it fails.
    - 18 % for 10 µm carbon at r_c 30 µm.
    A 2 % trip threshold needs per-beam baselines that track mote jitter and motes passing through other beams' cones.
 4. **Corneal aperture.** For t < 0.35 s the 1400 nm–100 µm limiting aperture is 1 mm, not 3.5 mm [memory]. The cut-dose limit at 0.1 J/cm² becomes 0.785 mJ instead of 9.6 mJ. The design (≤ 0.068 mJ) still has ≥ 11× margin. The standards question belongs to the other agent.
-5. **Optimiser.** It sits on the 100 W cap; the 12 % grid lands 1–15 % below it. This is harmless, but "86 W" is a grid artefact. The cost optimum is "at the cap".
+5. **Optimiser.** The cost optimum sits on the 100 W cap; m15's 12 % grid lands 9–16 % below it. This is harmless, but "86 W" is a grid artefact. The cost optimum is "at the cap".
 6. **Inconsistent T_max for ITO:** 600 K in m15, 573 K in m16.
 7. **Hologram compute.** 10⁹–10¹⁰ pixels at 360 Hz with 10³–10⁴ flat-top spots and iterative (MRAF/CG) refinement is unbudgeted. It is a GPU-cluster-class load [ESTIMATE].
 8. **Visible-exit-window check.** m15 compares the total P_vis with one head's limit (1.43 W); m16 divides by 10 heads. Pick one, according to which heads illuminate.
@@ -540,7 +542,7 @@ Both exceed 573 K. Heat does bind here, and it fails.
   - a coated ITO-class mote that has never been made;
   - ~10¹⁰ hologram modes.
 - Film density does not fit 100 W in any room.
-- LCSV-P is the more promising half. It keeps a 2–4× beam reduction against v4 (rather than 6×) in quiet rooms, but only if a 1 µm mote can be made visible from the side. That is the new gating material question.
+- LCSV-P is the more promising half. It keeps a ~3.5× beam reduction against v4 (rather than 6×) in quiet rooms, but only if a 1 µm mote can be made visible from the side. That is the new gating material question.
 
 ---
 

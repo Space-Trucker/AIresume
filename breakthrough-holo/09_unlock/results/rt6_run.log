@@ -9,3 +9,241 @@ PHYS: force/heat/drag ratios rt6/physics.py
   alpha*a=  6.0  J1/A GL 0.3838 MC 0.3839 ph 0.3838 | A GL 0.9861 MC 0.9862 ph 0.9862
   alpha*a= 30.0  J1/A GL 0.4753 MC 0.4754 ph 0.4752 | A GL 0.9994 MC 0.9994 ph 0.9996
   B2 closed form 7.364e+05 vs model (h=1, hot gas) 7.867e+05 ratio 1.068
+GEOM H10: h_worst 2.13 mean 1.36 occluded p95 3.70 (infeasible 0.000); active 3.00; throws 0.90-4.75 m
+GEOM H14: h_worst 2.13 mean 1.26 occluded p95 3.29 (infeasible 0.000); active 3.00; throws 0.90-4.75 m
+REPRO: rt6 (independent) vs m15d JSON;  [at m15's r_c,r_v] and [rt6 continuous optimum]
+ a_sketch_ito5
+   FOM            m15      5.317  rt6@same      5.311 ( -0.1%)  rt6 opt      5.311
+   dT             m15      73.95  rt6@same      73.84 ( -0.1%)  rt6 opt      73.84
+   jitter_um      m15      7.958  rt6@same      7.958 ( +0.0%)  rt6 opt      7.958
+   r_c_um         m15      86.13  rt6@same      86.13 ( +0.0%)  rt6 opt      92.43
+   r_v_um         m15      61.88  rt6@same      61.88 ( +0.0%)  rt6 opt      67.53
+   P_focus_mW     m15      48.15  rt6@same      48.42 ( +0.6%)  rt6 opt      55.77
+   P_ir_W         m15      86.24  rt6@same      86.74 ( +0.6%)  rt6 opt       99.9
+   P_vis_spot_uW  m15      327.1  rt6@same      327.1 ( +0.0%)  rt6 opt      389.6
+   P_vis_W        m15     0.9087  rt6@same     0.9087 ( +0.0%)  rt6 opt      1.082
+   M_dir          m15  4.291e+07  rt6@same  4.291e+07 ( +0.0%)  rt6 opt  3.726e+07
+   M_vis          m15  8.314e+07  rt6@same  8.314e+07 ( +0.0%)  rt6 opt  6.981e+07
+   px_total       m15  5.122e+08  rt6@same  5.122e+08 ( +0.0%)  rt6 opt  4.424e+08
+   I_hold         m15  7.723e+05  rt6@same  7.768e+05 ( +0.6%)  rt6 opt  7.768e+05
+   occluded_dT    m15      140.6  rt6@same      140.1 ( -0.3%)  rt6 opt      140.1
+   fails m15 []  rt6 [] / opt [] ; occluded fails []
+ b_film_ito5
+   FOM            m15      5.317  rt6@same      5.311 ( -0.1%)  rt6 opt      5.311
+   dT             m15      73.95  rt6@same      73.84 ( -0.1%)  rt6 opt      73.84
+   jitter_um      m15      7.958  rt6@same      7.958 ( +0.0%)  rt6 opt      7.958
+   r_c_um         m15      34.79  rt6@same      34.79 ( +0.0%)  rt6 opt      37.73
+   r_v_um         m15      26.75  rt6@same      26.75 ( +0.0%)  rt6 opt      27.45
+   P_focus_mW     m15      7.854  rt6@same      7.899 ( +0.6%)  rt6 opt      9.295
+   P_ir_W         m15      84.41  rt6@same      84.89 ( +0.6%)  rt6 opt       99.9
+   P_vis_spot_uW  m15      81.53  rt6@same      81.53 ( +0.0%)  rt6 opt      85.87
+   P_vis_W        m15      1.359  rt6@same      1.359 ( +0.0%)  rt6 opt      1.431
+   M_dir          m15  2.631e+08  rt6@same  2.631e+08 ( +0.0%)  rt6 opt  2.235e+08
+   M_vis          m15  4.448e+08  rt6@same  4.448e+08 ( +0.0%)  rt6 opt  4.223e+08
+   px_total       m15  3.075e+09  rt6@same  3.075e+09 ( +0.0%)  rt6 opt  2.658e+09
+   I_hold         m15  7.723e+05  rt6@same  7.768e+05 ( +0.6%)  rt6 opt  7.768e+05
+   occluded_dT    m15      140.6  rt6@same      140.1 ( -0.3%)  rt6 opt      140.1
+   fails m15 []  rt6 [] / opt [] ; occluded fails []
+ c_sketch_carbonW10
+   FOM            m15      2.475  rt6@same      2.473 ( -0.1%)  rt6 opt      2.473
+   dT             m15        239  rt6@same        228 ( -4.6%)  rt6 opt        228
+   jitter_um      m15      7.958  rt6@same      7.958 ( +0.0%)  rt6 opt      7.958
+   r_c_um         m15       61.3  rt6@same       61.3 ( +0.0%)  rt6 opt      65.62
+   r_v_um         m15      108.2  rt6@same      108.2 ( -0.0%)  rt6 opt      135.1
+   P_focus_mW     m15      50.73  rt6@same      48.68 ( -4.0%)  rt6 opt      55.77
+   P_ir_W         m15      90.88  rt6@same       87.2 ( -4.0%)  rt6 opt       99.9
+   P_vis_spot_uW  m15      250.2  rt6@same      250.2 ( -0.0%)  rt6 opt      389.6
+   P_vis_W        m15      0.695  rt6@same      0.695 ( -0.0%)  rt6 opt      1.082
+   M_dir          m15   8.47e+07  rt6@same   8.47e+07 ( +0.0%)  rt6 opt  7.393e+07
+   M_vis          m15  2.718e+07  rt6@same  2.718e+07 ( +0.0%)  rt6 opt  1.745e+07
+   px_total       m15  8.742e+08  rt6@same  8.742e+08 ( +0.0%)  rt6 opt  7.568e+08
+   I_hold         m15  1.606e+06  rt6@same  1.541e+06 ( -4.0%)  rt6 opt  1.541e+06
+   occluded_dT    m15      413.3  rt6@same      396.9 ( -4.0%)  rt6 opt      396.9
+   fails m15 []  rt6 [] / opt [] ; occluded fails ['heat']
+LOOP mote ito5: tau_p 47 us, force lag (l=1 thermal mode) 9 us
+LOOP mote carbonW10: tau_p 136 us, force lag (l=1 thermal mode) 19 us
+LOOP Rice levels (3D isotropic, 1e-4/s): u0.03_L0.01_Uc1.0: nu0 1 Hz b 5.08, u0.03_L0.03_Uc1.0: nu0 0 Hz b 4.95, u0.03_L0.1_Uc1.0: nu0 0 Hz b 4.81, u0.1_L0.01_Uc1.0: nu0 5 Hz b 5.44, u0.1_L0.03_Uc1.0: nu0 3 Hz b 5.33, u0.1_L0.1_Uc1.0: nu0 1 Hz b 5.20, u0.3_L0.01_Uc1.0: nu0 23 Hz b 5.75, u0.3_L0.03_Uc1.0: nu0 13 Hz b 5.64, u0.3_L0.1_Uc1.0: nu0 7 Hz b 5.53
+  ito5      20.0kHz lat 100us u 0.1 L 0.01: binary sigma   4.43 um (turb 1.12, noise 0.34, quant 4.27) f_c   300 Hz r_c,min  32.5 | 64-level   0.68 um r_c,min   9.3
+  ito5      20.0kHz lat 100us u 0.1 L 0.1: binary sigma   4.11 um (turb 0.67, noise 0.27, quant 4.05) f_c   253 Hz r_c,min  30.4 | 64-level   0.46 um r_c,min   7.9
+  ito5      20.0kHz lat 100us u 0.3 L 0.01: binary sigma  15.97 um (turb 6.04, noise 0.55, quant 14.78) f_c   660 Hz r_c,min 106.2 | 64-level   6.07 um r_c,min  43.5
+  ito5      20.0kHz lat 100us u 0.3 L 0.1: binary sigma  13.70 um (turb 3.81, noise 0.38, quant 13.15) f_c   380 Hz r_c,min  90.6 | 64-level   1.94 um r_c,min  17.3
+  ito5      20.0kHz lat 150us u 0.1 L 0.01: binary sigma   4.50 um (turb 1.30, noise 0.35, quant 4.29) f_c   298 Hz r_c,min  32.9 | 64-level   1.00 um r_c,min  11.2
+  ito5      20.0kHz lat 150us u 0.1 L 0.1: binary sigma   4.15 um (turb 1.09, noise 0.24, quant 3.99) f_c   198 Hz r_c,min  30.5 | 64-level   0.49 um r_c,min   8.1
+  ito5      20.0kHz lat 150us u 0.3 L 0.01: binary sigma  19.70 um (turb 14.39, noise 0.41, quant 13.45) f_c   390 Hz r_c,min 128.1 | 64-level  14.33 um r_c,min  94.6
+  ito5      20.0kHz lat 150us u 0.3 L 0.1: binary sigma  14.12 um (turb 4.29, noise 0.41, quant 13.45) f_c   390 Hz r_c,min  93.3 | 64-level   4.30 um r_c,min  31.9
+  ito5      20.0kHz lat 250us u 0.1 L 0.01: binary sigma   4.72 um (turb 1.87, noise 0.35, quant 4.31) f_c   275 Hz r_c,min  34.2 | 64-level   1.91 um r_c,min  16.8
+  ito5      20.0kHz lat 250us u 0.1 L 0.1: binary sigma   4.24 um (turb 0.80, noise 0.30, quant 4.15) f_c   210 Hz r_c,min  31.0 | 64-level   0.67 um r_c,min   9.1
+  ito5      20.0kHz lat 250us u 0.3 L 0.01: binary sigma  32.44 um (turb 29.75, noise 0.35, quant 12.94) f_c   275 Hz r_c,min 205.9 | 64-level  29.75 um r_c,min 189.2
+  ito5      20.0kHz lat 250us u 0.3 L 0.1: binary sigma  15.73 um (turb 8.94, noise 0.35, quant 12.94) f_c   275 Hz r_c,min 102.4 | 64-level   8.95 um r_c,min  60.4
+  ito5      12.5kHz lat 160us u 0.1 L 0.01: binary sigma   7.99 um (turb 2.25, noise 0.37, quant 7.66) f_c   216 Hz r_c,min  54.1 | 64-level   1.23 um r_c,min  12.7
+  ito5      12.5kHz lat 160us u 0.1 L 0.1: binary sigma   7.40 um (turb 1.34, noise 0.29, quant 7.27) f_c   180 Hz r_c,min  50.3 | 64-level   0.61 um r_c,min   8.8
+  ito5      12.5kHz lat 160us u 0.3 L 0.01: binary sigma  30.50 um (turb 17.59, noise 0.50, quant 24.91) f_c   358 Hz r_c,min 195.2 | 64-level  17.54 um r_c,min 114.4
+  ito5      12.5kHz lat 160us u 0.3 L 0.1: binary sigma  24.93 um (turb 7.82, noise 0.42, quant 23.67) f_c   272 Hz r_c,min 159.3 | 64-level   5.30 um r_c,min  38.0
+  ito5      12.5kHz lat 240us u 0.1 L 0.01: binary sigma   8.15 um (turb 2.77, noise 0.37, quant 7.66) f_c   208 Hz r_c,min  55.1 | 64-level   1.98 um r_c,min  17.3
+  ito5      12.5kHz lat 240us u 0.1 L 0.1: binary sigma   7.50 um (turb 1.65, noise 0.30, quant 7.31) f_c   181 Hz r_c,min  50.9 | 64-level   0.74 um r_c,min   9.6
+  ito5      12.5kHz lat 240us u 0.3 L 0.01: binary sigma  38.77 um (turb 30.40, noise 0.44, quant 24.07) f_c   274 Hz r_c,min 245.0 | 64-level  30.40 um r_c,min 193.2
+  ito5      12.5kHz lat 240us u 0.3 L 0.1: binary sigma  25.77 um (turb 9.19, noise 0.44, quant 24.07) f_c   274 Hz r_c,min 164.5 | 64-level   9.21 um r_c,min  62.0
+  carbonW10 20.0kHz lat 100us u 0.1 L 0.01: binary sigma   3.18 um (turb 0.96, noise 0.38, quant 3.01) f_c   400 Hz r_c,min  29.9 | 64-level   0.68 um r_c,min  14.3
+  carbonW10 20.0kHz lat 100us u 0.1 L 0.1: binary sigma   2.91 um (turb 0.80, noise 0.28, quant 2.78) f_c   285 Hz r_c,min  28.0 | 64-level   0.46 um r_c,min  12.9
+  carbonW10 20.0kHz lat 100us u 0.3 L 0.01: binary sigma  12.31 um (turb 7.03, noise 0.51, quant 10.10) f_c   560 Hz r_c,min  87.7 | 64-level   7.05 um r_c,min  54.5
+  carbonW10 20.0kHz lat 100us u 0.3 L 0.1: binary sigma  10.04 um (turb 3.08, noise 0.47, quant 9.55) f_c   563 Hz r_c,min  73.4 | 64-level   2.16 um r_c,min  23.6
+  carbonW10 20.0kHz lat 150us u 0.1 L 0.01: binary sigma   3.39 um (turb 1.33, noise 0.36, quant 3.10) f_c   343 Hz r_c,min  31.1 | 64-level   0.98 um r_c,min  16.1
+  carbonW10 20.0kHz lat 150us u 0.1 L 0.1: binary sigma   3.03 um (turb 0.80, noise 0.27, quant 2.92) f_c   200 Hz r_c,min  28.6 | 64-level   0.49 um r_c,min  13.1
+  carbonW10 20.0kHz lat 150us u 0.3 L 0.01: binary sigma  16.82 um (turb 13.49, noise 0.46, quant 10.03) f_c   478 Hz r_c,min 115.7 | 64-level  13.50 um r_c,min  94.9
+  carbonW10 20.0kHz lat 150us u 0.3 L 0.1: binary sigma  10.83 um (turb 4.26, noise 0.41, quant 9.95) f_c   358 Hz r_c,min  77.5 | 64-level   4.28 um r_c,min  36.9
+  carbonW10 20.0kHz lat 250us u 0.1 L 0.01: binary sigma   3.89 um (turb 2.26, noise 0.33, quant 3.15) f_c   268 Hz r_c,min  34.1 | 64-level   2.28 um r_c,min  24.1
+  carbonW10 20.0kHz lat 250us u 0.1 L 0.1: binary sigma   3.16 um (turb 0.95, noise 0.28, quant 3.00) f_c   203 Hz r_c,min  29.4 | 64-level   0.76 um r_c,min  14.7
+  carbonW10 20.0kHz lat 250us u 0.3 L 0.01: binary sigma  34.79 um (turb 33.48, noise 0.33, quant 9.45) f_c   268 Hz r_c,min 225.2 | 64-level  33.48 um r_c,min 217.2
+  carbonW10 20.0kHz lat 250us u 0.3 L 0.1: binary sigma  14.15 um (turb 10.53, noise 0.33, quant 9.45) f_c   268 Hz r_c,min  97.6 | 64-level  10.54 um r_c,min  75.2
+  carbonW10 12.5kHz lat 160us u 0.1 L 0.01: binary sigma   6.29 um (turb 2.16, noise 0.38, quant 5.90) f_c   246 Hz r_c,min  48.8 | 64-level   1.15 um r_c,min  17.2
+  carbonW10 12.5kHz lat 160us u 0.1 L 0.1: binary sigma   5.72 um (turb 1.85, noise 0.27, quant 5.40) f_c   166 Hz r_c,min  44.9 | 64-level   0.61 um r_c,min  13.8
+  carbonW10 12.5kHz lat 160us u 0.3 L 0.01: binary sigma  26.32 um (turb 17.18, noise 0.52, quant 19.92) f_c   341 Hz r_c,min 173.9 | 64-level  17.20 um r_c,min 117.1
+  carbonW10 12.5kHz lat 160us u 0.3 L 0.1: binary sigma  19.92 um (turb 7.17, noise 0.45, quant 18.58) f_c   325 Hz r_c,min 133.9 | 64-level   4.98 um r_c,min  41.0
+  carbonW10 12.5kHz lat 240us u 0.1 L 0.01: binary sigma   6.66 um (turb 2.31, noise 0.43, quant 6.24) f_c   267 Hz r_c,min  51.2 | 64-level   2.35 um r_c,min  24.5
+  carbonW10 12.5kHz lat 240us u 0.1 L 0.1: binary sigma   5.86 um (turb 1.39, noise 0.31, quant 5.69) f_c   155 Hz r_c,min  45.7 | 64-level   0.82 um r_c,min  15.1
+  carbonW10 12.5kHz lat 240us u 0.3 L 0.01: binary sigma  38.78 um (turb 33.97, noise 0.43, quant 18.71) f_c   267 Hz r_c,min 249.9 | 64-level  33.97 um r_c,min 220.2
+  carbonW10 12.5kHz lat 240us u 0.3 L 0.1: binary sigma  21.58 um (turb 10.73, noise 0.43, quant 18.71) f_c   267 Hz r_c,min 143.5 | 64-level  10.75 um r_c,min  76.5
+  SIM ito5      20.0kHz lat 150us u 0.1 L 0.01 auth 4.5x lev 1: sigma_x 4.81 um (freq-domain 4.50) r_p99.9 22.3 r_max 55 um sat 8.11e-06 exceed/s {'10um': 0.1724137931034483, '20um': 0.1724137931034483, '30um': 0.034482758620689655, '50um': 0.0017241379310344827, '100um': 0.0}
+  SIM ito5      20.0kHz lat 150us u 0.1 L 0.01 auth 4.5x lev 64: sigma_x 1.01 um (freq-domain 1.00) r_p99.9 4.1 r_max 6 um sat 0.00e+00 exceed/s {'10um': 0.0, '20um': 0.0, '30um': 0.0, '50um': 0.0, '100um': 0.0}
+  SIM ito5      12.5kHz lat 160us u 0.1 L 0.01 auth 4.5x lev 1: sigma_x 8.58 um (freq-domain 7.99) r_p99.9 37.2 r_max 52 um sat 3.18e-05 exceed/s {'10um': 0.1724137931034483, '20um': 0.1724137931034483, '30um': 0.1724137931034483, '50um': 0.01206896551724138, '100um': 0.0}
+  SIM ito5      20.0kHz lat 250us u 0.3 L 0.01 auth 4.5x lev 64: sigma_x 30.48 um (freq-domain 29.75) r_p99.9 122.8 r_max 163 um sat 4.25e-06 exceed/s {'10um': 0.1724137931034483, '20um': 0.1724137931034483, '30um': 0.1724137931034483, '50um': 0.1724137931034483, '100um': 0.1724137931034483}
+  SIM carbonW10 20.0kHz lat 150us u 0.1 L 0.01 auth 4.5x lev 1: sigma_x 3.45 um (freq-domain 3.39) r_p99.9 16.7 r_max 24 um sat 1.00e-06 exceed/s {'10um': 0.1724137931034483, '20um': 0.16206896551724137, '30um': 0.0, '50um': 0.0, '100um': 0.0}
+  SIM carbonW10 20.0kHz lat 250us u 0.1 L 0.1 auth 4.5x lev 64: sigma_x 0.91 um (freq-domain 0.76) r_p99.9 3.7 r_max 5 um sat 0.00e+00 exceed/s {'10um': 0.0, '20um': 0.0, '30um': 0.0, '50um': 0.0, '100um': 0.0}
+  SIM ito5      20.0kHz lat 150us u 0.1 L 0.01 auth 1.3x lev 64: sigma_x 4371.24 um (freq-domain 1.00) r_p99.9 43080.2 r_max 57901 um sat 3.39e-01 exceed/s {'10um': 0.1724137931034483, '20um': 0.1724137931034483, '30um': 0.1724137931034483, '50um': 0.1724137931034483, '100um': 0.1724137931034483}
+  SIM ito5      20.0kHz lat 150us u 0.1 L 0.01 auth 2.0x lev 64: sigma_x 1071.77 um (freq-domain 1.00) r_p99.9 19309.2 r_max 34387 um sat 7.79e-02 exceed/s {'10um': 0.1724137931034483, '20um': 0.1724137931034483, '30um': 0.1724137931034483, '50um': 0.1724137931034483, '100um': 0.1724137931034483}
+  SIM ito5      20.0kHz lat 150us u 0.1 L 0.01 auth 3.0x lev 64: sigma_x 98.08 um (freq-domain 1.00) r_p99.9 2641.5 r_max 7708 um sat 4.43e-03 exceed/s {'10um': 0.13275862068965516, '20um': 0.1310344827586207, '30um': 0.12931034482758622, '50um': 0.12413793103448276, '100um': 0.11724137931034483}
+DMD a_sketch_ito5      rho 1.00 corner N  1808 NA 0.0180 planes  1: overlapped  72.2% mean overlaps 4.2, footprint p50 2.26 mm max 6.7 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 1.00 corner N  1808 NA 0.0180 planes  4: overlapped  36.6% mean overlaps 0.9, footprint p50 0.95 mm max 1.7 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 1.00 corner N  1808 NA 0.0180 planes 16: overlapped   2.5% mean overlaps 0.0, footprint p50 0.29 mm max 0.5 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 1.00 floor  N  1808 NA 0.0180 planes  1: overlapped  80.4% mean overlaps 3.8, footprint p50 2.43 mm max 5.8 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 1.00 floor  N  1808 NA 0.0180 planes  4: overlapped  26.7% mean overlaps 0.6, footprint p50 0.75 mm max 1.5 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 1.00 floor  N  1808 NA 0.0180 planes 16: overlapped   1.8% mean overlaps 0.0, footprint p50 0.27 mm max 0.4 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 1.00): required 1.22e-03 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 75 DMDs per head
+DMD a_sketch_ito5      rho 3.56 corner N  1808 NA 0.0642 planes  1: overlapped  92.3% mean overlaps 17.3, footprint p50 7.82 mm max 23.6 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 3.56 corner N  1808 NA 0.0642 planes  4: overlapped  86.3% mean overlaps 4.8, footprint p50 3.16 mm max 6.0 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 3.56 corner N  1808 NA 0.0642 planes 16: overlapped  30.1% mean overlaps 0.6, footprint p50 0.81 mm max 1.6 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 3.56 floor  N  1808 NA 0.0642 planes  1: overlapped  98.0% mean overlaps 16.5, footprint p50 8.42 mm max 20.3 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 3.56 floor  N  1808 NA 0.0642 planes  4: overlapped  77.0% mean overlaps 3.9, footprint p50 2.44 mm max 5.1 mm (one-DMD mirror = 0.94 mm)
+DMD a_sketch_ito5      rho 3.56 floor  N  1808 NA 0.0642 planes 16: overlapped  24.0% mean overlaps 0.4, footprint p50 0.72 mm max 1.3 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 3.56): required 1.55e-02 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 957 DMDs per head
+DMD b_film_ito5        rho 1.00 corner N 10070 NA 0.0443 planes  1: overlapped  94.0% mean overlaps 33.7, footprint p50 6.53 mm max 24.8 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 1.00 corner N 10070 NA 0.0443 planes  4: overlapped  82.2% mean overlaps 5.5, footprint p50 3.05 mm max 6.2 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 1.00 corner N 10070 NA 0.0443 planes 16: overlapped  28.1% mean overlaps 0.6, footprint p50 0.79 mm max 1.6 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 1.00 floor  N 10070 NA 0.0443 planes  1: overlapped  93.8% mean overlaps 19.7, footprint p50 7.23 mm max 17.7 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 1.00 floor  N 10070 NA 0.0443 planes  4: overlapped  77.8% mean overlaps 3.5, footprint p50 2.33 mm max 4.5 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 1.00 floor  N 10070 NA 0.0443 planes 16: overlapped  12.7% mean overlaps 0.2, footprint p50 0.58 mm max 1.1 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 1.00): required 7.39e-03 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 456 DMDs per head
+DMD b_film_ito5        rho 3.56 corner N 10070 NA 0.1577 planes  1: overlapped  99.3% mean overlaps 289.5, footprint p50 23.17 mm max 88.1 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 3.56 corner N 10070 NA 0.1577 planes  4: overlapped  96.1% mean overlaps 23.7, footprint p50 10.76 mm max 22.0 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 3.56 corner N 10070 NA 0.1577 planes 16: overlapped  80.4% mean overlaps 3.8, footprint p50 2.73 mm max 5.5 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 3.56 floor  N 10070 NA 0.1577 planes  1: overlapped  99.7% mean overlaps 129.2, footprint p50 25.66 mm max 63.1 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 3.56 floor  N 10070 NA 0.1577 planes  4: overlapped  96.3% mean overlaps 15.7, footprint p50 8.22 mm max 15.8 mm (one-DMD mirror = 0.94 mm)
+DMD b_film_ito5        rho 3.56 floor  N 10070 NA 0.1577 planes 16: overlapped  74.4% mean overlaps 2.4, footprint p50 1.97 mm max 4.0 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 3.56): required 9.37e-02 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 5778 DMDs per head
+DMD c_sketch_carbonW10 rho 1.00 corner N  1808 NA 0.0254 planes  1: overlapped  78.5% mean overlaps 6.1, footprint p50 3.12 mm max 9.4 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 1.00 corner N  1808 NA 0.0254 planes  4: overlapped  56.5% mean overlaps 1.6, footprint p50 1.28 mm max 2.4 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 1.00 corner N  1808 NA 0.0254 planes 16: overlapped   4.1% mean overlaps 0.1, footprint p50 0.35 mm max 0.6 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 1.00 floor  N  1808 NA 0.0254 planes  1: overlapped  87.9% mean overlaps 5.7, footprint p50 3.36 mm max 8.1 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 1.00 floor  N  1808 NA 0.0254 planes  4: overlapped  45.1% mean overlaps 1.2, footprint p50 0.99 mm max 2.1 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 1.00 floor  N  1808 NA 0.0254 planes 16: overlapped   4.0% mean overlaps 0.1, footprint p50 0.31 mm max 0.6 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 1.00): required 2.43e-03 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 150 DMDs per head
+DMD c_sketch_carbonW10 rho 3.56 corner N  1808 NA 0.0905 planes  1: overlapped  94.4% mean overlaps 25.5, footprint p50 10.96 mm max 33.3 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 3.56 corner N  1808 NA 0.0905 planes  4: overlapped  90.9% mean overlaps 6.8, footprint p50 4.39 mm max 8.4 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 3.56 corner N  1808 NA 0.0905 planes 16: overlapped  51.0% mean overlaps 1.1, footprint p50 1.09 mm max 2.1 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 3.56 floor  N  1808 NA 0.0905 planes  1: overlapped  98.7% mean overlaps 24.5, footprint p50 11.82 mm max 28.5 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 3.56 floor  N  1808 NA 0.0905 planes  4: overlapped  83.7% mean overlaps 5.6, footprint p50 3.38 mm max 7.2 mm (one-DMD mirror = 0.94 mm)
+DMD c_sketch_carbonW10 rho 3.56 floor  N  1808 NA 0.0905 planes 16: overlapped  45.4% mean overlaps 0.9, footprint p50 0.96 mm max 1.8 mm (one-DMD mirror = 0.94 mm)
+  etendue (rho 3.56): required 3.09e-02 m^2 sr per head vs one DLP650LNIR 1.62e-05 -> 1902 DMDs per head
+HOLO flat-top plateau radius 0.40 lambda/NA: eta_eq 0.391 (target r0 0.55, edge 0.2, ripple 1.70)
+HOLO flat-top plateau radius 0.60 lambda/NA: eta_eq 0.478 (target r0 0.90, edge 0.2, ripple 0.23)
+HOLO flat-top plateau radius 0.80 lambda/NA: eta_eq 0.504 (target r0 1.10, edge 0.3, ripple 0.42)
+HOLO flat-top plateau radius 1.00 lambda/NA: eta_eq 0.557 (target r0 1.30, edge 0.3, ripple 0.37)
+HOLO flat-top plateau radius 1.25 lambda/NA: eta_eq 0.627 (target r0 1.55, edge 0.2, ripple 0.52)
+HOLO flat-top plateau radius 1.50 lambda/NA: eta_eq 0.662 (target r0 1.80, edge 0.2, ripple 0.35)
+HOLO flat-top plateau radius 2.00 lambda/NA: eta_eq 0.700 (target r0 2.30, edge 0.2, ripple 0.33)
+HOLO flat-top plateau radius 2.50 lambda/NA: eta_eq 0.750 (target r0 2.80, edge 0.1, ripple 0.32)
+HOLO flat-top plateau radius 3.00 lambda/NA: eta_eq 0.776 (target r0 3.45, edge 0.3, ripple 0.10)
+HOLO flat-top plateau radius 4.00 lambda/NA: eta_eq 0.819 (target r0 4.45, edge 0.3, ripple 0.10)
+  a_sketch_ito5: r_c 86 um -> NA 0.0641 (Airy 0.0110); aperture radius at 3.95/4.75 m 253/304 mm; modes/head 6.44e+09 vs m15 4.29e+07 (x150.1); 4K LCoS per head 732
+  b_film_ito5: r_c 35 um -> NA 0.1586 (Airy 0.0272); aperture radius at 3.95/4.75 m 627/754 mm; modes/head 3.95e+10 vs m15 2.63e+08 (x150.1); 4K LCoS per head 4488
+  c_sketch_carbonW10: r_c 61 um -> NA 0.0900 (Airy 0.0154); aperture radius at 3.95/4.75 m 356/428 mm; modes/head 1.27e+10 vs m15 8.47e+07 (x150.1); 4K LCoS per head 1445
+  MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.0: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.31 min/mean 0.30 spot-to-spot 0.04 zero-order 1.1e-05
+  MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.3: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.31 min/mean 0.29 spot-to-spot 0.04 zero-order 1.8e-04
+  MRAF r_spot 1.5 cells (7 cells/spot) init random fringing 0.6: eff(plateau) 0.17 eff(signal) 0.26 rms in spot 0.33 min/mean 0.21 spot-to-spot 0.39 zero-order 3.3e-01
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.0: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.24 min/mean 0.23 spot-to-spot 0.06 zero-order 1.6e-05
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.3: eff(plateau) 0.50 eff(signal) 0.74 rms in spot 0.24 min/mean 0.23 spot-to-spot 0.06 zero-order 1.8e-04
+  MRAF r_spot 1.5 cells (7 cells/spot) init smooth fringing 0.6: eff(plateau) 0.17 eff(signal) 0.26 rms in spot 0.26 min/mean 0.18 spot-to-spot 0.37 zero-order 3.3e-01
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.0: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.39 min/mean 0.22 spot-to-spot 0.02 zero-order 1.7e-05
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.3: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.39 min/mean 0.22 spot-to-spot 0.02 zero-order 1.5e-04
+  MRAF r_spot 3.0 cells (28 cells/spot) init random fringing 0.6: eff(plateau) 0.18 eff(signal) 0.28 rms in spot 0.44 min/mean 0.02 spot-to-spot 0.38 zero-order 3.3e-01
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.0: eff(plateau) 0.51 eff(signal) 0.78 rms in spot 0.37 min/mean 0.20 spot-to-spot 0.02 zero-order 1.5e-05
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.3: eff(plateau) 0.51 eff(signal) 0.77 rms in spot 0.37 min/mean 0.20 spot-to-spot 0.02 zero-order 1.6e-04
+  MRAF r_spot 3.0 cells (28 cells/spot) init smooth fringing 0.6: eff(plateau) 0.18 eff(signal) 0.28 rms in spot 0.41 min/mean 0.00 spot-to-spot 0.37 zero-order 3.3e-01
+MOTE alpha(1550) for 5 % carbon: n2.3_k0.8: linear 3.24e+05, MG 1.18e+05; n2.5_k1.0: linear 4.05e+05, MG 1.20e+05; n2.7_k1.2: linear 4.86e+05, MG 1.17e+05
+  white-coated carbon FOM band: a=10 um 0.99-3.44; a=5 um 0.54-2.44
+  a_sketch_ito5: T_m 367 K, T1 19 K -> hot face ~393 K; occluded mean 433 K, face ~459 K
+  b_film_ito5: T_m 367 K, T1 19 K -> hot face ~393 K; occluded mean 433 K, face ~459 K
+  c_sketch_carbonW10: T_m 521 K, T1 31 K -> hot face ~562 K; occluded mean 690 K, face ~731 K
+MIE validation: BH test Qext 3.1050 (3.1054) Qback 2.9242 (2.9253); x=300 Qext 2.044 (->2)
+  ito_aerogel_5um          m=1.040+0.0001i x=63: Qsca 2.95; q_iso(deg) 30:0.298 60:0.0301 90:0.00133 120:0.00118 150:0.000804 170:0.000235 | frac into 30-150 deg 0.0179
+  ito_aerogel_1um          m=1.040+0.0001i x=13: Qsca 0.49; q_iso(deg) 30:0.274 60:0.0149 90:0.00319 120:0.00118 150:0.00159 170:0.000518 | frac into 30-150 deg 0.0088
+  ito_aerogel_1.5um        m=1.040+0.0001i x=19: Qsca 1.03; q_iso(deg) 30:0.237 60:0.0137 90:0.00293 120:0.00105 150:0.00155 170:0.000124 | frac into 30-150 deg 0.00986
+  carbon_aerogel_MG_5um    m=1.043+0.0194i x=63: Qsca 1.22; q_iso(deg) 30:0.145 60:0.00686 90:0.00106 120:0.00059 150:0.000539 170:0.00053 | frac into 30-150 deg 0.0069
+  carbon_aerogel_MG_10um   m=1.043+0.0194i x=126: Qsca 1.05; q_iso(deg) 30:0.0887 60:0.00478 90:0.00102 120:0.000592 150:0.000539 170:0.000536 | frac into 30-150 deg 0.0045
+  dense_black_carbon_5um   m=1.950+0.7900i x=63: Qsca 1.27; q_iso(deg) 30:0.473 60:0.219 90:0.176 120:0.166 150:0.164 170:0.164 | frac into 30-150 deg 0.174
+  dense_black_carbon_10um  m=1.950+0.7900i x=126: Qsca 1.25; q_iso(deg) 30:0.415 60:0.216 90:0.176 120:0.166 150:0.164 170:0.164 | frac into 30-150 deg 0.171
+  solid_silica_1um         m=1.460+0.0000i x=13: Qsca 2.78; q_iso(deg) 30:5.39 60:1.29 90:0.331 120:0.161 150:0.845 170:1.85 | frac into 30-150 deg 0.657
+  solid_TiO2_1um           m=2.600+0.0000i x=13: Qsca 2.30; q_iso(deg) 30:1.84 60:1.36 90:0.843 120:0.719 150:0.828 170:1.84 | frac into 30-150 deg 1.06
+  Lambertian white coat q_iso vs phase angle (0 = viewer beside the illuminating head): R=0.1: 0:0.27 30:0.23 60:0.16 90:0.08 120:0.03 150:0.00 170:0.00; R=0.3: 0:0.80 30:0.70 60:0.49 90:0.25 120:0.09 150:0.01 170:0.00; R=0.6: 0:1.60 30:1.41 60:0.97 90:0.51 120:0.17 150:0.02 170:0.00
+  a_sketch_ito5: q(90deg) uncoated 1.33e-03 -> visible spot 73.6 mW (m15 0.327 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 9.00e-06 cd
+  b_film_ito5: q(90deg) uncoated 1.33e-03 -> visible spot 18.3 mW (m15 0.082 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 1.20e-05 cd
+  c_sketch_carbonW10: q(90deg) uncoated 1.02e-03 -> visible spot 73.8 mW (m15 0.250 mW at q=0.3); dots at 3 mm = 10.3 arcmin at 1 m; I_v per dot 9.00e-06 cd
+STRAY a_sketch_ito5: P_vis 0.91 W (200 lm) vs image 0.188 lm; leak 1e-3 -> L_wall 1.0e-03 cd/m2 (image's own flux adds 9.6e-04); old 5% rule: 106 % of image flux -> FAIL; air scatter 0.027-0.091 lm = 14-48 % of image flux; dust sparkles 1.1/11/106
+STRAY b_film_ito5: P_vis 1.36 W (300 lm) vs image 1.508 lm; leak 1e-3 -> L_wall 1.5e-03 cd/m2 (image's own flux adds 7.7e-03); old 5% rule: 20 % of image flux -> FAIL; air scatter 0.041-0.137 lm = 3-9 % of image flux; dust sparkles 0.2/2/22
+STRAY c_sketch_carbonW10: P_vis 0.69 W (153 lm) vs image 0.188 lm; leak 1e-3 -> L_wall 7.8e-04 cd/m2 (image's own flux adds 9.6e-04); old 5% rule: 81 % of image flux -> FAIL; air scatter 0.021-0.070 lm = 11-37 % of image flux; dust sparkles 9.9/99/993
+  H10 receiver landing zones (bounding box of beam ends through the volume): 2.8-8.9 m^2 per head
+SAFETY a_sketch_ito5: P_focus 48.4 mW, undetected 2% 0.97 mW (10% of 10 mW); cut dose 0.068 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.327 mW, cut 0.46 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 1.09 mW; mote's own extinction 0.5% of its beam
+SAFETY b_film_ito5: P_focus 7.9 mW, undetected 2% 0.16 mW (2% of 10 mW); cut dose 0.011 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.082 mW, cut 0.11 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 0.27 mW; mote's own extinction 3.3% of its beam
+SAFETY c_sketch_carbonW10: P_focus 48.7 mW, undetected 2% 0.97 mW (10% of 10 mW); cut dose 0.068 mJ vs m15 limit 9.62 mJ (3.5 mm, 0.1 J/cm2), 1-mm aperture 0.785/7.85 mJ (0.1/1 J/cm2); 500 nm spot 0.250 mW, cut 0.35 uJ vs 5.01 uJ; ~3.3 spots in a 7 mm pupil = 0.83 mW; mote's own extinction 4.3% of its beam
+  bystanders (1 people at 1.2 m): 4% of (mote, head) trap beams cut downstream of the focus, 25% of motes lose >= 1 head (NA 0.005)
+  bystanders (1 people at 1.2 m): 5% of (mote, head) trap beams cut downstream of the focus, 30% of motes lose >= 1 head (NA 0.05)
+  bystanders (2 people at 1.2 m): 8% of (mote, head) trap beams cut downstream of the focus, 55% of motes lose >= 1 head (NA 0.005)
+  bystanders (2 people at 1.2 m): 10% of (mote, head) trap beams cut downstream of the focus, 66% of motes lose >= 1 head (NA 0.05)
+  bystanders (6 people at 1.2 m): 24% of (mote, head) trap beams cut downstream of the focus, 78% of motes lose >= 1 head (NA 0.005)
+  bystanders (6 people at 1.2 m): 30% of (mote, head) trap beams cut downstream of the focus, 85% of motes lose >= 1 head (NA 0.05)
+M16 sketch_quiet_a1.0_v1.0: N 526.3/526.3 (+0.0%); dT 196.9/197.5 (+0.3%); err_um 3.82/3.82 (+0.0%); r_c_um 11.46/11.46 (+0.0%); P_focus_mW 11.64/11.87 (+1.9%); P_ir_W 3.952/4.028 (+1.9%); P_vis_spot_mW 0.6926/0.6926 (+0.0%); P_vis_W 0.3645/0.3645 (+0.0%); occluded_dT 369.5/372.2 (+0.7%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 sketch_normal_a1.0_v0.5: N 1053/1053 (+0.0%); dT 148.9/149.2 (+0.2%); err_um 9.868/9.868 (+0.0%); r_c_um 29.6/29.6 (+0.0%); P_focus_mW 56.21/57.11 (+1.6%); P_ir_W 38.16/38.76 (+1.6%); P_vis_spot_mW 2.311/2.311 (+0.0%); P_vis_W 2.433/2.433 (+0.0%); occluded_dT 282.1/283.3 (+0.4%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 film_density_normal_a1.5_v0.5: N 4337/4337 (+0.0%); dT 188.3/188.5 (+0.1%); err_um 9.868/9.868 (+0.0%); r_c_um 29.6/29.6 (+0.0%); P_focus_mW 51.54/52.37 (+1.6%); P_ir_W 144.2/146.5 (+1.6%); P_vis_spot_mW 1.369/1.369 (+0.0%); P_vis_W 5.94/5.94 (+0.0%); occluded_dT 347/348.2 (+0.4%) | occluded heat fail rt6 True (m16 ['heat'])
+M16 film_density_quiet_a1.0_v1.0: N 2169/2169 (+0.0%); dT 196.9/197.5 (+0.3%); err_um 3.82/3.82 (+0.0%); r_c_um 11.46/11.46 (+0.0%); P_focus_mW 11.64/11.87 (+1.9%); P_ir_W 16.28/16.6 (+1.9%); P_vis_spot_mW 0.9234/0.9234 (+0.0%); P_vis_W 2.003/2.003 (+0.0%); occluded_dT 369.5/372.2 (+0.7%) | occluded heat fail rt6 True (m16 ['heat'])
+  diffraction-limited plateau radius (um), R_head 0.3 m: rc_min_rho1.0_d1.25 6, rc_min_rho1.0_d3.95 20, rc_min_rho1.0_d4.75 25, rc_min_rho3.0_d1.25 19, rc_min_rho3.0_d3.95 61, rc_min_rho3.0_d4.75 74
+  max P-loop crossover (Ms<=2) vs latency: 10us: 7355 Hz (1/8tau 10000), 20us: 4379 Hz (1/8tau 5556), 50us: 1954 Hz (1/8tau 2381), 100us: 1053 Hz (1/8tau 1220), 150us: 703 Hz (1/8tau 820), 250us: 453 Hz (1/8tau 495)
+  1-um mote loop crossover vs total latency: 10us: 1827 Hz, 20us: 1702 Hz, 50us: 1477 Hz, 100us: 789 Hz, 150us: 539 Hz, 250us: 327 Hz
+  sketch       quiet  a 1.0 v 1.0 m16_as_is             : r_c  11.5 um, T_m  491 K ok  , P_focus   11.9 mW, P_IR     4.0 W, vis spot 0.69 mW (uncoated 65 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 diffraction_rho1      : r_c  20.4 um, T_m  491 K ok  , P_focus   53.8 mW, P_IR    18.3 W, vis spot 0.69 mW (uncoated 65 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 +latency150us         : r_c  81.5 um, T_m  491 K ok  , P_focus  856.9 mW, P_IR   290.8 W, vis spot 35.00 mW (uncoated 3290 mW), channels 2105 -> 3421
+  sketch       quiet  a 1.0 v 1.0 +turb_peaks(sigma=u)  : r_c  81.5 um, T_m  557 K ok  , P_focus  856.9 mW, P_IR   290.8 W, vis spot 35.00 mW (uncoated 3290 mW), channels 2105 -> 3421
+  sketch       normal a 1.0 v 0.5 m16_as_is             : r_c  29.6 um, T_m  442 K ok  , P_focus   57.1 mW, P_IR    38.8 W, vis spot 2.31 mW (uncoated 217 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 diffraction_rho1      : r_c  29.6 um, T_m  442 K ok  , P_focus   81.6 mW, P_IR    55.4 W, vis spot 2.31 mW (uncoated 217 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 +latency150us         : r_c 210.4 um, T_m  442 K ok  , P_focus 4122.9 mW, P_IR  2798.6 W, vis spot 116.79 mW (uncoated 10977 mW), channels 4211 -> 6842
+  sketch       normal a 1.0 v 0.5 +turb_peaks(sigma=u)  : r_c 210.4 um, T_m  641 K HEAT, P_focus 4122.9 mW, P_IR  2798.6 W, vis spot 116.79 mW (uncoated 10977 mW), channels 4211 -> 6842
+  film_density normal a 1.5 v 0.5 m16_as_is             : r_c  29.6 um, T_m  482 K ok  , P_focus   52.4 mW, P_IR   146.5 W, vis spot 1.37 mW (uncoated 129 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 diffraction_rho1      : r_c  29.6 um, T_m  482 K ok  , P_focus   74.8 mW, P_IR   209.2 W, vis spot 1.37 mW (uncoated 129 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 +latency150us         : r_c 210.4 um, T_m  482 K ok  , P_focus 3780.8 mW, P_IR 10574.8 W, vis spot 69.21 mW (uncoated 6505 mW), channels 17349 -> 28193
+  film_density normal a 1.5 v 0.5 +turb_peaks(sigma=u)  : r_c 210.4 um, T_m  717 K HEAT, P_focus 3780.8 mW, P_IR 10574.8 W, vis spot 69.21 mW (uncoated 6505 mW), channels 17349 -> 28193
+  film_density quiet  a 1.0 v 1.0 m16_as_is             : r_c  11.5 um, T_m  491 K ok  , P_focus   11.9 mW, P_IR    16.6 W, vis spot 0.92 mW (uncoated 87 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 diffraction_rho1      : r_c  20.4 um, T_m  491 K ok  , P_focus   53.8 mW, P_IR    75.2 W, vis spot 0.92 mW (uncoated 87 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 +latency150us         : r_c  81.5 um, T_m  491 K ok  , P_focus  856.9 mW, P_IR  1198.4 W, vis spot 46.67 mW (uncoated 4386 mW), channels 8675 -> 14096
+  film_density quiet  a 1.0 v 1.0 +turb_peaks(sigma=u)  : r_c  81.5 um, T_m  557 K ok  , P_focus  856.9 mW, P_IR  1198.4 W, vis spot 46.67 mW (uncoated 4386 mW), channels 8675 -> 14096
+TABLE corrected LCSV (rt6): flat-top rho 1.0 (eta_eq 0.56), modes x11.8, DMD+relay eff 0.6, white-coated ITO (FOM 4.1, 573 K), loop floor from NIR-DMD binary model
+  a_sketch_ito5|m15 model (rt6 optimum)                          r_c    92 dT(power)   74 dT(peak)   74 P_IR   99.9 W P_vis  1.08 W px 4.4e+08 vol$     35k lab$    0.7M  OK
+  a_sketch_ito5|still (U 0, sigma 0.03)                          r_c    55 dT(power)   87 dT(peak)  139 P_IR   99.9 W P_vis  1.43 W px 1.4e+10 vol$    445k lab$   15.7M  OK
+  a_sketch_ito5|quiet office (U 0.1, sigma 0.03)                 r_c    38 dT(power)  161 dT(peak)  207 P_IR   99.9 W P_vis  1.43 W px 2.7e+10 vol$    839k lab$   30.2M  OK
+  a_sketch_ito5|turbulent quiet (U 0, sigma 0.1)                 r_c    65 dT(power)  236 dT(peak)  362 P_IR  459.8 W P_vis  1.43 W px 1.0e+10 vol$    341k lab$   11.7M  ir_power_cap,heat@peak
+  b_film_ito5|m15 model (rt6 optimum)                            r_c    38 dT(power)   74 dT(peak)   74 P_IR   99.9 W P_vis  1.43 W px 2.7e+09 vol$    102k lab$    3.1M  OK
+  b_film_ito5|still (U 0, sigma 0.03)                            r_c    23 dT(power)   87 dT(peak)  139 P_IR  106.3 W P_vis  1.43 W px 8.3e+10 vol$   2513k lab$   91.6M  ir_power_cap
+  b_film_ito5|quiet office (U 0.1, sigma 0.03)                   r_c    23 dT(power)  161 dT(peak)  207 P_IR  217.2 W P_vis  1.43 W px 8.3e+10 vol$   2516k lab$   91.6M  ir_power_cap
+  b_film_ito5|turbulent quiet (U 0, sigma 0.1)                   r_c    65 dT(power)  236 dT(peak)  362 P_IR 2759.0 W P_vis  8.57 W px 1.1e+10 vol$    402k lab$   12.7M  vis_exit_window,ir_power_cap,heat@peak
+  c_sketch_carbonW10|m15 model (rt6 optimum)                     r_c    66 dT(power)  228 dT(peak)  228 P_IR   99.9 W P_vis  1.08 W px 7.6e+08 vol$     45k lab$    1.1M  OK
+  c_sketch_carbonW10|still (U 0, sigma 0.03)                     r_c    44 dT(power)  215 dT(peak)  329 P_IR   99.9 W P_vis  1.43 W px 2.0e+10 vol$    620k lab$   22.1M  heat@peak
+  c_sketch_carbonW10|quiet office (U 0.1, sigma 0.03)            r_c    31 dT(power)  375 dT(peak)  468 P_IR   99.9 W P_vis  1.43 W px 4.0e+10 vol$   1219k lab$   44.1M  heat
+  c_sketch_carbonW10|turbulent quiet (U 0, sigma 0.1)            r_c    59 dT(power)  528 dT(peak)  779 P_IR  585.3 W P_vis  1.43 W px 1.1e+10 vol$    363k lab$   12.5M  heat,ir_power_cap
