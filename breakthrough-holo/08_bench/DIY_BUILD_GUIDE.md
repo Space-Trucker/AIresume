@@ -16,7 +16,8 @@
 | `R11_sourcing.md` | Part numbers, prices, search keywords, red flags, legal notes and full BOM tables (§14). Every price is a search snapshot (±30 %); check before ordering. Validation notes are at the top |
 | `diy_calcs.py` | Particle speeds, trap power windows, camera frame rates |
 | `sim_d1_lens_trap.py` | Which lens, beam size and orientation make a trap pocket (21 self-tests) |
-| `diy2_control/` | Path generator, Helios and ESP32 drivers, `ELECTRONICS.md` (interlock and galvo circuit) |
+| `diy2_control/` | Path generator, Helios and ESP32 drivers, `ELECTRONICS.md` (interlock and galvo circuit), `autotrap.py` (automatic trap tester) |
+| `ORDER_LIST.md` | **What to put in the cart**: three orders (safety kit, DIY-1, DIY-2) with picks, quantities and prices |
 
 ---
 
@@ -74,8 +75,10 @@ The lasers here are **Class 3B/4**. A 405/445 nm beam of 100 mW or more can perm
 - Use a **single-emitter** diode with a glass lens, such as a Nichia NDB7875 445 nm 1.6–2 W in a copper module ($65–96), plus a separate **constant-current** driver with TTL and soft start ($15–45).
 - **Not an engraver head.** Those combine 2–4 emitters into a tiny focused spot and cannot give a clean collimated beam.
 - **Power sizing** (peak I₀ = 2P/πw²):
-  - 10 W/cm² needs **0.63 W** in a 4 mm (1/e² diameter) beam;
-  - 1.6–2 W reaches 25–30 W/cm² at that size, or ~100 W/cm² at 2 mm.
+  - 10 W/cm² needs **0.63 W** in a 4 mm (1/e² diameter) beam.
+  - **Keep the optical power within your eyewear's LB rating.** LG3-class eyewear covers ~1 W CW, so run ≤ 1 W.
+  - At 1 W you get 16 W/cm² at 4 mm, 64 W/cm² at 2 mm and ~250 W/cm² at 1 mm.
+  - For the hot end of the power series (mote heating ~50–100 K), **tighten the beam rather than adding power**. `analyze_b1.py` normalises each track to its local Gaussian intensity.
 - **Profile the beam.** Its radius enters squared, so a 10 % radius error is a 20 % force error. A razor knife-edge on a micrometer stage, plus the power meter, is enough (R11 §6.4).
 
 **Particles** (R11 §5; the predictions come from `diy_calcs.py`):
