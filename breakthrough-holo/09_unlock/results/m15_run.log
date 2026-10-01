@@ -168,3 +168,42 @@ film_density calm   carbon_aerogel_pess   10  1.7  351  3.0  10000    36   24   
 film_density normal carbon_aerogel_white   5  1.6  407  3.0  10000    72   48  307.9 4444.2   4.33   5.1e+08   0.9    1574    116  heat,trap_exit_window,vis_exit_window,ir_power_cap
 film_density normal carbon_aerogel_white  10  2.5  460  3.0  10000    72   48  163.4 2359.1   1.08   5.1e+08   0.9    1156     75  heat,trap_exit_window,ir_power_cap
 film_density normal carbon_aerogel_pess   10  1.7  569  3.0  10000    72   48  232.5 3355.2  10.82   5.1e+08   0.9    1360     95  heat,vis_spot_class1,trap_exit_window,vis_exit_window,ir_power_cap,wall_light
+
+M15d measured room layouts (M4) instead of the ideal octahedron; <= 100 W IR; hand-occlusion case
+content      room   mote                   a layout occl    dT   r_c   P_IR  P_vis  px_total   lab$k  vol$k  fails
+accent       quiet  carbon_aerogel_white  10 H10    heat   239   136   88.8   0.14   2.0e+08     438     28  OK
+accent       quiet  carbon_aerogel_white  10 H14    heat   239   136   82.4   0.14   2.7e+08     593     38  OK
+accent       quiet  ito_aerogel            5 H10    ok      74   190   84.3   0.18   1.7e+08     405     27  OK
+accent       quiet  ito_aerogel            5 H14    ok      74   213   98.1   0.18   1.8e+08     499     35  OK
+accent       calm   carbon_aerogel_white  10 H10    heat   325    36    9.2   0.01   3.0e+09    3547    111  heat
+accent       calm   carbon_aerogel_white  10 H14    heat   325    36    8.5   0.01   4.0e+09    4719    149  heat
+accent       calm   ito_aerogel            5 H10    ok     106   152   79.9   0.18   2.2e+08     459     28  OK
+accent       calm   ito_aerogel            5 H14    ok     106   170   93.0   0.18   2.4e+08     560     37  OK
+accent       normal carbon_aerogel_white  10 H10    heat   534    72   71.5   0.03   7.6e+08    1051     44  heat
+accent       normal carbon_aerogel_white  10 H14    heat   534    72   66.4   0.03   1.0e+09    1403     60  heat
+accent       normal ito_aerogel            5 H10    heat   190   108   80.1   0.18   3.6e+08     608     32  OK
+accent       normal ito_aerogel            5 H14    ok     190   121   93.2   0.18   3.9e+08     725     41  OK
+sketch       quiet  carbon_aerogel_white  10 H10    heat   239    61   90.9   0.69   8.7e+08    1180     48  OK
+sketch       quiet  carbon_aerogel_white  10 H14    heat   239    61   84.3   0.69   1.2e+09    1631     66  OK
+sketch       quiet  ito_aerogel            5 H10    ok      74    86   86.2   0.91   5.1e+08     781     37  OK
+sketch       quiet  ito_aerogel            5 H14    ok      74    86   80.0   0.91   6.8e+08    1049     50  OK
+sketch       calm   carbon_aerogel_white  10 H10    heat   325    36   45.8   0.03   3.0e+09    3554    112  heat
+sketch       calm   carbon_aerogel_white  10 H14    heat   325    36   42.5   0.03   4.0e+09    4726    150  heat
+sketch       calm   ito_aerogel            5 H10    ok     106    69   81.7   0.91   7.6e+08    1051     44  OK
+sketch       calm   ito_aerogel            5 H14    ok     106    77   95.1   0.91   8.4e+08    1220     55  OK
+sketch       normal carbon_aerogel_white  10 H10    heat   534    72  357.7   0.14   7.6e+08    1108     50  heat,ir_power_cap
+sketch       normal carbon_aerogel_white  10 H14    heat   534    72  331.8   0.14   1.0e+09    1456     65  heat,ir_power_cap
+sketch       normal ito_aerogel            5 H10    heat   190    72  176.0   0.54   7.6e+08    1072     46  ir_power_cap
+sketch       normal ito_aerogel            5 H14    ok     190    72  163.2   0.54   1.0e+09    1422     62  ir_power_cap
+film_density quiet  carbon_aerogel_white  10 H10    heat   239    30  130.6   0.12   4.8e+09    5499    166  ir_power_cap
+film_density quiet  carbon_aerogel_white  10 H14    heat   239    30  121.1   0.12   6.2e+09    7133    217  ir_power_cap
+film_density quiet  ito_aerogel            5 H10    ok      74    35   84.4   1.36   3.1e+09    3600    114  OK
+film_density quiet  ito_aerogel            5 H14    ok      74    39   98.2   1.36   3.4e+09    4019    131  OK
+film_density calm   carbon_aerogel_white  10 H10    heat   325    36  274.6   0.27   3.0e+09    3600    117  heat,ir_power_cap
+film_density calm   carbon_aerogel_white  10 H14    heat   325    36  254.7   0.27   4.0e+09    4768    154  heat,ir_power_cap
+film_density calm   ito_aerogel            5 H10    ok     106    36  133.4   1.08   3.0e+09    3572    114  ir_power_cap
+film_density calm   ito_aerogel            5 H14    ok     106    36  123.7   1.08   4.0e+09    4742    152  ir_power_cap
+film_density normal carbon_aerogel_white  10 H10    heat   534    72 2146.1   1.08   7.6e+08    1466     86  heat,trap_exit_window,ir_power_cap
+film_density normal carbon_aerogel_white  10 H14    heat   534    72 1990.6   1.08   1.0e+09    1788     98  heat,ir_power_cap
+film_density normal ito_aerogel            5 H10    heat   190    72 1055.9   4.33   7.6e+08    1250     64  vis_exit_window,ir_power_cap
+film_density normal ito_aerogel            5 H14    ok     190    72  979.4   4.33   1.0e+09    1587     78  vis_exit_window,ir_power_cap

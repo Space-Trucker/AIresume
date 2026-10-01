@@ -117,6 +117,28 @@ With a 100 W IR cap and δ = 3 mm:
 - **Film density** needs the better mote or ~150–300 W.
 - **Normal rooms** need a faster force loop: jitter ∝ u/bandwidth sets r_c ≥ 72 µm at 0.3 m/s.
 
+**Fourth pass: measured room layouts and hand occlusion (M15d, `results/m15d_layouts.json`).**
+
+The ideal octahedron (h_worst 1.73) cannot push in all directions when one head is blocked. M4's measured layouts can:
+- H10 (8 corners + ceiling spot + floor head): h_worst 2.14, h_mean 1.38, one-head-occluded p95 4.47.
+- H14 (H10 + 4 wall niches): h_mean 1.28, occluded p95 3.73.
+
+With ≤ 100 W IR and δ = 3 mm:
+
+| Content / room | 10 µm white carbon mote (known material class, FOM 2.5) | ITO-aerogel mote (FOM 5.3, unmade) |
+|---|---|---|
+| Accent, quiet | ✓ (H10: 89 W, 2×10⁸ px); **local dropout near hands** (overheats with a head blocked) | ✓, holds with a head blocked |
+| Accent, calm / normal | ✗ heat | ✓ (normal: H14 holds with a head blocked) |
+| Sketch, quiet | ✓ (91 W, 8.7×10⁸ px, $48k vol / $1.2M lab); local dropout near hands | ✓ (86 W, 5.1×10⁸ px, $37k / $0.78M), holds with a head blocked |
+| Sketch, calm | ✗ heat | ✓ (82–95 W) |
+| Sketch, normal | ✗ | needs 163–176 W |
+| Film density, quiet | ✗ (121–131 W) | ✓ (84–98 W, 3.1–3.4×10⁹ px, $114–131k vol / $3.6–4.0M lab) |
+| Film density, calm | ✗ | needs 124–133 W |
+
+**Reading.**
+- **The mote's FOM buys robustness, not just cost.** The ITO-class mote keeps holding when a hand blocks a head; the carbon mote overheats there.
+- The verdict's gate (FOM ≳ 4) stands for any image that the hands go *into*.
+
 **Known gaps** (to be closed before any grade change):
 1. **Black motes scatter weakly** (side albedo ~5 %), so wall stray light fails at 1 % leakage. Fixes to test:
    - tighter illumination spots, co-centred by the fast loop;

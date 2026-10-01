@@ -26,6 +26,13 @@ import safety as sf  # noqa: E402
 import budget2 as b2  # noqa: E402
 
 OCTA = dict(h_worst=math.sqrt(3), h_mean=1.5, single=1.0, heads=6)
+# measured room layouts from M4 (07_mote_route/results/m4_room_heads.json): push overheads with all heads, and the
+# 95th-percentile worst overhead with one head occluded by a hand (occ_p95)
+LAYOUTS = {
+    "octa6": dict(OCTA, occ_p95=math.inf),
+    "H10": dict(h_worst=2.14, h_mean=1.38, single=1.13, heads=10, occ_p95=4.47),
+    "H14": dict(h_worst=2.14, h_mean=1.28, single=1.13, heads=14, occ_p95=3.73),
+}
 
 # motes: j1A, k_eff (W/m/K), A_trap (1550 nm), q_side (fraction of pi a^2 scattered into side directions at ~500 nm),
 # T_max (K), density (kg/m^3)
@@ -214,12 +221,16 @@ COST = {  # [ASSUMPTION] lab-today vs volume prices
 
 def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="quiet", f_fast=2e4, bw_frac=0.1,
             r_c=None, r_v=None, holo_rate=360.0, holo_eff=0.6, D_field=1.0, theta_det=0.02, t_cut=1.4e-3, C_ph=0.85,
-            force_margin=1.3, eta_shape=0.8, R_head=0.3, leak=1e-3, lam_vis=500.0, P_ir_max=None):
+            force_margin=1.3, eta_shape=0.8, R_head=0.3, leak=1e-3, lam_vis=500.0, P_ir_max=None, layout="octa6",
+            occluded=False):
     """Split control (I4): spot positions from a slow hologram (holo_rate); spot force from a fast amplitude plane at
     f_fast with loop bandwidth bw_frac*f_fast. Mote jitter = u/(2 pi f_bw); r_c >= 3 jitter and >= 3a; the illumination
     spot only needs to cover the jitter (r_v = max(2 jitter, 1.5 a))."""
     L, S, _ = b2.CONTENT[content]
     Mt, Rm = mote_props(mote, a), ROOMS[room]
+    G = dict(LAYOUTS[layout])
+    if occluded:                                                   # a hand shadows one head for these motes
+        G["h_worst"] = G["occ_p95"]
     N = S / delta
     Tm = ph.T0 + 30
     for _ in range(60):
@@ -227,7 +238,7 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
         F = force_margin * ph.drag(a, Rm["u"], Tf)
         fpw = ph.force_per_absorbed_watt(a, Mt["k_eff"], Tm, C_ph, j1A=Mt["j1A"])
         P_abs_unit = F / fpw
-        Tn = ph.mote_temperature(OCTA["h_worst"] * P_abs_unit, a, v_rel=Rm["u"])
+        Tn = ph.mote_temperature(G["h_worst"] * P_abs_unit, a, v_rel=Rm["u"])
         if abs(Tn - Tm) < 0.01:
             break
         Tm = 0.5 * (Tm + Tn)
@@ -236,13 +247,13 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
     r_min = max(3 * jitter, 3 * a)
     r_c = max(r_c or r_min, r_min)
     P_unit = I_unit * math.pi * r_c ** 2 / eta_shape
-    P_focus = OCTA["h_worst"] * P_unit
+    P_focus = G["h_worst"] * P_unit
     Phi = 4 * math.pi * L * 1e-3 * S
     V_vis = 683 * ph.V(lam_vis)
     P_sc = Phi / N / V_vis
     r_v = max(r_v or 0.0, 2 * jitter, 1.5 * a)
     P_vis_spot = P_sc / (Mt["q_side"] * math.pi * a * a) * math.pi * r_v ** 2 / eta_shape
-    P_ir = N * OCTA["h_mean"] * P_unit / holo_eff
+    P_ir = N * G["h_mean"] * P_unit / holo_eff
     P_vis = N * P_vis_spot / holo_eff
     M_dir = D_field ** 2 / (math.pi * r_c ** 2)
     M_vis = D_field ** 2 / (math.pi * r_v ** 2)                  # illumination hologram (1-2 heads)
@@ -255,7 +266,7 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
         fails.append("trap_cut_dose")
     if P_vis_spot > sf.ael_class1(lam_vis):
         fails.append("vis_spot_class1")
-    if P_ir / OCTA["heads"] > sf.head_power_limit(1550, R_head):
+    if P_ir / G["heads"] > sf.head_power_limit(1550, R_head):
         fails.append("trap_exit_window")
     if P_vis > sf.head_power_limit(lam_vis, R_head):
         fails.append("vis_exit_window")
@@ -272,8 +283,8 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
         fails.append("wall_light")
     cost = {}
     for k, c in COST.items():
-        cost[k] = (c["px"] * (OCTA["heads"] * M_dir + M_vis) + c["W_ir"] * P_ir + c["W_vis"] * P_vis
-                   + c["head"] * OCTA["heads"])
+        cost[k] = (c["px"] * (G["heads"] * M_dir + M_vis) + c["W_ir"] * P_ir + c["W_vis"] * P_vis
+                   + c["head"] * G["heads"])
     return dict(content=content, room=room, mote=mote, delta_mm=delta * 1e3, N=N, FOM=ph.figure_of_merit(Mt["j1A"], Mt["k_eff"]),
                 dT=Tm - ph.T0, jitter_um=jitter * 1e6, r_c_um=r_c * 1e6, r_v_um=r_v * 1e6, P_focus_mW=P_focus * 1e3,
                 P_vis_spot_uW=P_vis_spot * 1e6, P_ir_W=P_ir, P_vis_W=P_vis, M_dir=M_dir, M_vis=M_vis,
@@ -317,6 +328,30 @@ def main2():
         json.dump(rows, fh, indent=1)
 
 
+def main4(P_ir_max=100.0):
+    print(f"\nM15d measured room layouts (M4) instead of the ideal octahedron; <= {P_ir_max:.0f} W IR; hand-occlusion case")
+    print(f"{'content':12s} {'room':6s} {'mote':20s} {'a':>3s} {'layout':6s} {'occl':5s} {'dT':>4s} {'r_c':>5s} {'P_IR':>6s} "
+          f"{'P_vis':>6s} {'px_total':>9s} {'lab$k':>7s} {'vol$k':>6s}  fails")
+    rows = []
+    for content in ("accent", "sketch", "film_density"):
+        for room in ("quiet", "calm", "normal"):
+            for mote, a in (("carbon_aerogel_white", 10e-6), ("ito_aerogel", 5e-6)):
+                for layout in ("H10", "H14"):
+                    d = optimise(basis="volume", content=content, room=room, mote=mote, a=a, delta=3e-3,
+                                 P_ir_max=P_ir_max, layout=layout)
+                    # the same spots, with one head occluded near a hand: does the mote still hold (heat)?
+                    do = design2(content=content, room=room, mote=mote, a=a, delta=3e-3, layout=layout, occluded=True,
+                                 r_c=d["r_c_um"] * 1e-6, r_v=d["r_v_um"] * 1e-6)
+                    rows.append(dict(d, layout=layout, occluded_dT=do["dT"], occluded_fails=do["fails"]))
+                    px = LAYOUTS[layout]["heads"] * d["M_dir"] + d["M_vis"]
+                    occ = "heat" if "heat" in do["fails"] else "ok"
+                    print(f"{content:12s} {room:6s} {mote:20s} {a * 1e6:3.0f} {layout:6s} {occ:5s} {d['dT']:4.0f} "
+                          f"{d['r_c_um']:5.0f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} {px:9.1e} {d['cost_lab_k']:7.0f} "
+                          f"{d['cost_volume_k']:6.0f}  {','.join(d['fails']) or 'OK'}")
+    with open(os.path.join(HERE, "results", "m15d_layouts.json"), "w") as fh:
+        json.dump(rows, fh, indent=1)
+
+
 def main3(P_ir_max=100.0):
     print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices); mote FOM from alpha*a")
     print(f"{'content':12s} {'room':6s} {'mote':20s} {'a':>3s} {'FOM':>4s} {'dT':>4s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} "
@@ -340,3 +375,4 @@ if __name__ == "__main__":
     main()
     main2()
     main3()
+    main4()
