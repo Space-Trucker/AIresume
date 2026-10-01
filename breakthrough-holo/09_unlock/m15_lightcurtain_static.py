@@ -35,11 +35,14 @@ MOTES = {
     # q_side: a black sphere's side scatter is mostly surface reflection (Fresnel ~4-8 %) [ESTIMATE].
     "carbon_aerogel": dict(j1A=0.40, k_eff=0.045, A=0.95, q_side=0.05, T_max=600.0, rho=100.0),
     "carbon_aerogel_pess": dict(j1A=0.30, k_eff=0.08, A=0.90, q_side=0.03, T_max=550.0, rho=150.0),
+    # carbon-aerogel core with a thin porous white silica shell: scatters visible (q ~0.3 [ESTIMATE]); the shell's
+    # thermal resistance lowers J1/A somewhat and adds conduction (k_eff +0.01) [ESTIMATE]
+    "carbon_aerogel_white": dict(j1A=0.36, k_eff=0.055, A=0.93, q_side=0.30, T_max=600.0, rho=110.0),
     # v4 reference mote (ITO skin on silica aerogel), white-ish: higher side scatter
     "ito_aerogel": dict(j1A=0.486, k_eff=0.04, A=1.0, q_side=0.3, T_max=600.0, rho=150.0),
 }
 
-ROOMS = {"quiet": dict(u=0.10, u_res=0.01), "normal": dict(u=0.30, u_res=0.03)}
+ROOMS = {"quiet": dict(u=0.10, u_res=0.01), "calm": dict(u=0.15, u_res=0.015), "normal": dict(u=0.30, u_res=0.03)}
 DEVICES = {  # hologram device: pixels, frame rate (Hz), efficiency into the spots
     "LCoS_4K": dict(px=8.8e6, rate=360.0, eff=0.6),
     "PLM_MEMS": dict(px=1.3e6, rate=1440.0, eff=0.5),
@@ -188,5 +191,138 @@ def main():
     print("\nwrote results/m15_lcsv.json")
 
 
+COST = {  # [ASSUMPTION] lab-today vs volume prices
+    "lab": dict(px=1.1e-3, W_ir=200.0, W_vis=500.0, head=20e3),
+    "volume": dict(px=3e-5, W_ir=20.0, W_vis=50.0, head=2e3),
+}
+
+
+def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="quiet", f_fast=2e4, bw_frac=0.1,
+            r_c=None, r_v=None, holo_rate=360.0, holo_eff=0.6, D_field=1.0, theta_det=0.02, t_cut=1.4e-3, C_ph=0.85,
+            force_margin=1.3, eta_shape=0.8, R_head=0.3, leak=1e-3, lam_vis=500.0, P_ir_max=None):
+    """Split control (I4): spot positions from a slow hologram (holo_rate); spot force from a fast amplitude plane at
+    f_fast with loop bandwidth bw_frac*f_fast. Mote jitter = u/(2 pi f_bw); r_c >= 3 jitter and >= 3a; the illumination
+    spot only needs to cover the jitter (r_v = max(2 jitter, 1.5 a))."""
+    L, S, _ = b2.CONTENT[content]
+    Mt, Rm = MOTES[mote], ROOMS[room]
+    N = S / delta
+    Tm = ph.T0 + 30
+    for _ in range(60):
+        Tf = 0.5 * (ph.T0 + Tm)
+        F = force_margin * ph.drag(a, Rm["u"], Tf)
+        fpw = ph.force_per_absorbed_watt(a, Mt["k_eff"], Tm, C_ph, j1A=Mt["j1A"])
+        P_abs_unit = F / fpw
+        Tn = ph.mote_temperature(OCTA["h_worst"] * P_abs_unit, a, v_rel=Rm["u"])
+        if abs(Tn - Tm) < 0.01:
+            break
+        Tm = 0.5 * (Tm + Tn)
+    I_unit = P_abs_unit / (Mt["A"] * math.pi * a * a)
+    jitter = Rm["u"] / (2 * math.pi * bw_frac * f_fast)
+    r_min = max(3 * jitter, 3 * a)
+    r_c = max(r_c or r_min, r_min)
+    P_unit = I_unit * math.pi * r_c ** 2 / eta_shape
+    P_focus = OCTA["h_worst"] * P_unit
+    Phi = 4 * math.pi * L * 1e-3 * S
+    V_vis = 683 * ph.V(lam_vis)
+    P_sc = Phi / N / V_vis
+    r_v = max(r_v or 0.0, 2 * jitter, 1.5 * a)
+    P_vis_spot = P_sc / (Mt["q_side"] * math.pi * a * a) * math.pi * r_v ** 2 / eta_shape
+    P_ir = N * OCTA["h_mean"] * P_unit / holo_eff
+    P_vis = N * P_vis_spot / holo_eff
+    M_dir = D_field ** 2 / (math.pi * r_c ** 2)
+    M_vis = D_field ** 2 / (math.pi * r_v ** 2)                  # illumination hologram (1-2 heads)
+    fails = []
+    if Tm > Mt["T_max"]:
+        fails.append("heat")
+    if theta_det * P_focus > sf.ael_class1(1550):
+        fails.append("trap_curtain_threshold")
+    if P_focus * t_cut > 1e3 * math.pi * (sf.meas_aperture(1550) / 2) ** 2:
+        fails.append("trap_cut_dose")
+    if P_vis_spot > sf.ael_class1(lam_vis):
+        fails.append("vis_spot_class1")
+    if P_ir / OCTA["heads"] > sf.head_power_limit(1550, R_head):
+        fails.append("trap_exit_window")
+    if P_vis > sf.head_power_limit(lam_vis, R_head):
+        fails.append("vis_exit_window")
+    if P_ir_max is not None and P_ir > P_ir_max:
+        fails.append("ir_power_cap")
+    # stray light: with every beam ending in a receiver, only the leak fraction (black-cavity reflection + dust scatter
+    # along the path) reaches the room, spread diffusely over ~A_wall of surfaces. Criterion: added wall luminance
+    # <= 0.01 cd/m^2, far below a dim lab's ambient (0.3-3 cd/m^2) and the 3-4 cd/m^2 image lines. (budget2's 5 %-of-
+    # image-flux rule was for pump light striking walls directly.)
+    A_wall, rho_wall = 50.0, 0.8
+    wall_ratio = leak * P_vis * V_vis / Phi
+    L_wall = rho_wall * leak * P_vis * V_vis / (math.pi * A_wall)
+    if L_wall > 0.01:
+        fails.append("wall_light")
+    cost = {}
+    for k, c in COST.items():
+        cost[k] = (c["px"] * (OCTA["heads"] * M_dir + M_vis) + c["W_ir"] * P_ir + c["W_vis"] * P_vis
+                   + c["head"] * OCTA["heads"])
+    return dict(content=content, room=room, mote=mote, delta_mm=delta * 1e3, N=N, FOM=ph.figure_of_merit(Mt["j1A"], Mt["k_eff"]),
+                dT=Tm - ph.T0, jitter_um=jitter * 1e6, r_c_um=r_c * 1e6, r_v_um=r_v * 1e6, P_focus_mW=P_focus * 1e3,
+                P_vis_spot_uW=P_vis_spot * 1e6, P_ir_W=P_ir, P_vis_W=P_vis, M_dir=M_dir, M_vis=M_vis,
+                v_content_max_cm_s=r_c * holo_rate / 3 * 100, wall_ratio=wall_ratio, L_wall=L_wall, cost_lab_k=cost["lab"] / 1e3,
+                cost_volume_k=cost["volume"] / 1e3, fails=fails, feasible=not fails)
+
+
+def optimise(basis="lab", **kw):
+    """Cheapest feasible (r_c, r_v) on log grids, at lab or volume prices."""
+    key = "cost_lab_k" if basis == "lab" else "cost_volume_k"
+    best = None
+    for i in range(36):
+        for j in range(0, 30, 2):
+            d = design2(r_c=10e-6 * 1.12 ** i, r_v=5e-6 * 1.15 ** j, **kw)
+            if d["feasible"] and (best is None or d[key] < best[key]):
+                best = d
+    if best is None:
+        best = design2(**kw)
+    best["basis"] = basis
+    return best
+
+
+def main2():
+    print("\nM15b split control (fast amplitude plane 20 kHz), curtain safety, cost-optimised spot radii (r_c, r_v)")
+    print(f"{'content':12s} {'room':6s} {'mote':20s} {'basis':6s} {'dmm':>4s} {'N':>6s} {'dT':>4s} {'r_c':>5s} "
+          f"{'r_v':>4s} {'Pfoc':>6s} {'Pvis':>6s} {'P_IR':>6s} {'P_vis':>6s} {'M/dir':>8s} {'M_vis':>8s} {'vmax':>5s} "
+          f"{'lab$k':>7s} {'vol$k':>6s}  fails")
+    rows = []
+    for content in ("accent", "sketch", "film_density"):
+        for room in ("quiet", "calm", "normal"):
+            for mote in ("carbon_aerogel", "carbon_aerogel_white", "carbon_aerogel_pess"):
+                for basis in ("lab", "volume"):
+                    d = optimise(basis=basis, content=content, room=room, mote=mote, delta=2e-3)
+                    rows.append(d)
+                    print(f"{content:12s} {room:6s} {mote:20s} {basis:6s} {d['delta_mm']:4.1f} {d['N']:6.0f} "
+                          f"{d['dT']:4.0f} {d['r_c_um']:5.0f} {d['r_v_um']:4.0f} {d['P_focus_mW']:6.1f} "
+                          f"{d['P_vis_spot_uW']:6.1f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} {d['M_dir']:8.1e} "
+                          f"{d['M_vis']:8.1e} {d['v_content_max_cm_s']:5.1f} {d['cost_lab_k']:7.0f} "
+                          f"{d['cost_volume_k']:6.0f}  {','.join(d['fails']) or 'OK'}")
+    with open(os.path.join(HERE, "results", "m15b_split_control.json"), "w") as fh:
+        json.dump(rows, fh, indent=1)
+
+
+def main3(P_ir_max=100.0):
+    print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices), white-coated carbon-aerogel motes")
+    print(f"{'content':12s} {'room':6s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} {'r_v':>4s} {'Pfoc':>6s} {'P_IR':>6s} {'P_vis':>6s} "
+          f"{'M/dir':>8s} {'M_vis':>8s} {'px_total':>9s} {'vmax':>5s} {'lab$k':>7s} {'vol$k':>6s}  fails")
+    rows = []
+    for content in ("accent", "sketch", "film_density"):
+        for room in ("quiet", "calm", "normal"):
+            for delta in (2e-3, 3e-3):
+                d = optimise(basis="volume", content=content, room=room, mote="carbon_aerogel_white", delta=delta,
+                             P_ir_max=P_ir_max)
+                rows.append(d)
+                px = OCTA["heads"] * d["M_dir"] + d["M_vis"]
+                print(f"{content:12s} {room:6s} {d['delta_mm']:4.1f} {d['N']:6.0f} {d['r_c_um']:5.0f} {d['r_v_um']:4.0f} "
+                      f"{d['P_focus_mW']:6.1f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} {d['M_dir']:8.1e} {d['M_vis']:8.1e} "
+                      f"{px:9.1e} {d['v_content_max_cm_s']:5.1f} {d['cost_lab_k']:7.0f} {d['cost_volume_k']:6.0f}  "
+                      f"{','.join(d['fails']) or 'OK'}")
+    with open(os.path.join(HERE, "results", "m15c_capped.json"), "w") as fh:
+        json.dump(rows, fh, indent=1)
+
+
 if __name__ == "__main__":
     main()
+    main2()
+    main3()

@@ -1,0 +1,118 @@
+# T6: Bounds, invariants and loopholes for any matter-at-the-point display (draft v1)
+
+*Status: theory draft, written 2026-10-01 before idea round 2 reports. Every claim is tagged [DERIVED], [MODEL] (computed in `m15_lightcurtain_static.py` with the validated MOTE physics) or [ASSUMPTION].*
+
+## 1. What cannot be avoided
+
+**Theorem T1 (from T1).** A free-space image visible from all around needs light made or scattered **at the image point**. Air alone cannot do it without plasma. So the image needs **matter at the point**: motes or beads. That matter must be held, positioned and lit. [DERIVED, T1]
+
+**Bound B2: holding intensity.** A photophoretic mote of radius a, moving at speed w relative to the air, needs an intensity at the mote of
+
+  I_hold = 4·ρT·h·w / (3·η·C_ph·μ·FOM·A·Cc)
+
+where:
+- ρT = p/R_air = 353 kg·K/m³;
+- h ≥ 1 is the push-geometry overhead (octahedral push: √3 worst case);
+- η ≤ 1 for pushes, ≤ 2/π for lateral gradient traps;
+- FOM = (J₁/A)/(k_eff + 2k_g).
+
+I_hold does **not depend on mote size**. [DERIVED from the validated force law; checked in `m15 --selftest` within 5 %]
+
+Example: w = 0.1 m/s, FOM 4.1, η = 1, h = 1, margin 1.3 → I_hold ≈ 1×10⁶ W/m².
+
+**Bound B3: heat.** ΔT = A·a·I/(4k_g). At I_hold this is 76 K for a = 5 µm at w = 0.1 m/s, and 195 K at w = 0.3 m/s (octahedral push). Small motes run cool. [DERIVED]
+
+**Bound B4: the light must stay with the mote.** The trap light fills a spot of radius r_c that contains the mote's position uncertainty. So the power at one focus is P_focus = h·I_hold·π r_c²/η_shape. [DERIVED]
+
+**Bound B5: addressable modes.** To put such spots anywhere in a field of area A_f, each head needs M = A_f/(π r_c²) independent modes (pixels of a hologram, or resolvable spots of a scanner). [DERIVED; étendue]
+
+**Bound B6: control.** The mote must be pushed back before it leaves its spot: f_ctrl ≥ k·u/r_c. A passive (feedback-free) trap needs gradient features of size ~a, so r_c ~ a. [DERIVED; M2 earlier found 20–50 kHz at r_c = 20 µm, u = 0.3]
+
+**The invariant.** Combining B4 and B5 for N motes:
+
+  **P_total · M = N · h_mean · I_hold · A_f / (η_shape·η_holo)** [DERIVED; checked in m15 self-test]
+
+Combining with B6:
+
+  **P_total ≥ N · π·h·I_hold·(k·u/f)² ∝ N·u³/f²**, since I_hold ∝ u.
+
+**Drafts enter cubed.** A normal room (0.3 m/s) costs **27×** the power of a quiet one (0.1 m/s) at the same control rate. [DERIVED]
+
+**Class 1 per focus** (P_focus ≤ 10 mW at 1550 nm) forces r_c ≤ 27 µm at 0.3 m/s. That is why v4 needs 10³–10⁴ precisely steered beams. [DERIVED]
+
+**Acoustic beam-cone bound.** A trap bead needs ~150–160 dB at the bead and carries ~0.03–1 W of ultrasound. At distance d from the focus, a beam of half-angle θ spreads that power over π(d·tanθ)². At d = 0.3–1 m that is still 105–120 dB. The public limit is 100 dB (IRPA, 25–100 kHz), and no guideline exists above 100 kHz. **Any listener inside a beam cone within ~1 m of a bead exceeds the limit.** [DERIVED with R3 limits; sharper than E9's room-average argument]
+
+## 2. Loopholes (each bound's non-fundamental assumption)
+
+| Bound | Assumption | Loophole | Status |
+|---|---|---|---|
+| B4 Class 1 per focus | An eye can stay at a focus for ≥ 10 s | **Monitored-beam "light curtain"** (I1): every beam ends on a receiver that measures its transmitted power. Any intercept above θ_det cuts it within t_cut. The hazard becomes (a) an undetected partial intercept ≤ θ_det·P_focus ≤ AEL, and (b) the dose during the cut ≤ the short-exposure MPE | **Candidate.** Standards fit (IEC 60825-1 classification with engineering controls; IEC 60825-4 active guards; IEC 61496 light curtains) is under review by idea round 2 |
+| B7 light budget | Light from a phosphor pumped by a 405 nm beam; unabsorbed pump reaches the walls | **Terminated scattering illumination** (I3): a visible spot lights the mote, and its beam ends in a receiver, so walls see no direct light. This removes T5's reason for rejecting scatterers (Babinet forward light reaching the walls) | **Candidate.** It also allows **black motes** (no visible transparency needed), hence a known-material mote: carbon aerogel |
+| Material | The absorber must be visible-transparent (ITO/Cs_xWO₃ islands) | With I3, a **carbon-aerogel microsphere** works: black, k ≈ 0.03–0.05 W/m/K (bulk), skin-like absorption. FOM ≈ 3–4.4 from bulk data | **Candidate.** Bulk-property estimate; k at µm size still needs measuring (B2 bench) |
+| Mote speed | POV needs fast motes (S·f/v motes) | **Static voxels** (I2): motes sit at the image points (spacing δ) and move only with the content. Each mote needs force only against drafts. Content speed ≤ r_c × (hologram rate)/k | **Candidate for static and slow content.** Fast hand-manipulated objects still need POV channels |
+| B6 control | Every mote needs its own fast loop through the hologram | **Split control** (I4): a slow hologram places the spots. A fast per-line-of-sight amplitude modulator (a DMD in an intermediate field plane, 10–20 kHz) sets each spot's force. Drafts are smooth on cm scales, so even zone-level control helps | **Candidate.** Needs per-mote position sensing at ≥ 10 kHz (event cameras or receiver detectors) |
+| Drafts | Room air is uncontrolled | The power cost ∝ u³ makes **room air speed the master variable**. Quiet zones (≤ 0.1–0.15 m/s) are realistic with calm HVAC (ASHRAE comfort ≤ 0.2 m/s). Human thermal plumes are 0.1–0.25 m/s near hands | No loophole found; design for u ≈ 0.1–0.15 m/s with margin |
+
+## 3. Candidate architecture LCSV (light-curtain static voxels)
+
+**Heads and beams.**
+- Six heads in an octahedral layout: three opposed pairs, set "gracefully" on ceiling, floor and walls (the owner allows many heads).
+- Each head is an emitter and a receiver.
+- **Emitter:**
+  - 1550 nm laser, fed through a phase-hologram tile array that places flat-top spots of radius r_c at each mote;
+  - a DMD amplitude plane for fast per-spot force;
+  - a visible (cyan, plus optional orange or RGB) illumination hologram.
+- **Receiver:** monitors every incoming beam (curtain) and senses each mote's shadow and position.
+
+**Motes.** Carbon-aerogel microspheres, a ≈ 5 µm, about 0.05 ng each. A film-density image uses 15,000–30,000 of them, about 1 µg in total.
+
+**First-pass numbers** (M15, carbon aerogel FOM 4.1, octahedral push, curtain safety):
+
+| Case | N motes | r_c | 1550 nm total | Visible total | Modes per direction | Notes |
+|---|---|---|---|---|---|---|
+| Sketch, quiet (0.1 m/s), δ = 2 mm, fast 1.4 kHz device | 2,500 | 21 µm | 13 W | 0.15 W | 7×10⁸ | Pixel count is the cost driver |
+| Sketch, quiet, 4K LCoS at 360 Hz | 2,500 | 83 µm | 177 W | 10 W | 5×10⁷ (31 SLMs) | Power is the cost driver |
+| Film density, quiet, δ = 2 mm, fast device | 15,000 | 21 µm | 80 W | 1–6 W | 7×10⁸ | |
+| Any content, normal room (0.3 m/s) | | | ×27 power | | | Infeasible at fixed modes |
+
+**Second pass: split control and a stray-light fix (M15b/M15c, `results/m15b_split_control.json`, `m15c_capped.json`).**
+- **Split control.** The spot radius is now set by the fast amplitude loop (20 kHz DMD plane, 2 kHz loop bandwidth, mote jitter = u/(2π·bw): 8 µm quiet, 24 µm normal), not by the slow hologram.
+- **Stray light.** The criterion is now *added wall luminance* ≤ 0.01 cd/m². Light leaking from the receivers (10⁻³) spreads over ~50 m² of walls. budget2's 5 %-of-flux rule assumed pump light striking walls directly.
+- **Optimisation.** Both radii (r_c, r_v) are cost-optimised, with total 1550 nm capped at 100 W:
+
+| Content | Room u | Motes (δ) | r_c | IR total | Visible | Hologram pixels (all heads) | Content speed | Cost, volume / lab [ASSUMPTION prices] |
+|---|---|---|---|---|---|---|---|---|
+| Accent | quiet / calm / **normal** | 333–500 (2–3 mm) | 72–152 µm | 87–97 W | 0.2–0.3 W | 1.7–4.2×10⁸ | 0.9–1.8 cm/s | $19–27k / $0.3–0.6M |
+| Sketch | quiet / calm | 1,667–2,500 | 44–69 µm | 90–100 W | 0.9 W | 4.9–11×10⁸ | 0.5–0.8 cm/s | $29–46k / $0.7–1.3M |
+| Sketch | normal | 1,667–2,500 | 72 µm | 316–474 W | 0.5 W | 5×10⁸ | | fails the 100 W cap |
+| Film density | quiet, δ = 3 mm | 10,000 | 28 µm | 98 W | 1.4 W | 2.9×10⁹ | 0.3 cm/s | $102k / $3.4M |
+| Film density | calm / normal | | | 240–2,800 W | | | | fails the cap |
+
+These are model results with white-coated carbon-aerogel motes: FOM 3.4, side albedo 0.3 [ESTIMATE].
+
+For comparison, v4 POV needs ~12,200 steered beams for a sketch ($8.6–61M) and ~50,000 for film density.
+
+**What carries the gain.**
+1. The curtain lets each focus carry 25–200 mW instead of ≤ 10 mW, so spots can be 3–10× wider.
+2. Static voxels need force only against drafts, not against tracing speed.
+3. Holographic parallelism replaces one galvo per beam.
+4. Terminated scattering removes the 405 nm pump and phosphor, so black or carbon motes are allowed.
+
+**Known gaps** (to be closed before any grade change):
+1. **Black motes scatter weakly** (side albedo ~5 %), so wall stray light fails at 1 % leakage. Fixes to test:
+   - tighter illumination spots, co-centred by the fast loop;
+   - white-coated carbon motes (q ≈ 0.3);
+   - receiver leakage ≤ 10⁻³.
+2. **Hologram pixel count.** Slow LCoS is enough once split control is used, but film density needs ~3×10⁹ pixels, about 330 4K panels. Fast per-spot amplitude control needs one DMD per head at an intermediate field plane. Spots at different depths must stay localised there; my estimate is ~10 px blur at 1/50 demagnification. Per-mote position sensing at ≥ 20 kHz for up to 10⁴ motes is assumed, not designed (event cameras or receiver detectors). The jitter model u/(2π·bw) assumes ~80 µs loop latency; 150–200 µs would double r_c and the IR power.
+3. **Content speed.** Holographic static voxels move at ~1–6 cm/s. Hand-manipulated content needs hybrid POV channels.
+4. **Safety argument.** Whether IEC 60825-1/-4 accept a monitored-beam interlock as the primary safeguard for a consumer product.
+
+## 4. What would make the theory "complete"
+
+All of the following must hold:
+- A mote whose FOM is computed from **measured** properties at its size;
+- a safety case accepted under existing standards;
+- hardware whose pixel count, speed and power exist **today**;
+- every requirement R1–R10 MET in a model that two independent checks reproduce.
+
+At the time of writing, none of the four is complete. This note is the map of where the needle must be.
