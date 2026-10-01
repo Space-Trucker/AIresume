@@ -12,6 +12,16 @@
 - T7: the 1 µm mote, forward-scatter illumination, and Gaussian spots with follow mode;
 - RT6: the corrections.
 
+> **Updates after red team 7 and idea round 3 (sonnet)** (main session, pending red team 8):
+> - **Mean wind (RT7 C3).** m19b now adds the mean wind U and includes it in the authority. POV spots follow their motes, so it holds: at 20 kHz and v 0.5 m/s, the quiet office (U 0.1) loses 0/20 at w 35–50 µm, and the office (σ 0.1, U 0.1) loses 2/20 at 35 µm and 0/20 at 50 µm. The §3 table predates this fix.
+> - **Realistic mote (RT7 C2): E/L doubles.**
+>   - With A = 0.5, the eye-limited waist is 21–24 µm for a sketch and 17.5–20 µm for film density.
+>   - Heads need an aperture radius R ≥ 0.15 m (30 cm) for diffraction. The office film case fails even then.
+>   - The loop must then hold ~20 µm spots. Tests at 20/40 kHz with 1–2 µm sensing are running.
+> - **EN 50689 child-appealing skin rule** (sonnet, snippet-verified): 0.785 mW mean through 1 mm over 10 s. With the realistic mote this caps the waist at ~19–21 µm (sketch). A strict ICNIRP small-beam reading would also need a ~0.7 ms stall cut, against T8's ≤ 100 ms.
+> - **Visible illumination (RT7 C1)** applies to T8 too. Free-standing viewers all round the image need 66–220 wall emitters, and the direct beams reach the audience. Restricting viewers to a front zone (~15–20 emitters), or using an isotropically scattering mote, are the alternatives. Neither is solved.
+> - **Strokes that move along themselves** (sonnet's moving-beam sim) put 11–25× the limit through a pupil on the stroke. The content planner must assign motes so that no pupil is swept repeatedly, using an Eulerian assignment and a space-time dose map.
+
 ## 1. The loophole in B9: a moving focus is a pulse train, not a static focus
 
 **The standards basis.** Two independent sources agree:

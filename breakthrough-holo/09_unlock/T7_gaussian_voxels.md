@@ -17,6 +17,32 @@
   - aerogel motes are index-matched (n ≈ 1.04).
 - RT6's validated code is reused, not re-derived: BHMIE, the loop tuner and simulator, the draft spectra and LP `min_push`. Rule 11 (no duplicated simulation) is respected.
 
+> **Red team 7 correction box** (`05_reviews/red_team_7_gaussian.md`; verified by the main session). It overrides the text below where they conflict.
+> - **C1, forward-scatter illumination does not scale.**
+>   - A 1 µm mote's lobe is usable only to ~15° (first null 20.2°), and 5–10° is the stable window.
+>   - A ±10 % size batch gives ×2–6 mote-to-mote brightness differences.
+>   - Viewers anywhere on a ring need **66–220 wall emitters** (up to ~670 for the stable window), i.e. 10¹¹–10¹² visible modes, not ×1–2 of the IR engine.
+>   - Each emitter lies in its own viewer's view, so non-signal light must be ≲ 10⁻³.
+>   - The direct beams land on the audience: wall light 0.08 cd/m² for a sketch, 8× the criterion.
+> - **C2, the mote.** A thin skin absorbs at most ~50–60 % per pass, and back-side heating lowers J₁. So J₁ ≈ 0.24, not 0.486, and **I_unit doubles** (T7's A = 0.5 rows). B9 halves; the still-room sketch waist becomes 30 µm.
+> - **C3, the loop sims omitted the mean wind.** The draft had zero mean; U set only the convection speed.
+>   - Fixed spots lose motes in home and office air: 6×10⁻³ to 4×10⁻² /s.
+>   - **Spot-following at 5 kHz holds** (0/200 motes in 11 940 mote-s, quiet office, w 50 µm).
+>   - The §3 "fixed-spot holds" rows for home and quiet office are void.
+> - **Major findings**
+>   - B9 is a modes-and-aperture bound.
+>   - Every 10 s Class 1 window must pass, which is 1.45–1.83× the mean.
+>   - Lines aimed at a head stack 34–50 units in one pupil, so co-axial heads must be dropped.
+>   - The real H10 field needs 2.2× the modes (1.3×10¹⁰).
+>   - Loop margins are thin: 8 µm noise loses almost every mote.
+>   - The PLM reaches 2π only up to 650 nm.
+>   - Spot-following lets motes drift 1–16 mm from their voxel unless drift is counted as loss.
+>   - I9's crosstalk is heavy-tailed on strokes (23–49 %), and its fast active-matrix layer does not exist.
+>   - Weighted-GS holograms need 10¹⁷–10¹⁸ ops/s.
+> - **Corrected bottom line.** With a realistic mote, only the **still-room sketch** remains consistent: w 30 µm, 5 kHz spot-following, ≤ 4.7×10⁻⁴ losses/s. Film density, homes and offices need 18–26 µm waists that no verified loop holds.
+>
+> **Idea round 3 (sonnet), EN 50689 child-appealing products.** The skin MPE through 1 mm over 10 s gives **0.785 mW per focus** (snippet-verified). That cuts static voxels a further ~4× (B9 ≈ 1.2 cm/s at w = 50 µm).
+
 ## 1. Three design changes against RT6's corrected LCSV
 
 ### 1.1 Gaussian spots instead of flat-tops (answers RT6 C2a)
