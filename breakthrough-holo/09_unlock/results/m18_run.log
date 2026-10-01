@@ -1,0 +1,54 @@
+self-test 1 (I ~ v, ~size-free): PASS I(0.1)/I(0.05) 2.00, I(2.5um)/I(1um) 0.87
+self-test 2 (B2 closed form): PASS model/closed 1.000
+self-test 3 (mode count): PASS
+self-test 4 (Mie vs RT6): PASS q30 0.274 q90 3.19e-03
+self-test 5 (Maxwell mean speed): PASS 0.0479
+
+B9 (Class 1 speed bound): mean mote speed relative to the air, draft + content motion, at which the worst
+pupil reaches the 10 mW AEL. Static-voxel geometry (h_worst x stacking ~7), and a sparse POV-like case (h s = 1.5):
+  w  15 um: I_unit 7.30e+06 W/m^2 per m/s;  static (h s 7.3) v_max  52.9 cm/s;  sparse (h s 1.5) v_max 258.5 cm/s
+  w  20 um: I_unit 7.30e+06 W/m^2 per m/s;  static (h s 7.2) v_max  30.2 cm/s;  sparse (h s 1.5) v_max 145.4 cm/s
+  w  35 um: I_unit 7.30e+06 W/m^2 per m/s;  static (h s 7.1) v_max  10.0 cm/s;  sparse (h s 1.5) v_max  47.5 cm/s
+  w  50 um: I_unit 7.30e+06 W/m^2 per m/s;  static (h s 7.1) v_max   4.9 cm/s;  sparse (h s 1.5) v_max  23.3 cm/s
+  w  70 um: I_unit 7.30e+06 W/m^2 per m/s;  static (h s 7.1) v_max   2.5 cm/s;  sparse (h s 1.5) v_max  11.9 cm/s
+
+Forward scatter of uncoated ITO-aerogel motes at 500 nm (q_iso, isotropic-equivalent; RT6 coat target 0.3):
+  a 0.50 um  Qsca 0.122  10deg 3.56  15deg 2.53  20deg 1.53  25deg 0.761  30deg 0.286  40deg 0.00532  60deg 0.0165  90deg 0.00365
+  a 0.75 um  Qsca 0.277  10deg 12.8  15deg 5.73  20deg 1.51  25deg 0.134  30deg 0.0789  40deg 0.0839  60deg 0.0168  90deg 0.000658
+  a 1.00 um  Qsca 0.487  10deg 24.5  15deg 4.96  20deg 0.249  25deg 0.49  30deg 0.266  40deg 0.0731  60deg 0.0166  90deg 0.00368
+  a 1.50 um  Qsca 1.029  10deg 27  15deg 2  20deg 1.39  25deg 0.285  30deg 0.239  40deg 0.0701  60deg 0.0158  90deg 0.00351
+  a 2.50 um  Qsca 2.279  10deg 18.7  15deg 3.1  20deg 0.954  25deg 0.417  30deg 0.223  40deg 0.0788  60deg 0.0159  90deg 0.00293
+
+content      room         modulator      A  Thot   occ  w_c1    w   stk    Pf   P_IR apert    M_tot   Tb/s     q     Pv  P_vis   Lwall      CGH  fails
+sketch       still        MEMS 5 kHz   1.0   330   368    51   51  3.32  3.01   12.5   115 6.14e+09    123 4.956   10.7   0.07  0.0008  1.5e+16  OK
+sketch       still        MEMS 5 kHz   0.5   325   357    36   50  3.32  5.87   24.4   117 6.30e+09    126 4.956   10.7   0.07  0.0008  1.6e+16  loop_vs_class1,class1_ir
+sketch       still        MEMS 10 kHz  1.0   330   368    51   51  3.32  3.01   12.5   115 6.14e+09    246 4.956   10.7   0.07  0.0008  3.1e+16  OK
+sketch       still        MEMS 10 kHz  0.5   325   357    36   36  3.33  3.00   12.5   164 1.23e+10    493 4.956   10.7   0.07  0.0008  6.2e+16  OK
+sketch       home         MEMS 5 kHz   1.0   341   390    43   50  3.32  4.14   18.8   117 6.30e+09    126 4.956   13.6   0.09  0.0010  1.6e+16  loop_vs_class1,class1_ir
+sketch       home         MEMS 5 kHz   0.5   334   376    30   50  3.32  8.28   37.6   117 6.30e+09    126 4.956   13.6   0.09  0.0010  1.6e+16  loop_vs_class1,class1_ir
+sketch       home         MEMS 10 kHz  1.0   341   390    43   43  3.32  3.01   13.7   137 8.67e+09    347 4.956   13.6   0.09  0.0010  4.3e+16  OK
+sketch       home         MEMS 10 kHz  0.5   334   376    30   40  3.33  5.30   24.0   146 9.85e+09    394 4.956   13.6   0.09  0.0010  4.9e+16  loop_vs_class1,class1_ir
+sketch       quiet_office MEMS 5 kHz   1.0   352   411    33   50  3.32  6.69   25.4   117 6.30e+09    126 4.956   17.5   0.12  0.0013  1.6e+16  loop_vs_class1,class1_ir
+sketch       quiet_office MEMS 5 kHz   0.5   344   394    24   50  3.32 13.37   50.7   117 6.30e+09    126 4.956   17.5   0.12  0.0013  1.6e+16  loop_vs_class1,class1_ir
+sketch       quiet_office MEMS 10 kHz  1.0   352   411    33   40  3.33  4.28   16.2   146 9.85e+09    394 4.956   17.5   0.12  0.0013  4.9e+16  loop_vs_class1,class1_ir
+sketch       quiet_office MEMS 10 kHz  0.5   344   394    24   40  3.33  8.56   32.5   146 9.85e+09    394 4.956   17.5   0.12  0.0013  4.9e+16  loop_vs_class1,class1_ir
+sketch       office       MEMS 5 kHz   1.0   429   555    26  120  3.31 65.39  310.7    49 1.09e+09     22 0.490 1884.2  12.52  0.1406  2.7e+15  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+sketch       office       MEMS 5 kHz   0.5   409   517    18  120  3.31 130.77  621.5    49 1.09e+09     22 0.490 1884.2  12.52  0.1406  2.7e+15  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+sketch       office       MEMS 10 kHz  1.0   429   555    26   90  3.31 36.78  174.8    65 1.95e+09     78 0.490 1884.2  12.52  0.1406  9.7e+15  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+sketch       office       MEMS 10 kHz  0.5   409   517    18   90  3.31 73.56  349.6    65 1.95e+09     78 0.490 1884.2  12.52  0.1406  9.7e+15  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+film_density still        MEMS 5 kHz   1.0   330   368    40   50  5.24  2.94   73.3   117 6.30e+09    126 4.956   14.3   0.57  0.0064  9.5e+16  loop_vs_class1,class1_ir,exit_window
+film_density still        MEMS 5 kHz   0.5   325   357    29   50  5.24  5.87  146.6   117 6.30e+09    126 4.956   14.3   0.57  0.0064  9.5e+16  loop_vs_class1,class1_ir,exit_window
+film_density still        MEMS 10 kHz  1.0   330   368    40   40  5.22  1.92   47.8   145 9.67e+09    387 4.956   14.3   0.57  0.0064  2.9e+17  OK
+film_density still        MEMS 10 kHz  0.5   325   357    29   35  5.21  2.88   71.8   167 1.29e+10    515 4.956   14.3   0.57  0.0064  3.9e+17  loop_vs_class1,class1_ir
+film_density home         MEMS 5 kHz   1.0   341   390    34   50  5.24  4.14  112.7   117 6.30e+09    126 4.956   18.1   0.72  0.0081  9.5e+16  loop_vs_class1,class1_ir,exit_window
+film_density home         MEMS 5 kHz   0.5   334   376    24   50  5.24  8.28  225.4   117 6.30e+09    126 4.956   18.1   0.72  0.0081  9.5e+16  loop_vs_class1,class1_ir,exit_window
+film_density home         MEMS 10 kHz  1.0   341   390    34   40  5.22  2.65   72.1   146 9.85e+09    394 4.956   18.1   0.72  0.0081  3.0e+17  loop_vs_class1,class1_ir
+film_density home         MEMS 10 kHz  0.5   334   376    24   40  5.22  5.30  144.2   146 9.85e+09    394 4.956   18.1   0.72  0.0081  3.0e+17  loop_vs_class1,class1_ir,exit_window
+film_density quiet_office MEMS 5 kHz   1.0   352   411    27   50  5.24  6.69  152.1   117 6.30e+09    126 4.956   23.3   0.93  0.0105  9.5e+16  loop_vs_class1,class1_ir,exit_window,wall_light
+film_density quiet_office MEMS 5 kHz   0.5   344   394    19   50  5.24 13.37  304.3   117 6.30e+09    126 4.956   23.3   0.93  0.0105  9.5e+16  loop_vs_class1,class1_ir,exit_window,wall_light
+film_density quiet_office MEMS 10 kHz  1.0   352   411    27   40  5.22  4.28   97.4   146 9.85e+09    394 4.956   23.3   0.93  0.0105  3.0e+17  loop_vs_class1,class1_ir,exit_window,wall_light
+film_density quiet_office MEMS 10 kHz  0.5   344   394    19   40  5.22  8.56  194.7   146 9.85e+09    394 4.956   23.3   0.93  0.0105  3.0e+17  loop_vs_class1,class1_ir,exit_window,wall_light
+film_density office       MEMS 5 kHz   1.0   429   555    21  120  5.30 65.39 1864.4    49 1.09e+09     22 0.490 2512.3 100.12  1.1249  1.6e+16  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+film_density office       MEMS 5 kHz   0.5   409   517    15  120  5.30 130.77 3728.8    49 1.09e+09     22 0.490 2512.3 100.12  1.1249  1.6e+16  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+film_density office       MEMS 10 kHz  1.0   429   555    21   90  5.29 36.78 1048.7    65 1.95e+09     78 0.490 2512.3 100.12  1.1249  5.8e+16  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light
+film_density office       MEMS 10 kHz  0.5   409   517    15   90  5.29 73.56 2097.4    65 1.95e+09     78 0.490 2512.3 100.12  1.1249  5.8e+16  loop_vs_class1,class1_ir,exit_window,class1_vis,wall_light

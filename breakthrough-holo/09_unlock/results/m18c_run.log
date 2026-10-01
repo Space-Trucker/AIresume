@@ -1,0 +1,27 @@
+self-test: allocation error 2.9e-16; |facet cost - linprog| max 4.4e-16; worst LP cost at the centre 1.66 (RT6's 2.13 is the worst over 48 volume points): PASS
+  PLM 1.44 kHz                   still, L 3 cm          w  35 um: r_p50   5.8 r_p99.9  51.1 r_max   51.5 um  lost 60/60 in 5 mote-s (95% upper 1.5e+01/s)  sat 5.4e-03
+  PLM 1.44 kHz                   still, L 3 cm          w  40 um: r_p50   5.9 r_p99.9  50.8 r_max   58.7 um  lost 60/60 in 15 mote-s (95% upper 5.0e+00/s)  sat 3.4e-03
+  PLM 1.44 kHz                   still, L 3 cm          w  50 um: r_p50   5.6 r_p99.9  48.7 r_max   74.5 um  lost 60/60 in 99 mote-s (95% upper 7.6e-01/s)  sat 1.6e-03
+  PLM 1.44 kHz                   still, L 3 cm          w  70 um: r_p50   5.2 r_p99.9  20.2 r_max  103.7 um  lost 26/60 in 924 mote-s (95% upper 3.9e-02/s)  sat 9.3e-06
+  PLM 1.44 kHz                   home, L 3 cm           w  35 um: r_p50   8.3 r_p99.9  40.2 r_max   40.5 um  lost 60/60 in 1 mote-s (95% upper 5.2e+01/s)  sat 7.2e-03
+  PLM 1.44 kHz                   home, L 3 cm           w  40 um: r_p50   8.3 r_p99.9  55.0 r_max   57.9 um  lost 60/60 in 6 mote-s (95% upper 1.2e+01/s)  sat 4.1e-03
+  PLM 1.44 kHz                   home, L 3 cm           w  50 um: r_p50   7.4 r_p99.9  56.7 r_max   72.3 um  lost 60/60 in 30 mote-s (95% upper 2.5e+00/s)  sat 1.9e-03
+  PLM 1.44 kHz                   home, L 3 cm           w  70 um: r_p50   7.3 r_p99.9  33.0 r_max  103.8 um  lost 53/60 in 478 mote-s (95% upper 1.4e-01/s)  sat 1.5e-04
+  PLM 1.44 kHz                   quiet office, L 3 cm   w  35 um: r_p50  14.5 r_p99.9  45.7 r_max   46.3 um  lost 60/60 in 0 mote-s (95% upper 1.6e+02/s)  sat 7.8e-03
+  PLM 1.44 kHz                   quiet office, L 3 cm   w  40 um: r_p50  10.6 r_p99.9  29.8 r_max   29.8 um  lost 60/60 in 0 mote-s (95% upper 2.7e+02/s)  sat 7.3e-03
+  PLM 1.44 kHz                   quiet office, L 3 cm   w  50 um: r_p50  12.4 r_p99.9  59.7 r_max   69.6 um  lost 60/60 in 5 mote-s (95% upper 1.4e+01/s)  sat 4.4e-03
+  PLM 1.44 kHz                   quiet office, L 3 cm   w  70 um: r_p50  13.0 r_p99.9  78.0 r_max  101.5 um  lost 60/60 in 81 mote-s (95% upper 9.3e-01/s)  sat 8.8e-04
+  PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  35 um: r_p50   5.5 r_p99.9  43.1 r_max   49.1 um  lost 60/60 in 22 mote-s (95% upper 3.4e+00/s)  sat 4.2e-03
+  PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  40 um: r_p50   5.1 r_p99.9  39.4 r_max   59.4 um  lost 60/60 in 62 mote-s (95% upper 1.2e+00/s)  sat 1.8e-03
+  PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  50 um: r_p50   4.8 r_p99.9  27.5 r_max   65.5 um  lost 54/60 in 496 mote-s (95% upper 1.4e-01/s)  sat 3.8e-04
+  PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  70 um: r_p50   4.3 r_p99.9  13.1 r_max   33.0 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  35 um: r_p50   6.0 r_p99.9  47.7 r_max   52.1 um  lost 60/60 in 17 mote-s (95% upper 4.5e+00/s)  sat 3.3e-03
+  PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  40 um: r_p50   5.6 r_p99.9  44.5 r_max   54.8 um  lost 60/60 in 46 mote-s (95% upper 1.7e+00/s)  sat 1.1e-03
+  PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  50 um: r_p50   5.2 r_p99.9  29.2 r_max   74.2 um  lost 55/60 in 467 mote-s (95% upper 1.5e-01/s)  sat 3.8e-04
+  PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  70 um: r_p50   4.7 r_p99.9  13.5 r_max   20.5 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  35 um: r_p50   7.7 r_p99.9  46.5 r_max   49.2 um  lost 60/60 in 5 mote-s (95% upper 1.5e+01/s)  sat 3.6e-03
+  PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  40 um: r_p50   7.5 r_p99.9  58.3 r_max   59.9 um  lost 60/60 in 14 mote-s (95% upper 5.4e+00/s)  sat 2.4e-03
+  PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  50 um: r_p50   6.9 r_p99.9  44.2 r_max   69.4 um  lost 60/60 in 145 mote-s (95% upper 5.2e-01/s)  sat 3.1e-04
+  PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  70 um: r_p50   6.4 r_p99.9  19.2 r_max   32.0 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  MEMS 3 kHz                     still, L 3 cm          w  35 um: r_p50   3.6 r_p99.9  26.3 r_max   51.3 um  lost 60/60 in 156 mote-s (95% upper 4.8e-01/s)  sat 5.9e-04
+  MEMS 3 kHz                     still, L 3 cm          w  40 um: r_p50   3.4 r_p99.9  14.5 r_max   58.2 um  lost 48/60 in 573 mote-s (95% upper 1.1e-01/s)  sat 2.9e-04
