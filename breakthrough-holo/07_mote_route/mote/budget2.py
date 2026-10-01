@@ -68,7 +68,7 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
            T_max=450.0, C_ph=1.0, force_margin=1.3, R_head=0.075, R_ft_min=20e-6, eta_shape=0.8,
            emitter="cyan_BaSi2O2N2", pump_lam=405, alpha_pump=1.5e5, n_pump=2, pump_R_head=None, pump_throw=2.0,
            jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0, focus_sum=True, pair_factor=1.35,
-           B_focus_pump=None):
+           B_focus_pump=None, trap_ael_factor=1.0):
     """u_air is the TOTAL air speed the trap must hold against (mean flow + fluctuation). Red team 5 (M3): feed-forward
     of a known mean flow removes position error, not the drag it causes, so a 'laminar zone' does not shrink it.
     pair_factor: worst-case pair heat factor = pair_factor/eta. 1.35 includes misaligned pairs and full pair coverage
@@ -136,7 +136,8 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
     P_pump_beam = P_abs_pump / (n_pump * A_pump * icp) if math.isfinite(P_abs_pump) else math.inf
     P_pump_total = N * n_pump * P_pump_beam
     wall_lm = 683 * ph.V(pump_lam) * whitener_gain * P_pump_total * (1 - icp * A_pump)
-    ael_t, ael_p = sf.ael_class1(1550), sf.ael_class1(pump_lam)
+    # trap_ael_factor > 1: hypothetical credit for a certified obstruction interlock (R7 open item; Wi-Charge-type argument)
+    ael_t, ael_p = sf.ael_class1(1550) * trap_ael_factor, sf.ael_class1(pump_lam)
     fails = []
     if runaway or T_face > T_max:
         fails.append("heat")

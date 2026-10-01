@@ -61,6 +61,12 @@ Steered beams = trap + pump; 405 nm pump; dim lab:
 
 **Hypothetical perfect materials** (k = 0.01, 900 K) cut beams by only ~30 % (M12). The Class 1 trap cap then binds.
 
+**Regulatory lever (M14).** If a certified obstruction interlock earns 30 mW per focus:
+- accent ~1 350, sketch ~5 900, film density ~20 300 steered beams;
+- this saturates at ~2–2.5× (heat binds above it).
+
+**All levers stacked** (integrated MEMS steering at $50–250 per channel): a sketch room is ~$0.3–1.5 M and a film-density room ~$1–5 M.
+
 **The bench is the critical path** (`08_bench/BENCH_PLAN.md`, gates G1–G4). B1 was re-planned after red team 5:
 - skin-absorbing reference spheres;
 - a J₁/A input;

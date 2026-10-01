@@ -667,3 +667,11 @@ Two red teams moved the film-density figure from my v1 claim of 4 500 to 50 000 
   - a quiet room.
 - It is not a "very sophisticated projector" in the consumer sense.
 - The two measurements that could move this by large factors are cheap: B1 (force law) and B2 (mote FOM).
+
+**Entry 22, addendum: M14, the regulatory lever.** Certified interlock credit (30 mW per focus) gives:
+- accent ~1 350 steered beams;
+- sketch ~5 900;
+- film density ~20 300;
+- motes at 0.45–0.53 m/s.
+
+Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and saturates. **All levers stacked** (perfect execution, interlock credit, integrated MEMS at $50–250 per channel): an Iron-Man sketch room is ~$0.3–1.5 M and a film-density room ~$1–5 M. Today: ~$4–30 M for a sketch.

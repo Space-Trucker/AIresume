@@ -1,0 +1,9 @@
+interlock credit x1 accent steered 2791 N 558 v 0.21 room_push a 4.0 Pfocus 9.8 mW
+interlock credit x1 sketch steered 12240 N 2448 v 0.21 room_push a 4.0 Pfocus 9.8 mW
+interlock credit x1 film_density steered 50436 N 10087 v 0.21 room_push a 4.0 Pfocus 9.8 mW
+interlock credit x3 accent steered 1346 N 269 v 0.45 room_push a 2.5 Pfocus 16.8 mW
+interlock credit x3 sketch steered 5903 N 1181 v 0.45 room_push a 2.5 Pfocus 16.8 mW
+interlock credit x3 film_density steered 20269 N 4054 v 0.53 room_push a 1.5 Pfocus 20.9 mW
+interlock credit x10 accent steered 1346 N 269 v 0.45 room_push a 2.5 Pfocus 16.8 mW
+interlock credit x10 sketch steered 5903 N 1181 v 0.45 room_push a 2.5 Pfocus 16.8 mW
+interlock credit x10 film_density steered 20269 N 4054 v 0.53 room_push a 1.5 Pfocus 20.9 mW

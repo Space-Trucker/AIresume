@@ -304,3 +304,15 @@ The summed-focus (cornea) correction was found independently by me and by RT5.
 - **Optimistic (errors fixed):** 1 500 / 6 600 / 27 000.
 - **R9-consistent materials:** 4 800 / 21 000 / 87 000; film-exact infeasible.
 - **Demonstrators:** D1 (10 cm glyph) 455 beams, $0.3–2.3 M today. D4 (sketch) 12 200 beams, $8.6–61 M today.
+
+## 14. The regulatory lever: certified interlock credit (M14)
+
+Suppose a certified obstruction interlock (µs beam cut on any intrusion, Wi-Charge-type argument; R7 open item) is accepted as limiting accessible emission, so that per-focus 1550 nm power may exceed 10 mW.
+
+| Per-focus cap | Accent | Sketch | Film density | Mote speed |
+|---|---|---|---|---|
+| 10 mW (×1) | 2 800 | 12 200 | 50 400 | 0.21 m/s |
+| 30 mW (×3) | **1 350** | **5 900** | **20 300** | 0.45–0.53 m/s |
+| 100 mW (×10) | 1 350 | 5 900 | 20 300 | 0.45–0.53 m/s |
+
+Steered beams, best estimate. Above ×3 the mote heat limit binds again. **The regulatory lever is worth ~2–2.5× and saturates.**
