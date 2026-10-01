@@ -1,0 +1,170 @@
+M15 self-test
+  PASS I_hold independent of a (2.5 vs 5 um, skin mote): 8.217e+05 (want 7.759e+05 +- 15%)
+  PASS I_hold vs closed form (T6 B2), slip ~ few %: 2.522e+06 (want 2.46e+06 +- 12%)
+  PASS flux bookkeeping: 0.1885 (want 0.1885 +- 0%)
+  PASS power x modes invariant: 2.627e+10 (want 2.627e+10 +- 0%)
+SELF-TEST PASS
+
+content      room   mote                dev      safety   dmm      N  FOM   dT   r_c   Pfoc   Pvis  Ptrap  Pvis modes/dir  SLMs  zone  vmax  fails
+                                                         um     mW     mW      W     W             tot   kHz  cm/s
+accent       quiet  carbon_aerogel      LCoS_4K  class1   1.0   1000  1.9  148    83  119.1  1.187  171.9  1.98  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,wall_light
+accent       quiet  carbon_aerogel      LCoS_4K  class1   2.0    500  1.9  148    83  119.1  2.373   86.0  1.98  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,wall_light
+accent       quiet  carbon_aerogel      LCoS_4K  curtain  1.0   1000  1.9  148    83  119.1  1.187  171.9  1.98  4.58e+07    31   3.6   1.0  wall_light
+accent       quiet  carbon_aerogel      LCoS_4K  curtain  2.0    500  1.9  148    83  119.1  2.373   86.0  1.98  4.58e+07    31   3.6   1.0  wall_light
+accent       quiet  carbon_aerogel      PLM_MEMS class1   1.0   1000  1.9  148    21    7.4  0.074   12.9  0.15  7.33e+08  3385  14.4   1.0  wall_light
+accent       quiet  carbon_aerogel      PLM_MEMS class1   2.0    500  1.9  148    21    7.4  0.148    6.4  0.15  7.33e+08  3385  14.4   1.0  wall_light
+accent       quiet  carbon_aerogel      PLM_MEMS curtain  1.0   1000  1.9  148    21    7.4  0.074   12.9  0.15  7.33e+08  3385  14.4   1.0  wall_light
+accent       quiet  carbon_aerogel      PLM_MEMS curtain  2.0    500  1.9  148    21    7.4  0.148    6.4  0.15  7.33e+08  3385  14.4   1.0  wall_light
+accent       quiet  carbon_aerogel_pess LCoS_4K  class1   1.0   1000  1.0  243    83  251.4  1.978  362.8  3.30  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,wall_light
+accent       quiet  carbon_aerogel_pess LCoS_4K  class1   2.0    500  1.0  243    83  251.4  3.956  181.4  3.30  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,wall_light
+accent       quiet  carbon_aerogel_pess LCoS_4K  curtain  1.0   1000  1.0  243    83  251.4  1.978  362.8  3.30  4.58e+07    31   3.6   1.0  wall_light
+accent       quiet  carbon_aerogel_pess LCoS_4K  curtain  2.0    500  1.0  243    83  251.4  3.956  181.4  3.30  4.58e+07    31   3.6   1.0  vis_curtain,vis_cut_dose,wall_light
+accent       normal carbon_aerogel      LCoS_4K  class1   1.0   1000  1.9  354   250 3129.1 10.680 4516.5 17.80  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel      LCoS_4K  class1   2.0    500  1.9  354   250 3129.1 21.361 2258.2 17.80  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel      LCoS_4K  curtain  1.0   1000  1.9  354   250 3129.1 10.680 4516.5 17.80  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel      LCoS_4K  curtain  2.0    500  1.9  354   250 3129.1 21.361 2258.2 17.80  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel      PLM_MEMS class1   1.0   1000  1.9  354    62  195.6  0.668  338.7  1.34  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,wall_light
+accent       normal carbon_aerogel      PLM_MEMS class1   2.0    500  1.9  354    62  195.6  1.335  169.4  1.34  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,wall_light
+accent       normal carbon_aerogel      PLM_MEMS curtain  1.0   1000  1.9  354    62  195.6  0.668  338.7  1.34  8.15e+07   376  14.4   3.0  heat,wall_light
+accent       normal carbon_aerogel      PLM_MEMS curtain  2.0    500  1.9  354    62  195.6  1.335  169.4  1.34  8.15e+07   376  14.4   3.0  heat,wall_light
+accent       normal carbon_aerogel_pess LCoS_4K  class1   1.0   1000  1.0  543   250 6439.6 17.801 9294.8 29.67  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel_pess LCoS_4K  class1   2.0    500  1.0  543   250 6439.6 35.601 4647.4 29.67  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel_pess LCoS_4K  curtain  1.0   1000  1.0  543   250 6439.6 17.801 9294.8 29.67  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+accent       normal carbon_aerogel_pess LCoS_4K  curtain  2.0    500  1.0  543   250 6439.6 35.601 4647.4 29.67  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel      LCoS_4K  class1   1.0   5000  1.9  148    83  119.1  1.187  859.7  9.89  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel      LCoS_4K  class1   2.0   2500  1.9  148    83  119.1  2.373  429.8  9.89  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel      LCoS_4K  curtain  1.0   5000  1.9  148    83  119.1  1.187  859.7  9.89  4.58e+07    31   3.6   1.0  trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel      LCoS_4K  curtain  2.0   2500  1.9  148    83  119.1  2.373  429.8  9.89  4.58e+07    31   3.6   1.0  vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel      PLM_MEMS class1   1.0   5000  1.9  148    21    7.4  0.074   64.5  0.74  7.33e+08  3385  14.4   1.0  wall_light
+sketch       quiet  carbon_aerogel      PLM_MEMS class1   2.0   2500  1.9  148    21    7.4  0.148   32.2  0.74  7.33e+08  3385  14.4   1.0  wall_light
+sketch       quiet  carbon_aerogel      PLM_MEMS curtain  1.0   5000  1.9  148    21    7.4  0.074   64.5  0.74  7.33e+08  3385  14.4   1.0  wall_light
+sketch       quiet  carbon_aerogel      PLM_MEMS curtain  2.0   2500  1.9  148    21    7.4  0.148   32.2  0.74  7.33e+08  3385  14.4   1.0  wall_light
+sketch       quiet  carbon_aerogel_pess LCoS_4K  class1   1.0   5000  1.0  243    83  251.4  1.978 1814.1 16.48  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel_pess LCoS_4K  class1   2.0   2500  1.0  243    83  251.4  3.956  907.1 16.48  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel_pess LCoS_4K  curtain  1.0   5000  1.0  243    83  251.4  1.978 1814.1 16.48  4.58e+07    31   3.6   1.0  trap_exit_window,vis_exit_window,wall_light
+sketch       quiet  carbon_aerogel_pess LCoS_4K  curtain  2.0   2500  1.0  243    83  251.4  3.956  907.1 16.48  4.58e+07    31   3.6   1.0  vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      LCoS_4K  class1   1.0   5000  1.9  354   250 3129.1 10.680 22582.3 89.00  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      LCoS_4K  class1   2.0   2500  1.9  354   250 3129.1 21.361 11291.1 89.00  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      LCoS_4K  curtain  1.0   5000  1.9  354   250 3129.1 10.680 22582.3 89.00  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      LCoS_4K  curtain  2.0   2500  1.9  354   250 3129.1 21.361 11291.1 89.00  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      PLM_MEMS class1   1.0   5000  1.9  354    62  195.6  0.668 1693.7  6.68  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      PLM_MEMS class1   2.0   2500  1.9  354    62  195.6  1.335  846.8  6.68  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      PLM_MEMS curtain  1.0   5000  1.9  354    62  195.6  0.668 1693.7  6.68  8.15e+07   376  14.4   3.0  heat,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel      PLM_MEMS curtain  2.0   2500  1.9  354    62  195.6  1.335  846.8  6.68  8.15e+07   376  14.4   3.0  heat,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel_pess LCoS_4K  class1   1.0   5000  1.0  543   250 6439.6 17.801 46474.0 148.34  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel_pess LCoS_4K  class1   2.0   2500  1.0  543   250 6439.6 35.601 23237.0 148.34  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel_pess LCoS_4K  curtain  1.0   5000  1.0  543   250 6439.6 17.801 46474.0 148.34  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+sketch       normal carbon_aerogel_pess LCoS_4K  curtain  2.0   2500  1.0  543   250 6439.6 35.601 23237.0 148.34  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel      LCoS_4K  class1   1.0  30000  1.9  148    83  119.1  1.582 5158.1 79.11  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel      LCoS_4K  class1   2.0  15000  1.9  148    83  119.1  3.165 2579.1 79.11  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel      LCoS_4K  curtain  1.0  30000  1.9  148    83  119.1  1.582 5158.1 79.11  4.58e+07    31   3.6   1.0  trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel      LCoS_4K  curtain  2.0  15000  1.9  148    83  119.1  3.165 2579.1 79.11  4.58e+07    31   3.6   1.0  trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel      PLM_MEMS class1   1.0  30000  1.9  148    21    7.4  0.099  386.9  5.93  7.33e+08  3385  14.4   1.0  wall_light
+film_density quiet  carbon_aerogel      PLM_MEMS class1   2.0  15000  1.9  148    21    7.4  0.198  193.4  5.93  7.33e+08  3385  14.4   1.0  wall_light
+film_density quiet  carbon_aerogel      PLM_MEMS curtain  1.0  30000  1.9  148    21    7.4  0.099  386.9  5.93  7.33e+08  3385  14.4   1.0  wall_light
+film_density quiet  carbon_aerogel      PLM_MEMS curtain  2.0  15000  1.9  148    21    7.4  0.198  193.4  5.93  7.33e+08  3385  14.4   1.0  wall_light
+film_density quiet  carbon_aerogel_pess LCoS_4K  class1   1.0  30000  1.0  243    83  251.4  2.637 10884.7 131.86  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel_pess LCoS_4K  class1   2.0  15000  1.0  243    83  251.4  5.274 5442.3 131.86  4.58e+07    31   3.6   1.0  trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel_pess LCoS_4K  curtain  1.0  30000  1.0  243    83  251.4  2.637 10884.7 131.86  4.58e+07    31   3.6   1.0  trap_exit_window,vis_exit_window,wall_light
+film_density quiet  carbon_aerogel_pess LCoS_4K  curtain  2.0  15000  1.0  243    83  251.4  5.274 5442.3 131.86  4.58e+07    31   3.6   1.0  vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      LCoS_4K  class1   1.0  30000  1.9  354   250 3129.1 14.241 135493.5 712.03  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      LCoS_4K  class1   2.0  15000  1.9  354   250 3129.1 28.481 67746.8 712.03  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      LCoS_4K  curtain  1.0  30000  1.9  354   250 3129.1 14.241 135493.5 712.03  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      LCoS_4K  curtain  2.0  15000  1.9  354   250 3129.1 28.481 67746.8 712.03  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      PLM_MEMS class1   1.0  30000  1.9  354    62  195.6  0.890 10162.0 53.40  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      PLM_MEMS class1   2.0  15000  1.9  354    62  195.6  1.780 5081.0 53.40  8.15e+07   376  14.4   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      PLM_MEMS curtain  1.0  30000  1.9  354    62  195.6  0.890 10162.0 53.40  8.15e+07   376  14.4   3.0  heat,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel      PLM_MEMS curtain  2.0  15000  1.9  354    62  195.6  1.780 5081.0 53.40  8.15e+07   376  14.4   3.0  heat,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_pess LCoS_4K  class1   1.0  30000  1.0  543   250 6439.6 23.734 278844.2 1186.71  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_pess LCoS_4K  class1   2.0  15000  1.0  543   250 6439.6 47.468 139422.1 1186.71  5.09e+06     3   3.6   3.0  heat,trap_focus_class1,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_pess LCoS_4K  curtain  1.0  30000  1.0  543   250 6439.6 23.734 278844.2 1186.71  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_pess LCoS_4K  curtain  2.0  15000  1.0  543   250 6439.6 47.468 139422.1 1186.71  5.09e+06     3   3.6   3.0  heat,trap_curtain_threshold,vis_curtain,vis_cut_dose,trap_exit_window,vis_exit_window,wall_light
+
+wrote results/m15_lcsv.json
+
+M15b split control (fast amplitude plane 20 kHz), curtain safety, cost-optimised spot radii (r_c, r_v)
+content      room   mote                 basis   dmm      N   dT   r_c  r_v   Pfoc   Pvis   P_IR  P_vis    M/dir    M_vis  vmax   lab$k  vol$k  fails
+accent       quiet  carbon_aerogel       lab     2.0    500  148   170   27  495.7  244.6  357.8   0.20  1.1e+07  4.4e+08   2.0     754     34  OK
+accent       quiet  carbon_aerogel       volume  2.0    500  148   121   27  251.2  244.6  181.3   0.20  2.2e+07  4.4e+08   1.5     789     33  OK
+accent       quiet  carbon_aerogel_white lab     2.0    500  174   152   82  478.0  381.5  345.0   0.32  1.4e+07  4.8e+07   1.8     333     23  OK
+accent       quiet  carbon_aerogel_white volume  2.0    500  174   121   82  303.8  381.5  219.2   0.32  2.2e+07  4.8e+07   1.5     360     22  OK
+accent       quiet  carbon_aerogel_pess  lab     2.0    500  243   108   20  422.5  233.1  304.9   0.19  2.7e+07  7.8e+08   1.3    1217     46  OK
+accent       quiet  carbon_aerogel_pess  volume  2.0    500  243   108   20  422.5  233.1  304.9   0.19  2.7e+07  7.8e+08   1.3    1217     46  OK
+accent       calm   carbon_aerogel       lab     2.0    500  206   136   27  467.5  244.6  337.4   0.20  1.7e+07  4.4e+08   1.6     791     35  OK
+accent       calm   carbon_aerogel       volume  2.0    500  206   108   27  297.1  244.6  214.4   0.20  2.7e+07  4.4e+08   1.3     832     35  OK
+accent       calm   carbon_aerogel_white lab     2.0    500  241   121   82  449.2  381.5  324.2   0.32  2.2e+07  4.8e+07   1.5     381     24  OK
+accent       calm   carbon_aerogel_white volume  2.0    500  241   108   82  358.1  381.5  258.5   0.32  2.7e+07  4.8e+07   1.3     404     24  OK
+accent       calm   carbon_aerogel_pess  lab     2.0    500  330    36   24   68.2  324.6   49.2   0.27  2.5e+08  5.6e+08   0.4    2383     74  heat
+accent       calm   carbon_aerogel_pess  volume  2.0    500  330    36   24   68.2  324.6   49.2   0.27  2.5e+08  5.6e+08   0.4    2383     74  heat
+accent       normal carbon_aerogel       lab     2.0    500  354    72   48  256.8  779.1  185.3   0.65  6.2e+07  1.4e+08   0.9     721     31  heat,vis_spot_class1
+accent       normal carbon_aerogel       volume  2.0    500  354    72   48  256.8  779.1  185.3   0.65  6.2e+07  1.4e+08   0.9     721     31  heat,vis_spot_class1
+accent       normal carbon_aerogel_white lab     2.0    500  407    72   48  307.9  129.9  222.2   0.11  6.2e+07  1.4e+08   0.9     728     32  heat
+accent       normal carbon_aerogel_white volume  2.0    500  407    72   48  307.9  129.9  222.2   0.11  6.2e+07  1.4e+08   0.9     728     32  heat
+accent       normal carbon_aerogel_pess  lab     2.0    500  543    72   48  528.5 1298.6  381.4   1.08  6.2e+07  1.4e+08   0.9     760     35  heat,trap_curtain_threshold,vis_spot_class1
+accent       normal carbon_aerogel_pess  volume  2.0    500  543    72   48  528.5 1298.6  381.4   1.08  6.2e+07  1.4e+08   0.9     760     35  heat,trap_curtain_threshold,vis_spot_class1
+sketch       quiet  carbon_aerogel       lab     2.0   2500  148   108   27  200.2  244.6  722.5   1.02  2.7e+07  4.4e+08   1.3     934     45  OK
+sketch       quiet  carbon_aerogel       volume  2.0   2500  148    86   27  127.2  244.6  459.2   1.02  4.3e+07  4.4e+08   1.0     985     42  OK
+sketch       quiet  carbon_aerogel_white lab     2.0   2500  174   108   62  242.2  218.1  873.9   0.91  2.7e+07  8.3e+07   1.3     567     37  OK
+sketch       quiet  carbon_aerogel_white volume  2.0   2500  174    77   62  122.7  218.1  442.7   0.91  5.4e+07  8.3e+07   0.9     656     33  OK
+sketch       quiet  carbon_aerogel_pess  lab     2.0   2500  243    77   20  214.1  233.1  772.4   0.97  5.4e+07  7.8e+08   0.9    1486     61  OK
+sketch       quiet  carbon_aerogel_pess  volume  2.0   2500  243    69   20  170.6  233.1  615.8   0.97  6.8e+07  7.8e+08   0.8    1545     60  OK
+sketch       calm   carbon_aerogel       lab     2.0   2500  206    96   27  236.8  244.6  854.6   1.02  3.4e+07  4.4e+08   1.2    1006     49  OK
+sketch       calm   carbon_aerogel       volume  2.0   2500  206    77   27  150.5  244.6  543.1   1.02  5.4e+07  4.4e+08   0.9    1074     46  OK
+sketch       calm   carbon_aerogel_white lab     2.0   2500  241    86   62  227.6  218.1  821.3   0.91  4.3e+07  8.3e+07   1.0     659     39  OK
+sketch       calm   carbon_aerogel_white volume  2.0   2500  241    69   62  144.6  218.1  521.9   0.91  6.8e+07  8.3e+07   0.8     762     37  OK
+sketch       calm   carbon_aerogel_pess  lab     2.0   2500  330    36   24   68.2  324.6  246.0   1.35  2.5e+08  5.6e+08   0.4    2423     78  heat
+sketch       calm   carbon_aerogel_pess  volume  2.0   2500  330    36   24   68.2  324.6  246.0   1.35  2.5e+08  5.6e+08   0.4    2423     78  heat
+sketch       normal carbon_aerogel       lab     2.0   2500  354    72   48  256.8  779.1  926.7   3.25  6.2e+07  1.4e+08   0.9     870     46  heat,vis_spot_class1,trap_exit_window,vis_exit_window
+sketch       normal carbon_aerogel       volume  2.0   2500  354    72   48  256.8  779.1  926.7   3.25  6.2e+07  1.4e+08   0.9     870     46  heat,vis_spot_class1,trap_exit_window,vis_exit_window
+sketch       normal carbon_aerogel_white lab     2.0   2500  407    72   48  307.9  129.9 1111.1   0.54  6.2e+07  1.4e+08   0.9     906     50  heat,trap_exit_window
+sketch       normal carbon_aerogel_white volume  2.0   2500  407    72   48  307.9  129.9 1111.1   0.54  6.2e+07  1.4e+08   0.9     906     50  heat,trap_exit_window
+sketch       normal carbon_aerogel_pess  lab     2.0   2500  543    72   48  528.5 1298.6 1907.1   5.41  6.2e+07  1.4e+08   0.9    1067     66  heat,trap_curtain_threshold,vis_spot_class1,trap_exit_window,vis_exit_window
+sketch       normal carbon_aerogel_pess  volume  2.0   2500  543    72   48  528.5 1298.6 1907.1   5.41  6.2e+07  1.4e+08   0.9    1067     66  heat,trap_curtain_threshold,vis_spot_class1,trap_exit_window,vis_exit_window
+film_density quiet  carbon_aerogel       lab     2.0  15000  148    24   16    9.8  115.4  211.7   2.89  5.6e+08  1.3e+09   0.3    5232    155  vis_exit_window
+film_density quiet  carbon_aerogel       volume  2.0  15000  148    24   16    9.8  115.4  211.7   2.89  5.6e+08  1.3e+09   0.3    5232    155  vis_exit_window
+film_density quiet  carbon_aerogel_white lab     2.0  15000  174    44   27   39.5   54.4  855.3   1.36  1.7e+08  4.4e+08   0.5    1884     73  OK
+film_density quiet  carbon_aerogel_white volume  2.0  15000  174    44   27   39.5   54.4  855.3   1.36  1.7e+08  4.4e+08   0.5    1884     73  OK
+film_density quiet  carbon_aerogel_pess  lab     2.0  15000  243    24   16   20.6  192.4  446.7   4.81  5.6e+08  1.3e+09   0.3    5280    159  vis_exit_window
+film_density quiet  carbon_aerogel_pess  volume  2.0  15000  243    24   16   20.6  192.4  446.7   4.81  5.6e+08  1.3e+09   0.3    5280    159  vis_exit_window
+film_density calm   carbon_aerogel       lab     2.0  15000  206    36   24   32.6  259.7  706.7   6.49  2.5e+08  5.6e+08   0.4    2517     88  vis_exit_window
+film_density calm   carbon_aerogel       volume  2.0  15000  206    36   24   32.6  259.7  706.7   6.49  2.5e+08  5.6e+08   0.4    2517     88  vis_exit_window
+film_density calm   carbon_aerogel_white lab     2.0  15000  241    36   27   39.3   54.4  851.8   1.36  2.5e+08  4.4e+08   0.4    2419     87  OK
+film_density calm   carbon_aerogel_white volume  2.0  15000  241    36   27   39.3   54.4  851.8   1.36  2.5e+08  4.4e+08   0.4    2419     87  OK
+film_density calm   carbon_aerogel_pess  lab     2.0  15000  330    36   24   68.2  432.9 1476.3  10.82  2.5e+08  5.6e+08   0.4    2673    104  heat,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density calm   carbon_aerogel_pess  volume  2.0  15000  330    36   24   68.2  432.9 1476.3  10.82  2.5e+08  5.6e+08   0.4    2673    104  heat,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel       lab     2.0  15000  354    72   48  256.8 1038.9 5560.0  25.97  6.2e+07  1.4e+08   0.9    1808    140  heat,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel       volume  2.0  15000  354    72   48  256.8 1038.9 5560.0  25.97  6.2e+07  1.4e+08   0.9    1808    140  heat,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_white lab     2.0  15000  407    72   48  307.9  173.1 6666.3   4.33  6.2e+07  1.4e+08   0.9    2019    161  heat,trap_exit_window,vis_exit_window
+film_density normal carbon_aerogel_white volume  2.0  15000  407    72   48  307.9  173.1 6666.3   4.33  6.2e+07  1.4e+08   0.9    2019    161  heat,trap_exit_window,vis_exit_window
+film_density normal carbon_aerogel_pess  lab     2.0  15000  543    72   48  528.5 1731.4 11442.4  43.29  6.2e+07  1.4e+08   0.9    2993    258  heat,trap_curtain_threshold,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+film_density normal carbon_aerogel_pess  volume  2.0  15000  543    72   48  528.5 1731.4 11442.4  43.29  6.2e+07  1.4e+08   0.9    2993    258  heat,trap_curtain_threshold,vis_spot_class1,trap_exit_window,vis_exit_window,wall_light
+
+M15c practical cap: <= 100 W of 1550 nm in total (volume prices); mote FOM from alpha*a
+content      room   mote                   a  FOM   dT  dmm      N   r_c  r_v   Pfoc   P_IR  P_vis  px_total  vmax   lab$k  vol$k  fails
+accent       quiet  carbon_aerogel_white   5  1.6  174  3.0    333    96   62  193.1   92.9   0.18   2.9e+08   1.2     456     23  OK
+accent       quiet  carbon_aerogel_white  10  2.5  203  3.0    333   136  108  203.0   97.6   0.14   1.3e+08   1.6     284     18  OK
+accent       quiet  carbon_aerogel_pess   10  1.7  261  3.0    333    30   16   14.4    6.9   0.03   3.4e+09   0.4    3838    114  heat
+accent       calm   carbon_aerogel_white   5  1.6  241  3.0    333    77   62  181.4   87.3   0.18   4.1e+08   0.9     584     26  OK
+accent       calm   carbon_aerogel_white  10  2.5  277  3.0    333   108  108  190.5   91.6   0.14   1.9e+08   1.3     348     20  OK
+accent       calm   carbon_aerogel_pess   10  1.7  351  3.0    333    36   24   30.1   14.5   0.07   2.0e+09   0.4    2376     74  heat
+accent       normal carbon_aerogel_white   5  1.6  407  3.0    333    72   48  307.9  148.1   0.11   5.1e+08   0.9     713     30  heat,ir_power_cap
+accent       normal carbon_aerogel_white  10  2.5  460  3.0    333    72   48  163.4   78.6   0.03   5.1e+08   0.9     699     29  heat
+accent       normal carbon_aerogel_pess   10  1.7  569  3.0    333    72   48  232.5  111.8   0.27   5.1e+08   0.9     706     30  heat,vis_spot_class1,ir_power_cap
+sketch       quiet  carbon_aerogel_white   5  1.6  174  3.0   1667    44   62   39.5   95.0   0.91   1.1e+09   0.5    1334     47  OK
+sketch       quiet  carbon_aerogel_white  10  2.5  203  3.0   1667    61  108   41.5   99.9   0.69   5.4e+08   0.7     729     30  OK
+sketch       quiet  carbon_aerogel_pess   10  1.7  261  3.0   1667    30   16   14.4   34.7   0.15   3.4e+09   0.4    3844    114  heat
+sketch       calm   carbon_aerogel_white   5  1.6  241  3.0   1667    36   62   39.3   94.6   0.91   1.6e+09   0.4    1869     61  OK
+sketch       calm   carbon_aerogel_white  10  2.5  277  3.0   1667    49  108   39.0   93.8   0.69   8.3e+08   0.6    1049     39  OK
+sketch       calm   carbon_aerogel_pess   10  1.7  351  3.0   1667    36   24   30.1   72.5   0.34   2.0e+09   0.4    2387     75  heat
+sketch       normal carbon_aerogel_white   5  1.6  407  3.0   1667    72   48  307.9  740.7   0.54   5.1e+08   0.9     832     42  heat,ir_power_cap
+sketch       normal carbon_aerogel_white  10  2.5  460  3.0   1667    72   48  163.4  393.2   0.14   5.1e+08   0.9     762     35  heat,ir_power_cap
+sketch       normal carbon_aerogel_pess   10  1.7  569  3.0   1667    72   48  232.5  559.2   1.35   5.1e+08   0.9     796     39  heat,vis_spot_class1,ir_power_cap
+film_density quiet  carbon_aerogel_white   5  1.6  174  3.0  10000    24   16   11.8  170.7   0.48   4.6e+09   0.3    5223    154  ir_power_cap
+film_density quiet  carbon_aerogel_white  10  2.5  203  3.0  10000    30   16    9.9  143.5   0.12   3.4e+09   0.4    3865    116  ir_power_cap
+film_density quiet  carbon_aerogel_pess   10  1.7  261  3.0  10000    30   16   14.4  208.3   1.20   3.4e+09   0.4    3879    118  heat,ir_power_cap
+film_density calm   carbon_aerogel_white   5  1.6  241  3.0  10000    36   24   39.3  567.9   1.08   2.0e+09   0.4    2487     85  ir_power_cap
+film_density calm   carbon_aerogel_white  10  2.5  277  3.0  10000    36   24   20.9  302.1   0.27   2.0e+09   0.4    2433     79  ir_power_cap
+film_density calm   carbon_aerogel_pess   10  1.7  351  3.0  10000    36   24   30.1  435.0   2.71   2.0e+09   0.4    2461     82  heat,vis_exit_window,ir_power_cap
+film_density normal carbon_aerogel_white   5  1.6  407  3.0  10000    72   48  307.9 4444.2   4.33   5.1e+08   0.9    1574    116  heat,trap_exit_window,vis_exit_window,ir_power_cap
+film_density normal carbon_aerogel_white  10  2.5  460  3.0  10000    72   48  163.4 2359.1   1.08   5.1e+08   0.9    1156     75  heat,trap_exit_window,ir_power_cap
+film_density normal carbon_aerogel_pess   10  1.7  569  3.0  10000    72   48  232.5 3355.2  10.82   5.1e+08   0.9    1360     95  heat,vis_spot_class1,trap_exit_window,vis_exit_window,ir_power_cap,wall_light

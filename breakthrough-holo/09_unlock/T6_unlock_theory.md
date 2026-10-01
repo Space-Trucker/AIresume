@@ -98,13 +98,34 @@ For comparison, v4 POV needs ~12,200 steered beams for a sketch ($8.6–61M) and
 3. Holographic parallelism replaces one galvo per beam.
 4. Terminated scattering removes the 405 nm pump and phosphor, so black or carbon motes are allowed.
 
+**Third pass: mote FOM computed from optical depth (M15c, `results/m15c_capped.json`).**
+
+Carbon aerogel (5 % solid) is a **volume** absorber with α ≈ 3×10⁵ m⁻¹ [ESTIMATE]. At a = 5 µm, αa = 1.5, which gives J₁/A ≈ 0.2 and FOM ≈ 1.6 with a white coat. At a = 10 µm, J₁/A ≈ 0.30 and FOM ≈ 2.5. That corrects the FOM 4.1 I had assumed in passes 1–2.
+
+With a 100 W IR cap and δ = 3 mm:
+
+| Content | quiet (0.10 m/s) | calm (0.15) | normal (0.30) |
+|---|---|---|---|
+| Accent, 10 µm white carbon | ✓ 98 W, 1.3×10⁸ px, $18k vol / $0.28M lab | ✓ | ✗ heat (ΔT 460 K) |
+| Sketch, 10 µm white carbon | ✓ 100 W, 5.4×10⁸ px, $30k / $0.73M | ✓ 94 W, 8.3×10⁸ px, $39k / $1.05M | ✗ (393 W, heat) |
+| Film density, 10 µm white carbon | ✗ 144 W | ✗ 302 W | ✗ |
+| Sketch, ITO-aerogel mote (FOM 5.3, unmade) | ✓ 94 W, 3.4×10⁸ px | ✓ 89 W | ✓ at 193 W |
+| Film density, ITO-aerogel mote | ✓ 92 W, 2.0×10⁹ px, $75k / $2.4M | ✓ at 173 W | ✗ (> 1 kW; limited by the fast loop's jitter) |
+
+**Reading.**
+- With a **known-material-class mote** (carbon aerogel, still unmeasured at µm size), the model reaches the **Iron-Man sketch in quiet or calm rooms**.
+- **Film density** needs the better mote or ~150–300 W.
+- **Normal rooms** need a faster force loop: jitter ∝ u/bandwidth sets r_c ≥ 72 µm at 0.3 m/s.
+
 **Known gaps** (to be closed before any grade change):
 1. **Black motes scatter weakly** (side albedo ~5 %), so wall stray light fails at 1 % leakage. Fixes to test:
    - tighter illumination spots, co-centred by the fast loop;
    - white-coated carbon motes (q ≈ 0.3);
    - receiver leakage ≤ 10⁻³.
 2. **Hologram pixel count.** Slow LCoS is enough once split control is used, but film density needs ~3×10⁹ pixels, about 330 4K panels. Fast per-spot amplitude control needs one DMD per head at an intermediate field plane. Spots at different depths must stay localised there; my estimate is ~10 px blur at 1/50 demagnification. Per-mote position sensing at ≥ 20 kHz for up to 10⁴ motes is assumed, not designed (event cameras or receiver detectors). The jitter model u/(2π·bw) assumes ~80 µs loop latency; 150–200 µs would double r_c and the IR power.
-3. **Content speed.** Holographic static voxels move at ~1–6 cm/s. Hand-manipulated content needs hybrid POV channels.
+3. **Content speed.** Holographic static voxels move at ~0.3–2 cm/s (r_c × hologram rate / 3). Hand-manipulated content needs hybrid POV channels, per-tile fast rigid transforms (a fast steering mirror for translation, focus for depth), or reduced density while moving.
+5. **Hand occlusion.** A hand blocks every beam it crosses, and the curtain cuts them. With only 6 octahedral heads, a mote that loses its +x head cannot be pushed in −x. Robust touch needs 8–12 heads, as in v4's R12 rig, which costs pixels and power ∝ heads.
+6. **Sensing.** Per-mote 3D position to ~10 µm at ≥ 20 kHz for 10³–10⁴ motes. A candidate is several event cameras with modulated illumination: ~2×10⁸ position samples per second in total. This needs design.
 4. **Safety argument.** Whether IEC 60825-1/-4 accept a monitored-beam interlock as the primary safeguard for a consumer product.
 
 ## 4. What would make the theory "complete"

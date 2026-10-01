@@ -29,18 +29,31 @@ OCTA = dict(h_worst=math.sqrt(3), h_mean=1.5, single=1.0, heads=6)
 
 # motes: j1A, k_eff (W/m/K), A_trap (1550 nm), q_side (fraction of pi a^2 scattered into side directions at ~500 nm),
 # T_max (K), density (kg/m^3)
+# motes: alpha (1/m, effective absorption at 1550 nm; J1/A and A follow from alpha*a via physics.py), k_eff (W/m/K),
+# q_side (fraction of pi a^2 scattered into side directions at ~500 nm), T_max (K), density (kg/m^3), j1_factor (<1 if a
+# coating adds thermal resistance in front of the absorber)
 MOTES = {
-    # carbon aerogel (RF-derived), rho ~100 kg/m^3: k_eff 0.03-0.05 W/m/K at 1 atm (bulk literature range; not measured at
-    # um size), glassy-carbon-like absorption diluted by 5 % solid -> alpha ~ 5e5-1.5e6 1/m, skin-like at a = 5 um.
-    # q_side: a black sphere's side scatter is mostly surface reflection (Fresnel ~4-8 %) [ESTIMATE].
-    "carbon_aerogel": dict(j1A=0.40, k_eff=0.045, A=0.95, q_side=0.05, T_max=600.0, rho=100.0),
-    "carbon_aerogel_pess": dict(j1A=0.30, k_eff=0.08, A=0.90, q_side=0.03, T_max=550.0, rho=150.0),
-    # carbon-aerogel core with a thin porous white silica shell: scatters visible (q ~0.3 [ESTIMATE]); the shell's
-    # thermal resistance lowers J1/A somewhat and adds conduction (k_eff +0.01) [ESTIMATE]
-    "carbon_aerogel_white": dict(j1A=0.36, k_eff=0.055, A=0.93, q_side=0.30, T_max=600.0, rho=110.0),
-    # v4 reference mote (ITO skin on silica aerogel), white-ish: higher side scatter
-    "ito_aerogel": dict(j1A=0.486, k_eff=0.04, A=1.0, q_side=0.3, T_max=600.0, rho=150.0),
+    # carbon aerogel (RF-derived, ~5 % solid, rho ~100 kg/m^3): k_eff 0.03-0.05 W/m/K at 1 atm (bulk literature range; not
+    # measured at um size). Effective absorption ~ 5 % x glassy-carbon alpha (6.5e6 1/m) ~ 3e5 1/m [ESTIMATE, 2e5-6e5]:
+    # a VOLUME absorber at a = 5 um (alpha*a = 1.5), so J1/A ~ 0.2 and FOM ~ 2 (not the skin value 0.4-0.5).
+    "carbon_aerogel": dict(alpha=3e5, k_eff=0.045, q_side=0.05, T_max=600.0, rho=100.0, j1_factor=1.0),
+    "carbon_aerogel_pess": dict(alpha=2e5, k_eff=0.08, q_side=0.03, T_max=550.0, rho=150.0, j1_factor=1.0),
+    # with a thin porous white silica shell: visible side scatter q ~ 0.3 [ESTIMATE]; shell lowers J1 ~10 %, adds k
+    "carbon_aerogel_white": dict(alpha=3e5, k_eff=0.055, q_side=0.30, T_max=600.0, rho=110.0, j1_factor=0.9),
+    # v4 reference mote (ITO island skin on silica aerogel): skin absorber, J1/A 0.486 regardless of size
+    "ito_aerogel": dict(alpha=None, j1A=0.486, A=1.0, k_eff=0.04, q_side=0.3, T_max=600.0, rho=150.0, j1_factor=1.0),
 }
+
+
+def mote_props(name, a):
+    Mt = MOTES[name]
+    if Mt.get("alpha"):
+        j1A = ph.j1_over_A(Mt["alpha"] * a) * Mt["j1_factor"]
+        A = ph.absorptance(Mt["alpha"] * a)
+    else:
+        j1A, A = Mt["j1A"], Mt["A"]
+    return dict(Mt, j1A=j1A, A=A)
+
 
 ROOMS = {"quiet": dict(u=0.10, u_res=0.01), "calm": dict(u=0.15, u_res=0.015), "normal": dict(u=0.30, u_res=0.03)}
 DEVICES = {  # hologram device: pixels, frame rate (Hz), efficiency into the spots
@@ -54,7 +67,7 @@ def design(content="sketch", delta=1.5e-3, a=5e-6, mote="carbon_aerogel", room="
            D_field=1.0, safety="curtain", theta_det=0.02, t_cut=1.4e-3, C_ph=0.85, force_margin=1.3, eta_shape=0.8,
            v_content=0.0, k_track=3.0, R_head=0.25, leak=0.01, n_illum=1, f_zone_max=2e4, r_c_min_mult=3.0):
     L, S, _duty = b2.CONTENT[content]
-    Mt, Rm, Dv = MOTES[mote], ROOMS[room], DEVICES[device]
+    Mt, Rm, Dv = mote_props(mote, a), ROOMS[room], DEVICES[device]
     N = S / delta
     # --- holding: force against drafts + content motion, octahedral pushes, iterate mote temperature
     Tm = ph.T0 + 30
@@ -141,12 +154,14 @@ def selftest():
 
     print("M15 self-test")
     # 1. I_unit is independent of mote size (T6 B2) at fixed temperature: compare a = 2.5 and 5 um
-    d1 = design(a=2.5e-6, r_c_min_mult=1.0)
+    # (skin absorber, so FOM itself does not depend on a; for volume absorbers J1/A grows with alpha*a)
+    d1 = design(a=2.5e-6, r_c_min_mult=1.0, mote="ito_aerogel")
+    d1b = design(a=5e-6, r_c_min_mult=1.0, mote="ito_aerogel")
+    chk("I_hold independent of a (2.5 vs 5 um, skin mote)", d1["I_unit_Wm2"], d1b["I_unit_Wm2"], 0.15)
     d2 = design(a=5e-6, r_c_min_mult=1.0)
-    chk("I_hold independent of a (2.5 vs 5 um)", d1["I_unit_Wm2"], d2["I_unit_Wm2"], 0.15)
     # 2. closed form I = 4 rhoT w/(3 C mu FOM A Cc) x margin (eta = 1, h = 1) at room temperature, small heating
-    Mt = MOTES["carbon_aerogel"]
     a = 5e-6
+    Mt = mote_props("carbon_aerogel", a)
     w = ROOMS["quiet"]["u"]
     I_cf = 1.3 * 4 * (101325 / ph.R_AIR) * w / (3 * 0.85 * ph.mu_air(ph.T0) * ph.figure_of_merit(Mt["j1A"], Mt["k_eff"])
                                                  * Mt["A"] * ph.cunningham(a))
@@ -204,7 +219,7 @@ def design2(content="sketch", delta=2e-3, a=5e-6, mote="carbon_aerogel", room="q
     f_fast with loop bandwidth bw_frac*f_fast. Mote jitter = u/(2 pi f_bw); r_c >= 3 jitter and >= 3a; the illumination
     spot only needs to cover the jitter (r_v = max(2 jitter, 1.5 a))."""
     L, S, _ = b2.CONTENT[content]
-    Mt, Rm = MOTES[mote], ROOMS[room]
+    Mt, Rm = mote_props(mote, a), ROOMS[room]
     N = S / delta
     Tm = ph.T0 + 30
     for _ in range(60):
@@ -303,21 +318,20 @@ def main2():
 
 
 def main3(P_ir_max=100.0):
-    print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices), white-coated carbon-aerogel motes")
-    print(f"{'content':12s} {'room':6s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} {'r_v':>4s} {'Pfoc':>6s} {'P_IR':>6s} {'P_vis':>6s} "
-          f"{'M/dir':>8s} {'M_vis':>8s} {'px_total':>9s} {'vmax':>5s} {'lab$k':>7s} {'vol$k':>6s}  fails")
+    print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices); mote FOM from alpha*a")
+    print(f"{'content':12s} {'room':6s} {'mote':20s} {'a':>3s} {'FOM':>4s} {'dT':>4s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} "
+          f"{'r_v':>4s} {'Pfoc':>6s} {'P_IR':>6s} {'P_vis':>6s} {'px_total':>9s} {'vmax':>5s} {'lab$k':>7s} {'vol$k':>6s}  fails")
     rows = []
     for content in ("accent", "sketch", "film_density"):
         for room in ("quiet", "calm", "normal"):
-            for delta in (2e-3, 3e-3):
-                d = optimise(basis="volume", content=content, room=room, mote="carbon_aerogel_white", delta=delta,
-                             P_ir_max=P_ir_max)
-                rows.append(d)
+            for mote, a in (("carbon_aerogel_white", 5e-6), ("carbon_aerogel_white", 10e-6), ("carbon_aerogel_pess", 10e-6)):
+                d = optimise(basis="volume", content=content, room=room, mote=mote, a=a, delta=3e-3, P_ir_max=P_ir_max)
+                rows.append(dict(d, a_um=a * 1e6))
                 px = OCTA["heads"] * d["M_dir"] + d["M_vis"]
-                print(f"{content:12s} {room:6s} {d['delta_mm']:4.1f} {d['N']:6.0f} {d['r_c_um']:5.0f} {d['r_v_um']:4.0f} "
-                      f"{d['P_focus_mW']:6.1f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} {d['M_dir']:8.1e} {d['M_vis']:8.1e} "
-                      f"{px:9.1e} {d['v_content_max_cm_s']:5.1f} {d['cost_lab_k']:7.0f} {d['cost_volume_k']:6.0f}  "
-                      f"{','.join(d['fails']) or 'OK'}")
+                print(f"{content:12s} {room:6s} {mote:20s} {a * 1e6:3.0f} {d['FOM']:4.1f} {d['dT']:4.0f} {d['delta_mm']:4.1f} "
+                      f"{d['N']:6.0f} {d['r_c_um']:5.0f} {d['r_v_um']:4.0f} {d['P_focus_mW']:6.1f} {d['P_ir_W']:6.1f} "
+                      f"{d['P_vis_W']:6.2f} {px:9.1e} {d['v_content_max_cm_s']:5.1f} {d['cost_lab_k']:7.0f} "
+                      f"{d['cost_volume_k']:6.0f}  {','.join(d['fails']) or 'OK'}")
     with open(os.path.join(HERE, "results", "m15c_capped.json"), "w") as fh:
         json.dump(rows, fh, indent=1)
 
