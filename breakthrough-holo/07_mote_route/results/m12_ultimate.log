@@ -1,0 +1,8 @@
+accent ito_aerogel 600 ch 421 N 140 v 0.64 a 2.5 room_push binding at faster v: ['heat', 'trap_beam_class']
+accent ideal_bound 900 ch 292 N 97 v 0.92 a 2.5 room_push binding at faster v: ['trap_beam_class']
+sketch ito_aerogel 600 ch 1845 N 615 v 0.64 a 2.5 room_push binding at faster v: ['heat', 'trap_beam_class']
+sketch ideal_bound 900 ch 1281 N 427 v 0.92 a 2.5 room_push binding at faster v: ['trap_beam_class']
+film_density ito_aerogel 600 ch 7601 N 2534 v 0.64 a 1.5 room_push binding at faster v: ['trap_beam_class']
+film_density ideal_bound 900 ch 5278 N 1759 v 0.92 a 1.5 room_push binding at faster v: ['trap_beam_class', 'pump_beam_class']
+film_exact ito_aerogel 600 none binding at faster v: 
+film_exact ideal_bound 900 none binding at faster v: 

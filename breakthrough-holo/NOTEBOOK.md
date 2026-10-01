@@ -612,3 +612,26 @@ Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. T
 Small demos are mote-limited; the étendue floor dominates only at ~1 m fields. A credible startup path: bench B1–B4, then D1, D2, then an integrated D3.
 
 (Housekeeping: commit 763f503's message lost its dollar figures to shell expansion; the correct figures are in RESULTS §10.)
+
+## 2026-10-01 · Entry 21: Ultimate bound, and a safety-accounting fix I found myself
+
+**M12, ultimate bound.** With hypothetical perfect materials (perfect skin, k_eff 0.01, survives 900 K), beam counts fall only ~30 % below the ITO floor:
+- sketch ~1 300;
+- film density ~5 300.
+
+The binding limit moves from heat to the 10 mW Class 1 cap on trap beams. **The MOTE route is fundamentally a 10³–10⁴-beam machine for Iron-Man content.** No material breakthrough changes that order of magnitude.
+
+**Self-found correction.** Beams converging on a mote add at the cornea at 1550 nm. `budget2` checked them per beam; it now checks the sum per focus. Effects:
+- the floor rises: accent ~490, sketch ~2 100, film density ~8 800, film-exact 8 800–10 500;
+- passive doughnut pairs become the best architecture (2 beams per focus).
+
+**Demonstrators re-run:**
+
+| Demo | Beams | Cost today |
+|---|---|---|
+| D1 | 79 | $0.06–0.4 M |
+| D2 | 404 | $0.3–2 M |
+| D3 | ~1 100 | $0.8–5.6 M |
+| D4 | ~2 400 | $1.7–12 M |
+
+Red team 5, still running, reviews the pre-fix state; its findings will be applied on top.

@@ -1,15 +1,15 @@
-film_density cyan_BaSi2O2N2_hiT   pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+6081 pump) trap 29 W pump 7 uW wall 0.011
-film_density cyan_BaSi2O2N2_hiT   pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+12162 pump) trap 29 W pump 4 uW wall 0.011
-film_density cyan_BaSi2O2N2_hiT   pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+18242 pump) trap 29 W pump 2 uW wall 0.011
+film_density cyan_BaSi2O2N2_hiT   pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+8756 pump) trap 30 W pump 4 uW wall 0.010
+film_density cyan_BaSi2O2N2_hiT   pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+17513 pump) trap 30 W pump 2 uW wall 0.010
+film_density cyan_BaSi2O2N2_hiT   pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+26269 pump) trap 30 W pump 1 uW wall 0.010
 film_density cyan_BaSi2O2N2_hiT   pump 450 nm x2: none
 film_density cyan_BaSi2O2N2_hiT   pump 450 nm x4: none
 film_density cyan_BaSi2O2N2_hiT   pump 450 nm x6: none
 film_density cyan_BaSi2O2N2_hiT   pump 470 nm x2: none
 film_density cyan_BaSi2O2N2_hiT   pump 470 nm x4: none
 film_density cyan_BaSi2O2N2_hiT   pump 470 nm x6: none
-film_density green_bSiAlON_hiT    pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+6081 pump) trap 29 W pump 3 uW wall 0.005
-film_density green_bSiAlON_hiT    pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+12162 pump) trap 29 W pump 2 uW wall 0.005
-film_density green_bSiAlON_hiT    pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+18242 pump) trap 29 W pump 1 uW wall 0.005
+film_density green_bSiAlON_hiT    pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+8756 pump) trap 30 W pump 2 uW wall 0.005
+film_density green_bSiAlON_hiT    pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+17513 pump) trap 30 W pump 1 uW wall 0.005
+film_density green_bSiAlON_hiT    pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+26269 pump) trap 30 W pump 1 uW wall 0.005
 film_density green_bSiAlON_hiT    pump 450 nm x2: none
 film_density green_bSiAlON_hiT    pump 450 nm x4: none
 film_density green_bSiAlON_hiT    pump 450 nm x6: none
@@ -25,9 +25,9 @@ film_exact   cyan_BaSi2O2N2_hiT   pump 450 nm x6: none
 film_exact   cyan_BaSi2O2N2_hiT   pump 470 nm x2: none
 film_exact   cyan_BaSi2O2N2_hiT   pump 470 nm x4: none
 film_exact   cyan_BaSi2O2N2_hiT   pump 470 nm x6: none
-film_exact   green_bSiAlON_hiT    pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  3648 ch=  7297 (+7297 pump) trap 30 W pump 33 uW wall 0.005
-film_exact   green_bSiAlON_hiT    pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+12162 pump) trap 29 W pump 22 uW wall 0.006
-film_exact   green_bSiAlON_hiT    pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  3040 ch=  6081 (+18242 pump) trap 29 W pump 15 uW wall 0.006
+film_exact   green_bSiAlON_hiT    pump 405 nm x2: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+8756 pump) trap 30 W pump 26 uW wall 0.005
+film_exact   green_bSiAlON_hiT    pump 405 nm x4: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+17513 pump) trap 30 W pump 13 uW wall 0.005
+film_exact   green_bSiAlON_hiT    pump 405 nm x6: room_pairs ito_aerogel   a=2.5 N=  4378 ch=  8756 (+26269 pump) trap 30 W pump 9 uW wall 0.005
 film_exact   green_bSiAlON_hiT    pump 450 nm x2: none
 film_exact   green_bSiAlON_hiT    pump 450 nm x4: none
 film_exact   green_bSiAlON_hiT    pump 450 nm x6: none

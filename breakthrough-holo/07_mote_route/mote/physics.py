@@ -256,6 +256,7 @@ PHOSPHOR = {
     "cyan_BaSi2O2N2": dict(lam_em=497, fwhm=35, QY=0.90, A_abs=0.7, T50=520.0, dT_q=40.0),
     # R9 (snippet): BaSi2O2N2:Eu quench onset reported near 450 C; optimistic sensitivity case
     "cyan_BaSi2O2N2_hiT": dict(lam_em=497, fwhm=35, QY=0.90, A_abs=0.7, T50=650.0, dT_q=40.0),
+    "cyan_ideal900": dict(lam_em=497, fwhm=35, QY=0.95, A_abs=0.7, T50=1000.0, dT_q=40.0),   # hypothetical bound only
     "green_bSiAlON": dict(lam_em=540, fwhm=55, QY=0.85, A_abs=0.6, T50=600.0, dT_q=50.0),
     # beta-SiAlON:Eu is a robust green (high thermal stability; excitable to ~480 nm) [MEMORY]; optimistic T50
     "green_bSiAlON_hiT": dict(lam_em=540, fwhm=55, QY=0.85, A_abs=0.6, T50=650.0, dT_q=50.0),

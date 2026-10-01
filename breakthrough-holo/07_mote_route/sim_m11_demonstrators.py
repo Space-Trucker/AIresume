@@ -34,10 +34,11 @@ for name, (L, S, duty, field, throw) in LADDER.items():
     for mote in ("ito_aerogel", "ito_coreshell"):
         for arch in ("room_push", "room_pairs"):
             for a in (1.5e-6, 2.5e-6):
-                for v in b2.V_GRID:
-                    d = b2.design(content=(L, S, duty), a=a, v=v, mote=mote, arch=arch, R_head=0.075, n_pump=2, **LEVERS)
-                    if d["feasible"] and (best is None or d["channels"] < best["channels"]):
-                        best = d
+                for R in (0.075, 0.15):
+                    for v in b2.V_GRID:
+                        d = b2.design(content=(L, S, duty), a=a, v=v, mote=mote, arch=arch, R_head=R, n_pump=2, **LEVERS)
+                        if d["feasible"] and (best is None or d["channels"] < best["channels"]):
+                            best = d
     D_head = 2 * 1.55e-6 * throw / (math.pi * W0) * 1e3                  # mm, 1/e^2 diameter for w0 = 10 um
     G = D_head * field / throw                                         # mm rad per axis
     floor = (G / E) ** 2

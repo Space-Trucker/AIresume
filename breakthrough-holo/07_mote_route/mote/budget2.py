@@ -41,6 +41,8 @@ MOTES = {  # j1A, k_eff (W/m/K), A_trap at 1550 nm; pump model
     "engineered": dict(j1A=0.43, k_eff=0.03, A=0.99),
     # M7-validated recipes with an ITO-class plasmonic skin (alpha ~5.7e5 /cm, skin tau >> 2): J1/A from sim_m7
     "ito_aerogel": dict(j1A=0.486, k_eff=0.04, A=1.0),
+    # hypothetical ceiling: perfect skin, k_eff 0.01 (better than any known solid), survives 900 K (bound only)
+    "ideal_bound": dict(j1A=0.5, k_eff=0.01, A=1.0),
     "ito_coreshell": dict(j1A=0.489, k_eff=ph.k_coated_sphere(5.0, 0.02, 0.6) + 0.01, A=1.0, core_frac=0.6, alpha_core=5e5),
     "optimistic": dict(j1A=0.40, k_eff=0.15, A=0.85),
     "dense": dict(j1A=0.40, k_eff=1.0, A=0.90),
@@ -62,7 +64,7 @@ def intercept(a, w, jitter=0.0):
 def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="room_push", f=60.0, u_air=0.3,
            T_max=450.0, C_ph=1.0, force_margin=1.3, R_head=0.075, R_ft_min=20e-6, eta_shape=0.8,
            emitter="cyan_BaSi2O2N2", pump_lam=405, alpha_pump=1.5e5, n_pump=2, pump_R_head=None, pump_throw=2.0,
-           jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0):
+           jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0, focus_sum=True):
     L, S, duty = CONTENT[content] if isinstance(content, str) else content     # or a custom (L, S, duty) tuple
     Mt = MOTES[mote]
     arc = dict(ROOM[arch])
@@ -121,7 +123,14 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
     fails = []
     if runaway or T_face > T_max:
         fails.append("heat")
-    if P_beam * k_ov_trap > ael_t:
+    # 1550 nm is a corneal hazard: all trap beams converging on one mote cross at its focus, so an eye placed there
+    # receives their SUM (focus_sum, added after M12). Push: worst-direction total = P_beam * h_worst / single;
+    # pairs: 2 beams.
+    if focus_sum:
+        P_focus = P_beam * (arc["h_worst"] / arc["single"] if arch == "room_push" else 2.0)
+    else:
+        P_focus = P_beam
+    if P_focus * k_ov_trap > ael_t:
         fails.append("trap_beam_class")
     if P_head > sf.head_power_limit(1550, R_head):
         fails.append("trap_exit_class")
@@ -134,7 +143,7 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
     return dict(content=content if isinstance(content, str) else f"custom L{L} S{S}", mote=mote, arch=arch, a_um=a * 1e6, v=v, f=f, N=N, channels=N * arc["beams"],
                 pump_channels=N * n_pump, eta=eta, h_worst=arc["h_worst"], Tm=Tm, T_face=T_face, dT=Tm - ph.T0,
                 w_trap_um=w_t * 1e6, R_ft_um=(R_ft or 0) * 1e6, P_beam_mW=P_beam * 1e3, P_trap_total_W=P_trap_total,
-                P_head_W=P_head, w_pump_um=w_p * 1e6, A_pump=A_pump, icp=icp, P_pump_beam_uW=P_pump_beam * 1e6,
+                P_head_W=P_head, P_focus_mW=(P_focus if 'P_focus' in dir() else P_beam) * 1e3, w_pump_um=w_p * 1e6, A_pump=A_pump, icp=icp, P_pump_beam_uW=P_pump_beam * 1e6,
                 P_pump_total_mW=P_pump_total * 1e3, lm_per_mote=phi_m, wall_ratio=wall_lm / Phi,
                 FOM=ph.figure_of_merit(j1A, k_eff), fails=fails, feasible=not fails)
 

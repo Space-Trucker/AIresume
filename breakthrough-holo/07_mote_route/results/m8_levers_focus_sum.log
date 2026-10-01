@@ -1,0 +1,20 @@
+accent        | L0 designed lab (S4), ITO skin       | room_push  ito_aerogel   a=2.5 R=0.075 v=0.26 N=   349 ch=  1047 Tface=468 trap 2.1 W beam 5.3 mW pump 4.8 uW
+accent        | L0 designed lab (S4), ITO skin       | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.21 N=   419 ch=   837 Tface=483 trap 2.5 W beam 4.0 mW pump 2.5 uW
+accent        | L3 + laminar zone (0.05 m/s fluct.)  | room_push  ito_aerogel   a=1.5 R=0.15 v=0.31 N=   291 ch=   872 Tface=401 trap 1.6 W beam 5.0 mW pump 6.1 uW
+accent        | L3 + laminar zone (0.05 m/s fluct.)  | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.37 N=   242 ch=   485 Tface=508 trap 1.7 W beam 4.6 mW pump 3.2 uW
+sketch        | L0 designed lab (S4), ITO skin       | room_push  ito_aerogel   a=2.5 R=0.075 v=0.26 N=  1530 ch=  4590 Tface=468 trap 9.0 W beam 5.3 mW pump 4.8 uW
+sketch        | L0 designed lab (S4), ITO skin       | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.21 N=  1836 ch=  3672 Tface=483 trap 11.1 W beam 4.0 mW pump 2.5 uW
+sketch        | L3 + laminar zone (0.05 m/s fluct.)  | room_push  ito_aerogel   a=1.5 R=0.15 v=0.31 N=  1275 ch=  3825 Tface=401 trap 7.1 W beam 5.0 mW pump 6.1 uW
+sketch        | L3 + laminar zone (0.05 m/s fluct.)  | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.37 N=  1063 ch=  2125 Tface=508 trap 7.4 W beam 4.6 mW pump 3.2 uW
+film_contrast | L0 designed lab (S4), ITO skin       | room_push  ito_aerogel   a=2.5 R=0.075 v=0.26 N=  2180 ch=  6541 Tface=468 trap 12.8 W beam 5.3 mW pump 6.4 uW
+film_contrast | L0 designed lab (S4), ITO skin       | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.21 N=  2616 ch=  5233 Tface=483 trap 15.8 W beam 4.0 mW pump 3.4 uW
+film_contrast | L3 + laminar zone (0.05 m/s fluct.)  | room_push  ito_aerogel   a=1.5 R=0.15 v=0.31 N=  1817 ch=  5451 Tface=401 trap 10.2 W beam 5.0 mW pump 8.2 uW
+film_contrast | L3 + laminar zone (0.05 m/s fluct.)  | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.37 N=  1514 ch=  3028 Tface=508 trap 10.5 W beam 4.6 mW pump 4.3 uW
+film_density  | L0 designed lab (S4), ITO skin       | room_push  ito_aerogel   a=2.5 R=0.075 v=0.26 N=  6305 ch= 18914 Tface=468 trap 37.1 W beam 5.3 mW pump 6.4 uW
+film_density  | L0 designed lab (S4), ITO skin       | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.21 N=  7565 ch= 15131 Tface=483 trap 45.6 W beam 4.0 mW pump 3.4 uW
+film_density  | L3 + laminar zone (0.05 m/s fluct.)  | room_push  ito_aerogel   a=1.5 R=0.1 v=0.31 N=  5254 ch= 15761 Tface=401 trap 29.4 W beam 5.0 mW pump 13.3 uW
+film_density  | L3 + laminar zone (0.05 m/s fluct.)  | room_pairs ito_aerogel   a=2.5 R=0.15 v=0.37 N=  4378 ch=  8756 Tface=508 trap 30.4 W beam 4.6 mW pump 4.3 uW
+film_exact    | L0 designed lab (S4), ITO skin       | room_push  none
+film_exact    | L0 designed lab (S4), ITO skin       | room_pairs none
+film_exact    | L3 + laminar zone (0.05 m/s fluct.)  | room_push  none
+film_exact    | L3 + laminar zone (0.05 m/s fluct.)  | room_pairs none

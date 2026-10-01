@@ -254,3 +254,25 @@ These figures assume the floor levers (L3) and the ITO-aerogel mote, which has n
 | D4 Iron-Man sketch | 5 m of strokes, 1 m field | 615 | ~2 400 | $1.7–12 M | $0.12–0.6 M |
 
 Small demos are limited by mote count, not étendue. The étendue floor dominates only from about the 1 m field upward.
+
+
+## 12. Correction: summed trap beams at a focus (self-found, after M12)
+
+1550 nm is a corneal hazard. All trap beams converging on a mote cross at its focus, so an eye placed there receives their sum. `budget2` now checks the **summed** power per focus against the 10 mW AEL:
+- push: P_beam · h_worst/single;
+- pairs: 2 · P_beam.
+
+**Effect on the L3 floor.** Passive pairs now win.
+
+| Target | Before | After |
+|---|---|---|
+| Accent | 336–421 | 485 |
+| Sketch | 1 476–1 845 | 2 125 |
+| Film density | 6 081–7 601 | 8 756 |
+| Film-exact | green ~6 100 / cyan ~10 500 | green 8 756 / cyan 10 508 |
+
+**Demonstrators (M11, re-run):** D1 79 beams, D2 404, D3 1 118, D4 ~2 400 modules. Costs are in the verdict.
+
+**Hypothetical perfect materials** (M12, run before this fix) reduce beams by only ~30 %. The 10 mW trap cap then binds, not heat.
+
+The 405 nm pump beams from different directions image to different retinal spots and are still assessed separately. Red team 5 was asked to check this.
