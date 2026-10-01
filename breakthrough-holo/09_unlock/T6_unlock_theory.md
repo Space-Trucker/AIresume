@@ -180,6 +180,35 @@ With ≤ 100 W IR and δ = 3 mm:
 - Hand-speed manipulation (0.3–0.5 m/s) is reachable only for small objects, at hundreds to thousands of steered beams.
 - The practical design treats a fast move as **"dissolve and re-form"**: the object fades or thins during the move, and the motes re-settle within ~1–2 s. This is a UX workaround, not physics, and it counts against R6/R9.
 
+## 3c. Fast POV with the curtain (LCSV-P, M16, `m16_fast_pov.py`, `results/m16_fast_pov.json`)
+
+In v4 the mote speed (0.2–0.5 m/s) was capped by the **light budget**, not by force:
+- the 405 nm pump's 39 µW Class 1 limit;
+- each POV mote's lumens grow with v, because fewer motes draw the same strokes.
+
+With I1 (curtain) and I3 (terminated visible scattering, a tracked spot per mote), **heat** sets the speed instead. Assumptions:
+- H10 room layout, ITO-skin mote (FOM 5.3, needed because carbon is a volume absorber and fails at 1 µm);
+- tracking loop 5 kHz with feedforward along the planned stroke, 2 % residual;
+- T_max 573 K.
+
+| Content, room | Mote a, speed v | Motes | Steered beams (3 push + 1 light) | IR / visible | Hand-occluded |
+|---|---|---|---|---|---|
+| Sketch, quiet / calm | 1–1.5 µm, **1.0 m/s** | 526 | **2,105** (v4: 12,200) | 4–8 W / 0.2–0.7 W | overheats near the hand |
+| Sketch, quiet / calm / **normal** | 1–2.5 µm, **0.5 m/s** | 1,053 | 4,211 | 3–38 W / 0.05–2.4 W | ✓ at 1–1.5 µm |
+| Film density, quiet / calm | 1–1.5 µm, 1.0 m/s | 2,169 | **8,675** (v4: ~50,000) | 15–34 W / 0.9–4 W | overheats near the hand |
+| Film density, **normal** | 1.5–2.5 µm, 0.5 m/s | 4,337 | 17,349 | 133–144 W / 2–6 W | ✓ at 1.5 µm |
+
+**Reading.**
+- The curtain plus terminated scattering cut v4's beam count **~6×** at the same content.
+- They make **normal (0.3 m/s) rooms** feasible at 0.5 m/s mote speed.
+- They raise content speed to ~0.5–1 m/s, versus 1–8 cm/s for the holographic static voxels.
+- Heat, not light, now caps v at ~1.2 m/s for 1 µm ITO motes.
+
+**Combined architecture.**
+- Holographic static voxels (LCSV-H) carry the static and slow bulk (UI panels, models at rest, video panels).
+- Fast POV channels (LCSV-P) carry moving and grabbed content and accents.
+- Both share the same heads, curtain receivers, lasers and motes.
+
 ## 4. What would make the theory "complete"
 
 All of the following must hold:
