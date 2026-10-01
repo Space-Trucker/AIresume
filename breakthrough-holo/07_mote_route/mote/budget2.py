@@ -63,7 +63,7 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
            T_max=450.0, C_ph=1.0, force_margin=1.3, R_head=0.075, R_ft_min=20e-6, eta_shape=0.8,
            emitter="cyan_BaSi2O2N2", pump_lam=405, alpha_pump=1.5e5, n_pump=2, pump_R_head=None, pump_throw=2.0,
            jitter=0.5e-6, k_overlap=2.0, whitener_gain=5.0, k_ov_trap=2.0):
-    L, S, duty = CONTENT[content]
+    L, S, duty = CONTENT[content] if isinstance(content, str) else content     # or a custom (L, S, duty) tuple
     Mt = MOTES[mote]
     arc = dict(ROOM[arch])
     j1A, k_eff, A = Mt["j1A"], Mt["k_eff"], Mt["A"]
@@ -131,7 +131,7 @@ def design(content="film_density", a=2.5e-6, v=0.5, mote="engineered", arch="roo
         fails.append("pump_exit_class")
     if wall_lm / Phi > 0.05:
         fails.append("wall_light")
-    return dict(content=content, mote=mote, arch=arch, a_um=a * 1e6, v=v, f=f, N=N, channels=N * arc["beams"],
+    return dict(content=content if isinstance(content, str) else f"custom L{L} S{S}", mote=mote, arch=arch, a_um=a * 1e6, v=v, f=f, N=N, channels=N * arc["beams"],
                 pump_channels=N * n_pump, eta=eta, h_worst=arc["h_worst"], Tm=Tm, T_face=T_face, dT=Tm - ph.T0,
                 w_trap_um=w_t * 1e6, R_ft_um=(R_ft or 0) * 1e6, P_beam_mW=P_beam * 1e3, P_trap_total_W=P_trap_total,
                 P_head_W=P_head, w_pump_um=w_p * 1e6, A_pump=A_pump, icp=icp, P_pump_beam_uW=P_pump_beam * 1e6,

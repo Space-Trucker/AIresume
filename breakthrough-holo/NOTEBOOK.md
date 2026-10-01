@@ -599,3 +599,16 @@ Verdict v4's mote condition is tightened to an ITO-class skin plus toxicology. T
 - With integration: ~$0.4–2 M.
 
 **Verdict R10 (startup-buildable) stays NOT MET today.** The path there is a fundable component: a large-étendue 2-axis analog MEMS mirror array.
+
+**Entry 20, addendum: M11 demonstrator ladder (conditional on G1–G2).**
+
+| Demo | Beams | Cost today | Integrated |
+|---|---|---|---|
+| D1 first glyph | 69 | $0.05–0.3 M | — |
+| D2 arc-reactor UI | 350 | $0.25–1.8 M | — |
+| D3 desk Jarvis panel | ~970 | $0.7–4.9 M | $49–243 k |
+| D4 Iron-Man sketch | ~2 400 | $1.7–12 M | — |
+
+Small demos are mote-limited; the étendue floor dominates only at ~1 m fields. A credible startup path: bench B1–B4, then D1, D2, then an integrated D3.
+
+(Housekeeping: commit 763f503's message lost its dollar figures to shell expansion; the correct figures are in RESULTS §10.)

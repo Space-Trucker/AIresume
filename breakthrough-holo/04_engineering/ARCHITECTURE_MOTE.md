@@ -34,6 +34,19 @@
 > 8. **Interaction:** gesture recognition plus haptic glove.
 > 9. **Air manager:** monitors the quiet-air zone and slows or pauses content when drafts exceed the margin.
 
+> **Demonstrator ladder (M11; conditional on bench gates G1–G2):**
+>
+> | Demo | Content | Motes | Beams | Cost today |
+> |---|---|---|---|---|
+> | D1 first glyph | 10 cm circle | 23 | 69 | $0.05–0.3 M |
+> | D2 arc-reactor UI | 1 m of strokes | 117 | 350 | $0.25–1.8 M |
+> | D3 desk Jarvis panel | 3 m of strokes | 324 | ~970 | $0.7–4.9 M |
+> | D4 Iron-Man sketch | 5 m of strokes | 615 | ~2 400 | $1.7–12 M |
+>
+> With integrated MEMS arrays (5–10 yr), D3 costs ~$50–250 k.
+>
+> The bench (`08_bench/`) comes before D1.
+
 **Status (v1 text below):** draft concept, superseded where it conflicts with the box above.
 
 ## One-paragraph description

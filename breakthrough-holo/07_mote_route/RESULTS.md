@@ -241,3 +241,16 @@ So f_cov ≈ 0.75–1. Partial coverage trades steering hardware for mote speed 
 **With 5–10 years of integration** (2-axis analog MEMS mirror arrays with built-in angle sensing plus integrated photonics): ~$50–250 and 0.1–0.3 W per channel, putting a film-density room at ~$0.4–2 M with ~0.3 m heads.
 
 **The single most valuable engineering development:** a 2-axis analog MEMS mirror array with 4–8× today's étendue per mirror (5–9 mm·rad per axis, ≥ 1 kHz, integrated µrad angle sensing, ideally integrated focus).
+
+## 11. Demonstrator ladder (M11, `sim_m11_demonstrators.py`)
+
+These figures assume the floor levers (L3) and the ITO-aerogel mote, which has not been made, so they are conditional on bench gates G1–G2. Modules = max(étendue floor, beams), 12 heads, 10 mm galvo channels.
+
+| Demo | Content | Motes | Beams/modules | Cost today (R10 band) | Integrated (5–10 yr) |
+|---|---|---|---|---|---|
+| D1 first glyph | 10 cm glowing circle | 23 | 69 | $0.05–0.3 M | $3–17 k |
+| D2 arc-reactor UI | 1 m of strokes, 0.3 m field | 117 | 350 | $0.25–1.8 M | $18–88 k |
+| D3 desk "Jarvis" panel | 3 m of strokes, 0.4 m field | 324 | ~970 | $0.7–4.9 M | $49–243 k |
+| D4 Iron-Man sketch | 5 m of strokes, 1 m field | 615 | ~2 400 | $1.7–12 M | $0.12–0.6 M |
+
+Small demos are limited by mote count, not étendue. The étendue floor dominates only from about the 1 m field upward.
