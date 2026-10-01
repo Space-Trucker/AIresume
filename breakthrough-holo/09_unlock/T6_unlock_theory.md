@@ -239,6 +239,11 @@ With I1 (curtain) and I3 (terminated visible scattering, a tracked spot per mote
 - They raise content speed to ~0.5–1 m/s, versus 1–8 cm/s for the holographic static voxels.
 - Heat, not light, now caps v at ~1.2 m/s for 1 µm ITO motes.
 
+**Carbon motes in POV mode** (main-session check):
+- Black carbon aerogel needs a ≥ 10–15 µm, or a dense 5 µm grade, to be optically thick. At that size the heat limit caps POV speed at **≤ 0.1–0.2 m/s** in quiet or calm rooms (sketch: ~10,500–21,000 steered beams), no better than v4.
+- **So fast POV, normal rooms and robust touch all need the small (1–2.5 µm) skin-absorbing ITO-class mote.** It remains the single material to make.
+- Carbon (known class) unlocks only the holographic static sketch in a quiet room.
+
 **Combined architecture.**
 - Holographic static voxels (LCSV-H) carry the static and slow bulk (UI panels, models at rest, video panels).
 - Fast POV channels (LCSV-P) carry moving and grabbed content and accents.
