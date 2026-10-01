@@ -1,0 +1,19 @@
+Moving hand/finger: radius around it (and its turbulent wake, ~V/2 over a few R) where motes are lost (authority 0.16 m/s)
+  finger V 0.05 m/s: lost within r =  0.8 cm of its centre (only contact; V below authority); Re    53
+  finger V 0.10 m/s: lost within r =  0.8 cm of its centre (only contact; V below authority); Re   107
+  finger V 0.30 m/s: lost within r =  1.0 cm of its centre; Re   320
+  finger V 1.00 m/s: lost within r =  1.5 cm of its centre; Re  1067
+  hand   V 0.05 m/s: lost within r =  4.5 cm of its centre (only contact; V below authority); Re   300
+  hand   V 0.10 m/s: lost within r =  4.5 cm of its centre (only contact; V below authority); Re   600
+  hand   V 0.30 m/s: lost within r =  5.5 cm of its centre; Re  1800
+  hand   V 1.00 m/s: lost within r =  8.3 cm of its centre; Re  6000
+
+Natural convection above a still hand (plate x = 8 cm; plume Q = h A dT, h 4 W/m^2K, A 0.04 m^2):
+  bare hand (33 C skin)           2 cm above: 0.100-0.480 m/s  (2.0-9.8x the B9 mean budget at w = 50 um)
+  bare hand (33 C skin)           5 cm above: 0.100-0.410 m/s  (2.0-8.4x the B9 mean budget at w = 50 um)
+  bare hand (33 C skin)          10 cm above: 0.100-0.349 m/s  (2.0-7.1x the B9 mean budget at w = 50 um)
+  bare hand (33 C skin)          20 cm above: 0.100-0.288 m/s  (2.0-5.9x the B9 mean budget at w = 50 um)
+  insulated glove (dT 1.5 K)      2 cm above: 0.035-0.240 m/s  (0.7-4.9x the B9 mean budget at w = 50 um)
+  insulated glove (dT 1.5 K)      5 cm above: 0.035-0.205 m/s  (0.7-4.2x the B9 mean budget at w = 50 um)
+  insulated glove (dT 1.5 K)     10 cm above: 0.035-0.174 m/s  (0.7-3.6x the B9 mean budget at w = 50 um)
+  insulated glove (dT 1.5 K)     20 cm above: 0.035-0.144 m/s  (0.7-2.9x the B9 mean budget at w = 50 um)

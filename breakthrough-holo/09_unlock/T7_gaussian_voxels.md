@@ -205,6 +205,19 @@ Rows that fail:
    - Photon budget: ~4 500 photons per mote per 0.2 ms through a 25 mm lens at 1.5 m, so σ ≈ 3 µm at 100 µm pixels.
    - Needs a multi-ROI camera readout. Plausible, not built.
 
+7. **Touch stirs the air** (`m18d_touch_air.py`, `results/m18d_run.log`).
+   - **A moving hand.** Potential flow past a sphere gives |u| ≤ V(R/r)³. Measured from the centre of the hand or finger, motes are lost within:
+
+     | | V = 0.3 m/s | V = 1 m/s |
+     |---|---|---|
+     | Finger | 1.0 cm | 1.5 cm |
+     | Hand | 5.5 cm | 8.3 cm |
+
+     There is also a turbulent wake at Re ≈ 300–6000.
+   - **A warm, still hand** sends 0.10–0.4 m/s of air upward. That is 2–8× B9's mean budget at w = 50 µm, and the range comes from two estimates (laminar plate and MTT plume).
+   - **A glove that keeps its surface within ~1.5 K of the room** cuts this to 0.035–0.2 m/s. That gives the owner's "simple glove" a second job: it must be thermally neutral.
+   - **What touch looks like.** The hologram parts around a moving hand, over ~1–8 cm, and re-forms from spare motes. Motes cannot rest on the skin. A person's body plume (~0.2 m/s) keeps the image ≥ 15–20 cm from torsos and faces.
+
 ## 6. Bottom line for the full vision
 
 **Physically consistent (pending RT7):** slow or static Iron-Man-style sketches, and film-density wireframes, floating in still air with no screen, glasses or gas. They need:
