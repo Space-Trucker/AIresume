@@ -1,0 +1,5 @@
+LOOPX m18c.simulate MEMS 5 kHz                     quiet office w 50 um, mean wind U 0.00 m/s, authority (U+5.4 sigma): lost 0/30 in 294 mote-s, r_p99.9 8.9 um, sat 0.0e+00 (76 s)
+LOOPX m18c.simulate PLM 1.44 kHz, 1-frame latency  quiet office w 70 um, mean wind U 0.00 m/s, authority (U+5.4 sigma): lost 0/30 in 294 mote-s, r_p99.9 18.8 um, sat 6.9e-06 (21 s)
+LOOPX m18c.simulate MEMS 5 kHz                     quiet office w 50 um, mean wind U 0.10 m/s, authority (U+5.4 sigma): lost 2/30 in 283 mote-s, r_p99.9 11.7 um, sat 3.3e-06 (81 s)
+LOOPX m18c.simulate PLM 1.44 kHz, 1-frame latency  quiet office w 70 um, mean wind U 0.10 m/s, authority (U+5.4 sigma): lost 24/30 in 107 mote-s, r_p99.9 41.8 um, sat 2.8e-04 (12 s)
+[rt7 sections ['loopx'] done in 190 s]

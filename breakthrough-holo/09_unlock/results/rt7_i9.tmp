@@ -1,0 +1,20 @@
+I9 head 0: room depth 1.60 m (T7: 0.8 m) -> intermediate depth 7.4 mm at m 15 (T7: 3.6 mm); lateral magnification varies 11.8-18.2 over the depth
+I9 head 8: room depth 0.93 m (T7: 0.8 m) -> intermediate depth 4.2 mm at m 15 (T7: 3.6 mm); lateral magnification varies 10.6-20.9 over the depth
+I9 head 9: room depth 0.94 m (T7: 0.8 m) -> intermediate depth 4.3 mm at m 15 (T7: 3.6 mm); lateral magnification varies 9.9-22.0 over the depth
+I9 sketch head 0 layers 4 served 1.00 (N 1531): crosstalk median 0.00% mean 9.74% p90 26.7% p99 100%; motes >1% 24%, >10% 13%; own-pixel conflicts 23.1%
+I9 sketch head 0 layers 4 served 0.33 (N 524): crosstalk median 0.00% mean 3.61% p90 1.5% p99 97%; motes >1% 11%, >10% 5%; own-pixel conflicts 11.5%
+I9 sketch head 0 layers 8 served 1.00 (N 1531): crosstalk median 0.00% mean 6.69% p90 1.9% p99 100%; motes >1% 11%, >10% 8%; own-pixel conflicts 8.5%
+I9 sketch head 0 layers 8 served 0.33 (N 487): crosstalk median 0.00% mean 2.55% p90 0.0% p99 100%; motes >1% 6%, >10% 4%; own-pixel conflicts 4.9%
+I9 sketch head 9 layers 4 served 1.00 (N 1531): crosstalk median 0.00% mean 10.66% p90 32.0% p99 123%; motes >1% 26%, >10% 16%; own-pixel conflicts 27.6%
+I9 sketch head 9 layers 4 served 0.33 (N 562): crosstalk median 0.00% mean 5.42% p90 5.1% p99 100%; motes >1% 16%, >10% 8%; own-pixel conflicts 15.3%
+I9 sketch head 9 layers 8 served 1.00 (N 1531): crosstalk median 0.00% mean 6.28% p90 0.4% p99 100%; motes >1% 9%, >10% 7%; own-pixel conflicts 8.5%
+I9 sketch head 9 layers 8 served 0.33 (N 511): crosstalk median 0.00% mean 2.17% p90 0.0% p99 77%; motes >1% 6%, >10% 4%; own-pixel conflicts 4.9%
+I9 film   head 0 layers 4 served 1.00 (N 9868): crosstalk median 5.96% mean 28.05% p90 99.6% p99 155%; motes >1% 60%, >10% 44%; own-pixel conflicts 48.7%
+I9 film   head 0 layers 4 served 0.33 (N 3209): crosstalk median 0.05% mean 11.49% p90 42.3% p99 103%; motes >1% 38%, >10% 22%; own-pixel conflicts 27.3%
+I9 film   head 0 layers 8 served 1.00 (N 9868): crosstalk median 0.02% mean 15.28% p90 66.5% p99 138%; motes >1% 38%, >10% 25%; own-pixel conflicts 18.7%
+I9 film   head 0 layers 8 served 0.33 (N 3189): crosstalk median 0.00% mean 6.65% p90 14.0% p99 100%; motes >1% 23%, >10% 11%; own-pixel conflicts 10.7%
+I9 film   head 9 layers 4 served 1.00 (N 9868): crosstalk median 0.38% mean 19.35% p90 96.2% p99 133%; motes >1% 45%, >10% 30%; own-pixel conflicts 36.2%
+I9 film   head 9 layers 4 served 0.33 (N 3191): crosstalk median 0.00% mean 8.62% p90 26.2% p99 100%; motes >1% 25%, >10% 15%; own-pixel conflicts 19.2%
+I9 film   head 9 layers 8 served 1.00 (N 9868): crosstalk median 0.00% mean 11.03% p90 37.0% p99 117%; motes >1% 26%, >10% 16%; own-pixel conflicts 13.9%
+I9 film   head 9 layers 8 served 0.33 (N 3351): crosstalk median 0.00% mean 4.86% p90 4.4% p99 100%; motes >1% 15%, >10% 8%; own-pixel conflicts 7.4%
+[rt7 sections ['i9'] done in 36 s]

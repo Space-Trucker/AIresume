@@ -1,0 +1,102 @@
+{
+ "MEMS 5 kHz_w50_U0.0": {
+  "case": "MEMS 5 kHz",
+  "draft": "quiet office, L 3 cm",
+  "w_um": 50.0,
+  "f_frame": 5000.0,
+  "latency_frames": 2,
+  "sig_noise_um": 4.0,
+  "follow": false,
+  "K": [
+   657.4780141096844,
+   205846.35192267352,
+   0.021260992945157823
+  ],
+  "r_p50_um": 3.2537547332907057,
+  "r_p999_um": 8.893974031027732,
+  "r_max_um": 12.942934447240823,
+  "lost": 0,
+  "n_motes": 30,
+  "mote_seconds": 294.00000000000006,
+  "loss_rate": 0.0,
+  "loss_rate_95_upper": 0.010204081632653059,
+  "sat_frac": 0.0,
+  "h_sum_mean": 1.7694314299032108,
+  "h_sum_max": 1.9989317679850975
+ },
+ "PLM 1.44 kHz, 1-frame latency_w70_U0.0": {
+  "case": "PLM 1.44 kHz, 1-frame latency",
+  "draft": "quiet office, L 3 cm",
+  "w_um": 70.0,
+  "f_frame": 1440.0,
+  "latency_frames": 1,
+  "sig_noise_um": 4.0,
+  "follow": false,
+  "K": [
+   305.9430239423852,
+   89143.93704667705,
+   0.03130935006001544
+  ],
+  "r_p50_um": 6.505721173125465,
+  "r_p999_um": 18.785417845536134,
+  "r_max_um": 44.2765571133385,
+  "lost": 0,
+  "n_motes": 30,
+  "mote_seconds": 294.00000000000006,
+  "loss_rate": 0.0,
+  "loss_rate_95_upper": 0.010204081632653059,
+  "sat_frac": 6.944444444444445e-06,
+  "h_sum_mean": 1.7694314299032108,
+  "h_sum_max": 1.9989317679850975
+ },
+ "MEMS 5 kHz_w50_U0.1": {
+  "case": "MEMS 5 kHz",
+  "draft": "quiet office, L 3 cm",
+  "w_um": 50.0,
+  "f_frame": 5000.0,
+  "latency_frames": 2,
+  "sig_noise_um": 4.0,
+  "follow": false,
+  "K": [
+   657.4780141096844,
+   205846.35192267352,
+   0.021260992945157823
+  ],
+  "r_p50_um": 3.5328929653235677,
+  "r_p999_um": 11.655782852624377,
+  "r_max_um": 41.881801782409845,
+  "lost": 2,
+  "n_motes": 30,
+  "mote_seconds": 283.46100000000007,
+  "loss_rate": 0.0070556443390801535,
+  "loss_rate_95_upper": 0.01703383225468826,
+  "sat_frac": 3.3333333333333333e-06,
+  "h_sum_mean": 1.7694314299032108,
+  "h_sum_max": 1.9989317679850975
+ },
+ "PLM 1.44 kHz, 1-frame latency_w70_U0.1": {
+  "case": "PLM 1.44 kHz, 1-frame latency",
+  "draft": "quiet office, L 3 cm",
+  "w_um": 70.0,
+  "f_frame": 1440.0,
+  "latency_frames": 1,
+  "sig_noise_um": 4.0,
+  "follow": false,
+  "K": [
+   305.9430239423852,
+   89143.93704667705,
+   0.03130935006001544
+  ],
+  "r_p50_um": 7.191082732187159,
+  "r_p999_um": 41.759039600392704,
+  "r_max_um": 92.76936971800173,
+  "lost": 24,
+  "n_motes": 30,
+  "mote_seconds": 106.58541666666669,
+  "loss_rate": 0.22517151736674415,
+  "loss_rate_95_upper": 0.31709740439287154,
+  "sat_frac": 0.0002800925925925926,
+  "h_sum_mean": 1.7694314299032108,
+  "h_sum_max": 1.9989317679850975
+ }
+}

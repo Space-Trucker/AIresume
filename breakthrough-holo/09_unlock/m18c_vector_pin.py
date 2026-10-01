@@ -247,8 +247,29 @@ def main_follow():
                     json.dump(rows, fh, indent=1, default=float)
 
 
+def main_follow2(out_dir):
+    """Follow mode, round 2: long runs at small waists (loss statistics) and office drafts (sigma_u 0.1)."""
+    rows = []
+    pts = [(m18b.CASES[5], m18b.DRAFTS[0], 30e-6, 150.0), (m18b.CASES[5], m18b.DRAFTS[3], 30e-6, 150.0),
+           (m18b.CASES[5], m18b.DRAFTS[4], 35e-6, 20.0), (m18b.CASES[5], m18b.DRAFTS[4], 50e-6, 20.0),
+           (m18b.CASES[5], m18b.DRAFTS[4], 70e-6, 20.0), (m18b.CASES[6], m18b.DRAFTS[4], 35e-6, 20.0),
+           (m18b.CASES[6], m18b.DRAFTS[4], 50e-6, 20.0)]
+    for case, draft, w, dur in pts:
+        seed = zlib.crc32(f"follow2{case[0]}{draft[0]}{w}{dur}".encode()) % 100000
+        r = simulate(case, draft, w, n_motes=60, dur=dur, seed=seed, follow=True)
+        rows.append(r)
+        print(f"  FOLLOW2 {case[0]:30s} {draft[0]:24s} w {w * 1e6:3.0f} um: r_p50 {r['r_p50_um']:5.1f} r_p99.9 "
+              f"{r['r_p999_um']:5.1f} r_max {r['r_max_um']:6.1f} um  lost {r['lost']}/{r['n_motes']} in "
+              f"{r['mote_seconds']:.0f} mote-s (95% upper {r['loss_rate_95_upper']:.1e}/s)  sat {r['sat_frac']:.1e}",
+              flush=True)
+        with open(os.path.join(out_dir, "m18c_vector_pin_follow2.json"), "w") as fh:
+            json.dump(rows, fh, indent=1, default=float)
+
+
 if __name__ == "__main__":
-    if "--follow" in sys.argv:
+    if "--follow2" in sys.argv:
+        main_follow2(sys.argv[sys.argv.index("--follow2") + 1])
+    elif "--follow" in sys.argv:
         main_follow()
     elif "--long" in sys.argv:
         main_long()

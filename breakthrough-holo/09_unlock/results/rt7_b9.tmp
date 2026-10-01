@@ -1,0 +1,20 @@
+B9 Class 1 at 1500-1800 nm [memory; MPE 0.1 W/cm^2 and 1.5 t^0.375 mm aperture confirmed by search]: AEL(t>10 s) = 1000 W/m^2 x 3.5 mm disc = 9.62 mW; AEL(t<=0.35 s) = 1e4 J/m^2 x 1 mm disc = 7.85 mJ
+B9 power-equivalent AEL(t): 0.01 s 785.4 mW, 0.1 s 78.5 mW, 0.35 s 22.4 mW, 1 s 17.7 mW, 3 s 13.4 mW, 10 s 9.6 mW, 100 s 9.6 mW
+B9 w  15 um, h s 7.1: v_max  52.2 cm/s (K 0.75-1.17: 41.0-63.9); realistic skin (A 0.6, J1/A 0.40):  25.8 cm/s
+B9 w  20 um, h s 7.1: v_max  29.4 cm/s (K 0.75-1.17: 23.0-35.9); realistic skin (A 0.6, J1/A 0.40):  14.5 cm/s
+B9 w  35 um, h s 7.1: v_max   9.6 cm/s (K 0.75-1.17: 7.5-11.7); realistic skin (A 0.6, J1/A 0.40):   4.7 cm/s
+B9 w  50 um, h s 7.1: v_max   4.7 cm/s (K 0.75-1.17: 3.7-5.8); realistic skin (A 0.6, J1/A 0.40):   2.3 cm/s
+B9 w  70 um, h s 7.1: v_max   2.4 cm/s (K 0.75-1.17: 1.9-2.9); realistic skin (A 0.6, J1/A 0.40):   1.2 cm/s
+B9 invariant: v_max = 7.46e-11 m/s per hologram pixel per head (T7 conventions) -> 1 m/s needs 1.34e+10 px/head (w 10.8 um); with the real H10 field (x2.2) 3.0e+10
+B9 stacking cross-check, sketch, w 50 um, 3 random heads, equal split: RT7 5.06 vs m17 3.32 (m17 uses 14 heads)
+B9 sketch (random arcs, 1659 motes), LP-weighted mean exposure: worst pupil 6.27 P_unit (T7 assumes h_worst x s = 7.1); mean LP cost over directions 1.33, worst 1.74
+B9 aligned content 'vertical_on_axis' (267 motes): worst pupil 49.5 P_unit (x7.0 T7's 7.1)
+B9 aligned content 'vertical_1cm_off' (267 motes): worst pupil 36.1 P_unit (x5.1 T7's 7.1)
+B9 aligned content 'vertical_3cm_off' (267 motes): worst pupil 14.3 P_unit (x2.0 T7's 7.1)
+B9 aligned content 'aimed_at_corner_head' (300 motes): worst pupil 33.8 P_unit (x4.8 T7's 7.1)
+B9 vertical on-axis line at w 25 um: worst pupil 31.0 P_unit
+B9 vertical on-axis line at w 70 um: worst pupil 58.0 P_unit
+B9 window check sig0.03_L0.03_U0.0: mean |u| 0.048 m/s; running-mean p99.9 / mean: 0.35s 2.48, 1.0s 2.28, 3.0s 1.88, 10.0s 1.50, 30.0s 1.27 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.50
+B9 window check sig0.03_L0.1_U0.0: mean |u| 0.048 m/s; running-mean p99.9 / mean: 0.35s 2.53, 1.0s 2.47, 3.0s 2.26, 10.0s 1.83, 30.0s 1.47 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.83
+B9 window check sig0.03_L0.03_U0.1: mean |u| 0.109 m/s; running-mean p99.9 / mean: 0.35s 1.75, 1.0s 1.59, 3.0s 1.39, 10.0s 1.22, 30.0s 1.13 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.22
+[rt7 sections ['b9'] done in 18 s]

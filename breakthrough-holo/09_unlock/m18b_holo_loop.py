@@ -38,6 +38,7 @@ DRAFTS = [  # name, u_rms per component, L, convection speed Uc
     ("still, L 10 cm", 0.03, 0.10, 0.03),
     ("home, L 3 cm", 0.03, 0.03, 0.05),
     ("quiet office, L 3 cm", 0.03, 0.03, 0.10),
+    ("office sigma 0.1, L 3 cm", 0.10, 0.03, 0.10),
 ]
 
 

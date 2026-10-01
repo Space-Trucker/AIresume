@@ -1,0 +1,14 @@
+{
+ "vertical_on_axis": {
+  "heads_dropped": 2,
+  "worst": 2.2710247159222066,
+  "h_mean": 2.082878160569078,
+  "h_worst": 4.947663405813699
+ },
+ "aimed_at_corner_head": {
+  "heads_dropped": 1,
+  "worst": 6.040261514514037,
+  "h_mean": 1.402981312036359,
+  "h_worst": 2.6138531708325625
+ }
+}

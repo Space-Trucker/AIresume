@@ -1,0 +1,46 @@
+PHYS air at 293 K: mu 1.813e-05, k 0.0257, rho 1.204, mfp 65.1 nm, Cc(1 um) 1.074
+PHYS I_unit (W/m^2 per m/s, 1 um ITO aerogel, J1/A 0.486, A 1, k_p 0.04): K0.75_slipTrue 9.36e+06, K0.75_slipFalse 6.75e+06, K0.956_slipTrue 7.34e+06, K0.956_slipFalse 5.31e+06, K1.17_slipTrue 6.00e+06, K1.17_slipFalse 4.34e+06
+PHYS a 0.5 um: slip factor on F_ph 0.554, Cc 1.149, I_unit 9.04e+06 W/m^2 per m/s
+PHYS a 1.0 um: slip factor on F_ph 0.728, Cc 1.074, I_unit 7.34e+06 W/m^2 per m/s
+PHYS a 2.5 um: slip factor on F_ph 0.875, Cc 1.030, I_unit 6.32e+06 W/m^2 per m/s
+PHYS a 5.0 um: slip factor on F_ph 0.934, Cc 1.015, I_unit 5.95e+06 W/m^2 per m/s
+PHYS cross-check: m18.hold I_unit 7.30e+06 vs RT7 (K 0.956, slip) 7.34e+06 (ratio 1.006)
+PHYS heat still        v_pk 0.162 m/s: hot face 327 K (occluded 355); A 0.5 327 K; thin-skin-consistent A 0.62 J1/A 0.30: 343 K (occ 386)
+PHYS heat home         v_pk 0.212 m/s: hot face 337 K (occluded 373); A 0.5 337 K; thin-skin-consistent A 0.62 J1/A 0.30: 358 K (occ 412)
+PHYS heat quiet_office v_pk 0.262 m/s: hot face 348 K (occluded 390); A 0.5 348 K; thin-skin-consistent A 0.62 J1/A 0.30: 372 K (occ 437)
+PHYS heat office       v_pk 0.640 m/s: hot face 419 K (occluded 511); A 0.5 419 K; thin-skin-consistent A 0.62 J1/A 0.30: 473 K (occ 610)
+PHYS single-pass absorptance ceiling of a homogeneous film in air at 1550 nm (normal incidence): 20nm: 0.50 (n 3.5, k 3.5), 50nm: 0.51 (n 2.3, k 2.2), 100nm: 0.53 (n 1.7, k 1.6), 150nm: 0.56 (n 1.6, k 1.4), 300nm: 0.73 (n 2.3, k 1.0)
+PHYS skin ITO_20nm      : A 0.13  J1/A 0.031  J1 = A J1/A 0.004
+PHYS skin ITO_50nm      : A 0.24  J1/A 0.099  J1 = A J1/A 0.024
+PHYS skin ITO_100nm     : A 0.30  J1/A 0.221  J1 = A J1/A 0.066
+PHYS skin ITO_150nm     : A 0.29  J1/A 0.325  J1 = A J1/A 0.095
+PHYS skin best_50nm     : A 0.56  J1/A 0.382  J1 = A J1/A 0.213  (n 2.70, k 2.82)
+PHYS skin best_100nm    : A 0.57  J1/A 0.408  J1 = A J1/A 0.232  (n 2.10, k 2.07)
+PHYS skin best_150nm    : A 0.61  J1/A 0.421  J1 = A J1/A 0.257  (n 1.80, k 1.61)
+PHYS skin best_250nm    : A 0.68  J1/A 0.471  J1 = A J1/A 0.321  (n 2.85, k 1.31)
+PHYS volume absorber (n = 1, straight rays), alpha*a: 0.5: A 0.47 J1/A 0.07 J1 0.03, 1.0: A 0.70 J1/A 0.13 J1 0.09, 2.0: A 0.89 J1/A 0.23 J1 0.20, 3.0: A 0.95 J1/A 0.29 J1 0.28, 5.0: A 0.98 J1/A 0.36 J1 0.36, 10.0: A 1.00 J1/A 0.43 J1 0.43, 30.0: A 1.00 J1/A 0.48 J1 0.48
+PHYS cross-check physics.py alpha*a 2: A 0.886 J1/A 0.229 vs RT7 0.887 / 0.229
+PHYS FOM ceiling (m K/W) at T_f 310 K: j0.5_kp0.0 9.3, j0.5_kp0.01 7.8, j0.5_kp0.02 6.8, j0.75_kp0.0 13.9, j0.75_kp0.01 11.7, j0.75_kp0.02 10.1; today's mote 5.17
+MIE self-test x 3, m 1.55: Qext 3.7022 (BH 3.1054), Qsca 3.7022
+MIE q_iso at 500 nm, n 1.04+1e-4i, averaged +-2.5 deg (T7 table: a 0.75/1.0/1.5 um, q(10) 12.8/24.5/27, q(15) 5.7/5.0/2.0, q(20) 1.5/0.25/1.4):
+  a 0.50 um: 5:4.33  8:3.91  10:3.56  12:3.16  15:2.53  17:2.12  20:1.53  25:0.762  30:0.286  90:0.00365   | ADA 10/15/20: 3.42/2.52/1.62
+  a 0.75 um: 5:19.9  8:15.9  10:12.8  12:9.75  15:5.74  17:3.65  20:1.52  25:0.137  30:0.0789  90:0.000664   | ADA 10/15/20: 12.4/5.94/1.82
+  a 1.00 um: 5:54.5  8:36.4  10:24.6  12:14.7  15:5  17:1.81  20:0.258  25:0.487  30:0.267  90:0.00367   | ADA 10/15/20: 24.3/5.58/0.332
+  a 1.25 um: 5:111  8:58.7  10:30.8  12:12.7  15:1.83  17:0.732  20:1.2  25:0.43  30:0.121  90:0.00168   | ADA 10/15/20: 31.3/2.21/1.09
+  a 1.50 um: 5:186  8:73.1  10:27.5  12:7.05  15:2  17:2.5  20:1.39  25:0.285  30:0.24  90:0.00349   | ADA 10/15/20: 28.9/1.79/1.69
+  a 2.50 um: 5:453  8:45.2  10:18.5  12:12  15:3.12  17:2.59  20:0.979  25:0.428  30:0.226  90:0.00293   | ADA 10/15/20: 18.2/3.18/1.1
+MIE cross-check rt6.q_iso_profile a 1 um: {'10': 24.495339813739406, '15': 4.955832990987933, '20': 0.248922624687103, '90': 0.0036770092511211262}  (RT7: 10 24.6, 15 5, 20 0.258, 90 0.00367)
+MIE first minima, a 0.75 um: [27.1] deg (depth q_min/q(10deg) 0.001)
+MIE first minima, a 1.00 um: [20.2, 35.1] deg (depth q_min/q(10deg) 0.003)
+MIE first minima, a 1.50 um: [13.4, 23.1, 32.9] deg (depth q_min/q(10deg) 0.042)
+MIE sensitivity at 15 deg, a 1 um: d ln q/d theta -0.44 per deg; d ln q/d ln a -2.4
+MIE +-10 % radius spread, a 0.75 um: 10deg mean 13 [min 9.5, max 16]  15deg mean 5.5 [min 4.9, max 5.8]  17deg mean 3.4 [min 3.1, max 3.5]
+MIE +-10 % radius spread, a 1.00 um: 10deg mean 24 [min 20, max 27]  15deg mean 4.2 [min 2.6, max 5.5]  17deg mean 1.3 [min 0.42, max 2.4]
+MIE +-10 % radius spread, a 1.50 um: 10deg mean 20 [min 12, max 26]  15deg mean 2.2 [min 0.47, max 4.5]  17deg mean 2.8 [min 1.4, max 3.5]
+MIE a 0.75 um +-10 %: worst-size q >= 2 from 1.0 up to 18.3 deg (contiguous window)
+MIE a 1.00 um +-10 %: worst-size q >= 2 from 1.0 up to 15.4 deg (contiguous window)
+[rt7 sections ['phys', 'mie'] done in 3 s]
+
+real	0m4.676s
+user	0m4.087s
+sys	0m0.394s

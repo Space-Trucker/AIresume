@@ -1,2 +1,34 @@
   FOLLOW PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  25 um: r_p50   7.3 r_p99.9 127.3 r_max 7195.7 um  lost 60/60 in 124 mote-s (95% upper 6.1e-01/s)  sat 9.6e-04
   FOLLOW PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  30 um: r_p50   6.1 r_p99.9  78.2 r_max 1098.7 um  lost 50/60 in 503 mote-s (95% upper 1.3e-01/s)  sat 2.6e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  35 um: r_p50   5.5 r_p99.9  36.6 r_max 7286.9 um  lost 15/60 in 1008 mote-s (95% upper 2.3e-02/s)  sat 1.2e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  still, L 3 cm          w  50 um: r_p50   4.5 r_p99.9  14.6 r_max   33.9 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  25 um: r_p50   7.2 r_p99.9 124.5 r_max  182.7 um  lost 60/60 in 76 mote-s (95% upper 9.9e-01/s)  sat 4.1e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  30 um: r_p50   6.2 r_p99.9  75.2 r_max  212.9 um  lost 58/60 in 350 mote-s (95% upper 2.1e-01/s)  sat 1.4e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  35 um: r_p50   5.6 r_p99.9  39.2 r_max  305.7 um  lost 29/60 in 861 mote-s (95% upper 4.6e-02/s)  sat 1.0e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  home, L 3 cm           w  50 um: r_p50   4.9 r_p99.9  15.4 r_max   23.9 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  25 um: r_p50   9.0 r_p99.9 108.9 r_max 4280.5 um  lost 60/60 in 67 mote-s (95% upper 1.1e+00/s)  sat 1.0e-03
+  FOLLOW PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  30 um: r_p50   7.9 r_p99.9  99.3 r_max 15675.3 um  lost 60/60 in 168 mote-s (95% upper 4.5e-01/s)  sat 4.3e-04
+  FOLLOW PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  35 um: r_p50   7.3 r_p99.9  43.3 r_max  327.6 um  lost 36/60 in 753 mote-s (95% upper 6.4e-02/s)  sat 7.5e-05
+  FOLLOW PLM 1.44 kHz, 1-frame latency  quiet office, L 3 cm   w  50 um: r_p50   6.5 r_p99.9  18.2 r_max   30.2 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 3 kHz                     still, L 3 cm          w  25 um: r_p50   4.2 r_p99.9  48.3 r_max  154.4 um  lost 58/60 in 318 mote-s (95% upper 2.3e-01/s)  sat 8.8e-04
+  FOLLOW MEMS 3 kHz                     still, L 3 cm          w  30 um: r_p50   3.8 r_p99.9  24.9 r_max  199.2 um  lost 22/60 in 925 mote-s (95% upper 3.4e-02/s)  sat 1.7e-06
+  FOLLOW MEMS 3 kHz                     still, L 3 cm          w  35 um: r_p50   3.5 r_p99.9  15.2 r_max  118.9 um  lost 4/60 in 1134 mote-s (95% upper 7.1e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 3 kHz                     still, L 3 cm          w  50 um: r_p50   3.1 r_p99.9   8.9 r_max   17.5 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 3 kHz                     home, L 3 cm           w  25 um: r_p50   4.8 r_p99.9  60.7 r_max  142.8 um  lost 60/60 in 164 mote-s (95% upper 4.6e-01/s)  sat 4.9e-04
+  FOLLOW MEMS 3 kHz                     home, L 3 cm           w  30 um: r_p50   4.2 r_p99.9  31.8 r_max  197.5 um  lost 46/60 in 637 mote-s (95% upper 9.3e-02/s)  sat 7.7e-05
+  FOLLOW MEMS 3 kHz                     home, L 3 cm           w  35 um: r_p50   3.9 r_p99.9  17.8 r_max  309.9 um  lost 10/60 in 1077 mote-s (95% upper 1.5e-02/s)  sat 4.7e-06
+  FOLLOW MEMS 3 kHz                     home, L 3 cm           w  50 um: r_p50   3.5 r_p99.9  10.2 r_max   20.8 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 3 kHz                     quiet office, L 3 cm   w  25 um: r_p50   5.8 r_p99.9  68.9 r_max  157.2 um  lost 60/60 in 89 mote-s (95% upper 8.5e-01/s)  sat 4.8e-04
+  FOLLOW MEMS 3 kHz                     quiet office, L 3 cm   w  30 um: r_p50   5.2 r_p99.9  37.1 r_max  176.2 um  lost 53/60 in 500 mote-s (95% upper 1.4e-01/s)  sat 1.5e-04
+  FOLLOW MEMS 3 kHz                     quiet office, L 3 cm   w  35 um: r_p50   4.8 r_p99.9  18.5 r_max  163.2 um  lost 16/60 in 1024 mote-s (95% upper 2.3e-02/s)  sat 6.9e-06
+  FOLLOW MEMS 3 kHz                     quiet office, L 3 cm   w  50 um: r_p50   4.4 r_p99.9  12.0 r_max   18.8 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     still, L 3 cm          w  25 um: r_p50   3.0 r_p99.9  17.5 r_max  159.5 um  lost 6/60 in 1127 mote-s (95% upper 9.7e-03/s)  sat 2.7e-06
+  FOLLOW MEMS 5 kHz                     still, L 3 cm          w  30 um: r_p50   2.7 r_p99.9  11.3 r_max   30.2 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     still, L 3 cm          w  35 um: r_p50   2.5 r_p99.9   8.8 r_max   25.7 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     still, L 3 cm          w  50 um: r_p50   2.3 r_p99.9   6.3 r_max   10.4 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     home, L 3 cm           w  25 um: r_p50   3.3 r_p99.9  17.4 r_max  193.8 um  lost 10/60 in 1100 mote-s (95% upper 1.5e-02/s)  sat 1.1e-05
+  FOLLOW MEMS 5 kHz                     home, L 3 cm           w  30 um: r_p50   3.0 r_p99.9  11.6 r_max   30.0 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     home, L 3 cm           w  35 um: r_p50   2.8 r_p99.9   9.1 r_max   17.9 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     home, L 3 cm           w  50 um: r_p50   2.6 r_p99.9   7.0 r_max   10.7 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
+  FOLLOW MEMS 5 kHz                     quiet office, L 3 cm   w  25 um: r_p50   3.8 r_p99.9  17.6 r_max  211.4 um  lost 7/60 in 1110 mote-s (95% upper 1.1e-02/s)  sat 4.1e-05
+  FOLLOW MEMS 5 kHz                     quiet office, L 3 cm   w  30 um: r_p50   3.5 r_p99.9  11.9 r_max   38.9 um  lost 0/60 in 1188 mote-s (95% upper 2.5e-03/s)  sat 0.0e+00
