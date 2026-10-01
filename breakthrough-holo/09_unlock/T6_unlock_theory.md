@@ -150,6 +150,41 @@ With ≤ 100 W IR and δ = 3 mm:
 6. **Sensing.** Per-mote 3D position to ~10 µm at ≥ 20 kHz for 10³–10⁴ motes. A candidate is several event cameras with modulated illumination: ~2×10⁸ position samples per second in total. This needs design.
 4. **Safety argument.** Whether IEC 60825-1/-4 accept a monitored-beam interlock as the primary safeguard for a consumer product.
 
+## 3a'. Idea round 2 (materials and hardware) and real device rates (M15e, `results/m15e_real_devices.json`)
+
+**Report:** `idea_round_2_sonnet.md`. Main-session checks:
+- **Confirmed with physics.py.** An optically thick **plain black carbon aerogel mote** (a = 15 µm, α = 3×10⁵ m⁻¹, k = 0.035) has τ = 4.5, J₁/A = 0.35, **FOM = 4.05**, FOM·A = 3.95. At 10 µm, FOM = 3.4. Larger motes reach the FOM ≳ 4 gate with a material class that has measured bulk data.
+- **Accepted: the white coat is thermally harmful.** A shell adds lateral conduction k_s·2t/a and roughly halves FOM·A. Passes 3–4 used an optimistic +0.01 W/m/K. The black mote (side albedo ~1–3 %) is preferred.
+- **Accepted: real device rates.**
+  - The phase hologram is a 4K LCoS (GAEA-2.1) at 60–180 Hz; no 8K phase LCoS exists.
+  - The fast gate is a DLP650LNIR at **12.5 kHz**, not 20 kHz.
+  - The TI PLM (1.44 kHz) is available by invitation only, with 4-bit phase and ~30 % efficiency at 1550 nm.
+  - No single device gives 10⁸–10⁹ modes at kHz rates.
+- **Sensing.** No SWIR event camera exists. Per-mote tracking at ≥ 20 kHz has to use visible-scatter event cameras (IMX636 class, ~1 Gev/s), split over 8–12 cameras.
+- **Killed (with the numbers that kill them, in the report):**
+  - Er³⁺ upconversion of the trap light;
+  - visible trap beams;
+  - third-harmonic generation;
+  - hollow carbon spheres;
+  - core-shell skins;
+  - nano-absorber composites at the τ ≥ 3 needed;
+  - carbon-black-opacified silica aerogel at µm size.
+
+**M15e: H10 layout, ≤ 100 W IR, δ = 3 mm, 12.5 kHz gate, 180 Hz hologram.**
+
+| Content / room | Black carbon 10–15 µm (FOM 3.4–4.1) | ITO-aerogel 5 µm (FOM 5.3, unmade) |
+|---|---|---|
+| Accent, quiet | ✓ 85 W, 2.6–5.8×10⁸ px (31–70 4K panels), $29–39k vol; **drops out near hands** | ✓ 84 W, 21 panels; holds with a head blocked |
+| Sketch, quiet | ✓ 86 W, 0.7–1.1×10⁹ px (82–135 panels), $42–55k vol; drops out near hands | ✓ 86 W, 62 panels; holds |
+| Sketch, calm | ✗ heat / visible-spot class | ✓ 82 W, 91 panels |
+| Film density, quiet | ✗ 160–180 W | ✗ 102 W (just over the cap) |
+| Any content, normal room | ✗ | ✗ (holographic mode) → use the fast-POV mode (§3c) |
+
+**Net.**
+- With a **known material class** (black carbon aerogel, still to be measured at µm size), the holographic static mode reaches an **Iron-Man sketch in a quiet room** using ~80–135 4K phase panels and ~86 W of 1550 nm.
+- Robust touch, calm rooms and film density need the better mote.
+- Normal rooms need the fast-POV mode.
+
 ## 3b. Content speed (I5), checked with the existing v4 machinery
 
 **Bound B8, content speed.** Content cannot move faster than its motes can, relative to the air. The heat-limited mote speed is v_max ≈ 0.2–0.5 m/s with today's best-estimate motes (v4/M13). [DERIVED]

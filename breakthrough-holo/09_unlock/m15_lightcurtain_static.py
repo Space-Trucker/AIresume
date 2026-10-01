@@ -47,6 +47,10 @@ MOTES = {
     "carbon_aerogel_pess": dict(alpha=2e5, k_eff=0.08, q_side=0.03, T_max=550.0, rho=150.0, j1_factor=1.0),
     # with a thin porous white silica shell: visible side scatter q ~ 0.3 [ESTIMATE]; shell lowers J1 ~10 %, adds k
     "carbon_aerogel_white": dict(alpha=3e5, k_eff=0.055, q_side=0.30, T_max=600.0, rho=110.0, j1_factor=0.9),
+    # idea round 2 (sonnet, verified with physics.py): plain BLACK carbon aerogel, optically thick by size. No white coat:
+    # a coat adds lateral conduction (k_eff + 2 k_s t/a) and roughly halves FOM.A. Side albedo of a black sphere ~1-3 %.
+    "carbon_black": dict(alpha=3e5, k_eff=0.035, q_side=0.02, T_max=600.0, rho=100.0, j1_factor=1.0),
+    "carbon_black_dense": dict(alpha=6e5, k_eff=0.05, q_side=0.02, T_max=600.0, rho=200.0, j1_factor=1.0),
     # v4 reference mote (ITO island skin on silica aerogel): skin absorber, J1/A 0.486 regardless of size
     "ito_aerogel": dict(alpha=None, j1A=0.486, A=1.0, k_eff=0.04, q_side=0.3, T_max=600.0, rho=150.0, j1_factor=1.0),
 }
@@ -352,6 +356,31 @@ def main4(P_ir_max=100.0):
         json.dump(rows, fh, indent=1)
 
 
+def main5(P_ir_max=100.0, f_fast=12.5e3, holo_rate=180.0):
+    """Real 2026 device rates (idea round 2): DLP650LNIR 12.5 kHz binary gate, GAEA-2.1 4K phase LCoS 60-180 Hz."""
+    print(f"\nM15e real device rates (fast gate {f_fast / 1e3:.1f} kHz, hologram {holo_rate:.0f} Hz), H10 layout, "
+          f"<= {P_ir_max:.0f} W IR, delta 3 mm; black carbon motes sized for optical depth")
+    print(f"{'content':12s} {'room':6s} {'mote':18s} {'a':>3s} {'FOM':>4s} {'dT':>4s} {'occ':>4s} {'r_c':>5s} {'r_v':>4s} "
+          f"{'P_IR':>6s} {'P_vis':>6s} {'px_total':>9s} {'4K':>5s} {'vmax':>5s} {'vol$k':>6s}  fails")
+    rows = []
+    for content in ("accent", "sketch", "film_density"):
+        for room in ("quiet", "calm", "normal"):
+            for mote, a in (("carbon_black", 10e-6), ("carbon_black", 15e-6), ("carbon_black_dense", 5e-6),
+                            ("ito_aerogel", 5e-6)):
+                d = optimise(basis="volume", content=content, room=room, mote=mote, a=a, delta=3e-3,
+                             P_ir_max=P_ir_max, layout="H10", f_fast=f_fast, holo_rate=holo_rate)
+                do = design2(content=content, room=room, mote=mote, a=a, delta=3e-3, layout="H10", occluded=True,
+                             r_c=d["r_c_um"] * 1e-6, r_v=d["r_v_um"] * 1e-6, f_fast=f_fast, holo_rate=holo_rate)
+                px = LAYOUTS["H10"]["heads"] * d["M_dir"] + d["M_vis"]
+                rows.append(dict(d, a_um=a * 1e6, px_total=px, occluded_dT=do["dT"], occluded_fails=do["fails"]))
+                print(f"{content:12s} {room:6s} {mote:18s} {a * 1e6:3.0f} {d['FOM']:4.1f} {d['dT']:4.0f} "
+                      f"{do['dT']:4.0f} {d['r_c_um']:5.0f} {d['r_v_um']:4.0f} {d['P_ir_W']:6.1f} {d['P_vis_W']:6.2f} "
+                      f"{px:9.1e} {px / 8.3e6:5.0f} {d['v_content_max_cm_s']:5.2f} {d['cost_volume_k']:6.0f}  "
+                      f"{','.join(d['fails']) or 'OK'}{' | occluded: heat' if 'heat' in do['fails'] else ''}")
+    with open(os.path.join(HERE, "results", "m15e_real_devices.json"), "w") as fh:
+        json.dump(rows, fh, indent=1)
+
+
 def main3(P_ir_max=100.0):
     print(f"\nM15c practical cap: <= {P_ir_max:.0f} W of 1550 nm in total (volume prices); mote FOM from alpha*a")
     print(f"{'content':12s} {'room':6s} {'mote':20s} {'a':>3s} {'FOM':>4s} {'dT':>4s} {'dmm':>4s} {'N':>6s} {'r_c':>5s} "
@@ -376,3 +405,4 @@ if __name__ == "__main__":
     main2()
     main3()
     main4()
+    main5()
