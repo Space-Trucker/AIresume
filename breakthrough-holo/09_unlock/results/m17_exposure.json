@@ -1,0 +1,67 @@
+[
+ {
+  "N": 9900,
+  "beams": 29700,
+  "P_focus_mW": 4.0,
+  "r_c_um": 25.0,
+  "max_mW": 20.27026579227415,
+  "p99_mW": 12.117755023919937,
+  "at_mote_median_mW": 6.386803959582906,
+  "own_focus_mW": 4.0,
+  "stacking_factor": 5.067566448068537,
+  "case": "film density, passive Class 1 (M15f)",
+  "focus_cap_for_class1_mW": 1.9733337692713275
+ },
+ {
+  "N": 9900,
+  "beams": 29700,
+  "P_focus_mW": 4.0,
+  "r_c_um": 15.0,
+  "max_mW": 19.849113929763046,
+  "p99_mW": 12.300589667334695,
+  "at_mote_median_mW": 6.385973002842866,
+  "own_focus_mW": 4.0,
+  "stacking_factor": 4.9622784824407615,
+  "case": "film density, passive Class 1, r_c 15",
+  "focus_cap_for_class1_mW": 2.0152033053738188
+ },
+ {
+  "N": 1650,
+  "beams": 4950,
+  "P_focus_mW": 4.0,
+  "r_c_um": 25.0,
+  "max_mW": 13.566273153875997,
+  "p99_mW": 10.266814239634675,
+  "at_mote_median_mW": 5.957071890074588,
+  "own_focus_mW": 4.0,
+  "stacking_factor": 3.3915682884689993,
+  "case": "sketch, passive Class 1",
+  "focus_cap_for_class1_mW": 2.948488471837357
+ },
+ {
+  "N": 9900,
+  "beams": 29700,
+  "P_focus_mW": 10.0,
+  "r_c_um": 22.0,
+  "max_mW": 50.53971077489973,
+  "p99_mW": 30.450644300179125,
+  "at_mote_median_mW": 15.971578649615827,
+  "own_focus_mW": 10.0,
+  "stacking_factor": 5.053971077489972,
+  "case": "film density, curtain (M15f)",
+  "focus_cap_for_class1_mW": 1.978642110664085
+ },
+ {
+  "N": 9900,
+  "beams": 29700,
+  "P_focus_mW": 50.0,
+  "r_c_um": 55.0,
+  "max_mW": 256.19060566052605,
+  "p99_mW": 151.23129225196922,
+  "at_mote_median_mW": 80.64454030421679,
+  "own_focus_mW": 50.0,
+  "stacking_factor": 5.12381211321052,
+  "case": "film density, curtain, 50 mW",
+  "focus_cap_for_class1_mW": 1.9516718761442087
+ }
+]

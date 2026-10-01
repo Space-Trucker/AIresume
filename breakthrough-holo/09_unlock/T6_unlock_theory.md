@@ -216,6 +216,15 @@ With ≤ 100 W IR and δ = 3 mm:
 - At a = 5 µm, sketch and film density in a normal room fail when a hand blocks a head, and fail Class 1.
 - **Design point: a ≈ 2.5 µm, FOM ≥ 4.** These motes are respirable, which bears on R3 (owner ruling, toxicology).
 
+**Line-of-sight stacking (M17, `m17_exposure_field.py`, `results/m17_exposure.json`).**
+
+The question: what passes through a 3.5 mm pupil anywhere in or around a random film-density wireframe? Setup: 9,900 motes, 3 active H14 beams each, focus budget shared.
+- **The worst point collects 5.1× the per-focus power** (p99: 3×). For a sketch it is 3.4×. The extra comes from the diverging tails of beams to nearby motes.
+- **Passive Class 1 therefore needs ≤ 2.0 mW per focus at film density and ≤ 3.0 mW for a sketch.** That is not the 4–5 mW of M15f (k_ov = 2).
+- Through the P·M invariant this doubles the hologram pixels for film density (~5×10¹⁰, ~6,000 4K panels; ~$1.5M at volume pricing) and multiplies them ×1.4 for a sketch.
+- A field checker that assigns heads to avoid stacking (heads were assigned at random here) should recover part of this. It is a certified software function either way.
+- **Curtain mode** (10–50 mW foci): the worst sums are 50–256 mW. This confirms opus's warning about summed sub-threshold intercepts. The curtain must trip on the *sum* through any eye-sized region, which per-beam monitoring cannot see. So the **curtain is defence in depth only**, as decided above.
+
 **Curtain standards analysis (opus, [MEASURED via secondary sources]).**
 - Physics and doses are sound.
 - Corrected 1550 nm cut dose: 10⁴ J/m² over a **1 mm** aperture for t < 0.35 s, i.e. 7.85 mJ. Allowed cut times are 39–157 ms at 200–50 mW, so a standard Type 4 light curtain (6–13 ms) suffices.
