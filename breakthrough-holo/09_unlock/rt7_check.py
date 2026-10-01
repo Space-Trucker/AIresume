@@ -9,7 +9,8 @@ Independence rules (owner rule: double-validate):
   loop simulator are all written here.
 - physics.py, rt6_check.py, m17_exposure_field.py, m18*.py are imported ONLY in clearly marked cross-check lines.
 
-Run: python3 rt7_check.py <section> [<section> ...]   sections: phys mie vis modes b9 loop loopx i9 table all
+Run: python3 rt7_check.py <section> [<section> ...]   sections: phys mie vis modes b9 b9fix i9 loop loop2 loop3 loopx table all
+(loop, loop2, loop3 and loopx are the slow ones: ~25, 6, 3 and 3 min on one core)
 """
 import json
 import math
@@ -1174,6 +1175,29 @@ LOOP_RUNS = {
     "L_mems10_w40_home_meanwind": dict(mod="MEMS 10 kHz", room="home", w=40e-6),
     "M_mems10_w35_still": dict(mod="MEMS 10 kHz", room="still", w=35e-6),
 }
+LOOP_RUNS3 = {
+    "R_follow_mems5_w30_still": dict(mod="MEMS 5 kHz", room="still", w=30e-6, follow=True),
+    "S_follow_mems5_w35_home_meanwind": dict(mod="MEMS 5 kHz", room="home", w=35e-6, follow=True),
+}
+LOOP_RUNS2 = {
+    "N_follow_mems5_w50_qoffice_meanwind": dict(mod="MEMS 5 kHz", room="quiet_office", w=50e-6, follow=True),
+    "O_follow_mems3_w50_qoffice_meanwind": dict(mod="MEMS 3 kHz", room="quiet_office", w=50e-6, follow=True),
+    "P_follow_plm1f_w50_still": dict(mod="PLM 1.44 kHz", room="still", w=50e-6, lat=1, follow=True),
+    "Q_mems10_w40_qoffice_meanwind": dict(mod="MEMS 10 kHz", room="quiet_office", w=40e-6),
+}
+
+
+def sec_loop2(runs=None, tag="loop2"):
+    """Second batch (spot-following with the mean wind; MEMS 10 kHz in the quiet office)."""
+    out = {}
+    for name, kw in (runs or LOOP_RUNS2).items():
+        t0 = time.time()
+        kw = dict(kw, n_motes=200, dur=60.0, seed=zlib.crc32(name.encode()) % 100000)
+        r = simulate_rt7(**kw)
+        out[name] = r
+        print(f"LOOP {name}: " + fmt_loop(r) + f"  ({time.time() - t0:.0f} s)", flush=True)
+        dump(tag, out)
+    return out
 
 
 def sec_loop(names=None, n_motes=200, dur=60.0):
@@ -1397,10 +1421,53 @@ def sec_b9fix():
     return out
 
 
+# ======================================================================================================================
+# Section table: corrected design rows (Class 1 waist with RT7 stacking and window derate; loop floors from sec loop)
+# ======================================================================================================================
+def sec_table():
+    out = dict(rows=[])
+    AEL = 1000.0 * math.pi * 1.75e-3 ** 2
+    b9 = json.load(open(os.path.join(RES, "rt7_b9.json")))
+    hs_sketch = b9["stacking"]["sketch_LP_mean"]                  # LP-weighted, time-mean h, random arcs, w 50 um
+    hs = {"sketch": hs_sketch, "film_density": hs_sketch * 5.22 / 3.32}   # film: scaled by T7's own film/sketch stacking
+    rooms = {"still": (0.0, 0.03), "home": (0.05, 0.03), "quiet_office": (0.10, 0.03)}
+    derate = {}
+    for rn, (U, sg) in rooms.items():                               # 10-s window p99.9 / long-term mean of |u|
+        rr = np.random.default_rng(zlib.crc32(rn.encode()))
+        u = gen_drafts(40, 1500.0, 50.0, sg, 0.03, U, max(U, sg), rr).astype(float)
+        sp = np.linalg.norm(u, axis=1)
+        k = 500
+        cs = np.cumsum(np.pad(sp, ((0, 0), (1, 0))), axis=1)
+        rm = (cs[:, k:] - cs[:, :-k]) / k / sp.mean()
+        derate[rn] = dict(v_mean=float(sp.mean()), win10=float(np.percentile(rm, 99.9)))
+    out["derate"] = derate
+    motes = {"T7 mote (A 1, J1/A 0.486)": hold_I(1e-6, 0.1)["I"] / 0.1,
+             "thin-skin mote (A 0.60, J1/A 0.40)": hold_I(1e-6, 0.1, j1A=0.40, A=0.60)["I"] / 0.1}
+    eta = 0.75 * 0.769 * 0.85
+    print("TABLE 10-s window derates: " + ", ".join(f"{k} {v['win10']:.2f} (mean |u| {v['v_mean']:.3f})" for k, v in derate.items()))
+    for content, S in (("sketch", 5.0), ("film_density", 30.0)):
+        N = S / 3e-3
+        for rn, (U, sg) in rooms.items():
+            for mname, Iu in motes.items():
+                HS = hs[content] * derate[rn]["win10"]
+                vm = derate[rn]["v_mean"]
+                w_c1 = math.sqrt(2 * AEL / (math.pi * HS * Iu * vm))
+                w_t7 = math.sqrt(2 * AEL / (math.pi * 2.14 * (3.32 if content == "sketch" else 5.22) * Iu * vm))
+                P_ir = N * 1.33 * Iu * (U + 3.1 * sg) * math.pi * w_c1 ** 2 / 2 / eta
+                M_ir = 1.34e10 * (51e-6 / w_c1) ** 2
+                row = dict(content=content, room=rn, mote=mname, HS=HS, w_class1_um=w_c1 * 1e6, w_t7conv_um=w_t7 * 1e6,
+                           P_ir_W=P_ir, M_ir=M_ir)
+                out["rows"].append(row)
+                print(f"TABLE {content:12s} {rn:12s} {mname:36s}: h s (eff) {HS:5.1f} -> Class 1 waist {w_c1 * 1e6:4.0f} um "
+                      f"(T7 conventions {w_t7 * 1e6:4.0f}); IR {P_ir:5.1f} W at that waist; IR modes {M_ir:.1e}")
+    dump("table", out)
+    return out
+
+
 if __name__ == "__main__":
     secs = sys.argv[1:] or ["all"]
     t0 = time.time()
-    table = {"phys": sec_phys, "mie": sec_mie, "vis": sec_vis, "modes": sec_modes, "b9": sec_b9, "loop": sec_loop, "i9": sec_i9, "loopx": sec_loopx, "b9fix": sec_b9fix}
+    table = {"phys": sec_phys, "mie": sec_mie, "vis": sec_vis, "modes": sec_modes, "b9": sec_b9, "loop": sec_loop, "i9": sec_i9, "loopx": sec_loopx, "b9fix": sec_b9fix, "loop2": sec_loop2, "table": sec_table, "loop3": lambda: sec_loop2(LOOP_RUNS3, "loop3")}
     for s in secs:
         if s == "all":
             for f in table.values():

@@ -1,0 +1,182 @@
+# rt7_check.py console log (red team 7). Sections run in this order; heavy sections (i9, loop, loopx, loop2, loop3) were run once each and their console output is appended verbatim.
+## python3 rt7_check.py phys mie vis modes b9 b9fix table
+PHYS air at 293 K: mu 1.813e-05, k 0.0257, rho 1.204, mfp 65.1 nm, Cc(1 um) 1.074
+PHYS I_unit (W/m^2 per m/s, 1 um ITO aerogel, J1/A 0.486, A 1, k_p 0.04): K0.75_slipTrue 9.36e+06, K0.75_slipFalse 6.75e+06, K0.956_slipTrue 7.34e+06, K0.956_slipFalse 5.31e+06, K1.17_slipTrue 6.00e+06, K1.17_slipFalse 4.34e+06
+PHYS a 0.5 um: slip factor on F_ph 0.554, Cc 1.149, I_unit 9.04e+06 W/m^2 per m/s
+PHYS a 1.0 um: slip factor on F_ph 0.728, Cc 1.074, I_unit 7.34e+06 W/m^2 per m/s
+PHYS a 2.5 um: slip factor on F_ph 0.875, Cc 1.030, I_unit 6.32e+06 W/m^2 per m/s
+PHYS a 5.0 um: slip factor on F_ph 0.934, Cc 1.015, I_unit 5.95e+06 W/m^2 per m/s
+PHYS cross-check: m18.hold I_unit 7.30e+06 vs RT7 (K 0.956, slip) 7.34e+06 (ratio 1.006)
+PHYS heat still        v_pk 0.162 m/s: hot face 327 K (occluded 355); A 0.5 327 K; thin-skin-consistent A 0.62 J1/A 0.30: 343 K (occ 386)
+PHYS heat home         v_pk 0.212 m/s: hot face 337 K (occluded 373); A 0.5 337 K; thin-skin-consistent A 0.62 J1/A 0.30: 358 K (occ 412)
+PHYS heat quiet_office v_pk 0.262 m/s: hot face 348 K (occluded 390); A 0.5 348 K; thin-skin-consistent A 0.62 J1/A 0.30: 372 K (occ 437)
+PHYS heat office       v_pk 0.640 m/s: hot face 419 K (occluded 511); A 0.5 419 K; thin-skin-consistent A 0.62 J1/A 0.30: 473 K (occ 610)
+PHYS single-pass absorptance ceiling of a homogeneous film in air at 1550 nm (normal incidence): 20nm: 0.50 (n 3.5, k 3.5), 50nm: 0.51 (n 2.3, k 2.2), 100nm: 0.53 (n 1.7, k 1.6), 150nm: 0.56 (n 1.6, k 1.4), 300nm: 0.73 (n 2.3, k 1.0)
+PHYS skin ITO_20nm      : A 0.13  J1/A 0.031  J1 = A J1/A 0.004
+PHYS skin ITO_50nm      : A 0.24  J1/A 0.099  J1 = A J1/A 0.024
+PHYS skin ITO_100nm     : A 0.30  J1/A 0.221  J1 = A J1/A 0.066
+PHYS skin ITO_150nm     : A 0.29  J1/A 0.325  J1 = A J1/A 0.095
+PHYS skin best_50nm     : A 0.56  J1/A 0.382  J1 = A J1/A 0.213  (n 2.70, k 2.82)
+PHYS skin best_100nm    : A 0.57  J1/A 0.408  J1 = A J1/A 0.232  (n 2.10, k 2.07)
+PHYS skin best_150nm    : A 0.61  J1/A 0.421  J1 = A J1/A 0.257  (n 1.80, k 1.61)
+PHYS skin best_250nm    : A 0.68  J1/A 0.471  J1 = A J1/A 0.321  (n 2.85, k 1.31)
+PHYS volume absorber (n = 1, straight rays), alpha*a: 0.5: A 0.47 J1/A 0.07 J1 0.03, 1.0: A 0.70 J1/A 0.13 J1 0.09, 2.0: A 0.89 J1/A 0.23 J1 0.20, 3.0: A 0.95 J1/A 0.29 J1 0.28, 5.0: A 0.98 J1/A 0.36 J1 0.36, 10.0: A 1.00 J1/A 0.43 J1 0.43, 30.0: A 1.00 J1/A 0.48 J1 0.48
+PHYS cross-check physics.py alpha*a 2: A 0.886 J1/A 0.229 vs RT7 0.887 / 0.229
+PHYS FOM ceiling (m K/W) at T_f 310 K: j0.5_kp0.0 9.3, j0.5_kp0.01 7.8, j0.5_kp0.02 6.8, j0.75_kp0.0 13.9, j0.75_kp0.01 11.7, j0.75_kp0.02 10.1; today's mote 5.17
+MIE self-test BH case (x 5.213, m 1.55): Qext 3.1054 (BH 3.1054), Qsca 3.1054
+MIE q_iso at 500 nm, n 1.04+1e-4i, averaged +-2.5 deg (T7 table: a 0.75/1.0/1.5 um, q(10) 12.8/24.5/27, q(15) 5.7/5.0/2.0, q(20) 1.5/0.25/1.4):
+  a 0.50 um: 5:4.33  8:3.91  10:3.56  12:3.16  15:2.53  17:2.12  20:1.53  25:0.762  30:0.286  90:0.00365   | ADA 10/15/20: 3.42/2.52/1.62
+  a 0.75 um: 5:19.9  8:15.9  10:12.8  12:9.75  15:5.74  17:3.65  20:1.52  25:0.137  30:0.0789  90:0.000664   | ADA 10/15/20: 12.4/5.94/1.82
+  a 1.00 um: 5:54.5  8:36.4  10:24.6  12:14.7  15:5  17:1.81  20:0.258  25:0.487  30:0.267  90:0.00367   | ADA 10/15/20: 24.3/5.58/0.332
+  a 1.25 um: 5:111  8:58.7  10:30.8  12:12.7  15:1.83  17:0.732  20:1.2  25:0.43  30:0.121  90:0.00168   | ADA 10/15/20: 31.3/2.21/1.09
+  a 1.50 um: 5:186  8:73.1  10:27.5  12:7.05  15:2  17:2.5  20:1.39  25:0.285  30:0.24  90:0.00349   | ADA 10/15/20: 28.9/1.79/1.69
+  a 2.50 um: 5:453  8:45.2  10:18.5  12:12  15:3.12  17:2.59  20:0.979  25:0.428  30:0.226  90:0.00293   | ADA 10/15/20: 18.2/3.18/1.1
+MIE cross-check rt6.q_iso_profile a 1 um: {'10': 24.495339813739406, '15': 4.955832990987933, '20': 0.248922624687103, '90': 0.0036770092511211262}  (RT7: 10 24.6, 15 5, 20 0.258, 90 0.00367)
+MIE first minima, a 0.75 um: [27.1] deg (depth q_min/q(10deg) 0.001)
+MIE first minima, a 1.00 um: [20.2, 35.1] deg (depth q_min/q(10deg) 0.003)
+MIE first minima, a 1.50 um: [13.4, 23.1, 32.9] deg (depth q_min/q(10deg) 0.042)
+MIE sensitivity at 15 deg, a 1 um: d ln q/d theta -0.44 per deg; d ln q/d ln a -2.4
+MIE +-10 % radius spread, a 0.75 um: 10deg mean 13 [min 9.5, max 16]  15deg mean 5.5 [min 4.9, max 5.8]  17deg mean 3.4 [min 3.1, max 3.5]
+MIE +-10 % radius spread, a 1.00 um: 10deg mean 24 [min 20, max 27]  15deg mean 4.2 [min 2.6, max 5.5]  17deg mean 1.3 [min 0.42, max 2.4]
+MIE +-10 % radius spread, a 1.50 um: 10deg mean 20 [min 12, max 26]  15deg mean 2.2 [min 0.47, max 4.5]  17deg mean 2.8 [min 1.4, max 3.5]
+MIE a 0.75 um +-10 %: worst-size q >= 2 from 1.0 up to 18.3 deg (contiguous window)
+MIE a 1.00 um +-10 %: worst-size q >= 2 from 1.0 up to 15.4 deg (contiguous window)
+VIS forward-illumination coverage: emitters on a wall grid, viewers on a ring at 1.6-2.4 m, eye height 1.6 m
+  window 10.0-20.0 deg, 1 viewers, spacing 1.0 m (  66 emitters): pairs covered  97.5%, emitters useful per viewer 17
+  window 10.0-20.0 deg, 1 viewers, spacing 0.5 m ( 220 emitters): pairs covered  99.9%, emitters useful per viewer 55
+  window 10.0-20.0 deg, 1 viewers, spacing 0.3 m ( 666 emitters): pairs covered 100.0%, emitters useful per viewer 164
+  window 10.0-20.0 deg, 1 viewers, spacing 0.2 m (1430 emitters): pairs covered 100.0%, emitters useful per viewer 344
+  window 10.0-20.0 deg, 3 viewers, spacing 1.0 m (  66 emitters): pairs covered  98.4%, emitters useful per viewer 17
+  window 10.0-20.0 deg, 3 viewers, spacing 0.5 m ( 220 emitters): pairs covered 100.0%, emitters useful per viewer 56
+  window 10.0-20.0 deg, 3 viewers, spacing 0.3 m ( 666 emitters): pairs covered 100.0%, emitters useful per viewer 164
+  window 10.0-20.0 deg, 3 viewers, spacing 0.2 m (1430 emitters): pairs covered 100.0%, emitters useful per viewer 353
+  window  3.0-15.0 deg, 1 viewers, spacing 1.0 m (  66 emitters): pairs covered  95.2%, emitters useful per viewer 14
+  window  3.0-15.0 deg, 1 viewers, spacing 0.5 m ( 220 emitters): pairs covered  99.7%, emitters useful per viewer 49
+  window  3.0-15.0 deg, 1 viewers, spacing 0.3 m ( 666 emitters): pairs covered  99.7%, emitters useful per viewer 140
+  window  3.0-15.0 deg, 1 viewers, spacing 0.2 m (1430 emitters): pairs covered  99.9%, emitters useful per viewer 295
+  window  3.0-15.0 deg, 3 viewers, spacing 1.0 m (  66 emitters): pairs covered  96.1%, emitters useful per viewer 15
+  window  3.0-15.0 deg, 3 viewers, spacing 0.5 m ( 220 emitters): pairs covered  99.7%, emitters useful per viewer 49
+  window  3.0-15.0 deg, 3 viewers, spacing 0.3 m ( 666 emitters): pairs covered  99.7%, emitters useful per viewer 141
+  window  3.0-15.0 deg, 3 viewers, spacing 0.2 m (1430 emitters): pairs covered  99.8%, emitters useful per viewer 305
+  window  4.0-10.0 deg, 1 viewers, spacing 1.0 m (  66 emitters): pairs covered  66.6%, emitters useful per viewer 12
+  window  4.0-10.0 deg, 1 viewers, spacing 0.5 m ( 220 emitters): pairs covered  96.0%, emitters useful per viewer 41
+  window  4.0-10.0 deg, 1 viewers, spacing 0.3 m ( 666 emitters): pairs covered  98.8%, emitters useful per viewer 111
+  window  4.0-10.0 deg, 1 viewers, spacing 0.2 m (1430 emitters): pairs covered  99.3%, emitters useful per viewer 234
+  window  4.0-10.0 deg, 3 viewers, spacing 1.0 m (  66 emitters): pairs covered  69.5%, emitters useful per viewer 12
+  window  4.0-10.0 deg, 3 viewers, spacing 0.5 m ( 220 emitters): pairs covered  96.7%, emitters useful per viewer 42
+  window  4.0-10.0 deg, 3 viewers, spacing 0.3 m ( 666 emitters): pairs covered  98.4%, emitters useful per viewer 113
+  window  4.0-10.0 deg, 3 viewers, spacing 0.2 m (1430 emitters): pairs covered  98.4%, emitters useful per viewer 246
+VIS modes per visible emitter (T7 rule (2 clip os L/(pi w))^2, L = sqrt(1.2) m): w_v 14.4 um: 7.60e+09 (spot 11 uW), w_v 25.0 um: 2.52e+09 (spot 32 uW), w_v 34.0 um: 1.36e+09 (spot 60 uW); IR head at w 51 um: 6.06e+08
+VIS emitter glow toward its viewer (P_e 4.7 mW, field 0.11 sr, aperture 80 mm): non-signal 0.25: 2.32e+00 cd, 365.8 cd/m^2, non-signal 0.01: 9.27e-02 cd, 14.6 cd/m^2, non-signal 0.001: 9.27e-03 cd, 1.5 cd/m^2; one mote 9.0e-06 cd, whole sketch 0.015 cd
+VIS sensing (25 mm lens at 1.5 m, 0.2 ms): IR mote proxy m 1.05+0.12i Qabs 0.80 Qsca 0.25
+  vis_90deg  q 0.00367: 2.32 photoelectrons/frame -> sigma px100um 68.4 um, px500um 189.7 um
+  vis_15deg  q 5: 3.16e+03 photoelectrons/frame -> sigma px100um 1.9 um, px500um 5.1 um
+  ir_20deg   q 2.79: 6.65e+04 photoelectrons/frame -> sigma px100um 0.4 um, px500um 1.1 um
+  ir_40deg   q 0.469: 1.12e+04 photoelectrons/frame -> sigma px100um 1.0 um, px500um 2.7 um
+  ir_60deg   q 0.00333: 79.4 photoelectrons/frame -> sigma px100um 11.7 um, px500um 32.4 um
+MODES head 0 (np.float64(0.15), np.float64(0.15), np.float64(2.7)): d 3.15-4.75 m, sin(half-field) 0.181 x 0.158, aperture 110 mm, pitch 2.86 um, M 1.31e+09 (T7 per head 6.06e+08, x2.2)
+MODES head 1 (np.float64(5.85), np.float64(0.15), np.float64(2.7)): d 3.15-4.75 m, sin(half-field) 0.181 x 0.158, aperture 110 mm, pitch 2.86 um, M 1.31e+09 (T7 per head 6.06e+08, x2.2)
+MODES head 2 (np.float64(5.85), np.float64(4.85), np.float64(2.7)): d 3.15-4.75 m, sin(half-field) 0.181 x 0.158, aperture 110 mm, pitch 2.86 um, M 1.31e+09 (T7 per head 6.06e+08, x2.2)
+MODES head 3 (np.float64(0.15), np.float64(4.85), np.float64(2.7)): d 3.15-4.75 m, sin(half-field) 0.181 x 0.158, aperture 110 mm, pitch 2.86 um, M 1.31e+09 (T7 per head 6.06e+08, x2.2)
+MODES head 4 (np.float64(0.15), np.float64(0.15), np.float64(0.12)): d 3.09-4.67 m, sin(half-field) 0.183 x 0.155, aperture 109 mm, pitch 2.82 um, M 1.25e+09 (T7 per head 6.06e+08, x2.1)
+MODES head 5 (np.float64(5.85), np.float64(0.15), np.float64(0.12)): d 3.09-4.67 m, sin(half-field) 0.183 x 0.155, aperture 109 mm, pitch 2.82 um, M 1.25e+09 (T7 per head 6.06e+08, x2.1)
+MODES head 6 (np.float64(5.85), np.float64(4.85), np.float64(0.12)): d 3.09-4.67 m, sin(half-field) 0.183 x 0.155, aperture 109 mm, pitch 2.82 um, M 1.25e+09 (T7 per head 6.06e+08, x2.1)
+MODES head 7 (np.float64(0.15), np.float64(4.85), np.float64(0.12)): d 3.09-4.67 m, sin(half-field) 0.183 x 0.155, aperture 109 mm, pitch 2.82 um, M 1.25e+09 (T7 per head 6.06e+08, x2.1)
+MODES head 8 (np.float64(3.0), np.float64(2.5), np.float64(2.75)): d 1.05-1.98 m, sin(half-field) 0.430 x 0.430, aperture 46 mm, pitch 1.20 um, M 1.46e+09 (T7 per head 6.06e+08, x2.4)
+MODES head 9 (np.float64(3.0), np.float64(2.5), np.float64(0.05)): d 0.85-1.80 m, sin(half-field) 0.506 x 0.506, aperture 42 mm, pitch 1.02 um, M 1.67e+09 (T7 per head 6.06e+08, x2.8)
+MODES H10 total at w 51 um: 1.34e+10 vs T7 6.06e+09 (x2.21)
+MODES conventions at w = r_c = 51 um, A_f 1.2 m^2: etendue minimum 1.47e+08; T7 6.06e+08 (x4.13); RT6 flat-top rho 1 bare 1.45e+09 (x9.9 the minimum, x2.4 T7); with T7's os/square conventions 4.15e+09 (x6.9 T7)
+MODES pixel envelope at os 1.5: mean 0.789, harmonic 0.769, corner 0.468 (T7 text says 0.65; m18 code uses 0.787)
+MODES clip 1.2: square aperture passes 0.967 of the Gaussian beam
+B9 Class 1 at 1500-1800 nm [memory; MPE 0.1 W/cm^2 and 1.5 t^0.375 mm aperture confirmed by search]: AEL(t>10 s) = 1000 W/m^2 x 3.5 mm disc = 9.62 mW; AEL(t<=0.35 s) = 1e4 J/m^2 x 1 mm disc = 7.85 mJ
+B9 power-equivalent AEL(t): 0.01 s 785.4 mW, 0.1 s 78.5 mW, 0.35 s 22.4 mW, 1 s 17.7 mW, 3 s 13.4 mW, 10 s 9.6 mW, 100 s 9.6 mW
+B9 w  15 um, h s 7.1: v_max  52.2 cm/s (K 0.75-1.17: 41.0-63.9); realistic skin (A 0.6, J1/A 0.40):  25.8 cm/s
+B9 w  20 um, h s 7.1: v_max  29.4 cm/s (K 0.75-1.17: 23.0-35.9); realistic skin (A 0.6, J1/A 0.40):  14.5 cm/s
+B9 w  35 um, h s 7.1: v_max   9.6 cm/s (K 0.75-1.17: 7.5-11.7); realistic skin (A 0.6, J1/A 0.40):   4.7 cm/s
+B9 w  50 um, h s 7.1: v_max   4.7 cm/s (K 0.75-1.17: 3.7-5.8); realistic skin (A 0.6, J1/A 0.40):   2.3 cm/s
+B9 w  70 um, h s 7.1: v_max   2.4 cm/s (K 0.75-1.17: 1.9-2.9); realistic skin (A 0.6, J1/A 0.40):   1.2 cm/s
+B9 invariant: v_max = 7.46e-11 m/s per hologram pixel per head (T7 conventions) -> 1 m/s needs 1.34e+10 px/head (w 10.8 um); with the real H10 field (x2.2) 3.0e+10
+B9 stacking cross-check, sketch, w 50 um, 3 random heads, equal split: RT7 5.06 vs m17 3.32 (m17 uses 14 heads)
+B9 sketch (random arcs, 1659 motes), LP-weighted mean exposure: worst pupil 6.27 P_unit (T7 assumes h_worst x s = 7.1); mean LP cost over directions 1.33, worst 1.74
+B9 aligned content 'vertical_on_axis' (267 motes): worst pupil 49.5 P_unit (x7.0 T7's 7.1)
+B9 aligned content 'vertical_1cm_off' (267 motes): worst pupil 36.1 P_unit (x5.1 T7's 7.1)
+B9 aligned content 'vertical_3cm_off' (267 motes): worst pupil 14.3 P_unit (x2.0 T7's 7.1)
+B9 aligned content 'aimed_at_corner_head' (300 motes): worst pupil 33.8 P_unit (x4.8 T7's 7.1)
+B9 vertical on-axis line at w 25 um: worst pupil 31.0 P_unit
+B9 vertical on-axis line at w 70 um: worst pupil 58.0 P_unit
+B9 window check sig0.03_L0.03_U0.0: mean |u| 0.048 m/s; running-mean p99.9 / mean: 0.35s 2.48, 1.0s 2.28, 3.0s 1.88, 10.0s 1.50, 30.0s 1.27 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.50
+B9 window check sig0.03_L0.1_U0.0: mean |u| 0.048 m/s; running-mean p99.9 / mean: 0.35s 2.53, 1.0s 2.47, 3.0s 2.26, 10.0s 1.83, 30.0s 1.47 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.83
+B9 window check sig0.03_L0.03_U0.1: mean |u| 0.109 m/s; running-mean p99.9 / mean: 0.35s 1.75, 1.0s 1.59, 3.0s 1.39, 10.0s 1.22, 30.0s 1.13 -> worst window / AEL(t) at a mean set to the 10 mW AEL: 1.22
+B9FIX vertical_on_axis: drop 2 co-axial head(s) -> worst pupil 2.3 P_unit, LP cost mean 2.08, worst 4.95 (all heads: worst ~1.7-2.1)
+B9FIX aimed_at_corner_head: drop 1 co-axial head(s) -> worst pupil 6.0 P_unit, LP cost mean 1.40, worst 2.61 (all heads: worst ~1.7-2.1)
+TABLE 10-s window derates: still 1.50 (mean |u| 0.048), home 1.45 (mean |u| 0.067), quiet_office 1.22 (mean |u| 0.109)
+TABLE sketch       still        T7 mote (A 1, J1/A 0.486)           : h s (eff)   9.4 -> Class 1 waist   43 um (T7 conventions   50); IR   9.0 W at that waist; IR modes 1.9e+10
+TABLE sketch       still        thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)   9.4 -> Class 1 waist   30 um (T7 conventions   35); IR   9.0 W at that waist; IR modes 3.8e+10
+TABLE sketch       home         T7 mote (A 1, J1/A 0.486)           : h s (eff)   9.1 -> Class 1 waist   37 um (T7 conventions   42); IR  10.1 W at that waist; IR modes 2.6e+10
+TABLE sketch       home         thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)   9.1 -> Class 1 waist   26 um (T7 conventions   29); IR  10.1 W at that waist; IR modes 5.2e+10
+TABLE sketch       quiet_office T7 mote (A 1, J1/A 0.486)           : h s (eff)   7.6 -> Class 1 waist   32 um (T7 conventions   33); IR  10.1 W at that waist; IR modes 3.5e+10
+TABLE sketch       quiet_office thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)   7.6 -> Class 1 waist   22 um (T7 conventions   23); IR  10.1 W at that waist; IR modes 7.0e+10
+TABLE film_density still        T7 mote (A 1, J1/A 0.486)           : h s (eff)  14.8 -> Class 1 waist   34 um (T7 conventions   40); IR  34.3 W at that waist; IR modes 3.0e+10
+TABLE film_density still        thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)  14.8 -> Class 1 waist   24 um (T7 conventions   28); IR  34.3 W at that waist; IR modes 6.0e+10
+TABLE film_density home         T7 mote (A 1, J1/A 0.486)           : h s (eff)  14.3 -> Class 1 waist   29 um (T7 conventions   33); IR  38.6 W at that waist; IR modes 4.0e+10
+TABLE film_density home         thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)  14.3 -> Class 1 waist   21 um (T7 conventions   23); IR  38.6 W at that waist; IR modes 8.2e+10
+TABLE film_density quiet_office T7 mote (A 1, J1/A 0.486)           : h s (eff)  12.0 -> Class 1 waist   25 um (T7 conventions   26); IR  38.5 W at that waist; IR modes 5.5e+10
+TABLE film_density quiet_office thin-skin mote (A 0.60, J1/A 0.40)  : h s (eff)  12.0 -> Class 1 waist   18 um (T7 conventions   18); IR  38.5 W at that waist; IR modes 1.1e+11
+[rt7 sections ['phys', 'mie', 'vis', 'modes', 'b9', 'b9fix', 'table'] done in 48 s]
+## python3 rt7_check.py i9
+I9 head 0: room depth 1.60 m (T7: 0.8 m) -> intermediate depth 7.4 mm at m 15 (T7: 3.6 mm); lateral magnification varies 11.8-18.2 over the depth
+I9 head 8: room depth 0.93 m (T7: 0.8 m) -> intermediate depth 4.2 mm at m 15 (T7: 3.6 mm); lateral magnification varies 10.6-20.9 over the depth
+I9 head 9: room depth 0.94 m (T7: 0.8 m) -> intermediate depth 4.3 mm at m 15 (T7: 3.6 mm); lateral magnification varies 9.9-22.0 over the depth
+I9 sketch head 0 layers 4 served 1.00 (N 1531): crosstalk median 0.00% mean 9.74% p90 26.7% p99 100%; motes >1% 24%, >10% 13%; own-pixel conflicts 23.1%
+I9 sketch head 0 layers 4 served 0.33 (N 524): crosstalk median 0.00% mean 3.61% p90 1.5% p99 97%; motes >1% 11%, >10% 5%; own-pixel conflicts 11.5%
+I9 sketch head 0 layers 8 served 1.00 (N 1531): crosstalk median 0.00% mean 6.69% p90 1.9% p99 100%; motes >1% 11%, >10% 8%; own-pixel conflicts 8.5%
+I9 sketch head 0 layers 8 served 0.33 (N 487): crosstalk median 0.00% mean 2.55% p90 0.0% p99 100%; motes >1% 6%, >10% 4%; own-pixel conflicts 4.9%
+I9 sketch head 9 layers 4 served 1.00 (N 1531): crosstalk median 0.00% mean 10.66% p90 32.0% p99 123%; motes >1% 26%, >10% 16%; own-pixel conflicts 27.6%
+I9 sketch head 9 layers 4 served 0.33 (N 562): crosstalk median 0.00% mean 5.42% p90 5.1% p99 100%; motes >1% 16%, >10% 8%; own-pixel conflicts 15.3%
+I9 sketch head 9 layers 8 served 1.00 (N 1531): crosstalk median 0.00% mean 6.28% p90 0.4% p99 100%; motes >1% 9%, >10% 7%; own-pixel conflicts 8.5%
+I9 sketch head 9 layers 8 served 0.33 (N 511): crosstalk median 0.00% mean 2.17% p90 0.0% p99 77%; motes >1% 6%, >10% 4%; own-pixel conflicts 4.9%
+I9 film   head 0 layers 4 served 1.00 (N 9868): crosstalk median 5.96% mean 28.05% p90 99.6% p99 155%; motes >1% 60%, >10% 44%; own-pixel conflicts 48.7%
+I9 film   head 0 layers 4 served 0.33 (N 3209): crosstalk median 0.05% mean 11.49% p90 42.3% p99 103%; motes >1% 38%, >10% 22%; own-pixel conflicts 27.3%
+I9 film   head 0 layers 8 served 1.00 (N 9868): crosstalk median 0.02% mean 15.28% p90 66.5% p99 138%; motes >1% 38%, >10% 25%; own-pixel conflicts 18.7%
+I9 film   head 0 layers 8 served 0.33 (N 3189): crosstalk median 0.00% mean 6.65% p90 14.0% p99 100%; motes >1% 23%, >10% 11%; own-pixel conflicts 10.7%
+I9 film   head 9 layers 4 served 1.00 (N 9868): crosstalk median 0.38% mean 19.35% p90 96.2% p99 133%; motes >1% 45%, >10% 30%; own-pixel conflicts 36.2%
+I9 film   head 9 layers 4 served 0.33 (N 3191): crosstalk median 0.00% mean 8.62% p90 26.2% p99 100%; motes >1% 25%, >10% 15%; own-pixel conflicts 19.2%
+I9 film   head 9 layers 8 served 1.00 (N 9868): crosstalk median 0.00% mean 11.03% p90 37.0% p99 117%; motes >1% 26%, >10% 16%; own-pixel conflicts 13.9%
+I9 film   head 9 layers 8 served 0.33 (N 3351): crosstalk median 0.00% mean 4.86% p90 4.4% p99 100%; motes >1% 15%, >10% 8%; own-pixel conflicts 7.4%
+[rt7 sections ['i9'] done in 36 s]
+## python3 rt7_check.py loop
+LOOP LP allocation vs scipy linprog: max |cost diff| 4.4e-16, max force error 4.3e-16
+LOOP tuner MEMS 5 kHz d2: RT7 K [  282.5 66498.6     0. ], sigma 1.28 um, f_c 53 Hz, Ms 1.30; rt6.tune K [   469.6 147033.1      0. ], sigma 1.44 um, Ms 1.38
+LOOP A_mems5_w50_still_m18cconv: MEMS 5 kHz   still        w  50 fixed  inst2 lat- U 0.00 noise 4: f_c    53 Hz, lost 0/200 in 11940 mote-s, rate 0.0e+00/s [95% 0.0e+00, 2.5e-04], >w 0, >100um 0, r_p50 2.3 r_p99.9 6.9 um, sat 0.0e+00  (107 s)
+LOOP B_mems5_w50_still: MEMS 5 kHz   still        w  50 fixed  inst2 lat+ U 0.00 noise 4: f_c    53 Hz, lost 0/200 in 11940 mote-s, rate 0.0e+00/s [95% 0.0e+00, 2.5e-04], >w 0, >100um 0, r_p50 2.4 r_p99.9 7.3 um, sat 0.0e+00  (106 s)
+LOOP C_mems5_w50_still_lat3: MEMS 5 kHz   still        w  50 fixed  avg2 lat+ U 0.00 noise 4: f_c    55 Hz, lost 14/200 in 11501 mote-s, rate 1.2e-03/s [95% 6.7e-04, 2.0e-03], >w 14, >100um 14, r_p50 2.5 r_p99.9 8.1 um, sat 7.3e-07  (120 s)
+LOOP D_mems5_w50_home_meanwind: MEMS 5 kHz   home         w  50 fixed  inst2 lat+ U 0.05 noise 4: f_c    65 Hz, lost 59/200 in 9875 mote-s, rate 6.0e-03/s [95% 4.5e-03, 7.7e-03], >w 59, >100um 59, r_p50 2.9 r_p99.9 10.6 um, sat 3.4e-06  (124 s)
+LOOP E_mems5_w50_qoffice_meanwind: MEMS 5 kHz   quiet_office w  50 fixed  inst2 lat+ U 0.10 noise 4: f_c    90 Hz, lost 122/200 in 6982 mote-s, rate 1.7e-02/s [95% 1.5e-02, 2.1e-02], >w 122, >100um 122, r_p50 3.4 r_p99.9 12.4 um, sat 1.5e-05  (111 s)
+LOOP E0_mems5_w50_qoffice_nomean: MEMS 5 kHz   quiet_office w  50 fixed  inst2 lat+ U 0.00 noise 4: f_c    90 Hz, lost 1/200 in 11913 mote-s, rate 8.4e-05/s [95% 2.1e-06, 4.7e-04], >w 1, >100um 1, r_p50 2.9 r_p99.9 8.2 um, sat 1.7e-07  (115 s)
+LOOP Es_mems5_w50_qoffice_meanwind_stiff: MEMS 5 kHz   quiet_office w  50 fixed  inst2 stiff lat+ U 0.10 noise 4: f_c   214 Hz, lost 119/200 in 7093 mote-s, rate 1.7e-02/s [95% 1.4e-02, 2.0e-02], >w 124, >100um 117, r_p50 5.3 r_p99.9 16.6 um, sat 6.6e-05  (117 s)
+LOOP Ds_mems5_w50_home_meanwind_stiff: MEMS 5 kHz   home         w  50 fixed  inst2 stiff lat+ U 0.05 noise 4: f_c   214 Hz, lost 4/200 in 11778 mote-s, rate 3.4e-04/s [95% 9.3e-05, 8.7e-04], >w 4, >100um 4, r_p50 5.1 r_p99.9 14.2 um, sat 2.6e-06  (99 s)
+LOOP F_plm1f_w70_still: PLM 1.44 kHz still        w  70 fixed  inst1 lat+ U 0.00 noise 4: f_c    41 Hz, lost 1/200 in 11907 mote-s, rate 8.4e-05/s [95% 2.1e-06, 4.7e-04], >w 1, >100um 1, r_p50 3.9 r_p99.9 11.6 um, sat 1.2e-07  (29 s)
+LOOP G_plm1f_w70_qoffice_meanwind: PLM 1.44 kHz quiet_office w  70 fixed  inst1 lat+ U 0.10 noise 4: f_c    71 Hz, lost 163/200 in 4377 mote-s, rate 3.7e-02/s [95% 3.2e-02, 4.3e-02], >w 163, >100um 163, r_p50 6.1 r_p99.9 23.6 um, sat 8.1e-05  (29 s)
+LOOP H_follow_mems3_w35_still: MEMS 3 kHz   still        w  35 follow inst2 lat+ U 0.00 noise 4: f_c    54 Hz, lost 51/200 in 10383 mote-s, rate 4.9e-03/s [95% 3.7e-03, 6.5e-03], >w 86, >100um 51, r_p50 3.5 r_p99.9 17.6 um, sat 4.4e-06  (50 s)
+LOOP I_follow_mems3_w35_qoffice_meanwind: MEMS 3 kHz   quiet_office w  35 follow inst2 lat+ U 0.10 noise 4: f_c    93 Hz, lost 200/200 in 174 mote-s, rate 1.1e+00/s [95% 1.0e+00, 1.3e+00], >w 200, >100um 200, r_p50 6.0 r_p99.9 52.2 um, sat 1.1e-03  (48 s)
+LOOP J_follow_plm1f_w50_qoffice_meanwind: PLM 1.44 kHz quiet_office w  50 follow inst1 lat+ U 0.10 noise 4: f_c    71 Hz, lost 144/200 in 5262 mote-s, rate 2.7e-02/s [95% 2.3e-02, 3.2e-02], >w 179, >100um 147, r_p50 6.8 r_p99.9 33.5 um, sat 5.5e-05  (27 s)
+LOOP K_mems5_w50_still_noise8: MEMS 5 kHz   still        w  50 fixed  inst2 lat+ U 0.00 noise 8: f_c    53 Hz, lost 196/200 in 2987 mote-s, rate 6.6e-02/s [95% 5.7e-02, 7.5e-02], >w 196, >100um 196, r_p50 4.9 r_p99.9 26.0 um, sat 1.5e-04  (89 s)
+LOOP L_mems10_w40_home_meanwind: MEMS 10 kHz  home         w  40 fixed  inst2 lat+ U 0.05 noise 4: f_c   107 Hz, lost 1/200 in 11894 mote-s, rate 8.4e-05/s [95% 2.1e-06, 4.7e-04], >w 1, >100um 1, r_p50 2.0 r_p99.9 6.5 um, sat 2.4e-07  (174 s)
+LOOP M_mems10_w35_still: MEMS 10 kHz  still        w  35 fixed  inst2 lat+ U 0.00 noise 4: f_c    94 Hz, lost 3/200 in 11831 mote-s, rate 2.5e-04/s [95% 5.2e-05, 7.4e-04], >w 3, >100um 3, r_p50 1.8 r_p99.9 6.0 um, sat 4.8e-07  (173 s)
+[rt7 sections ['loop'] done in 1521 s]
+## python3 rt7_check.py loopx
+LOOPX m18c.simulate MEMS 5 kHz                     quiet office w 50 um, mean wind U 0.00 m/s, authority (U+5.4 sigma): lost 0/30 in 294 mote-s, r_p99.9 8.9 um, sat 0.0e+00 (76 s)
+LOOPX m18c.simulate PLM 1.44 kHz, 1-frame latency  quiet office w 70 um, mean wind U 0.00 m/s, authority (U+5.4 sigma): lost 0/30 in 294 mote-s, r_p99.9 18.8 um, sat 6.9e-06 (21 s)
+LOOPX m18c.simulate MEMS 5 kHz                     quiet office w 50 um, mean wind U 0.10 m/s, authority (U+5.4 sigma): lost 2/30 in 283 mote-s, r_p99.9 11.7 um, sat 3.3e-06 (81 s)
+LOOPX m18c.simulate PLM 1.44 kHz, 1-frame latency  quiet office w 70 um, mean wind U 0.10 m/s, authority (U+5.4 sigma): lost 24/30 in 107 mote-s, r_p99.9 41.8 um, sat 2.8e-04 (12 s)
+[rt7 sections ['loopx'] done in 190 s]
+## python3 rt7_check.py loop2
+LOOP N_follow_mems5_w50_qoffice_meanwind: MEMS 5 kHz   quiet_office w  50 follow inst2 lat+ U 0.10 noise 4: f_c    90 Hz, lost 0/200 in 11940 mote-s, rate 0.0e+00/s [95% 0.0e+00, 2.5e-04], >w 0, >100um 0, r_p50 3.3 r_p99.9 10.2 um, sat 0.0e+00  (93 s)
+LOOP O_follow_mems3_w50_qoffice_meanwind: MEMS 3 kHz   quiet_office w  50 follow inst2 lat+ U 0.10 noise 4: f_c    93 Hz, lost 81/200 in 8709 mote-s, rate 9.3e-03/s [95% 7.4e-03, 1.2e-02], >w 86, >100um 81, r_p50 4.6 r_p99.9 19.0 um, sat 4.7e-07  (56 s)
+LOOP P_follow_plm1f_w50_still: PLM 1.44 kHz still        w  50 follow inst1 lat+ U 0.00 noise 4: f_c    41 Hz, lost 0/200 in 11940 mote-s, rate 0.0e+00/s [95% 0.0e+00, 2.5e-04], >w 0, >100um 0, r_p50 4.2 r_p99.9 14.1 um, sat 0.0e+00  (31 s)
+LOOP Q_mems10_w40_qoffice_meanwind: MEMS 10 kHz  quiet_office w  40 fixed  inst2 lat+ U 0.10 noise 4: f_c   107 Hz, lost 83/200 in 8716 mote-s, rate 9.5e-03/s [95% 7.6e-03, 1.2e-02], >w 83, >100um 83, r_p50 2.7 r_p99.9 10.0 um, sat 5.0e-06  (191 s)
+[rt7 sections ['loop2'] done in 371 s]
+## python3 rt7_check.py loop3
+LOOP R_follow_mems5_w30_still: MEMS 5 kHz   still        w  30 follow inst2 lat+ U 0.00 noise 4: f_c    53 Hz, lost 1/200 in 11891 mote-s, rate 8.4e-05/s [95% 2.1e-06, 4.7e-04], >w 17, >100um 1, r_p50 3.0 r_p99.9 13.0 um, sat 2.3e-07  (92 s)
+LOOP S_follow_mems5_w35_home_meanwind: MEMS 5 kHz   home         w  35 follow inst2 lat+ U 0.05 noise 4: f_c    65 Hz, lost 3/200 in 11834 mote-s, rate 2.5e-04/s [95% 5.2e-05, 7.4e-04], >w 6, >100um 3, r_p50 3.3 r_p99.9 14.0 um, sat 0.0e+00  (89 s)
+[rt7 sections ['loop3'] done in 180 s]

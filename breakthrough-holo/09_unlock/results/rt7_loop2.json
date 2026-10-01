@@ -1,0 +1,142 @@
+{
+ "N_follow_mems5_w50_qoffice_meanwind": {
+  "mod": "MEMS 5 kHz",
+  "room": "quiet_office",
+  "w_um": 50.0,
+  "n_motes": 200,
+  "dur": 60.0,
+  "meas": "inst",
+  "lat": 2,
+  "follow": true,
+  "lateral": true,
+  "mean_wind": true,
+  "stiff": false,
+  "U": 0.1,
+  "sig_n_um": 4.0,
+  "K": [
+   470.8097928436911,
+   221661.86103751935,
+   0.125
+  ],
+  "f_c_Hz": 90.13675079812133,
+  "Ms": 1.5732976601091482,
+  "sigma_lin_um": 1.6816795684260148,
+  "lost": 0,
+  "mote_s": 11940.000000000002,
+  "rate": 0.0,
+  "rate_ci95": [
+   0.0,
+   0.00025089885038140624
+  ],
+  "n_exceed_w": 0,
+  "n_defect_100um": 0,
+  "r_p50_um": 3.293350612257292,
+  "r_p999_um": 10.2173530677808,
+  "sat_frac": 0.0
+ },
+ "O_follow_mems3_w50_qoffice_meanwind": {
+  "mod": "MEMS 3 kHz",
+  "room": "quiet_office",
+  "w_um": 50.0,
+  "n_motes": 200,
+  "dur": 60.0,
+  "meas": "inst",
+  "lat": 2,
+  "follow": true,
+  "lateral": true,
+  "mean_wind": true,
+  "stiff": false,
+  "U": 0.1,
+  "sig_n_um": 4.0,
+  "K": [
+   565.3976630229928,
+   159837.25867593085,
+   0.125
+  ],
+  "f_c_Hz": 93.10682558705547,
+  "Ms": 1.5747535166490123,
+  "sigma_lin_um": 2.2967889610216337,
+  "lost": 81,
+  "mote_s": 8709.211,
+  "rate": 0.0093004980588942,
+  "rate_ci95": [
+   0.007385937944797223,
+   0.011559669892040629
+  ],
+  "n_exceed_w": 86,
+  "n_defect_100um": 81,
+  "r_p50_um": 4.621784661793298,
+  "r_p999_um": 19.023236232652273,
+  "sat_frac": 4.722222222222222e-07
+ },
+ "P_follow_plm1f_w50_still": {
+  "mod": "PLM 1.44 kHz",
+  "room": "still",
+  "w_um": 50.0,
+  "n_motes": 200,
+  "dur": 60.0,
+  "meas": "inst",
+  "lat": 1,
+  "follow": true,
+  "lateral": true,
+  "mean_wind": true,
+  "stiff": false,
+  "U": 0.0,
+  "sig_n_um": 4.0,
+  "K": [
+   218.78646441073514,
+   47867.517009349875,
+   0.125
+  ],
+  "f_c_Hz": 40.8488368865194,
+  "Ms": 1.6099366061227813,
+  "sigma_lin_um": 2.1584227148429616,
+  "lost": 0,
+  "mote_s": 11940.000000000002,
+  "rate": 0.0,
+  "rate_ci95": [
+   0.0,
+   0.00025089885038140624
+  ],
+  "n_exceed_w": 0,
+  "n_defect_100um": 0,
+  "r_p50_um": 4.179274372176901,
+  "r_p999_um": 14.1281938227943,
+  "sat_frac": 0.0
+ },
+ "Q_mems10_w40_qoffice_meanwind": {
+  "mod": "MEMS 10 kHz",
+  "room": "quiet_office",
+  "w_um": 40.0,
+  "n_motes": 200,
+  "dur": 60.0,
+  "meas": "inst",
+  "lat": 2,
+  "follow": false,
+  "lateral": true,
+  "mean_wind": true,
+  "stiff": false,
+  "U": 0.1,
+  "sig_n_um": 4.0,
+  "K": [
+   553.5055350553505,
+   255306.98111409153,
+   0.0375
+  ],
+  "f_c_Hz": 106.89358258940347,
+  "Ms": 1.3040389361418032,
+  "sigma_lin_um": 1.2085006863457999,
+  "lost": 83,
+  "mote_s": 8716.0425,
+  "rate": 0.009522670409190869,
+  "rate_ci95": [
+   0.007584753825810636,
+   0.011804782709270415
+  ],
+  "n_exceed_w": 83,
+  "n_defect_100um": 83,
+  "r_p50_um": 2.651133744943449,
+  "r_p999_um": 9.952725749357041,
+  "sat_frac": 5e-06
+ }
+}
