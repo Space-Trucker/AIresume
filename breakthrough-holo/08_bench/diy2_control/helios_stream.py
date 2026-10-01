@@ -29,8 +29,8 @@ def main():
     ap.add_argument("--rgb", default="0,180,255", help="illumination colour, e.g. Iron-Man cyan")
     a = ap.parse_args()
     d = np.loadtxt(a.csv, delimiter=",", skiprows=1)
-    if len(d) > 4096:   # HELIOS_MAX_POINTS per frame in the vendor SDK
-        raise SystemExit(f"{len(d)} points > 4096 per Helios frame: use a smaller --rate in path_gen.py (and the same --pps here)")
+    if len(d) > 4095:   # Helios max frame size (vendor spec: 4095 points)
+        raise SystemExit(f"{len(d)} points > 4095 per Helios frame: use a smaller --rate in path_gen.py (and the same --pps here)")
     xy = np.clip(np.round(2048 + d[:, :2] / a.mm_per_full_scale * 4095), 0, 4095).astype(int)
     inten = d[:, 2] if d.shape[1] > 2 else np.ones(len(d))
     r, g, b = (int(c) for c in a.rgb.split(","))

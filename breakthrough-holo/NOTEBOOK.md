@@ -675,3 +675,41 @@ Two red teams moved the film-density figure from my v1 claim of 4 500 to 50 000 
 - motes at 0.45–0.53 m/s.
 
 Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and saturates. **All levers stacked** (perfect execution, interlock credit, integrated MEMS at $50–250 per channel): an Iron-Man sketch room is ~$0.3–1.5 M and a film-density room ~$1–5 M. Today: ~$4–30 M for a sketch.
+
+## 2026-10-01 · Entry 23: Engineering phase: build it yourself from parts bought online
+
+**Owner's request.** "Now engineer… research how to achieve the building of it by myself by buying tools and stuff from Amazon or Alibaba."
+
+**Work done.**
+1. **R11 sourcing** (agent, 141 tool calls): prices, search keywords, minimum specs, red flags, legal notes and per-stage BOMs.
+   - Every web page was blocked, so prices are search snippets (±30 %).
+   - I double-checked the load-bearing claims (rule 12):
+     - **Corrected R11:** the standard Helios DAC is **12-bit**, not 16-bit.
+     - **Confirmed:** LG3 eyewear OD 7+ at 180–532 nm. I added the point that its EN 207 LB rating limits use to ~1 W at 532 nm.
+     - **Confirmed:** the Basler 525 fps camera price, and R11's beam-sizing table.
+   - R11 also corrected **my** numbers:
+     - toner's binder softens at 50–65 °C, not ~150 °C, so its trap window drops from ×22 to ×7;
+     - the DIY-1 beam-power example was wrong: 10 W/cm² needs 0.63 W in a 4 mm beam, not 1.5 W;
+     - carbon-coated hollow glass is not a stock item, so the DIY-1 reference pair is now glassy carbon + black PE;
+     - black anodised aluminium is not a near-IR beam dump.
+2. **Electronics** (`08_bench/diy2_control/ELECTRONICS.md`).
+   - A hardware interlock: safety relay, or two force-guided relays with a welded-contact check and manual reset.
+   - An ESP32/MCP4922 → ±5/±10 V galvo stage, with a self-check that passes.
+   - Two firmware issues found and fixed: a wrong DAC-mode comment, and logic-level incompatibility at 5 V.
+3. **D1 lens-trap simulation** (`sim_d1_lens_trap.py`; 21/21 self-tests: Airy, axial zero, energy, BFL, Seidel ratio, the analytic vortex focal profile, two-grid consistency).
+   - The tests caught three of my own errors before any result was used:
+     - a particle-averaging artifact at the axis;
+     - an unmasked argmax;
+     - a wrong assumption that a spiral phase plate on a Gaussian makes a pure LG01 beam. It does not: the focal ring differed by 30 %.
+   - **Results:**
+     - A cheap LA1509 mounted backwards with a 6 mm beam (~1.2 waves of spherical aberration) gives a trap pocket of contrast ≈ 21 for a 5 µm particle. It is sharply tuned: 2.7 at 5 mm, 7 at 8 mm.
+     - A smooth sphere balanced by gravity in one upward beam moves only at η(C−1)·v_settle, which is **≈ 1–20 mm/s**, even with an ideal vortex plate. 0.3 m/s would need 13–56 W.
+     - So BYU's m/s traps, which are gravity-independent and use irregular particles, rely on an axial mechanism our sphere model does not contain.
+   - **Engineering consequences:**
+     - use irregular black particles for the display;
+     - new optional stage DIY-2c: a corner-cube retroreflector at the back focal plane of a collimating lens returns a beam onto the trap point wherever the galvos move it, which should free spheres from the weight constraint.
+   - Registered **P27–P30** before any measurement.
+   - An independent red-team check of D1 (with a different propagation method) is running.
+4. **DIY_BUILD_GUIDE.md rewritten.** It now has a shopping plan with costs, a DIY-0 safety kit with specific products, and DIY-2 split into 2a (static trap and particle screen), 2b (drawing) and 2c (retro beam).
+
+**Status against the mission.** Unchanged: not solved, and no ping. The DIY path builds the *measurements* (G1) and a *1–2 cm open-air glyph*. That is a real, safe-if-enclosed first product step, not the Iron-Man room.

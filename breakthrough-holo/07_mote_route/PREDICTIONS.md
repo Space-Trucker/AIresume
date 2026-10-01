@@ -42,3 +42,14 @@ R5–R7 changed the question. First, room throw (1–3 m) makes the trap focus m
 - **Inconclusive (2):** P20, P25.
 
 The v1 scores (8 ✓) rested on model errors found by red team 4, and are withdrawn.
+
+## Addendum B: DIY bench predictions, registered 2026-10-01 before any DIY measurement
+
+These come from `08_bench/sim_d1_lens_trap.py` (21 self-tests) and `08_bench/diy_calcs.py`. Rig: 405 nm diode, Thorlabs LA1509-A (f = 100 mm) or an equivalent N-BK7 plano-convex, beam vertical and pointing up.
+
+| ID | Prediction | Interval |
+|---|---|---|
+| P27 | Smooth spheres (glassy carbon 2–12 µm, black PE ≥ 10 µm) held in a single upward beam, lens flat side first, beam 1/e² radius ≈ 3 mm: the lateral drag speed at which they are lost (moved by galvos or a stage) | ≤ 2 cm/s |
+| P28 | Irregular black particles (activated charcoal < 10 µm, candle soot, graphite, toner) in the same rig: at least one type traps with gravity-independent behaviour (also holds with the beam horizontal) and reaches | ≥ 0.1 m/s |
+| P29 | Adding a corner-cube return beam (DIY-2c) to the P27 rig: sphere loss speed rises by, and spheres also trap with the beam horizontal | ≥ ×5; yes |
+| P30 | Capture probability against beam 1/e² radius, LA1509 flat side first: peak location; with the curved side first at the same radius, capture is | 2.8–3.6 mm; ≤ ½ of the peak value |
