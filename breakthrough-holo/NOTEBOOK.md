@@ -713,3 +713,42 @@ Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and satur
 4. **DIY_BUILD_GUIDE.md rewritten.** It now has a shopping plan with costs, a DIY-0 safety kit with specific products, and DIY-2 split into 2a (static trap and particle screen), 2b (drawing) and 2c (retro beam).
 
 **Status against the mission.** Unchanged: not solved, and no ping. The DIY path builds the *measurements* (G1) and a *1–2 cm open-air glyph*. That is a real, safe-if-enclosed first product step, not the Iron-Man room.
+
+## 2026-10-01 · Entry 24: The unlock program (T6 → red team 6 → T7) and bound B9
+
+**Owner's request.** "Continue research, theoretical and engineering, until the full vision is solved… find the needle in the haystack… I want a theory that says it will work 100 %."
+
+**What I did.**
+1. **T6** (`09_unlock/T6_unlock_theory.md`): bounds B2–B8, idea round 2 (opus + sonnet), and the light-curtain static-voxel architecture (LCSV, m15–m17).
+   - The best intermediate claim was "film density in a normal room under passive Class 1".
+2. **Red team 6** (`05_reviews/red_team_6_lcsv.md`) refuted that claim with three critical findings, and I verified each one:
+   - **C1:** draft authority must cover U + 5.4σ, not 1.3·u. Motes are lost within seconds at 1.3–3σ.
+   - **C2:** flat-top spots need 12–150× the hologram modes, and the DMD fast plane fails on étendue and depth crosstalk.
+   - **C3:** aerogel motes are index-matched (n ≈ 1.04), so their side scatter is about 10⁻³.
+   - It also caught my misreading of my own m16 output (M7).
+   - The correction box is at the top of T6.
+3. **T7, round 3** (`09_unlock/T7_gaussian_voxels.md`, m18/m18b/m18c). Three changes answer C1–C3:
+   - **Gaussian spots:** about 8× fewer modes than flat-tops at equal conventions.
+   - **Forward-scatter, viewer-aware illumination:** the uncoated 1 µm mote has q ≈ 5–25 at 10–15°, so no coat is needed and the FOM stays 5.3.
+   - **1 µm motes:** heat stops binding (hot face 330–430 K at gust peaks).
+4. **The pinning loop.** I tested whether the hologram itself can be the loop actuator, using RT6's validated loop code and a new 3D vector model with the real H10 heads and LP allocation. That allocation matches linprog to 4×10⁻¹⁶.
+   - A Gaussian spot has a **profile instability**, growing at ~F·4r/w².
+   - So the loop needs a **≥ 3–5 kHz phase modulator with ≤ 2 frames of latency** at w = 50 µm; 1.44 kHz with 1-frame latency needs w ≥ 70 µm.
+   - Today's 1550 nm LCoS (60–400 Hz) cannot do it.
+5. **New bound, B9.** Under passive Class 1 (mean power per pupil ≤ 10 mW at 1550 nm, with the M17 stacking s), photophoresis gives
+   **v_rel,mean ≤ 2·AEL/(π w²·h·s·I_unit)**,
+   i.e. about **5 cm/s at w = 50 µm, 10 cm/s at 35 µm, 30 cm/s at 20 µm**.
+   - A still room spends about 5 cm/s on its drafts.
+   - B9 is independent of mote size.
+   - It is why every route ends in "still air and slow content", or in interlock-based eye safety.
+6. **Design points that pass every check** (m18):
+   - still-room sketch: 12.5 W of IR, 6×10⁹ modes at 5 kHz;
+   - still-room film density: 48 W, 1×10¹⁰ modes at 10 kHz.
+   - Both use 1 µm uncoated ITO motes, no DMD and no curtain.
+   - The cost is ~10¹⁶–10¹⁷ operations/s of hologram compute and ~120–390 Tb/s of modulator data.
+   - **I9** (a slow hologram plus fast stacked amplitude layers) would cut the loop's compute, but only for static content.
+
+**Status.** Not solved, and no ping.
+- The physics chain is closed for **slow content in still air**, pending red team 7.
+- **Fast animation and ordinary ventilated rooms are excluded by B9** under passive eye safety.
+- Red team 7 (T7) and idea round 3 ("beat B9", two models) are running.
