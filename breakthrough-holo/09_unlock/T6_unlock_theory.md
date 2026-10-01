@@ -211,6 +211,11 @@ With ≤ 100 W IR and δ = 3 mm:
 - The other remaining condition is the **ITO-class mote**.
 - Passive Class 1 still needs a **field checker**: a certified software constraint that no two foci share one aperture, and an independent fast cut against an SLM fault concentrating a head's power.
 
+**Robustness to a worse mote** (R9-pessimistic ITO mote, k_eff 0.07, FOM 4.0, T_max 573 K):
+- At **a = 2.5 µm**, film density in a normal room still fits passive Class 1: 42 W, 3.1×10¹⁰ px, $0.95M vol. It holds with a head blocked (ΔT 229 K).
+- At a = 5 µm, sketch and film density in a normal room fail when a hand blocks a head, and fail Class 1.
+- **Design point: a ≈ 2.5 µm, FOM ≥ 4.** These motes are respirable, which bears on R3 (owner ruling, toxicology).
+
 **Curtain standards analysis (opus, [MEASURED via secondary sources]).**
 - Physics and doses are sound.
 - Corrected 1550 nm cut dose: 10⁴ J/m² over a **1 mm** aperture for t < 0.35 s, i.e. 7.85 mJ. Allowed cut times are 39–157 ms at 200–50 mW, so a standard Type 4 light curtain (6–13 ms) suffices.

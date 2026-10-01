@@ -51,6 +51,8 @@ MOTES = {
     # a coat adds lateral conduction (k_eff + 2 k_s t/a) and roughly halves FOM.A. Side albedo of a black sphere ~1-3 %.
     "carbon_black": dict(alpha=3e5, k_eff=0.035, q_side=0.02, T_max=600.0, rho=100.0, j1_factor=1.0),
     "carbon_black_dense": dict(alpha=6e5, k_eff=0.05, q_side=0.02, T_max=600.0, rho=200.0, j1_factor=1.0),
+    # R9-pessimistic ITO mote (k_eff +0.03 for a micron aerogel denser at its surface): FOM ~4.0
+    "ito_aerogel_r9": dict(alpha=None, j1A=0.486, A=1.0, k_eff=0.07, q_side=0.3, T_max=573.0, rho=150.0, j1_factor=1.0),
     # v4 reference mote (ITO island skin on silica aerogel): skin absorber, J1/A 0.486 regardless of size
     "ito_aerogel": dict(alpha=None, j1A=0.486, A=1.0, k_eff=0.04, q_side=0.3, T_max=600.0, rho=150.0, j1_factor=1.0),
 }
