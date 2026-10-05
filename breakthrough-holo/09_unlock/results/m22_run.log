@@ -1,0 +1,98 @@
+selftest: kick closed 9.755 vs sim 9.761; ratchet(f=0) inf; Peek ok -> PASS
+
+A. Laplace low-pass: attenuation exp(-2 pi d / period) of field structure set by sources at distance d
+  period    3.0 mm  d 0.05 m  attenuation 3.32e-46
+  period    3.0 mm  d 0.30 m  attenuation 1.33e-273
+  period    3.0 mm  d 1.00 m  attenuation 0.00e+00
+  period    6.0 mm  d 0.05 m  attenuation 1.82e-23
+  period    6.0 mm  d 0.30 m  attenuation 3.65e-137
+  period    6.0 mm  d 1.00 m  attenuation 0.00e+00
+  period   30.0 mm  d 0.05 m  attenuation 2.83e-05
+  period   30.0 mm  d 0.30 m  attenuation 5.16e-28
+  period   30.0 mm  d 1.00 m  attenuation 1.10e-91
+  period  100.0 mm  d 0.05 m  attenuation 4.32e-02
+  period  100.0 mm  d 0.30 m  attenuation 6.51e-09
+  period  100.0 mm  d 1.00 m  attenuation 5.16e-28
+  distance from the sources for 1 % of a period-P component: P 3 mm -> 2.2 mm, P 6 mm -> 4.4 mm, P 30 mm -> 22.0 mm, P 100 mm -> 73.3 mm
+
+B. Photo-charge limits (C) for a 20 um bead, room field 1 kV/m
+  a_um                         20
+  q_needed                     1e-13
+  q_limit_peek                 1.58e-12
+  q_pos_photo_recapture        6.95e-17
+  q_pos_photo_4V               8.9e-15
+  q_like_ion_diffusion         3.88e-16
+  q_pauthenier_room            1.34e-16
+  q_pauthenier_corona_1MVm     1.34e-13
+
+C. One-way charge ratchet: time until the global field leaves a 10x range (OU loads, tau_c 1 s)
+  f 0.003  N   100  light covers 0.00  lifetime     30.6 s
+  f 0.003  N  1667  light covers 0.00  lifetime     22.7 s
+  f 0.010  N   100  light covers 0.00  lifetime      9.1 s
+  f 0.010  N  1667  light covers 0.00  lifetime      6.8 s
+  f 0.030  N   100  light covers 0.00  lifetime      3.0 s
+  f 0.030  N  1667  light covers 0.00  lifetime      2.2 s
+  f 0.100  N   100  light covers 0.00  lifetime      0.9 s
+  f 0.100  N  1667  light covers 0.00  lifetime      0.6 s
+  f 0.300  N   100  light covers 0.00  lifetime      0.2 s
+  f 0.300  N  1667  light covers 0.00  lifetime      0.1 s
+  f 0.100  N  1667  light covers 0.30  lifetime      2.4 s
+  f 0.100  N  1667  light covers 0.25  lifetime      1.3 s
+  f 0.300  N  1667  light covers 0.60  lifetime      0.3 s
+
+D. Time-shared thermal kicks: peak dT / steady dT at the same mean power
+  a   40 um rho   600  tau_th   9.846 ms  K  1000  t_d 0.100 ms  T_rev  100.00 ms  ratio    10.11  (T_rev/tau    10.16)
+  a   40 um rho   600  tau_th   9.846 ms  K   100  t_d 0.100 ms  T_rev   10.00 ms  ratio     1.58  (T_rev/tau     1.02)
+  a   40 um rho   600  tau_th   9.846 ms  K    10  t_d 0.100 ms  T_rev    1.00 ms  ratio     1.05  (T_rev/tau     0.10)
+  a   40 um rho   600  tau_th   9.846 ms  K   500  t_d 0.010 ms  T_rev    5.00 ms  ratio     1.27  (T_rev/tau     0.51)
+  a   30 um rho   600  tau_th   5.538 ms  K  1000  t_d 0.100 ms  T_rev  100.00 ms  ratio    17.89  (T_rev/tau    18.06)
+  a   30 um rho   600  tau_th   5.538 ms  K   100  t_d 0.100 ms  T_rev   10.00 ms  ratio     2.14  (T_rev/tau     1.81)
+  a   30 um rho   600  tau_th   5.538 ms  K    10  t_d 0.100 ms  T_rev    1.00 ms  ratio     1.08  (T_rev/tau     0.18)
+  a   30 um rho   600  tau_th   5.538 ms  K   500  t_d 0.010 ms  T_rev    5.00 ms  ratio     1.52  (T_rev/tau     0.90)
+  a   20 um rho   300  tau_th   1.231 ms  K  1000  t_d 0.100 ms  T_rev  100.00 ms  ratio    78.04  (T_rev/tau    81.25)
+  a   20 um rho   300  tau_th   1.231 ms  K   100  t_d 0.100 ms  T_rev   10.00 ms  ratio     7.81  (T_rev/tau     8.12)
+  a   20 um rho   300  tau_th   1.231 ms  K    10  t_d 0.100 ms  T_rev    1.00 ms  ratio     1.40  (T_rev/tau     0.81)
+  a   20 um rho   300  tau_th   1.231 ms  K   500  t_d 0.010 ms  T_rev    5.00 ms  ratio     4.12  (T_rev/tau     4.06)
+  a    5 um rho  1190  tau_th   0.542 ms  K  1000  t_d 0.100 ms  T_rev  100.00 ms  ratio   168.59  (T_rev/tau   184.64)
+  a    5 um rho  1190  tau_th   0.542 ms  K   100  t_d 0.100 ms  T_rev   10.00 ms  ratio    16.86  (T_rev/tau    18.46)
+  a    5 um rho  1190  tau_th   0.542 ms  K    10  t_d 0.100 ms  T_rev    1.00 ms  ratio     2.00  (T_rev/tau     1.85)
+  a    5 um rho  1190  tau_th   0.542 ms  K   500  t_d 0.010 ms  T_rev    5.00 ms  ratio     9.15  (T_rev/tau     9.23)
+  check: closed form 9.755 vs integration 9.761
+
+E. Self-addressing intracavity motes: gain etendue and pump power (field 0.6 m, throw 2 m, loss 30 %)
+  w  20 um (mote a  30, head R >=  74.4 mm)  modes 9.12e+07  Er:Yb glass 1535 nm    t   1.7834 mm  area   1260.34 cm^2  pump >=  8.17e+05 W
+  w  20 um (mote a  30, head R >=  74.4 mm)  modes 9.12e+07  Nd:YAG 1064 nm         t   0.5945 mm  area    420.11 cm^2  pump >=  2.86e+05 W
+  w  20 um (mote a  30, head R >=  74.4 mm)  modes 9.12e+07  InGaAsP bulk 1550 nm   t   0.0012 mm  area      0.84 cm^2  pump >=  4.96e+04 W
+  w  40 um (mote a  60, head R >=  37.2 mm)  modes 2.28e+07  Er:Yb glass 1535 nm    t   1.7834 mm  area    315.08 cm^2  pump >=  2.04e+05 W
+  w  40 um (mote a  60, head R >=  37.2 mm)  modes 2.28e+07  Nd:YAG 1064 nm         t   0.5945 mm  area    105.03 cm^2  pump >=  7.16e+04 W
+  w  40 um (mote a  60, head R >=  37.2 mm)  modes 2.28e+07  InGaAsP bulk 1550 nm   t   0.0012 mm  area      0.21 cm^2  pump >=  1.24e+04 W
+  w  60 um (mote a  90, head R >=  24.8 mm)  modes 1.01e+07  Er:Yb glass 1535 nm    t   1.7834 mm  area    140.04 cm^2  pump >=  9.08e+04 W
+  w  60 um (mote a  90, head R >=  24.8 mm)  modes 1.01e+07  Nd:YAG 1064 nm         t   0.5945 mm  area     46.68 cm^2  pump >=  3.18e+04 W
+  w  60 um (mote a  90, head R >=  24.8 mm)  modes 1.01e+07  InGaAsP bulk 1550 nm   t   0.0012 mm  area      0.09 cm^2  pump >=  5.52e+03 W
+
+F. Coulomb crystal of 5 um beads at 3 mm: shear modulus vs draft stress (du 1 cm/s over 10 cm)
+  q 5.71e-15 C  shear 5.83e-10 Pa  draft stress 6.32e-05 Pa  strain 1.1e+05
+  q 5.71e-14 C  shear 5.83e-08 Pa  draft stress 6.32e-05 Pa  strain 1.1e+03
+  q 1.90e-13 C  shear 6.48e-07 Pa  draft stress 6.32e-05 Pa  strain 9.8e+01
+
+G. E-AIR-SV: fixed per-bead charge compensates static wakes and size spread (armor, 0.6 m)
+  a  30 um rho   600  U 0.062 m/s  N 988  uz  -4.73..-0.01 mm/s  Delta  5.65 mm/s  q 8.87e-13 C (limit 2.96e-12)  E_v     76 V/m  q use p50 0.48 max 0.86
+      E_h for cross-draft 0.01 m/s:   115 V/m, 0.03 m/s:   346 V/m, 0.05 m/s:   577 V/m   hand field perturbation (bead speed) r 0.06 m:  25.8 mm/s, r 0.10 m:   8.7 mm/s, r 0.15 m:   3.8 mm/s, r 0.20 m:   2.1 mm/s   charge leak tau ~0.3 h
+  a  40 um rho   600  U 0.105 m/s  N 988  uz  -9.99.. 0.03 mm/s  Delta 11.56 mm/s  q 1.39e-12 C (limit 4.62e-12)  E_v    130 V/m  q use p50 0.52 max 0.88
+      E_h for cross-draft 0.01 m/s:    98 V/m, 0.03 m/s:   295 V/m, 0.05 m/s:   492 V/m   hand field perturbation (bead speed) r 0.06 m:  51.7 mm/s, r 0.10 m:  17.5 mm/s, r 0.15 m:   7.5 mm/s, r 0.20 m:   4.2 mm/s   charge leak tau ~0.5 h
+  a  40 um rho  1200  U 0.200 m/s  N 988  uz -17.37.. 0.04 mm/s  Delta 20.37 mm/s  q 1.39e-12 C (limit 4.62e-12)  E_v    231 V/m  q use p50 0.58 max 0.87
+      E_h for cross-draft 0.01 m/s:    98 V/m, 0.03 m/s:   295 V/m, 0.05 m/s:   492 V/m   hand field perturbation (bead speed) r 0.06 m:  91.9 mm/s, r 0.10 m:  31.1 mm/s, r 0.15 m:  13.4 mm/s, r 0.20 m:   7.4 mm/s   charge leak tau ~1.0 h
+
+H. Tetralemma: per-mote authority v under a per-focus cap -> largest spot w, modes per head, loop rate
+  child skin, h 2.14 x s 1.1   v   1.0 cm/s  w_max   37.6 um  modes(true) 2.58e+07  (m18 count 3.34e+08)  4K LCoS per head     2.9  loop >=     2658 Hz
+  child skin, h 2.14 x s 1.1   v   3.0 cm/s  w_max   21.7 um  modes(true) 7.73e+07  (m18 count 1.00e+09)  4K LCoS per head     8.8  loop >=    13812 Hz
+  child skin, h 2.14 x s 1.1   v  10.0 cm/s  w_max   11.9 um  modes(true) 2.58e+08  (m18 count 3.34e+09)  4K LCoS per head    29.3  loop >=    84057 Hz
+  child skin, h 2.14 x s 1.1   v  30.0 cm/s  w_max    6.9 um  modes(true) 7.73e+08  (m18 count 1.00e+10)  4K LCoS per head    87.9  loop >=   436773 Hz
+  eye, sparse hs 1.5           v   1.0 cm/s  w_max  168.2 um  modes(true) 1.29e+06  (m18 count 1.67e+07)  4K LCoS per head     0.1  loop >=      594 Hz
+  eye, sparse hs 1.5           v   3.0 cm/s  w_max   97.1 um  modes(true) 3.87e+06  (m18 count 5.01e+07)  4K LCoS per head     0.4  loop >=     3089 Hz
+  eye, sparse hs 1.5           v  10.0 cm/s  w_max   53.2 um  modes(true) 1.29e+07  (m18 count 1.67e+08)  4K LCoS per head     1.5  loop >=    18800 Hz
+  eye, sparse hs 1.5           v  30.0 cm/s  w_max   30.7 um  modes(true) 3.87e+07  (m18 count 5.01e+08)  4K LCoS per head     4.4  loop >=    97686 Hz
+  eye, static voxel hs 7.1     v   1.0 cm/s  w_max   77.3 um  modes(true) 6.10e+06  (m18 count 7.91e+07)  4K LCoS per head     0.7  loop >=     1293 Hz
+  eye, static voxel hs 7.1     v   3.0 cm/s  w_max   44.6 um  modes(true) 1.83e+07  (m18 count 2.37e+08)  4K LCoS per head     2.1  loop >=     6721 Hz
+  eye, static voxel hs 7.1     v  10.0 cm/s  w_max   24.4 um  modes(true) 6.10e+07  (m18 count 7.91e+08)  4K LCoS per head     6.9  loop >=    40901 Hz
+  eye, static voxel hs 7.1     v  30.0 cm/s  w_max   14.1 um  modes(true) 1.83e+08  (m18 count 2.37e+09)  4K LCoS per head    20.8  loop >=   212528 Hz
