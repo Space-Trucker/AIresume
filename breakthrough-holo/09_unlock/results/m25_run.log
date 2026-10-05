@@ -1,6 +1,74 @@
 selftest: PLM home w70 gauss lost 0/4, dip flat near centre -> PASS
 case                        draft           w prof   v_cap   lost  home p50/p99 um spot p99  P/cap p50/max    sat
-/usr/local/lib/python3.11/dist-packages/numpy/lib/_nanfunctions_impl.py:1592: RuntimeWarning: Mean of empty slice
-  return np.nanmean(a, axis, out=out, keepdims=keepdims)
 LCoS 240 Hz                 still room     40 gauss  0.189  20/20     nan/nan          nan    nan/nan     0.000
 LCoS 240 Hz                 still room     40 dip    0.095  20/20     nan/nan          nan    nan/nan     0.000
+LCoS 240 Hz                 still room     55 gauss  0.100  20/20     nan/nan          nan    nan/nan     0.000
+LCoS 240 Hz                 still room     55 dip    0.050  20/20     283/514         50.6    nan/nan     0.002
+LCoS 240 Hz                 still room     70 gauss  0.062  20/20     nan/nan          nan    nan/nan     0.003
+LCoS 240 Hz                 still room     70 dip    0.031  20/20     339/733         66.1    nan/nan     0.004
+LCoS 240 Hz                 still room    100 gauss  0.030  20/20     311/955        121.5    nan/nan     0.008
+LCoS 240 Hz                 still room    100 dip    0.015   1/20     330/705         44.8   4.31/5.98    0.000
+LCoS 240 Hz                 home           40 gauss  0.189  20/20     nan/nan          nan    nan/nan     0.000
+LCoS 240 Hz                 home           40 dip    0.095  20/20     nan/nan          nan    nan/nan     0.001
+LCoS 240 Hz                 home           55 gauss  0.100  20/20     nan/nan          nan    nan/nan     0.002
+LCoS 240 Hz                 home           55 dip    0.050  20/20     506/702         49.9    nan/nan     0.005
+LCoS 240 Hz                 home           70 gauss  0.062  20/20     nan/nan          nan    nan/nan     0.008
+LCoS 240 Hz                 home           70 dip    0.031  20/20     328/482         82.2    nan/nan     0.012
+LCoS 240 Hz                 home          100 gauss  0.030  20/20     769/1023        81.6    nan/nan     0.018
+LCoS 240 Hz                 home          100 dip    0.015  20/20     467/1041        72.6    nan/nan     0.003
+LCoS 240 Hz                 quiet office   40 gauss  0.189  20/20     nan/nan          nan    nan/nan     0.003
+LCoS 240 Hz                 quiet office   40 dip    0.095  20/20     nan/nan          nan    nan/nan     0.010
+LCoS 240 Hz                 quiet office   55 gauss  0.100  20/20     nan/nan          nan    nan/nan     0.011
+LCoS 240 Hz                 quiet office   55 dip    0.050  20/20     nan/nan          nan    nan/nan     0.025
+LCoS 240 Hz                 quiet office   70 gauss  0.062  20/20     nan/nan          nan    nan/nan     0.025
+LCoS 240 Hz                 quiet office   70 dip    0.031  20/20     nan/nan          nan    nan/nan     0.032
+LCoS 240 Hz                 quiet office  100 gauss  0.030  20/20     nan/nan          nan    nan/nan     0.036
+LCoS 240 Hz                 quiet office  100 dip    0.015  20/20   11356/16882      138.9    nan/nan     0.047
+PLM 1.44 kHz                still room     40 gauss  0.189  20/20      17/65          46.6    nan/nan     0.000
+PLM 1.44 kHz                still room     40 dip    0.095  19/20      14/37          41.0   0.63/0.63    0.000
+PLM 1.44 kHz                still room     55 gauss  0.100  18/20      15/65          53.3   0.57/0.60    0.000
+PLM 1.44 kHz                still room     55 dip    0.050   1/20      14/30          38.9   1.33/1.62    0.000
+PLM 1.44 kHz                still room     70 gauss  0.062   7/20      15/41          43.8   1.03/1.19    0.000
+PLM 1.44 kHz                still room     70 dip    0.031   0/20      13/29          38.4   1.99/2.69    0.000
+PLM 1.44 kHz                still room    100 gauss  0.030   0/20      14/31          39.0   2.23/2.97    0.000
+PLM 1.44 kHz                still room    100 dip    0.015   0/20      13/28          38.3   4.40/5.26    0.000
+PLM 1.44 kHz                home           40 gauss  0.189  20/20      19/58          49.2    nan/nan     0.000
+PLM 1.44 kHz                home           40 dip    0.095  20/20      17/51          44.5    nan/nan     0.001
+PLM 1.44 kHz                home           55 gauss  0.100  20/20      20/72          63.0    nan/nan     0.001
+PLM 1.44 kHz                home           55 dip    0.050   6/20      17/40          40.5   1.80/2.13    0.000
+PLM 1.44 kHz                home           70 gauss  0.062  19/20      20/81          59.6   1.36/1.36    0.000
+PLM 1.44 kHz                home           70 dip    0.031   0/20      16/36          38.6   2.84/3.67    0.000
+PLM 1.44 kHz                home          100 gauss  0.030   1/20      18/42          41.5   3.10/3.39    0.000
+PLM 1.44 kHz                home          100 dip    0.015   0/20      17/37          38.2   5.85/7.14    0.000
+PLM 1.44 kHz                quiet office   40 gauss  0.189  20/20      45/116         45.7    nan/nan     0.006
+PLM 1.44 kHz                quiet office   40 dip    0.095  20/20      31/174         54.0    nan/nan     0.007
+PLM 1.44 kHz                quiet office   55 gauss  0.100  20/20      43/262         75.1    nan/nan     0.007
+PLM 1.44 kHz                quiet office   55 dip    0.050  16/20      25/57          43.8   2.70/2.74    0.006
+PLM 1.44 kHz                quiet office   70 gauss  0.062  20/20      31/151         76.6    nan/nan     0.006
+PLM 1.44 kHz                quiet office   70 dip    0.031   0/20      25/54          39.3   4.70/5.91    0.000
+PLM 1.44 kHz                quiet office  100 gauss  0.030  17/20      28/73          53.7   4.81/4.99    0.001
+PLM 1.44 kHz                quiet office  100 dip    0.015   2/20      27/363         38.8   9.34/11.42   0.019
+MEMS 5 kHz (not commodity)  still room     40 gauss  0.189   0/20       9/25          34.4   0.43/0.61    0.000
+MEMS 5 kHz (not commodity)  still room     40 dip    0.095   0/20       9/20          35.1   0.73/1.05    0.000
+MEMS 5 kHz (not commodity)  still room     55 gauss  0.100   0/20       9/21          34.5   0.73/1.00    0.000
+MEMS 5 kHz (not commodity)  still room     55 dip    0.050   0/20       9/20          35.1   1.32/1.98    0.000
+MEMS 5 kHz (not commodity)  still room     70 gauss  0.062   0/20       9/20          34.7   1.13/1.69    0.000
+MEMS 5 kHz (not commodity)  still room     70 dip    0.031   0/20       9/20          35.2   2.23/3.08    0.000
+MEMS 5 kHz (not commodity)  still room    100 gauss  0.030   0/20       9/20          34.9   2.33/2.91    0.000
+MEMS 5 kHz (not commodity)  still room    100 dip    0.015   0/20       9/20          35.4   4.35/5.54    0.000
+MEMS 5 kHz (not commodity)  home           40 gauss  0.189   8/20      10/32          36.4   0.60/0.66    0.000
+MEMS 5 kHz (not commodity)  home           40 dip    0.095   0/20       9/21          35.1   1.05/1.20    0.000
+MEMS 5 kHz (not commodity)  home           55 gauss  0.100   0/20       9/24          35.2   1.01/1.27    0.000
+MEMS 5 kHz (not commodity)  home           55 dip    0.050   0/20       9/20          35.1   1.90/2.48    0.000
+MEMS 5 kHz (not commodity)  home           70 gauss  0.062   0/20       9/21          34.8   1.57/1.98    0.000
+MEMS 5 kHz (not commodity)  home           70 dip    0.031   0/20       9/20          35.3   3.01/3.54    0.000
+MEMS 5 kHz (not commodity)  home          100 gauss  0.030   0/20       9/20          35.0   3.10/3.68    0.000
+MEMS 5 kHz (not commodity)  home          100 dip    0.015   0/20       9/20          35.4   6.01/7.38    0.002
+MEMS 5 kHz (not commodity)  quiet office   40 gauss  0.189  19/20      12/45          40.3   0.84/0.84    0.000
+MEMS 5 kHz (not commodity)  quiet office   40 dip    0.095   2/20      10/24          35.5   1.53/1.72    0.000
+MEMS 5 kHz (not commodity)  quiet office   55 gauss  0.100   0/20      11/31          37.0   1.66/2.09    0.000
+MEMS 5 kHz (not commodity)  quiet office   55 dip    0.050   0/20       9/21          35.5   3.03/4.05    0.000
+MEMS 5 kHz (not commodity)  quiet office   70 gauss  0.062   0/20      10/25          35.5   2.43/3.31    0.000
+MEMS 5 kHz (not commodity)  quiet office   70 dip    0.031   0/20       9/21          35.4   4.86/6.29    0.000
+MEMS 5 kHz (not commodity)  quiet office  100 gauss  0.030   0/20       9/21          35.0   4.96/5.85    0.000
+MEMS 5 kHz (not commodity)  quiet office  100 dip    0.015   1/20      10/20396       37.1  10.04/16.40   0.105
