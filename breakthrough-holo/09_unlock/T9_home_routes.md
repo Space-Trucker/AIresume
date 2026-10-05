@@ -236,6 +236,37 @@ Today's modulators run at 0.1–1 kHz for 4K LCoS and ~10 kHz for 1 Mpx DMDs.
 
 No route found in eight red teams and four idea rounds relaxes none of them.
 
+### 2.9 Addendum (main session, after RT9; **not yet red-teamed**): the O-band window [MEASURED rules + DERIVED, m24]
+
+**What the project used.** Since round 1 it held motes at 1550 nm, chosen for eye safety. At 1550 nm the EN 50689 skin rule binds at 0.785 mW per focus (1 mm, 10 s; 1000 W/m²).
+
+**Two Ed. 3 / ICNIRP rules change the picture at 1250–1400 nm:**
+- **Skin:** the long-exposure MPE is 2000·C_A W/m² with C_A = 5 at 1050–1400 nm, i.e. 10 kW/m². That is **×10 → 7.85 mW per 1 mm**.
+- **Eye:** Edition 3 raised C7 at 1250–1400 nm to 8 + 10^(0.04(λ−1250)), which is 259 at 1310 nm (32× the old value). The cornea is protected by a Class 3B dual limit of 0.5 W. So **the Class 1 eye AEL is ~0.1–0.5 W at 1290–1342 nm**, against 10 mW at 1550 nm.
+- Sources: Seibersdorf white papers on IEC 60825-1 Ed. 3 and A11; ILSC 2019 "Comparison of corneal injury thresholds with laser safety limits"; ICNIRP 2013 as transcribed in `07_mote_route/R7_mote_safety.md`.
+
+**Consequences** (m24):
+
+| Item | Effect at 1310 nm |
+|---|---|
+| Binding per-focus cap | still skin, but **3.3 mW** after h·s = 2.35 (0.33 mW at 1550) |
+| Tetralemma at 3 cm/s | w ≤ 69 µm, **7.7×10⁶ true modes**, 4.4 kHz (1550: 22 µm, 7.7×10⁷, 14 kHz) |
+| Tetralemma at 10 cm/s | 38 µm, 2.6×10⁷, 27 kHz |
+| RT8 C1 (POV pupil stacking 2.7–9.1× at 1550) | **0.05–0.18×** the 1310 nm AEL: resolved |
+| RT9 C2 (FLOW-R2 probe) | the eye case becomes 0.21×; skin at the exit 9.4× (was 24×) |
+
+**What it does not change:**
+- **Addressing (pillar 4).** About 10⁷ modes per head at ≥ 4 kHz is still ~10–20× beyond a TI PLM (1.3 Mpx at 1.44 kHz) or a 4K LCoS (8.8 Mpx at ≤ 240 Hz). It is ~4–10× beyond DMD binary holography after its SBP and efficiency losses.
+- **The visible engine.**
+- **Motes.** The IR absorber must move to 1.3 µm: heavily doped ITO or Cs_xWO₃ nanocrystals (visible-transparent, strong NIR absorption) [ESTIMATE].
+
+**Sources at 1.3 µm** (O-band telecom and DPSS) [ESTIMATE, to check]:
+- 1310 nm DFB/FP diodes;
+- O-band SOAs and PDFAs;
+- 1342 nm Nd:YVO₄.
+
+**Net.** The O-band is a genuine ×10 lever on the binding safety rule and removes the eye-stacking failures. It narrows the tetralemma's addressing gap from ~100× to ~10×. It does not close it.
+
 ---
 
 ## 3. Air-carried routes
