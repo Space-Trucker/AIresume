@@ -1,0 +1,22 @@
+Per-focus caps (W):
+  1550 nm: C7      nan  eye Class 1    10.0 mW  skin 1 mm  0.785 mW  -> per-focus mean cap  0.334 mW (binding: skin)
+  1342 nm: C7   4794.3  eye Class 1   500.0 mW  skin 1 mm  7.854 mW  -> per-focus mean cap  3.336 mW (binding: skin)
+  1310 nm: C7    259.2  eye Class 1   500.0 mW  skin 1 mm  7.854 mW  -> per-focus mean cap  3.336 mW (binding: skin)
+  1290 nm: C7     47.8  eye Class 1    94.1 mW  skin 1 mm  7.854 mW  -> per-focus mean cap  3.336 mW (binding: skin)
+  1270 nm: C7     14.3  eye Class 1    28.2 mW  skin 1 mm  7.854 mW  -> per-focus mean cap  3.336 mW (binding: skin)
+
+Tetralemma at the binding cap (w_max = sqrt(2 cap/(pi I_unit v)) with cap already divided by h s):
+  1550 nm v    1 cm/s: w_max   37.6 um  true modes 2.58e+07  (m18 count x13: 3.34e+08)  loop >=    2657 Hz
+  1550 nm v    3 cm/s: w_max   21.7 um  true modes 7.73e+07  (m18 count x13: 1.00e+09)  loop >=   13808 Hz
+  1550 nm v   10 cm/s: w_max   11.9 um  true modes 2.58e+08  (m18 count x13: 3.34e+09)  loop >=   84036 Hz
+  1550 nm v   20 cm/s: w_max    8.4 um  true modes 5.15e+08  (m18 count x13: 6.68e+09)  loop >=  237689 Hz
+  1310 nm v    1 cm/s: w_max  119.0 um  true modes 2.58e+06  (m18 count x13: 3.34e+07)  loop >=     840 Hz
+  1310 nm v    3 cm/s: w_max   68.7 um  true modes 7.73e+06  (m18 count x13: 1.00e+08)  loop >=    4367 Hz
+  1310 nm v   10 cm/s: w_max   37.6 um  true modes 2.58e+07  (m18 count x13: 3.34e+08)  loop >=   26574 Hz
+  1310 nm v   20 cm/s: w_max   26.6 um  true modes 5.15e+07  (m18 count x13: 6.68e+08)  loop >=   75164 Hz
+
+RT8 C1 (POV pupil stacking 2.7-9.1x the 10 mW AEL at 1550 nm), same beams at 1310 nm:
+  27-91 mW against 500 mW -> 0.05-0.18x the AEL (eye); skin per focus x10 headroom
+
+RT9 C2 (FLOW-R2 probe fan, 0.2 W) moved from 850 nm to 1310 nm:
+  pupil at 10 cm: 104 mW against 500 mW -> 0.21x; skin at the exit through 1 mm: 74 mW against 7.85 mW -> 9.4x (850 nm: 24x)
