@@ -1,0 +1,6 @@
+selftest: PLM home w70 gauss lost 0/4, dip flat near centre -> PASS
+case                        draft           w prof   v_cap   lost  home p50/p99 um spot p99  P/cap p50/max    sat
+/usr/local/lib/python3.11/dist-packages/numpy/lib/_nanfunctions_impl.py:1592: RuntimeWarning: Mean of empty slice
+  return np.nanmean(a, axis, out=out, keepdims=keepdims)
+LCoS 240 Hz                 still room     40 gauss  0.189  20/20     nan/nan          nan    nan/nan     0.000
+LCoS 240 Hz                 still room     40 dip    0.095  20/20     nan/nan          nan    nan/nan     0.000
