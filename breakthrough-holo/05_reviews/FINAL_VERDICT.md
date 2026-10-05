@@ -40,6 +40,14 @@
 
 Items 1–4 passing would make a room FLOW-R2 a credible installation. It would still not be "just a projector".
 
+**v6 addendum (after idea round 5 and m24/m25, same day).**
+- **The O-band window (1290–1342 nm).** The EN 50689 skin cap rises ×10, to 7.85 mW per 1 mm. The formal Class 1 eye AEL is ~0.1–0.5 W, but physically only ×4.5–8 better than 1550 nm.
+- **m25.** Even at 1310 nm, static voxels in home drafts need ~5 kHz, ~10⁷-mode modulators (1.0–1.3× the cap). A PLM at 1.44 kHz runs 2.8–3.7× over the cap, and 240 Hz LCoS loses motes even in still rooms. Not commodity.
+- **Idea round 5 (opus) found no loophole in the tetralemma.** Its top idea is **EVAP-R**: a self-erasing distilled-water drop rain from a push-only pendant. It needs no pedestal and no capture, and leaves no residue; drops live 1.6–4.0 s and add 17 g/h of water.
+  - It is a desk-scale demo, and "no fog" needs the owner's ruling (it is a water mist).
+  - P × fit is 0.16.
+- **Scorecard unchanged (4/5/1). Not solved, no ping.**
+
 ---
 
 # Final verdict (v5: unlock program T6–T8 and red teams 6–8 applied; v4 below)

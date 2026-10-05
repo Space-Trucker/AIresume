@@ -265,7 +265,23 @@ No route found in eight red teams and four idea rounds relaxes none of them.
 - O-band SOAs and PDFAs;
 - 1342 nm Nd:YVO₄.
 
-**Net.** The O-band is a genuine ×10 lever on the binding safety rule and removes the eye-stacking failures. It narrows the tetralemma's addressing gap from ~100× to ~10×. It does not close it.
+**Net.** The O-band is a genuine ×10 lever on the binding safety rule. It narrows the tetralemma's addressing gap from ~100× to ~10×. It does not close it.
+
+**Softened after idea round 5** (`idea_round_5_opus.md` §3.2):
+- IEC 60825-1 Ed. 3 itself cautions that the 0.5 W dual limit may not protect the anterior eye.
+- Physically, the 1310 nm absorption depth of ~6 mm (against ~1 mm at 1550 nm) buys only ×4.5–8 in anterior heating per watt, not ×50.
+- So RT8 C1's pupil stacking at 1310 nm sits at ~0.6–2× a physically equivalent limit. It is **not** "resolved".
+- **Only the ×10 skin lever is robust.**
+
+**m25 test of the O-band static route** (20 motes × 5 s per point, intra-frame force, mean wind, power summed over the beams at each focus; `results/m25_run.log`):
+
+| Modulator | Still room | Home (U 5 cm/s, σ 3 cm/s) |
+|---|---|---|
+| 4K-class LCoS, 240 Hz | loses motes at every w and profile | loses motes |
+| PLM, 1.44 kHz (commodity-ish) | holds only with dipped spots, at 1.3–5× the skin cap | holds only dipped w ≥ 70 µm, at **2.8–3.7× the cap** |
+| 5 kHz MEMS class (not commodity) | holds, at 0.4–0.6× the cap (Gaussian, w 40 µm) | holds at **1.0–1.3× the cap** |
+
+**Verdict:** at 1310 nm a static voxel in home drafts still needs a ~5 kHz, ~10⁷-mode modulator per head. **No commodity-rate engine fits.**
 
 ---
 
@@ -361,6 +377,35 @@ No route found in eight red teams and four idea rounds relaxes none of them.
 **Lighter setting** (δ 5 mm, 1.5 cd/m²): 34 mg/m³, 20 g/h, 0.38 % optical depth, 48 simultaneous spots, vertical coverage 20 %.
 
 **Desk** (0.3 m column, 1 m of strokes): 4.7 g/h, 7 µg/m³ in the room at 99.9 %, 26 spots, 4.7×10⁵ modes. That is FLOW-R's regime, now without tracking.
+
+### 3.5 Idea round 5 (opus, `idea_round_5_opus.md`): EVAP-R, a self-erasing water rain, and other checks
+
+The main session re-checked the lifetime and water-load numbers below (`v10_round5_check.py`).
+
+**EVAP-R.** FLOW-R's sugar motes are replaced by 30 pL drops of distilled water, which evaporate in flight.
+- **Lifetime.** With the drop surface at the wet-bulb temperature (10.9 / 13.8 / 16.4 °C), drops live **1.6 / 2.3 / 4.0 s at 30 / 50 / 70 % RH** (main session; opus 1.8 / 2.6 / 4.5 s). They vanish 0.5–1.2 m below a push-only pendant.
+- **What it removes:** the pedestal and the capture requirement, and any particulate or residue.
+- **Water load.** 17.3 g/h at the desk flux (1.6×10⁵ drops/s) gives **+4 % RH** in a 50 m³ room at 0.5 ACH.
+- **Optics.** Clear drops are ×14–22 dimmer than white motes at 90° (Mie). A low ring of 4–6 heads at 25–30° elevation restores parity.
+- **Head power.** The larger drops need only ~50 µW per beam at a 140 µm spot. That fixes RT9 C2 at desk scale.
+- **Costs:**
+  - more haze than FLOW-R, because the drops are bigger: optical depth ×7 per unit fill; side haze ×1.6–3.4 against black;
+  - the vanish height drifts with room RH;
+  - beam ends leave a faint sparkle on the floor;
+  - it is a water mist, so "no fog" needs the owner's ruling;
+  - meteorologically, any rain display at these densities is a thin dense-fog sample (extinction ~0.06 /m).
+- **Ranking:** idea round 5's top idea, but only at desk scale (P × fit 0.16).
+
+**Flow direction as a design variable.** Blow the rain normal to the main content plane. Every in-plane stroke then shows short gaps, which removes the vertical-stroke texture problem (RT9 M2).
+
+**Desk FLOW-R against RT9:**
+- **C1 escapes:** tracking lights every crossing, 16–19 /s per sample.
+- **C2 is marginal:** 2–4× the per-head limit at the scan vertex, 0.4–1.4× at 100 mm. A recessed exit plus 3–4 heads fixes it.
+- **C3 passes in the core.** In a hand wake it passes only at spots ≥ 140 µm with ≤ 3–5 ms latency.
+
+**RT9 C3 contrarian** [analytic, **not yet simulated**]. A dissipative-range model gives 57–88 % hits in a hand wake at 80 µm, against RT9's 15–39 %. It needs a Monte Carlo before it replaces RT9's figure.
+
+**Drying-time correction.** The round-4 d²-law (0.86 s) ignored wet-bulb cooling. Corrected, a 30 pL drop dries in 2.3–2.6 s at 50 % RH, so FLOW-R's drying duct must be ×3 longer.
 
 ---
 

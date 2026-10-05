@@ -818,3 +818,19 @@ Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and satur
 - Not solved, no ping.
 - **Verdict v6** keeps 4/5/1.
 - The nearest buildable thing is a desk FLOW-R demo that bends "no gas" and "not a table". A room installation would need RT9's items 1–4 on the bench, at roughly $50–120k, and would still not be "just a projector".
+
+## 2026-10-05 · Entry 27: The O-band window, m25, and idea round 5
+
+1. **The O-band window** (m24, my find). At 1250–1400 nm, EN 50689's skin limit is ×10 higher (C_A = 5 gives 10 kW/m²), and Ed. 3 raised C7 to 259 at 1310 nm, with a 0.5 W Class 3B dual limit for the cornea. The ×10 skin lever is robust. The eye margin is softer than the formal AEL: idea round 5 found the standard's own caution and a ×4.5–8 physical estimate.
+2. **m25** tested O-band static voxels with Gaussian and dipped spots, forces resolved inside each frame, mean wind, and summed per-focus power.
+   - 240 Hz LCoS fails even in still air.
+   - A 1.44 kHz PLM holds home drafts only at 2.8–3.7× the cap.
+   - 5 kHz MEMS-class loops hold at 1.0–1.3× the cap.
+   - So the O-band narrows the gap but leaves static voxels non-commodity.
+3. **Idea round 5 (opus)** found no loophole. Its top idea is EVAP-R, a self-erasing water rain from a pendant: no pedestal, capture or residue. It is desk-scale, and "no fog" needs the owner's ruling (P × fit 0.16). It also corrects the round-4 drying time ×3 (wet bulb), which I confirmed.
+4. **My errors this round:**
+   - m24's "RT8 C1 resolved" (now softened);
+   - m25's first controller, which fed back noise through an air-estimate term and was misaligned by one frame (rewritten as a delay-aware PID);
+   - m25's first power metric, which took the max beam rather than the sum at the focus;
+   - a wet-bulb solver with its bisection reversed (caught on the first run).
+5. **Status:** not solved, no ping, verdict v6 unchanged.
