@@ -414,6 +414,37 @@ The main session re-checked the lifetime and water-load numbers below (`v10_roun
 
 **Drying-time correction.** The round-4 d²-law (0.86 s) ignored wet-bulb cooling. Corrected, a 30 pL drop dries in 2.3–2.6 s at 50 % RH, so FLOW-R's drying duct must be ×3 longer.
 
+> **Correction by red team 10 (`05_reviews/red_team_10_evapr.md`, 4 critical, 15 major, 13 minor).**
+>
+> **How it was checked.** The red team's own script (`rt10_check.py`) was written but never run: a safety filter blocked the agent's shell. Its numbers are hand-derived with the arithmetic shown. A main-session check script was also blocked, and was not retried or worked around.
+>
+> **EVAP-R is refuted** on three independent grounds.
+> 1. **Wetting.**
+>    - A 30 pL drop is gone 0.5 m below the pendant only at RH ≤ ~32 %.
+>    - At 50 % RH it arrives at ~19–22 µm, with 10–20 % of its mass left. That deposits ~50–80 g/m²/h over the column footprint, for example on a desk below.
+>    - Main-session hand check: d² = d₀²(1 − t/t_life), with t ≈ 2 s at U ~0.25 m/s, gives d ≈ 0.48 d₀ ≈ 18.5 µm.
+> 2. **Visible beam cage.** In clear drops, the beam paths read as streaks at 0.2–0.8 cd/m² (1.3–5× a dark wall at 10 lux). Hiding them with steep heads costs 2–4× the Class 1 AEL per beam.
+> 3. **No commodity, additive-free 30–45 µm generator.** Thermal inkjet needs a humectant, which leaves residue; piezo meshes give 4–6 µm drops.
+>
+> **Also from red team 10:**
+> - **Confirmed:** opus's Mie table and the low-ring parity (6 heads; 4 heads sit at 1.03× the AEL). Drop lifetimes with the sphere closure are 1.8 / 2.6 / 4.6 s, so `v10_round5_check.py` (psychrometric closure) is 13–16 % short.
+> - **Head recess.** For scanned beams the needed recess is 20–40 mm, not 100–300 mm. That helps desk FLOW-R's C2.
+> - **Flow-normal lever.** It cuts fill to b/d_s ≈ 0.15 of nominal, so it needs ×2–7 density or ×3 power. It is not free.
+> - **Aim contrarian:** right but conditional. At u′ ≈ 0.3 m/s (a bare hand moving), τ_η ≈ 6.7 ms ≈ Δ, and hits fall to 12–34 %.
+> - **m25 names the wrong wall.** A ~400 Hz loop would suffice in a closed form. The real walls are power (≈ 1.0× the cap only at dipped w 39 µm) and 2.3×10⁷ modes per head. m25 is biased against the O-band route (no air feedforward), but also for it (it tracks one focus where a display needs 10³–10⁴).
+>
+> **Updated ranking (P × fit):**
+>
+> | Rank | Option | P × fit |
+> |---|---|---|
+> | 1 | **Desk FLOW-R** | **0.088** |
+> | 2 | Aerial plate | 0.048 |
+> | 3 | EVAP-R desk | 0.026 (was 0.16) |
+> | 4 | FLOW-R2 room | 0.023 |
+> | 5 | EVAP-R room | 0.012 |
+>
+> **The idea worth keeping:** an evaporating medium decouples scatterer size from particulate load. A ~$1k deposition bench would settle it.
+
 ---
 
 ## 4. Nearest buildable variants against the vision

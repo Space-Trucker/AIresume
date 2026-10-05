@@ -46,6 +46,12 @@ Items 1–4 passing would make a room FLOW-R2 a credible installation. It would 
 - **Idea round 5 (opus) found no loophole in the tetralemma.** Its top idea is **EVAP-R**: a self-erasing distilled-water drop rain from a push-only pendant. It needs no pedestal and no capture, and leaves no residue; drops live 1.6–4.0 s and add 17 g/h of water.
   - It is a desk-scale demo, and "no fog" needs the owner's ruling (it is a water mist).
   - P × fit is 0.16.
+- **Red team 10 refuted EVAP-R** (P × fit falls to 0.026):
+  - drops still wet at a desk 0.5 m below above ~32 % RH;
+  - a visible beam cage in clear drops;
+  - no additive-free commodity generator.
+- **m26 aim Monte Carlo (Sawford model).** Gated flashes hit 85–100 % with ≤ 2 ms latency and ~5 µm tracking noise, but only 12–34 % around a fast-moving bare hand (red team 10).
+- **The nearest buildable demo stays the desk FLOW-R** (P × fit 0.088). It is not the vision.
 - **Scorecard unchanged (4/5/1). Not solved, no ping.**
 
 ---
