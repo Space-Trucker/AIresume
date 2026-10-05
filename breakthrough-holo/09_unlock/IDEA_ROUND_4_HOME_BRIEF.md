@@ -91,3 +91,33 @@ Several discreet heads in the room are fine. The owner can build hardware bought
 - Check what the repository already covers (`05_reviews/`, `09_unlock/`, `07_mote_route/`) and do not repeat it.
 - At most 10 web searches.
 - Output one markdown file at the path given in your task, ending with a ranked list and a weeks-scale bench test for the top idea.
+
+## Addendum: a second lead from the main session, "AIR-SV" (the air holds, light only trims)
+
+Model: `m21_airsv.py`, output in `results/m21_run.log`.
+
+**The tension it resolves** [DERIVED]:
+- Holding with light: per-focus power ∝ I(v)·a², so the eye/skin cap gives v_rel ≤ P_cap/(I_unit·a²). This favours small motes.
+- Lighting for the eye: modes ∝ A·p/(a²·P_cap). This favours big motes.
+- The fix is to let the **air carry the weight**: an **upward** laminar column at U = v_s of size-sorted white beads with a visible-transparent IR skin, e.g. ITO on PMMA or hollow glass, a ≈ 30–40 µm, ρ ≈ 600–1200, U ≈ 0.06–0.2 m/s. Light then only *trims* by ~0.4–2 mm/s.
+
+**What remains for the light to supply.** Trims cover Stokeslet interactions at 3 mm spacing (80 % pre-compensated by design), a 0.1–0.25 % size spread and Tu 0.2 %. That is I ≈ 0.6–3×10⁴ W/m² and **0.04–0.37 mW per focus** (skin-safe), with ΔT of 1–5 K.
+
+**Time-shared pulsed trims.** One galvo IR beam per head visits ~1 000 beads round-robin:
+- 0.1 ms dwell, 0.1 s revisit;
+- beads drift 40–220 µm between kicks;
+- 4–37 µJ per pulse (rule 1: 7.85 mJ);
+- kicks heat the bead by 14–29 K;
+- the galvo needs 7–10 mm·rad of étendue, which is commodity hardware.
+
+**Visible lighting.** Static holographic spots with w_v ≈ 370–490 µm, about 10× the bead radius, which Class 1 allows. That is ~2–3.5×10⁶ modes per head, i.e. **one 4K LCoS per head**.
+
+**Open problems:**
+- **The column against room cross-drafts and people:** a guard flow is probably needed.
+- **A warm hand's plume** (0.035–0.4 m/s) is 16–160× the trim authority, so beads above a hand are blown away.
+- **Bead placement and content changes are slow** at mm/s trim authority.
+- **Collective sedimentation** of bead chains.
+- **Bead materials:** an ITO or IR-dye skin on a white body.
+- **"Not a table":** the air source sits below the image, in a pedestal or floor vent.
+
+Evaluate AIR-SV with the same rigour as FLOW-X. Compare the two, and say which (if either) is the better home-buildable route.
