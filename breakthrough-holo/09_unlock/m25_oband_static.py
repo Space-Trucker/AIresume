@@ -209,8 +209,9 @@ def main(quick=False):
         print(f"{case:27s} {draft:12s} {w * 1e6:4.0f} {kind:5s} {r['v_cap_mean']:6.3f} {r['lost']:3d}/{r['n']:<2d} "
               f"{r['home_p50_um']:7.0f}/{r['home_p99_um']:<7.0f} {r['spot_off_p99_um']:8.1f} "
               f"{r['mean_power_over_cap_p50']:6.2f}/{r['mean_power_over_cap_max']:<6.2f} {r['sat_frac']:6.3f}", flush=True)
-        os.makedirs(os.path.join(HERE, "results"), exist_ok=True)
-        with open(os.path.join(HERE, "results", "m25_oband_static.json"), "w") as fh:
+        out_dir = os.environ.get("M25_OUT", os.path.join(HERE, "results"))
+        os.makedirs(out_dir, exist_ok=True)
+        with open(os.path.join(out_dir, "m25_oband_static.json"), "w") as fh:
             json.dump(rows, fh, indent=1)
 
 
