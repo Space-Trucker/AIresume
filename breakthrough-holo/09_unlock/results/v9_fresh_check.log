@@ -1,0 +1,23 @@
+D a 40: tau 9.846 ms, peak/ss 10.11
+D a 20: tau 1.231 ms, peak/ss 78.04
+D a 5: tau 0.542 ms, peak/ss 168.59
+B Peek 3.556e+07 V/m q_lim 1.583e-12; recapture 6.954e-17; Pauth room 1.335e-16; corona 1.335e-13
+E ErYb: 2.044e+05 W
+E NdYAG: 7.155e+04 W
+E InGaAsP: 1.241e+04 W
+F q 5.71e-15: shear 5.83e-10 stress 6.32e-05 strain 1.1e+05
+F q 5.71e-14: shear 5.83e-08 stress 6.32e-05 strain 1.1e+03
+F q 1.90e-13: shear 6.48e-07 stress 6.32e-05 strain 9.8e+01
+H skin v 0.01: w 37.6 um modes 2.58e+07 loop 2658
+H skin v 0.03: w 21.7 um modes 7.73e+07 loop 13812
+H skin v 0.1: w 11.9 um modes 2.58e+08 loop 84057
+H eye static v 0.01: w 77.3 um modes 6.10e+06 loop 1293
+H eye static v 0.03: w 44.6 um modes 1.83e+07 loop 6721
+H eye static v 0.1: w 24.4 um modes 6.10e+07 loop 40901
+m23 vs 8.97 mm/s n 2.574e+07 mass 56.2 mg/m3 tau 0.63% g/h 33.5
+  room ug/m3 at 99.9%: 50.0
+  drop 0.135 vert 0.33
+  w_v 140: P 1.33 mW E 5.15 uJ AEL 10.84 uJ spots 79 ghost dots 0.188 zR 11.8 cm
+  w_v 80: P 0.44 mW E 1.69 uJ AEL 10.84 uJ spots 79 ghost dots 0.020 zR 3.9 cm
+  probe e- 13236
+opus: d0 38.6 um mote 10.4 um dry 0.86 s latent 11.8 W p90 0.764
