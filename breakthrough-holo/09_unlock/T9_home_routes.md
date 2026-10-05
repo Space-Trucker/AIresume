@@ -403,7 +403,14 @@ The main session re-checked the lifetime and water-load numbers below (`v10_roun
 - **C2 is marginal:** 2–4× the per-head limit at the scan vertex, 0.4–1.4× at 100 mm. A recessed exit plus 3–4 heads fixes it.
 - **C3 passes in the core.** In a hand wake it passes only at spots ≥ 140 µm with ≤ 3–5 ms latency.
 
-**RT9 C3 contrarian** [analytic, **not yet simulated**]. A dissipative-range model gives 57–88 % hits in a hand wake at 80 µm, against RT9's 15–39 %. It needs a Monte Carlo before it replaces RT9's figure.
+**RT9 C3 contrarian, now simulated (m26).** The model is a Monte Carlo of Sawford's two-time-scale Lagrangian model (smooth below τ_η, decorrelating at T_L), with tracked positions, a least-squares velocity fit and a fire time τ later. Results (`results/m26_run.log`):
+- **Column core and gloved or bare hand wakes** (τ_η 83–236 ms): the error is set by tracking noise.
+  - At σ_pos 5 µm and τ 4 ms: **≥ 97–100 % hits at r_aim 40 µm**.
+  - At 10 µm: 87 %, and 99.8 % at 70 µm.
+- **Near-wake stress cases** (σ 8–10 cm/s at L 1–2 cm, τ_η 17–34 ms):
+  - τ 4 ms gives 30–87 % at 40 µm;
+  - **τ 2 ms with 2 kHz tracking gives 85–100 %**.
+- **Adjudication:** RT9's 15–39 % is too pessimistic, because its inertial-range wander does not apply at τ ≪ τ_η. Round 5 is right in direction. **C3 is met with ≤ 2 ms end-to-end latency and ≤ 5–10 µm tracking noise** [DERIVED, model-dependent; bench item].
 
 **Drying-time correction.** The round-4 d²-law (0.86 s) ignored wet-bulb cooling. Corrected, a 30 pL drop dries in 2.3–2.6 s at 50 % RH, so FLOW-R's drying duct must be ×3 longer.
 
