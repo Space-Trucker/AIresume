@@ -1,0 +1,18 @@
+selftest: Lambert 4pi average 1.0000, p(90) 0.764, line distance 1.000 -> PASS
+
+Armor content at 0.6 m: 1026 samples at 3 mm, S = 3.08 m; near-vertical (within 30 deg) 59.1 %
+
+case                                   n/m3  mg/m3  tau%   g/h room ug  drop  vert  Pbeam  Efl/AEL spots  glit    modes      e-  wand air m3/h gdots
+room 20 Hz N_s 1 (B' settings)     2.57e+07   56.2  0.63 33.54    50.0 0.135  0.33   1.33     0.48    79 0.634 3.31e+06   13236  0.58      576 0.188
+room 30 Hz N_s 1                   3.86e+07   84.3  0.95 50.32    75.0 0.050  0.50   0.89     0.32   119 0.951 3.31e+06   13236  0.58      576 0.282
+room 20 Hz N_s 2 (fewer dropouts)  5.15e+07  112.4  1.27 67.09   100.0 0.018  0.67   0.67     0.24   158 1.268 3.31e+06   13236  0.58      576 0.375
+room 20 Hz a 5 um                  2.62e+07   20.8  0.33 12.22    34.5 0.135  0.33   2.57     0.92    81 0.645 3.31e+06    6871  0.59      576 0.191
+room 20 Hz, 1 ms flashes           2.57e+07   56.2  0.63 33.54    50.0 0.135  0.33   5.15     1.31    21 0.634 3.31e+06   13236  0.58      576 0.188
+room 20 Hz, 99 % capture           2.57e+07   56.2  0.63 33.54   500.0 0.135  0.33   1.33     0.48    79 0.634 3.31e+06   13236  0.58      576 0.188
+room 20 Hz, w_v 80 um              2.57e+07   56.2  0.63 33.54    50.0 0.135  0.33   0.44     0.16    79 0.207 1.01e+07   13236  0.58      576 0.020
+room 20 Hz, delta 5 mm, 1.5 cd/m2  1.54e+07   33.7  0.38 20.13    30.0 0.135  0.20   1.11     0.40    48 0.380 3.31e+06   13236  0.58      576 0.113
+desk 0.3 m column (S 1 m)          2.57e+07   56.2  0.24  4.72     7.0 0.135  0.33   1.33     0.48    26 0.238 4.65e+05   13236  0.58       81 0.188
+
+  haze: column 0.0182 cd/m2 vs dark wall 0.159 cd/m2 at 10 lux (contrast 11.4 %); probe z_R 0.45 m; look-ahead 23.2 ms; spurious crossings per probe beam 3733/s; total probe power 205 mW; flash 3.9 ms, 5.15 uJ vs single-pulse AEL 10.84 uJ
+  ghosts at eps 0.5 mm: single-camera ghost beams per sample 1.1, 0.1, 0.1 (r_vox 4.5/s); accidental/true: 2 cams 0.001, 3 cams 0.0000 at 2.0 ms; 2 cams 0.000, 3 cams 0.0000 at 1.0 ms; 2 cams 0.000, 3 cams 0.0000 at 0.5 ms
+  ghosts at eps 1.0 mm: single-camera ghost beams per sample 1.9, 0.1, 0.1 (r_vox 9.0/s); accidental/true: 2 cams 0.006, 3 cams 0.0005 at 2.0 ms; 2 cams 0.003, 3 cams 0.0001 at 1.0 ms; 2 cams 0.002, 3 cams 0.0000 at 0.5 ms
