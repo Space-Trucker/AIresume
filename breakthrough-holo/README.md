@@ -4,7 +4,13 @@ An overnight research lab, run autonomously, answering one question:
 
 > Can a single "very sophisticated projector" make Iron Man-style holograms in open room air, with no glasses, fog or screens, touchable with at most a glove, and safe for everyday use?
 
-**Short answer (verdict v5, after eight red teams): not solved.**
+**Short answer (verdict v6, after nine red teams): not solved.**
+- Round 9 tried home routes in which the air carries the motes (`09_unlock/T9_home_routes.md`).
+- It proved a full-vision tetralemma: no fog, occupied open air, child-safe light and commodity addressing cannot all hold.
+- The nearest buildable thing is a desk-scale "mote rain" demo that bends "no gas" and "not a table". The room-scale design (FLOW-R2) was refuted as specified by red team 9.
+- See `05_reviews/FINAL_VERDICT.md` (v6).
+
+*Earlier short answer (verdict v5, after eight red teams): not solved.*
 - The unlock program ([`09_unlock/`](09_unlock): T6–T8, red teams 6–8) found a physics bound for static light-held motes (B9: under passive eye safety they need still air and slow content). It also found the crossing-rate rule, which frees moving motes from B9.
 - But the moving-mote design (T8) was refuted as specified: pupil stacking along strokes, loop instability, and channel étendue.
 - The only consistent design left is a still-room sketch with ~10¹⁰ hologram modes and a never-made mote.

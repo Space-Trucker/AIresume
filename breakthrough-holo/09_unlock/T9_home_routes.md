@@ -1,12 +1,46 @@
 # T9: Home routes. The air carries the motes, light addresses them, and the full vision meets a tetralemma
 
-**Status: the full vision is NOT SOLVED.**
+**Status: the full vision is NOT SOLVED. FLOW-R2 as specified was REFUTED as a credible nearest build by red team 9 (correction box below).**
 - The nearest candidate is **FLOW-R2**: a room-scale, gated, uniform mote rain. A camera-gated light engine replaces 3D tracking.
 - It bends two of the owner's rules:
   - the medium: a sub-visible stream of food-grade motes;
   - the hardware: a ceiling air unit plus a floor grille.
 - It also renders vertical strokes as flowing dashes.
 - **Waiting on red team 9 (RT9).**
+
+> **Correction by red team 9 (`05_reviews/red_team_9_home.md`, 3 critical, 6 major, 10 minor).**
+>
+> **Re-checked by the main session.**
+> - C1 matches m23's own `r_vox` of 4.5–9 /s against the 20 /s budget, an inconsistency that m23 computed but never compared.
+> - C3 is plain arithmetic: 0.58 mm of wander against a 40–70 µm aim.
+> - C2 is confirmed to order of magnitude: the content subtends only ~0.12 × 0.19 rad from a ceiling head, so a pupil near the exit collects ~20–50 % of the 0.2 W probe fan.
+>
+> **What survives:**
+> - the bounds of §2.2–2.6 and the tetralemma arithmetic (all reproduced);
+> - the crossed-probe *geometry*;
+> - the mannitol correction;
+> - per-beam, per-flash visible Class 1 (C5 = 1 for point sources in IEC 60825-1 Ed. 3).
+>
+> **What fails for FLOW-R2 as specified:**
+> - **C1, starved rain.** The probe ∩ camera voxel admits only 3.4–4.8 crossings/s per sample, 17–24 % of the 20 /s design. That leaves 62–71 % of samples dark per 0.1 s, not 13.5 %. Fixing it needs a ≥ 3 mm² sheet voxel (ghosts 1–5 %) or a ×4–6 rain (48–67 % haze contrast, no longer sub-visible).
+> - **C2, heads are Class 1 per beam, not per product.** About 1 000 lines leave each ceiling head in a tight bundle:
+>   - visible: 11.5–115× the CW AEL at 10 cm;
+>   - 850 nm probe: 133× at 10 cm, 35× at 50 cm;
+>   - skin at the probe exit: 24× (EN 50689).
+>
+>   A distributed, wide-aperture launch is needed. It is neither commodity nor discreet.
+> - **C3, missed shots.** The 23 ms open-loop look-ahead hits the mote for 0.2–0.7 % of flashes. Velocity estimation plus ≤ 1.5 mm look-ahead gives 93–99.97 % in the core, but 15–39 % in a hand's wake.
+>
+> **Majors:**
+> - **M1, photons vs depth of field.** A 35 mm aperture blurs ~3 mm. At 6–12 mm the budget is 230–1 070 e⁻.
+> - **M2, gated fill.** Gated flashes cut the fill to 0.11–0.15 (vertical) and 0.05–0.09 (horizontal).
+> - **M4, particles.** 99.97 % capture is needed for WHO 45 µg/m³. Lactose carries milk protein, so trehalose should be the default.
+> - **M5, column buoyancy.** ±0.3 K of column/room mismatch changes the image-level speed by ±20 %, and +1 K stalls it.
+> - **M6, cost.** ~$50–120k.
+>
+> **The main session's fill law (m23b) is confirmed**, with a qualification: vertical strokes keep 67 % of their length in gaps > 10 mm (horizontal: 7 %).
+>
+> **Net:** T9's top verdict ("not solved") is confirmed and strengthened. **FLOW-R2 is not a credible nearest full-vision build as specified**, and it bends three rules, not two (medium, ceiling and floor hardware, dotted or streaky lines). Its redesign path is RT9's "what would change the verdict" items 1–6, none of which is commodity or shown.
 
 **Sources:**
 - Models m20 (FLOW-X), m21 / m21b (AIR-SV), m22 (needles), m23 (FLOW-R2).

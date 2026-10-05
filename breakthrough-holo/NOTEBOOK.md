@@ -784,3 +784,37 @@ Above 3× the heat limit binds again, so the lever is worth ~2–2.5× and satur
 **Status.** Not solved, and no ping.
 - **Verdict v5** keeps 4/5/1 and records B9, the crossing-rate framework, the physics floors and the EN 50689 skin rule.
 - **The only surviving consistent design** is a still-room *sketch* of static voxels: w ≈ 30 µm, a 5 kHz spot-following hologram, ~10¹⁰ IR modes plus a large visible engine, and a never-made mote. That is far from "a projector".
+
+## 2026-10-05 · Entry 26: Round 9, home routes: the air carries, light addresses, and the tetralemma
+
+**What happened.**
+1. **Models m20 (FLOW-X) and m21 / m21b (AIR-SV):** the air carries or holds the motes and light only lights or trims them. This resolves the holding-vs-visibility tension of the addressing theorem.
+2. **Idea round 4 (opus), double-checked:** FLOW-X fails at home (Tu, no 2D injector, 1.2–5 s lag), and AIR-SV is dead in open rooms. Its top idea is **FLOW-R**: a uniform food-grade rain with gated visible spots. It works as a desk demo, but 3D tracking blocks room scale.
+3. **m22 needles** (all reproduced by RT9 and by my fresh check). Each closes a door:
+   - Laplace low-pass (only waves address);
+   - one-way photo-charge and its seconds-scale ratchet;
+   - the thermal kick theorem;
+   - a ≥ 5.5 kW pump floor for self-addressing intracavity motes;
+   - Coulomb crystals too soft;
+   - E-AIR-SV, which fixes static wakes but not drafts or hands;
+   - the full-vision **tetralemma**.
+4. **m23 FLOW-R2, my design.** Crossed-probe gating (an IR pencil projector plus 2–3 cameras) replaces tracking; ghosts ≤ 0.6 %. **m23b** gives the rain rendering law.
+5. **Red team 9** (3 critical, 6 major, 10 minor; I re-checked C1–C3): FLOW-R2 as specified fails.
+   - **C1:** the probe voxel admits only 17–24 % of the crossings the rain is sized for. m23 computed this rate but never compared it.
+   - **C2:** each ceiling head bundles ~1 000 lines, so it is Class 1 per beam but 11–133× over per product at 10 cm.
+   - **C3:** a 23 ms open-loop look-ahead misses a 40–70 µm aim.
+
+**My own errors this round, caught by RT9 or my checks:**
+- the unchecked voxel rate (C1);
+- the probe eye case, which I left open (C2);
+- a wander-vs-spot comparison against d_s rather than w_v (C3);
+- the claim that vertical strokes are "the main weakness": their fill is the same, only the texture differs (my catch, confirmed by RT9).
+
+**Safety corrections:** no mannitol (Aridol), trehalose rather than lactose (milk protein), and 99.97 % capture.
+
+**Process note.** The sonnet validator was stopped by a safety filter on an inhalation-dosing question. I did not try to get around it, and I re-ran the physics checks myself with fresh code.
+
+**Status.**
+- Not solved, no ping.
+- **Verdict v6** keeps 4/5/1.
+- The nearest buildable thing is a desk FLOW-R demo that bends "no gas" and "not a table". A room installation would need RT9's items 1–4 on the bench, at roughly $50–120k, and would still not be "just a projector".

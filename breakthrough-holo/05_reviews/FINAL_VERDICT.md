@@ -1,3 +1,47 @@
+# Final verdict (v6: home routes T9, idea round 4, red team 9; v5 below)
+
+## v6 summary (2026-10-05)
+
+**Answer: not solved. No ping.** The scorecard stays at **4 MET, 5 PARTIAL, 1 NOT MET**.
+
+**What round 9 did.** It took the owner's "buildable at home" instruction and tried every route in which the air, not the light, carries the motes.
+
+| Route | Source | Best claim | Outcome |
+|---|---|---|---|
+| FLOW-X: a targeted mote stream in a laminar column, lit by POV | m20, brief | No IR; visible Class 1 | **Fails at home** (opus round 4, double-checked). It needs Tu ≤ 0.2 % and a 2D on-demand injector, and content lags 1.2–5 s |
+| AIR-SV: beads hover in an upward column, and light only trims | m21, m21b | Trims of 0.04–0.4 mW, skin-safe | **Dead in open rooms.** Cross-drafts must stay ≤ 8–21 mm/s; hand plumes are 10–400× the trims; vertical strokes exceed the skin cap; content moves at 22 s per 10 cm |
+| E-AIR-SV: AIR-SV plus a fixed per-bead charge and a weak field | m22 G | Static wakes and size spread compensated at 76–231 V/m | **Enclosed sculpture only.** Drafts, hands (9–31 mm/s at 10 cm) and content speed remain |
+| FLOW-R: a uniform food-grade mote rain, gated visible spots, tracking | opus round 4 | One-frame content, survives hand wakes, no IR | Desk-scale demo (0.2 m, ~$5–12k) that bends "no gas" and "not a table". 3D tracking blocks room scale |
+| FLOW-R2: FLOW-R plus crossed-probe gating (an IR pencil projector and 2–3 cameras) | m23, m23b | Room scale without tracking; ghosts ≤ 0.6 % | **Refuted as specified by RT9** (re-checked by the main session). The probe voxel starves the rain (C1: 62–71 % of samples dark); heads are Class 1 per beam, not per product (C2: 11–133× at 10 cm); open-loop shots miss (C3: 0.2–0.7 % hit). Fixes are non-commodity: about $50–120k for an installation, not a projector |
+
+**New results that stand** (m22 and m23b, reproduced by RT9 and the main session's fresh check):
+- **Laplace low-pass.** Fields from sources outside the image cannot address mm structure. Only propagating waves address single motes in open air.
+- **Photo-charge is one-way in air.** Light can only lower |q|, and per-bead charge control ratchets out within seconds. Charge is a static setting.
+- **Thermal kick theorem.** Time-shared trims peak at T_rev/τ_th × the steady heating.
+- **Self-addressing intracavity motes** need ≥ 5.5 kW–0.8 MW of pump (gain étendue).
+- **Coulomb crystals** of charged motes are 10²–10⁵× too soft against drafts.
+- **Rain rendering law:**
+  - fill F ≈ n·U·d_s²·t_eye(|cos θ| + |sin θ|) for any stroke angle;
+  - simultaneous lit motes = F·S/(U·t_eye);
+  - mass and haze ∝ F/(U·d_s²).
+- **The full-vision tetralemma.** No fog + occupied open air + child-safe light + commodity addressing cannot all hold: at 3 cm/s the skin rule needs w ≤ 22 µm, 7.7×10⁷ modes per head and 14 kHz loops. Every escape found relaxes at least one of the four (column, interlock, rain medium, smaller image).
+- **Safety corrections:**
+  - mannitol is the Aridol bronchial challenge agent;
+  - lactose carries milk protein, so trehalose is the default mote sugar;
+  - 99.97 % capture is needed for the WHO PM10 figure.
+
+**What would move it** (RT9's value-of-information list):
+1. a rate-matched probe voxel with ≤ 1–2 % ghosts;
+2. a Class 1 distributed launch for the heads;
+3. a ≤ 5–6 ms velocity-predicting aim with ≥ 90 % hits;
+4. 99.97 % capture, measured with people present;
+5. a viewing study of dotted and streaky lines;
+6. the owner's rulings on the mote medium, ceiling and floor hardware, and line texture.
+
+Items 1–4 passing would make a room FLOW-R2 a credible installation. It would still not be "just a projector".
+
+---
+
 # Final verdict (v5: unlock program T6–T8 and red teams 6–8 applied; v4 below)
 
 ## v5 summary (2026-10-01)
