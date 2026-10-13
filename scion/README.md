@@ -2,8 +2,12 @@
 
 > **Status: being rebuilt.** The design baseline in [`docs/design/`](docs/design/00-process.md) was approved
 > at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system is being rebuilt from the
-> baseline in milestones B1–B5. Progress is in [`docs/design/11-traceability.md`](docs/design/11-traceability.md).
-> The sections below describe the target system.
+> baseline in milestones B1–B5. **Built so far:** B1, the version control core, and B2, the server API,
+> the daemon → cache → server tiers with snapshots, the `scn` client (full, sparse and virtual checkouts),
+> multiple repositories per deployment, and TLS with mutual TLS between tiers. Still to come: B3 (directory
+> permissions, audit, Antique review and landing), B4 (git ingestion, post-merge testing, bisect and revert,
+> grep, superfans, backup) and B5 (system verification). Progress is in
+> [`docs/design/11-traceability.md`](docs/design/11-traceability.md). The sections below describe the target system.
 
 A working implementation of the system described in Anthropic's engineering post
 [*Redesigning source control at Anthropic*](https://www.anthropic.com/engineering/redesigning-source-control).
@@ -64,26 +68,32 @@ follow its gap list.
 
 ```bash
 cd scion
-./examples/demo.sh            # ingests the enclosing git repo, starts all tiers, clones, commits, reviews, lands
-python3 -m unittest discover -s tests   # 79 tests: fuzzing, hermetic swarm simulation, end-to-end CLI
-python3 -m scion scion-admin bench      # commit scaling, ancestry, checkout benchmarks
+python3 -m unittest discover -s tests   # 61 tests: core, fuzzing, tiers, client and CLI, TLS, multi-repository
 ```
 
 Running the pieces by hand:
 
 ```bash
 export PYTHONPATH=$PWD
-python3 -m scion scion-admin ingest --repo /tmp/scion/repo --git /path/to/git/repo --verify
-python3 -m scion scion-server --repo /tmp/scion/repo --listen 127.0.0.1:7070 &
+python3 -m scion scion-admin init --root /tmp/scion/dep
+python3 -m scion scion-admin create-repo --root /tmp/scion/dep monorepo        # --read/--write to restrict it
+python3 -m scion scion-server --root /tmp/scion/dep --listen 127.0.0.1:7070 &
 python3 -m scion scion-cache  --listen 127.0.0.1:7080 --upstream http://127.0.0.1:7070 &
-python3 -m scion scion-daemon --socket /tmp/scion/d.sock --upstream http://127.0.0.1:7080 &
+python3 -m scion scion-daemon --socket /tmp/scion/d.sock --store /tmp/scion/node --upstream http://127.0.0.1:7080 &
 
-python3 -m scion scn --server http://127.0.0.1:7070 --user me clone wc --objects unix:/tmp/scion/d.sock --sparse src
+scn="python3 -m scion scn --server http://127.0.0.1:7070 --repo monorepo --user me"
+$scn api commit -m "first" --file src/x.py=scion/__init__.py --ref main   # a write without any checkout
+$scn clone wc --objects unix:/tmp/scion/d.sock --sparse src
 cd wc && echo hi >> src/x.py
 python3 -m scion scn commit -m "change"        # created on the server; there is nothing to push
-python3 -m scion scn review create --title "change"
-python3 -m scion scn review land 1
+python3 -m scion scn log
 ```
+
+For production-like transport, give every TCP hop TLS and the tiers client certificates (ADR-14):
+`scion-admin gen-certs DIR` makes a development CA and certificates (it needs the `openssl` tool);
+servers and caches take `--tls-cert/--tls-key/--client-ca`, caches and daemons take `--ca/--cert/--key`
+for their upstreams, and users authenticate with tokens from `deployment.json` (`scion-admin hash-token`).
+`scion-admin snapshot` publishes daemon snapshots, and `scion-daemon --snapshots DIR` warm-starts from them.
 
 After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cache`,
 `scion-daemon` and `scion-admin` are available directly.
@@ -93,9 +103,10 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | | |
 |---|---|
 | working copy | `clone [--sparse dirs] [--virtual]`, `status`, `add`, `rm`, `restore`, `diff`, `commit`, `update`, `rebase`, `stack`, `sparse show/add/remove`, `materialize`, `watch start/stop` (inotify fsmonitor) |
-| server queries | `log [path]`, `show`, `blame`, `history`, `cat`, `ls`, `search`, `grep`, `merge-base`, `diff -r A -r B [--merge-base]` |
-| review | `review create/update/list/show/approve/comment/land/abandon/landing` |
-| automation | `revert [--land]`, `bisect --file PATH:REGEX` (no checkout) or `--cmd`, `api <method> k=v ...` (any RPC), `api commit --file PATH=LOCAL` (write without a checkout) |
+| server queries | `log [path]`, `show`, `blame`, `history`, `cat`, `ls`, `search`, `merge-base`, `diff -r A -r B [--merge-base]`; B4 adds `grep` |
+| repository | `repos`, `whoami`, `refs`, `ref-log NAME`, `is-ancestor A B` |
+| review (B3) | `review create/update/list/show/approve/comment/land/abandon/landing` |
+| automation | `api <method> k=v ...` (any RPC), `api commit --file PATH=LOCAL` (write without a checkout); B4 adds `revert [--land]` and `bisect --file PATH:REGEX` or `--cmd` |
 
 ## Layout
 
@@ -107,8 +118,9 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | `derived.py`, `derived_types.py` | the generic derived-data mechanism and its six types |
 | `repo.py` | server-side history, blame, ancestry, merge, rebase, revert |
 | `merge3.py` | line-based three-way merge |
-| `iam.py`, `ratelimit.py` | repository and directory permissions, protected refs, tokens; rate limiting |
-| `rpc.py`, `server.py`, `tiers.py`, `snapshot.py` | the RPC layer, scion-server, scion-cache, scion-daemon, snapshots |
+| `iam.py`, `ratelimit.py` | principals, tokens, repository and directory permissions, protected refs; rate limiting |
+| `deployment.py` | one deployment hosting many repositories, each with its own policy |
+| `rpc.py`, `server.py`, `tiers.py`, `snapshot.py` | the RPC layer (TLS, mutual TLS, failover), scion-server, scion-cache, scion-daemon, snapshots |
 | `client.py`, `fsmonitor.py`, `cli.py` | `scn`: working copies (full, sparse, virtual), the inotify monitor, the CLI |
 | `antique.py`, `classify.py` | code review with semantic approval rules, lock-free landing, landing index |
 | `search.py` | path search over bloom-filtered search trees; server-side grep |
@@ -117,6 +129,8 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | `superfan.py` | per-component telemetry watchers with adaptive baselines and threshold alerts |
 
 ## Measured here (4-core container)
+
+These numbers come from the deleted prototype; the rebuild re-measures them in B5 (T-PERF-01).
 
 | Benchmark | Result |
 |---|---|

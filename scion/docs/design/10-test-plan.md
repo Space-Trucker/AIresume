@@ -101,6 +101,8 @@
 | T-MR-01 | FR-IAM-02, ADR-13 | two repositories with different policies on one deployment; caches key by repository; a private repository's objects are never cached | test_multirepo |
 | T-TLS-01 | NFR-20, ADR-14 | TLS on every TCP hop; mutual TLS identifies tiers; plaintext and wrong certificates are refused | test_tls |
 | T-LIM-01 | FR-WR-07 | an oversized upload gets 413 and stores nothing | test_ops |
+| T-OPS-05 | FR-OP-01/02, NFR-16 | health, stats, latency percentiles, error counts and hit rates on server, cache and daemon | test_ops |
+| T-STD-01 | NFR-19 | the package imports only the standard library | test_ops |
 | T-CL-13 | FR-FP-03 | an interrupted clone resumes in place and reuses received objects | test_client |
 | T-IAM-09 | FR-IAM-01 | repository-level read restriction, through the API and through the caches | test_iam |
 | T-IAM-10 | FR-IAM-09 | re-indexing ACLs after a policy change restricts existing objects | test_iam |

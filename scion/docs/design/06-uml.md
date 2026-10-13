@@ -377,28 +377,56 @@ classDiagram
 classDiagram
   class Service {
     +tier
-    +policy : Policy
+    +identity : Identity
     +limiter : RateLimiter
     +register(name, fn, klass, tiers)
-    +authenticate(headers) Caller
-    +dispatch(method, body, caller)
+    +authenticate(headers, peer_cn) Caller
+    +dispatch(method, body, query, caller)
     +stats() dict
+    +health() dict
   }
   class ScionService {
-    +repo : Repository
+    +deployment : Deployment
     +antique : Antique
+    +reload()
+  }
+  class Deployment {
+    +root
+    +identity : Identity
+    +repo(name) Repository
+    +create_repo(name, policy) Repository
+    +names() list
+    +reload()
+  }
+  class Identity {
+    +tokens
+    +service_principals
+    +groups
+    +admins
+    +check_token(principal, token) bool
+    +matches(user, principals) bool
+  }
+  class Policy {
+    +public : bool
+    +max_file_bytes
+    +can_read_repo(user) bool
+    +can_write_repo(user) bool
+    +can_read(user, path) bool
+    +can_write(user, path) bool
+    +can_update_ref(user, ref) bool
+    +restricted_prefix(path) str
   }
   class ObjectTierService {
     +source : CachingSource
+    +allowed_callers
   }
   class DaemonService {
-    +refresh_snapshot() int
+    +refresh_snapshots() int
   }
   class ObjectSource {
     <<interface>>
-    +fetch(ids, user) list
+    +fetch(repo, ids, user) list
   }
-  class RepositorySource
   class RemoteSource {
     +clients : RpcClient[]
     +failovers
@@ -406,34 +434,49 @@ classDiagram
   class CachingSource {
     +store : ObjectStore
     +upstream : ObjectSource
-    +restricted : set
-    +fetch(ids, user) list
+    +restricted : bounded set
+    +fetch(repo, ids, user) list
   }
   class Caller {
     +principal
     +tier
     +on_behalf
+    +via
     +user()
   }
   class RateLimiter {
     +acquire(principal, klass, cost)
   }
-  class Policy {
-    +can_read(user, path) bool
-    +can_write(user, path) bool
-    +can_update_ref(user, ref) bool
-    +restricted_prefix(path) str
+  class RpcServer {
+    +address
+    +tls : TlsConfig
+    +start()
+    +stop()
+  }
+  class RpcClient {
+    +call(method, params)
+    +get_objects(repo, ids, on_behalf)
+    +put_objects(repo, items)
+  }
+  class FailoverClient {
+    +clients : RpcClient[]
   }
   Service <|-- ScionService
   Service <|-- ObjectTierService
   ObjectTierService <|-- DaemonService
   ObjectTierService --> CachingSource
-  ObjectSource <|.. RepositorySource
+  ScionService --> Deployment
+  Deployment --> Identity
+  Deployment ..> Policy : per repository
+  Policy --> Identity
   ObjectSource <|.. RemoteSource
   ObjectSource <|.. CachingSource
   CachingSource --> ObjectSource : upstream
+  RemoteSource --> RpcClient
+  FailoverClient --> RpcClient
+  RpcServer --> Service
+  Service --> Identity
   Service --> RateLimiter
-  Service --> Policy
   Service ..> Caller
 ```
 
@@ -444,26 +487,33 @@ classDiagram
   class WorkingCopy {
     +root
     +config
-    +state
-    +clone(dest, server, objects, rev, mode, sparse)$ WorkingCopy
+    +base
+    +clone(dest, server, repo, objects, rev, mode, sparse)$ WorkingCopy
+    +finish_checkout()
     +status() Status
     +add(paths)
     +remove(paths)
-    +commit(message, paths) ChangesetId
+    +restore(paths)
+    +diff_local(paths) str
+    +commit(message, paths, addremove) ChangesetId
     +update(rev, clean)
     +rebase(onto)
+    +stack(onto) list
     +materialize(paths)
     +read(path) bytes
     +sparse_add(dirs)
     +sparse_remove(dirs)
-    +diff_local(paths) str
   }
   class ServerApi {
+    +repo
+    +rpc : FailoverClient
     +call(method, params)
   }
   class ObjectFetcher {
-    +fetch_stream(ids) iterator
-    +trees(ids) dict
+    +repo
+    +log
+    +fetch_batches(ids, stage) iterator
+    +trees(ids, level) dict
     +blob(id) bytes
   }
   class SparseProfile {
@@ -476,10 +526,13 @@ classDiagram
     +added
     +removed
     +untracked
+    +examined
+    +used_fsmonitor
   }
   class FsMonitor {
     +start(root)
     +query(root, token)
+    +stop(root)
   }
   WorkingCopy --> ServerApi
   WorkingCopy --> ObjectFetcher

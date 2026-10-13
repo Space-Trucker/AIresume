@@ -54,7 +54,7 @@ Domain model: [6.1](06-uml.md#61-domain-model).
 | Refs | single-row compare-and-swap; every success is appended to the ref log |
 | Landing | per-server, per-target group commit: one leader drains the queue, rebases a chain, does one CAS; retries with jittered exponential backoff up to a deadline; servers never coordinate except through the CAS |
 | Cache misses | single flight per object id; waiters re-read the store or re-request |
-| Request handling | a thread per connection (HTTP/1.1 keep-alive); per-thread SQLite connections in WAL mode |
+| Request handling | a thread per connection (HTTP/1.1 keep-alive; each response leaves in one write, with TCP_NODELAY); TLS handshakes run on the connection's thread; per-thread SQLite connections in WAL mode |
 | Client fetch | breadth-first by tree level; blob batches fetched in parallel |
 | Status | a filesystem watcher process journals events; the sync cookie orders queries after earlier events |
 
@@ -82,7 +82,9 @@ Deployment diagram: [6.3](06-uml.md#63-deployment).
 **Repositories (ADR-13).** A deployment root holds `repos/<name>/` directories, each with
 `objects/`, `meta.db` and `policy.json`. A server serves every repository under its root. RPC
 parameters and the object protocol carry `repo`; working copies record which repository they
-belong to.
+belong to. Principals are deployment-wide: `deployment.json` at the root holds the tokens, service
+principals, groups, deployment administrators, rate limits and default limits, and each
+repository's `policy.json` holds who may read and write it, its administrators and its limits.
 
 **Object identity:** `id = sha256(type || 0x00 || payload)`. Objects are stored as
 `zlib(type || 0x00 || payload)`, which is exactly what crosses the wire.
@@ -117,7 +119,12 @@ with `id = sha256("changeset\0" || json)`.
   stable HTTP statuses 400/401/403/404/409/429/500.
 * **Identity headers:** `X-Scion-User`, `Authorization: Bearer`, `X-Scion-Tier`, `X-Scion-On-Behalf-Of`.
 * **Objects:** `get_objects {repo, ids}` returns repeated `[32B id][1B flags][4B len][stored bytes]`.
-  The flags are RESTRICTED, MISSING and DENIED.
+  The flags are RESTRICTED, MISSING and DENIED. `put_objects?repo=<name>` takes the same framing.
+* **Transport security (ADR-14):** `https://` endpoints use TLS 1.2 or later. With a client CA
+  configured, the client certificate's common name is the service principal, and service
+  principals must authenticate that way; users send bearer tokens.
+* **Failover (NFR-09):** tiers and clients take several equivalent upstream endpoints; an endpoint
+  that can't be reached is skipped, and requests that are safe to resend move on after a 5xx.
 * **Daemon transport:** the same HTTP over a Unix domain socket.
 * Full reference: [../API.md](../API.md).
 

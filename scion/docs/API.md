@@ -3,26 +3,42 @@
 Every query the `scn` client makes is one of these RPCs, so any CI job or tool can use them
 without a checkout. The article suggests forges could standardize something similar.
 
-**Transport.** Requests are `POST /rpc/<method>` with the body `{"params": {...}}`, and responses
-are `{"result": ...}`. Errors return `{"error": {"code", "message", "data"}}` with these HTTP
-statuses:
-- 400: bad request
+> **Availability.** The rebuild delivers these in milestones: everything below except the
+> Antique methods and `grep` is built (B2); Antique arrives in B3 and `grep` in B4
+> ([design/11-traceability.md](design/11-traceability.md)).
+
+**Transport.** Requests are `POST /rpc/<method>` with the body `{"params": {...}}` and a
+`Content-Length` (chunked bodies get 411), and responses are `{"result": ...}`. Errors return
+`{"error": {"code", "message", "data"}}` with these HTTP statuses:
+- 400: bad request, or an object that fails verification (`integrity`)
 - 401: unauthenticated
 - 403: permission denied or tiering violation
-- 404: not found
+- 404: not found (unknown method, revision, path or repository)
 - 409: merge conflict (`data.conflicts`)
-- 429: rate limited (honor `Retry-After`)
+- 413: request body over 512 MB, or a file over the repository's per-file limit
+- 429: rate limited: wait `Retry-After` seconds (`data.retry_after` has the exact value)
+- 502/503 from a cache or daemon: its upstream sent a bad object, or no upstream answered
+
+**Endpoints.** `http://host:port` (development), `https://host:port` (TLS 1.2 or later) and
+`unix:/path` (the node daemon). Servers and caches can require mutual TLS: then the client
+certificate's common name is the service principal, and the `scion-cache` and `scion-daemon`
+principals must authenticate that way (ADR-14). Clients and tiers accept several equivalent
+endpoints and fail over between them.
 
 **Headers.**
 - `X-Scion-User`: the caller's identity.
-- `Authorization: Bearer <token>`: required when the policy defines tokens.
+- `Authorization: Bearer <token>`: required when `deployment.json` defines tokens (stored plain or
+  as `sha256:<hex>`, see `scion-admin hash-token`).
 - `X-Scion-Tier`: one of `client`, `daemon` or `cache`. The daemon and cache tiers must be the
   `scion-daemon` and `scion-cache` principals.
 - `X-Scion-On-Behalf-Of`: lets a service principal pass along the end user's identity, whose
   permissions then apply.
 
 **Repositories (ADR-13).** One deployment hosts many repositories. Every RPC below and the object
-protocol take a `repo` parameter that names the repository (the CLI reads it from the working copy).
+protocol take a `repo` parameter that names the repository (the CLI reads it from the working copy);
+`deployment.json` may name a `default_repo` for requests without one. Each repository's
+`policy.json` decides who may read and write it; a caller who may not read a repository gets 403
+from every RPC on it, and DENIED for its objects.
 
 **Revisions.** Any `rev` accepts a ref name, a full changeset id, a unique id prefix of at least
 4 hex characters, and `~N` (first-parent ancestor) and `^N` (Nth parent) suffixes, for example
@@ -34,8 +50,10 @@ protocol take a `repo` parameter that names the repository (the CLI reads it fro
 
 | Method | Params | Returns | Class |
 |---|---|---|---|
-| `whoami` | | principal, effective user, tier, admin | read |
-| `server_info` | | changeset count, refs, derived-data counts | read |
+| `whoami` | `repo?` | principal, effective user, tier, how the principal was established (`token`, `cert`, `trusted`), admin, and `repo_admin` | read |
+| `list_repos` | | the repositories the caller may read: `{name, public, writable}` | read |
+| `server_info` | `repo?` | with `repo`: changeset count, refs, derived-data counts; without: the readable repositories | read |
+| `tier_info` | | `{tier, object_callers}`: every tier answers it, so a tier can check its upstream | read |
 | `resolve` | `rev` | changeset id | read |
 | `get_changeset` | `rev` | parents, author, message, timestamp, changes (relative to the first parent), generation, copies | read |
 | `get_changesets` | `ids` | list of the above | read |
@@ -57,9 +75,9 @@ protocol take a `repo` parameter that names the repository (the CLI reads it fro
 
 | Method | Params | Notes |
 |---|---|---|
-| `has_objects` | `ids` | returns the ids the server does **not** have |
-| `put_objects` | binary framing (below) | blobs only; integrity is verified; trees are always derived on the server |
-| `create_changeset` | `parents`, `files: [{path, delete} \| {path, kind, blob} \| {path, kind, content_b64}]`, `message`, `author?`, `timestamp?`, `extra?`, `update_ref? {name, old, record_landing?}` | creates the changeset on the server; no locks; an optional ref compare-and-swap |
+| `has_objects` | `ids` | writers only: returns the ids the server does **not** have, so uploads skip known content |
+| `put_objects` | `POST /rpc/put_objects?repo=<name>` with the binary framing (below) | writers only; blobs only, each verified against its id; trees are always derived on the server; nothing is stored if any object is invalid or over the per-file limit (413) |
+| `create_changeset` | `parents`, `files: [{path, delete} \| {path, kind, blob} \| {path, kind, content_b64}]`, `message`, `author?`, `timestamp?`, `extra?`, `update_ref? {name, old, record_landing?}` | creates the changeset on the server; no locks; an optional ref compare-and-swap, reported as `ref_updated`; the author is the caller unless the caller is an admin or a service; inline content over the per-file limit gets 413 |
 | `merge` | `ours`, `theirs`, `message?`, `ff?` | 409 with structured conflicts |
 | `rebase` | `head`, `onto`, `base?` | rebases a whole stack: `{head, rebased: {old: new}}` |
 | `revert` | `cs`, `onto`, `message?` | three-way revert of `cs` on top of `onto` |
@@ -68,7 +86,7 @@ protocol take a `repo` parameter that names the repository (the CLI reads it fro
 
 ## Object protocol (identical on scion-daemon, scion-cache and scion-server)
 
-`get_objects` takes `{"ids": [...]}` (at most 2,000 per request) and responds with
+`get_objects` takes `{"repo": "<name>", "ids": [...]}` (at most 2,000 ids per request) and responds with
 `application/octet-stream` containing repeated records:
 
 ```
@@ -78,6 +96,9 @@ flags: 0x1 restricted (do not cache)   0x2 missing   0x4 denied
 
 The request lists only the objects the caller *wants*. It never describes what the caller
 already has. Only `blob` and `tree` objects are served; derived structures stay internal.
+Caches and daemons key what they store by (repository, id) and never store an object flagged
+restricted: every object of a repository whose reads are not open to everyone is restricted. A
+tier acting for a user sends `X-Scion-On-Behalf-Of`, so the user's permissions apply.
 
 Each tier accepts requests only from the tier directly below it:
 
