@@ -9,51 +9,51 @@ requirement is built and its acceptance tests pass.
 
 | Req | Use cases | Feature | Design | Tests | Status | Note |
 |---|---|---|---|---|---|---|
-| FR-CS-01 | UC-04, UC-07 | F-01 | repo.create_changeset; client.commit | T-CL-01, T-IAM-07 | B1 | |
-| FR-CS-02 | UC-04 | F-01 | changeset.Changeset | T-CORE-03, T-FUZZ-01 | B1 | |
-| FR-CS-03 | UC-04 | F-02 | objects, storage | T-CORE-03 | B1 | |
-| FR-CS-04 | UC-04 | F-01 | Changeset.id; meta.insert_changeset | T-CORE-04 | B1 | |
-| FR-CS-05 | UC-04 | F-01 | meta.insert_changeset | T-CORE-05, T-SIM-01 | B1 | |
-| FR-CS-06 | UC-04 | F-01 | shared MetaStore | T-SIM-01, T-TIER-06 | B1 | |
-| FR-CS-07 | all queries | F-05 | repo.resolve | T-CORE-06 | B1 | |
-| FR-CS-08 | UC-04, UC-07 | F-01 | repo.create_changeset; trees.apply_augmented | T-CORE-07 | B1 | |
-| FR-CS-09 | UC-04 | F-03 | trees.apply_augmented; incremental derived types | T-CORE-08, T-CORE-10 | B1 | |
-| FR-REF-01 | UC-13, UC-15 | F-04 | meta.refs; antique.create | T-CORE-05, T-LD-01 | B1 | |
-| FR-REF-02 | UC-15, UC-28 | F-04 | meta.cas_ref | T-CORE-05, T-SIM-01 | B1 | |
+| FR-CS-01 | UC-04, UC-07 | F-01 | repo.create_changeset; client.commit | T-CL-01, T-IAM-07 | I |  |
+| FR-CS-02 | UC-04 | F-01 | changeset.Changeset | T-CORE-03, T-FUZZ-01 | I |  |
+| FR-CS-03 | UC-04 | F-02 | objects, storage | T-CORE-03 | I |  |
+| FR-CS-04 | UC-04 | F-01 | Changeset.id; meta.insert_changeset | T-CORE-04 | I |  |
+| FR-CS-05 | UC-04 | F-01 | meta.insert_changeset | T-CORE-05, T-SIM-01 | I |  |
+| FR-CS-06 | UC-04 | F-01 | shared MetaStore | T-DD-01 (two repositories on one store) | I |  |
+| FR-CS-07 | all queries | F-05 | repo.resolve | T-CORE-06 | I |  |
+| FR-CS-08 | UC-04, UC-07 | F-01 | repo.create_changeset; trees.apply_augmented | T-CORE-07 | I |  |
+| FR-CS-09 | UC-04 | F-03 | trees.apply_augmented; incremental derived types | T-CORE-08, T-CORE-10 | I |  |
+| FR-REF-01 | UC-13, UC-15 | F-04 | meta.refs; antique.create | T-CORE-05, T-LD-01 | I |  |
+| FR-REF-02 | UC-15, UC-28 | F-04 | meta.cas_ref | T-CORE-05, T-SIM-01 | I |  |
 | FR-REF-03 | UC-28 | F-25 | iam.can_update_ref | T-IAM-06 | B3 | |
-| FR-REF-04 | UC-28 | F-04 | meta.ref_log | T-SIM-01 | B1 | |
+| FR-REF-04 | UC-28 | F-04 | meta.ref_log | T-CORE-05 | I |  |
 | FR-REF-05 | UC-28 | F-25 | create_release RPC; release/* protection | T-REF-01 | B3 | |
-| FR-OBJ-01 | all (5.3) | F-02 | objects | T-CORE-01 | B1 | |
-| FR-OBJ-02 | all (5.3) | F-02 | storage.FileObjectStore | T-CORE-01 | B1 | |
-| FR-OBJ-03 | all (5.3) | F-02 | bounded stores; no gc | T-CORE-02 | B1 | |
-| FR-OBJ-04 | UC-01 | F-02 | decode_stored(expected_id) in daemon and client | T-TIER-08 | B1 | |
-| FR-OBJ-05 | all (5.3) | F-02 | derived trees only | T-CORE-08 | B1 | |
-| FR-DD-01 | UC-27 | F-06 | derived.DerivedDataManager | T-DD-01 | B1 | |
-| FR-DD-02 | UC-09, UC-27 | F-06 | DerivedDataManager._derive_missing | T-DD-01 | B1 | |
-| FR-DD-03 | UC-09, UC-27 | F-06 | DerivedType.eager | T-DD-01, T-DD-07 | B1 | |
-| FR-DD-04 | UC-27 | F-06 | register | T-DD-02 | B1 | |
-| FR-DD-05 | UC-09 | F-06 | derived_put (insert or ignore) | T-SIM-01 | B1 | |
-| FR-DD-06 | UC-27 | F-06 | backfill; `scion-admin derive` | T-DD-07 | B1 | |
-| FR-DD-07 | UC-01 | F-06 | RootTreeType | T-FUZZ-01 | B1 | |
-| FR-DD-08 | UC-08 | F-08 | HistoryTreeType; repo.file_history | T-DD-04, T-FUZZ-01 | B1 | |
-| FR-DD-09 | UC-09 | F-08 | BlameType | T-DD-05, T-DD-08, T-FUZZ-01, T-MG-02 | B1 | |
-| FR-DD-10 | UC-11 | F-07 | GraphType; is_ancestor; merge_bases | T-DD-06, T-FUZZ-01 | B1 | |
-| FR-DD-11 | UC-08 | F-08 | CopyInfoType | T-DD-03 | B1 | |
-| FR-DD-12 | UC-12 | F-39 | SearchTreeType | T-SR-01, T-FUZZ-01 | B1 | |
-| FR-QRY-01 | all | F-09 | server.get_changeset(s) | T-IAM-03 | B1 | |
-| FR-QRY-02 | UC-20 | F-09 | repo.log | T-AUT-01, T-DD-04 | B1 | |
-| FR-QRY-03 | UC-05, UC-10 | F-09 | repo.diff; trees.diff | T-CORE-09, T-FUZZ-01 | B1 | |
-| FR-QRY-04 | UC-10 | F-09 | server._diff(merge_base) | T-CL-10 | B1 | |
-| FR-QRY-05 | UC-11 | F-07 | merge_bases; is_ancestor | T-DD-06, T-FUZZ-01 | B1 | |
-| FR-QRY-06 | UC-08 | F-08 | file_history | T-DD-03/04 | B1 | |
-| FR-QRY-07 | UC-09 | F-08 | blame | T-DD-05 | B1 | |
-| FR-QRY-08 | UC-02 | F-09 | read_file; list_dir | T-IAM-03 | B1 | |
-| FR-QRY-09 | UC-11, UC-20 | F-07 | fp_ancestor | T-DD-06 | B1 | |
+| FR-OBJ-01 | all (5.3) | F-02 | objects | T-CORE-01 | I |  |
+| FR-OBJ-02 | all (5.3) | F-02 | storage.FileObjectStore | T-CORE-01 | I |  |
+| FR-OBJ-03 | all (5.3) | F-02 | bounded stores; no gc | T-CORE-02 | I |  |
+| FR-OBJ-04 | UC-01 | F-02 | decode_stored(expected_id) in daemon and client | T-CORE-01, T-TIER-08 | I |  |
+| FR-OBJ-05 | all (5.3) | F-02 | derived trees only | T-CORE-08 | I |  |
+| FR-DD-01 | UC-27 | F-06 | derived.DerivedDataManager | T-DD-01 | I |  |
+| FR-DD-02 | UC-09, UC-27 | F-06 | DerivedDataManager._derive_missing | T-DD-01 | I |  |
+| FR-DD-03 | UC-09, UC-27 | F-06 | DerivedType.eager | T-DD-01, T-DD-07 | I |  |
+| FR-DD-04 | UC-27 | F-06 | register | T-DD-02 | I |  |
+| FR-DD-05 | UC-09 | F-06 | derived_put (insert or ignore) | T-DD-01 | I |  |
+| FR-DD-06 | UC-27 | F-06 | backfill; `scion-admin derive` | T-DD-07 | I |  |
+| FR-DD-07 | UC-01 | F-06 | RootTreeType | T-CORE-07, T-FUZZ-01 | I |  |
+| FR-DD-08 | UC-08 | F-08 | HistoryTreeType; repo.file_history | T-DD-04, T-DD-08, T-FUZZ-01 | I |  |
+| FR-DD-09 | UC-09 | F-08 | BlameType | T-DD-05, T-DD-08, T-FUZZ-01, T-MG-02 | I |  |
+| FR-DD-10 | UC-11 | F-07 | GraphType; is_ancestor; merge_bases | T-DD-06, T-FUZZ-01 | I |  |
+| FR-DD-11 | UC-08 | F-08 | CopyInfoType | T-DD-03 | I |  |
+| FR-DD-12 | UC-12 | F-39 | SearchTreeType | T-CORE-12, T-FUZZ-01 | I |  |
+| FR-QRY-01 | all | F-09 | server.get_changeset(s) | T-CORE-03 | I |  |
+| FR-QRY-02 | UC-20 | F-09 | repo.log | T-DD-04 | I |  |
+| FR-QRY-03 | UC-05, UC-10 | F-09 | repo.diff; trees.diff | T-CORE-09, T-FUZZ-01 | I |  |
+| FR-QRY-04 | UC-10 | F-09 | server._diff(merge_base) | T-CL-10 | I |  |
+| FR-QRY-05 | UC-11 | F-07 | merge_bases; is_ancestor | T-DD-06, T-FUZZ-01 | I |  |
+| FR-QRY-06 | UC-08 | F-08 | file_history | T-DD-03, T-DD-04, T-FUZZ-01 | I |  |
+| FR-QRY-07 | UC-09 | F-08 | blame | T-DD-05, T-DD-08, T-FUZZ-01 | I |  |
+| FR-QRY-08 | UC-02 | F-09 | read_file; list_dir | T-CORE-11 | I |  |
+| FR-QRY-09 | UC-11, UC-20 | F-07 | fp_ancestor | T-DD-06, T-FUZZ-01 | I |  |
 | FR-QRY-10 | all | F-09 | client uses only public RPCs | T-CL-11 | B2 | |
 | FR-WR-01 | UC-07 | F-11 | create_changeset (content_b64) | T-CL-10 | B2 | |
-| FR-WR-02 | UC-06, UC-29 | F-10 | repo.merge; merge3 | T-WR-01 | B1 | |
-| FR-WR-03 | UC-06 | F-10 | repo.rebase | T-WR-01, T-CL-04 | B1 | |
-| FR-WR-04 | UC-21 | F-10 | repo.revert | T-WR-01, T-PM-01 | B1 | |
+| FR-WR-02 | UC-06, UC-29 | F-10 | repo.merge; merge3 | T-WR-01 | I |  |
+| FR-WR-03 | UC-06 | F-10 | repo.rebase | T-WR-01, T-CL-04 | I |  |
+| FR-WR-04 | UC-21 | F-10 | repo.revert | T-WR-01, T-PM-01 | I |  |
 | FR-WR-05 | UC-07 | F-11 | create_changeset update_ref | T-CL-10 | B2 | |
 | FR-WR-06 | UC-04 | F-11 | has_objects | T-CL-01 | B2 | |
 | FR-WR-07 | UC-04, UC-07 | F-11 | policy limits.max_file_bytes; 413 | T-LIM-01 | B2 | |
@@ -156,16 +156,16 @@ requirement is built and its acceptance tests pass.
 | NFR-02 | B5 | planned verification: T-SIM-01, T-PERF-01 |
 | NFR-03 | B5 | planned verification: 10 §10.4 |
 | NFR-04 | B5 | planned verification: T-SIM-01, T-PERF-01 |
-| NFR-05 | B1 | planned verification: 10 §10.4 |
-| NFR-06 | B1 | planned verification: 10 §10.4 |
+| NFR-05 | I | T-CORE-10: one-file commit time flat within ±25% from 10² to 10⁴ files, and a constant 3 tree writes |
+| NFR-06 | I | T-DD-06: ancestry over 100 changesets in < 20 steps; history is one lookup per result |
 | NFR-07 | B2 | planned verification: 10 §10.4 |
 | NFR-08 | B2 | planned verification: 10 §10.4 |
 | NFR-09 | B2 | planned verification: 10 §10.4 |
 | NFR-10 | B3 | planned verification: 10 §10.4 |
 | NFR-11 | B2 | planned verification: 10 §10.4 |
-| NFR-12 | B1 | planned verification: 10 §10.4 |
+| NFR-12 | I | T-CORE-05: concurrent CAS, exactly one winner, unbroken ref log; T-DD-01: deterministic derived values across two servers |
 | NFR-13 | B5 | planned verification: 10 §10.4 |
-| NFR-14 | B1 | planned verification: 10 §10.4 |
+| NFR-14 | I | no maintenance commands exist; T-DD-02: a new derived type in one class |
 | NFR-15 | B5 | planned verification: 10 §10.4 |
 | NFR-16 | B2 | planned verification: 10 §10.4 |
 | NFR-17 | B5 | planned verification: T-SIM-01, T-PERF-01 |
@@ -179,7 +179,7 @@ Updated at the end of every milestone (computed by the T-DOC-02 cross-check).
 
 | Milestone | Scope | Status |
 |---|---|---|
-| B1 | version control core | planned |
+| B1 | version control core | **done**: 45 requirements built and tested (21 core tests; fuzzing 8 seeds × 70 steps in the suite, 200 × 120 in a stress run) |
 | B2 | service, tiers, client, multi-repository, TLS | planned |
 | B3 | IAM, audit, review and landing | planned |
 | B4 | migration, automation, search, operations, backup | planned |

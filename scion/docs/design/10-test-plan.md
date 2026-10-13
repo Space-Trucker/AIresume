@@ -39,6 +39,8 @@
 | T-CORE-07 | FR-CS-08 | validation, including file↔directory replacement | test_core.TestChangesets |
 | T-CORE-08 | FR-CS-09, FR-OBJ-05 | only changed subtrees are rewritten | test_core.TestChangesets |
 | T-CORE-09 | FR-QRY-03 | scoped diffs and text diffs | test_core.TestChangesets |
+| T-CORE-11 | FR-QRY-08 | read a file and list a directory at a revision | test_core |
+| T-CORE-12 | FR-DD-12, FR-SR-01 | path search skips subtrees whose bloom filter cannot match | test_core |
 | T-DD-01 | FR-DD-01/02/03 | eager vs deferred; ancestors derived first | test_core.TestDerived |
 | T-DD-02 | FR-DD-04 | registering a new type | test_core.TestDerived |
 | T-DD-03 | FR-DD-11, FR-QRY-06 | copy and rename detection; history across renames | test_core.TestDerived |
