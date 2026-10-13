@@ -37,7 +37,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-OBJ-01 | All source-control data is content-addressed and immutable. | M | §Scaling Scion | Rewriting stored bytes is detected as an integrity failure. |
 | FR-OBJ-02 | Objects are stored individually and compressed. There are no packfiles. | M | §Principles: horizontally scalable | The storage layout has one entry per object. |
 | FR-OBJ-03 | No server, cache or client needs repository maintenance (gc, repack). | M | §Principles; §Scaling Scion | No maintenance command exists or is needed. Bounded stores evict on their own. |
-| FR-OBJ-04 | Any consumer can verify an object's integrity from its id alone. | M | Derived (AS-05) | A tampered object is rejected by the daemon and the client. |
+| FR-OBJ-04 | Any consumer can verify an object's integrity from its id alone. | M | Derived (AS-05). Not stated in the article; kept because a hash check is cheap. Flagged for review in light of the article's warning about over-defensive validation (cross-check A135). | A tampered object is rejected by the daemon and the client. |
 | FR-OBJ-05 | No component holds a fully materialized copy of the repository, not even the server. | M | §Principles: horizontally scalable | Trees are built on demand from changesets; no full working copy exists on the server. |
 
 ### FR-DD Derived data
@@ -156,7 +156,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-RV-05 | Each changed file is classified as docs, comment-only or logic. | M | §What we learned: security ("comment-only changes") | Comment edits in Python and C-like files classify as comment-only; comment markers inside strings do not. |
 | FR-RV-06 | Approval rules per directory and per category, including owner approvals. | M | §What we learned: security ("complex semantic constraints") | A logic change under an owned directory needs an owner's approval. |
 | FR-RV-07 | The evaluated requirements (needed vs present) are shown to authors and reviewers. | M | Derived | The UI and API show each scope's need and have. |
-| FR-RV-08 | A review UI with a diff view. | M | §Introduction ("a code review surface") | The CR page shows metadata, requirements, comments and the diff. |
+| FR-RV-08 | A review UI with a diff view. | M | §Opening ("a code review surface") | The CR page shows metadata, requirements, comments and the diff. |
 | FR-RV-09 | Approve and comment from the UI. | S | Derived | The UI actions call the same API. |
 | FR-RV-10 | Reviewers are notified of review requests. | C | Derived | A webhook fires on CR creation. |
 
@@ -164,8 +164,8 @@ means the requirement is engineering analysis needed to make an article statemen
 
 | ID | Requirement | Pri | Source | Acceptance criterion |
 |---|---|---|---|---|
-| FR-LD-01 | An approved CR lands by a server-side rebase onto the target's tip and an atomic compare-and-swap of the ref. | M | §What we learned: rethinking priors | The landed changeset descends from the old tip; the ref moved by CAS. |
-| FR-LD-02 | There is no global repository lock and no serialized merge queue. | M | §What we learned ("haven't been able to replicate … a global repository lock") | Servers coordinate only through the ref CAS. |
+| FR-LD-01 | An approved CR lands by a server-side rebase onto the target's tip and an atomic compare-and-swap of the ref. | M | Derived from §What we learned (no global repository lock; post-merge testing instead) and §Data structures (a ref is moved by a compare-and-swap) | The landed changeset descends from the old tip; the ref moved by CAS. |
+| FR-LD-02 | There is no global repository lock and no serialized merge queue. | M | §What we learned ("We haven't been able to effectively replicate the industry standard of a global repository lock on the merge queue") | Servers coordinate only through the ref CAS. |
 | FR-LD-03 | Landing makes progress under heavy concurrency, without starvation. | M | Derived (from 30k+/day with growth) | 32 concurrent landers × 5 rounds on 2 servers: all land. |
 | FR-LD-04 | Conflicts are reported in a structured form and the CR enters a conflict state; a new revision resolves it. | M | §What we learned ("Claude can typically fix these conflicts") | A 409 response lists paths and reasons; the CR lands after an update. |
 | FR-LD-05 | Every landed changeset is indexed to its CR, ref and time, and can be looked up by its landed or original id. | M | §What we learned ("asking our code review tool") | The lookup is indexed and needs no scan of the log. |
@@ -193,8 +193,8 @@ means the requirement is engineering analysis needed to make an article statemen
 
 | ID | Requirement | Pri | Source | Acceptance criterion |
 |---|---|---|---|---|
-| FR-SR-01 | Path search backed by a derived index. | M | §Introduction ("code search"); §Data structures | Finds every matching path; visits far fewer trees than the repository has. |
-| FR-SR-02 | Content search (regex) on the server, with no checkout. | M | §Introduction | Returns path, line and text matches. |
+| FR-SR-01 | Path search backed by a derived index. | M | §Opening ("code search"); §Data structures | Finds every matching path; visits far fewer trees than the repository has. |
+| FR-SR-02 | Content search (regex) on the server, with no checkout. | M | §Opening | Returns path, line and text matches. |
 | FR-SR-03 | An indexed content search that scales to the full monorepo. | S | Derived (scale) | Query time is sublinear in repository size. |
 | FR-SR-04 | Results are filtered by the caller's permissions. | M | FR-IAM-04 | Restricted paths never appear. |
 
@@ -207,7 +207,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-MG-03 | Incremental sync: only new commits are ingested. | M | Derived (migration while git is live) | A re-run ingests only the new commits. |
 | FR-MG-04 | Memory use is bounded, independent of history size (streaming). | M | §What we learned ("20x less memory") | Memory stays flat as the commit count grows. |
 | FR-MG-05 | Verify ingested trees against git, byte for byte. | M | Derived | Verification reports zero mismatches. |
-| FR-MG-06 | Answer metadata queries (ancestry, blame) for git-hosted history before a Scion client exists. | S | §Scaling Scion ("Scion only answered these metadata queries") | Ingested history is queryable through the API with no `scn` client. |
+| FR-MG-06 | Answer metadata queries (ancestry, blame) for git-hosted history before a Scion client exists. | S | §Scaling Scion (early in the migration, Scion answered only "metadata" queries) | Ingested history is queryable through the API with no `scn` client. |
 | FR-MG-07 | Map git commit ids to changeset ids in both directions. | M | Derived | Lookup works both ways. |
 
 ### FR-OP Operations and observability
@@ -216,7 +216,8 @@ means the requirement is engineering analysis needed to make an article statemen
 |---|---|---|---|---|
 | FR-OP-01 | Every component exposes health and stats endpoints. | M | §What we learned (operational excellence) | `/healthz` and `/stats` respond on server, cache and daemon. |
 | FR-OP-02 | Stats include per-tier hit rate, latency percentiles and error counts. | M | §Scaling Scion (hit rate > 99%) | The values are present and correct in tests. |
-| FR-OP-03 | Superfans: a per-component monitor that learns baselines and flags novel anomalies. | S | §What we learned (superfans) | A sudden hit-rate drop raises a "novel" finding. |
+| FR-OP-03 | Superfans: a per-component monitor that learns baselines and flags novel anomalies, at least for scion-daemon, scion-cache and the Antique landing queue (the article's examples). | S | §What we learned (superfans) | A sudden hit-rate drop raises a "novel" finding. |
+| FR-OP-08 | Superfans can read each component's logs as well as its telemetry. | S | §What we learned ("access to our telemetry and logs") | A finding can cite the log lines around an anomaly. |
 | FR-OP-04 | Traditional threshold alerts. | M | §What we learned ("traditional alerts") | A configured threshold breach raises a finding. |
 | FR-OP-05 | Findings are delivered to chat via a webhook. | S | §What we learned (Slack channels) | The webhook receives a Slack-compatible payload. |
 | FR-OP-06 | Rate limiting per principal and request class, with concurrency caps. | M | §What we learned ("sophisticated rate limiting") | Excess requests receive 429 with a Retry-After header; the client backs off. |
@@ -228,8 +229,8 @@ means the requirement is engineering analysis needed to make an article statemen
 |---|---|---|---|---|
 | FR-AD-01 | Initialize a repository. | M | Derived | Creates empty storage. |
 | FR-AD-02 | Publish a snapshot (FR-TIER-11). | M | §Scaling Scion | See FR-TIER-11. |
-| FR-AD-03 | Backfill derived data (FR-DD-06). | S | — | See FR-DD-06. |
-| FR-AD-04 | Re-index ACLs (FR-IAM-09). | S | — | See FR-IAM-09. |
+| FR-AD-03 | Backfill derived data (FR-DD-06). | S | Derived (see FR-DD-06) | See FR-DD-06. |
+| FR-AD-04 | Re-index ACLs (FR-IAM-09). | S | Derived (see FR-IAM-09) | See FR-IAM-09. |
 | FR-AD-05 | Administrative ref operations, protections respected. | M | Derived | Set a ref with CAS semantics. |
 | FR-AD-06 | Back up and restore the authoritative stores. | S | Derived (durability) | A restore reproduces identical refs and changesets. |
 
@@ -237,11 +238,11 @@ means the requirement is engineering analysis needed to make an article statemen
 
 | ID | Quality | Requirement | Target | Pri | Source |
 |---|---|---|---|---|---|
-| NFR-01 | Throughput | Sustain the landing rate with growth headroom | Design: ≥30,000 landings per day with 10× headroom (≈3.5/s sustained). Prototype: no starvation with 32 concurrent landers on 2 servers. | M | §Introduction |
-| NFR-02 | Checkout volume | Serve very high checkout volumes from local tiers | Design: ~25M checkouts per day; ≥99% hit rate per tier in steady state. Prototype: a second checkout on a node makes 0 cache requests. | M | §Growing; §Scaling |
-| NFR-03 | Size | No component needs the whole repository | 100 GB history and 25 GB working copy supported, because no component materializes everything | M | §Growing |
+| NFR-01 | Throughput | Sustain the landing rate with growth headroom | Design: ≥30,000 landings per day with 10× headroom (≈3.5/s sustained). Prototype: no starvation with 32 concurrent landers on 2 servers. | M | §Opening |
+| NFR-02 | Checkout volume | Serve very high checkout volumes from local tiers | Design: ≥25M checkouts per day for CI alone, plus developer environments, agent sandboxes and research jobs; ≥99% hit rate per tier in steady state. Prototype: a second checkout on a node makes 0 cache requests. | M | §Growing our monorepo; §Scaling Scion |
+| NFR-03 | Size | No component needs the whole repository | 100 GB history and 25 GB working copy supported, because no component materializes everything | M | §Growing our monorepo |
 | NFR-04 | Latency | Checkouts take seconds | Sparse checkout of a typical project in < 10 s from a warm daemon | M | §Scaling Scion |
-| NFR-05 | Incrementality | Commit cost tracks change size | ±25% across repositories of 10² to 10⁴ files | M | §Principles |
+| NFR-05 | Incrementality | Commit, rebase and merge are fast: their cost tracks the size of the change, not of the repository | Commit: ±25% across repositories of 10² to 10⁴ files; rebase and merge touch only the changed paths | M | §Principles ("each of those operations needs to be fast") |
 | NFR-06 | Algorithmic | Ancestry is O(log n) on linear history; history is O(depth) per result | Measured by step counters | M | §What we learned |
 | NFR-07 | Scalability | Every component scales horizontally; tiers are stateless | Adding instances needs no data migration | M | §Principles |
 | NFR-08 | Fault isolation | A tier's failure does not overload the tier above it | Strict tiering, single flight, rate limits | M | §Scaling Scion |
@@ -254,8 +255,8 @@ means the requirement is engineering analysis needed to make an article statemen
 | NFR-15 | Testability | Fuzzing and hermetic simulation of every non-trivial interaction | Fuzzing against a naive model; a multi-agent simulation | M | §What we learned |
 | NFR-16 | Observability | Every component is measurable | FR-OP-01/02 | M | §What we learned |
 | NFR-17 | Footprint | Resource use far below the git mirror fleet | Prototype: in-memory caches sized in MB; servers hold no full copies | S | §Scaling Scion |
-| NFR-18 | Usability | CLI familiar to git and Sapling users; errors machine-readable for agents | Structured JSON errors with stable codes | M | AS-03 |
-| NFR-19 | Portability | Standard library only; Linux reference platform | No third-party imports | M | CON-01 |
+| NFR-18 | Usability | CLI familiar to git and Sapling users; errors machine-readable for agents | Structured JSON errors with stable codes | M | Derived (AS-03, which rests on §Growing our monorepo) |
+| NFR-19 | Portability | Standard library only; Linux reference platform | No third-party imports | M | Project constraint (CON-01), not from the article |
 | NFR-20 | Security hardening | Encrypted transport between components (mTLS) in production | Out of scope for the prototype; must be done before production | S | Derived |
 
 ## 3.3 Business rules
@@ -267,7 +268,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | BR-03 | Comment-only and docs-only changes may need fewer approvals than logic changes, as configured. |
 | BR-04 | Only the landing service and administrators move `main`; only release managers move `release/*`. |
 | BR-05 | Restricted content is never stored by shared caches. |
-| BR-06 | A changeset's history and blame follow its first parent (footnote 1), except for lines or files taken verbatim from another parent. |
+| BR-06 | A changeset's history and blame follow its first parent (footnote 1), except for lines or files taken verbatim from another parent. **The exception goes beyond the article**, which calls first-parent storage "a stylistic choice" and says people "only care about history or blame for commits on the main line". It is kept because it costs nothing at write time; flagged for review. |
 
 ## 3.4 External interfaces
 

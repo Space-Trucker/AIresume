@@ -81,16 +81,25 @@ gantt
 
 ## 12.5 Definition of Done
 
-1. The code implements exactly the referenced requirements, nothing more.
-2. New and updated automated tests pass, along with the full suite, the 32×5 stress simulation, and the docs checks (T-DOC-01 rendering, T-DOC-02 cross-references).
-3. The traceability matrix (11) is updated: status, design element, tests.
-4. User-facing docs are updated (README, API, FEATURES).
-5. Committed with a message that names the work package and requirement IDs.
+1. The code implements exactly the referenced requirements, nothing more. The article's lesson:
+   the engineer's job is often to tell the agent "no".
+2. Findings from adversarial or automated review are weighed against the requirements and ADRs.
+   Hypothetical concerns do not justify extra validation or complexity. The article's example is a
+   review that was "overly defensive about trusting another internal service".
+3. New and updated automated tests pass, along with the full suite, the 32×5 stress simulation, and the docs checks (T-DOC-01 rendering, T-DOC-02 cross-references).
+4. The traceability matrix (11) is updated: status, design element, tests.
+5. User-facing docs are updated (README, API, FEATURES).
+6. Committed with a message that names the work package and requirement IDs.
 
 ## 12.6 Change control
 
 * **Requirement changes:** edit 03 with a new or changed ID; record why in the commit; update 04, 05 and 11 in the same change; T-DOC-02 must pass.
 * **Architecture changes:** a new ADR row in 07 §7.11 (never edit an accepted ADR; supersede it).
+* **Agents and core constraints:** the article reports that agents sometimes "violate core system
+  constraints to satisfy a pattern that should never have been allowed in the first place".
+  For example, systems found when a change merged by linearly reading the commit log instead of
+  asking the code review tool. A change that bypasses an ADR or an indexed API (such as FR-LD-05) is
+  rejected in review.
 * **Code changes without a work item:** not allowed after M0, except fixes for severity-1 defects, which get a work item retroactively within the day.
 
 ## 12.7 Open questions for the project lead (needed for M0)
@@ -106,4 +115,4 @@ gantt
 |---|---|---|
 | Project lead / product owner | approves the baseline, prioritizes the gap list | you |
 | Architect / implementer | maintains the package; implements work items | Claude |
-| Reviewer | reviews each work item against its requirements | you, or a delegate |
+| Reviewer | reviews every change request for the intent of the change against its requirements, rather than reading every line (as the article describes) | you, or a delegate |

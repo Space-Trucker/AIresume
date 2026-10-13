@@ -2,6 +2,9 @@
 
 ## 8.1 Assets
 
+The article puts it this way: managing safety, security and compliance in a massive monorepo is as
+important as managing its size and scale, so Scion was built with them in mind from the start.
+
 | Asset | Why it matters |
 |---|---|
 | Restricted source code (directories with read restrictions) | confidentiality, compliance |

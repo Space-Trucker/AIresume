@@ -346,9 +346,9 @@ scenario · extensions · postconditions · frequency.
 * **Extensions:** an upstream instance fails: callers fail over; single flight and rate limits protect the remaining instances.
 
 ### UC-26 Monitor a component
-* **Primary actor:** Superfan monitor, operator. **Level:** user goal. **Requirements:** FR-OP-01…05.
+* **Primary actor:** Superfan monitor, operator. **Level:** user goal. **Requirements:** FR-OP-01…05, FR-OP-08.
 * **Main success scenario:**
-  1. The superfan polls one component's `/stats`.
+  1. The superfan polls one component's `/stats` and, where available, reads its logs (FR-OP-08).
   2. It turns counters into per-interval rates (including the interval hit rate) and updates an adaptive baseline for each metric.
   3. It raises "novel" findings for large deviations and "threshold" findings for configured rules.
   4. It posts findings to stdout and the chat webhook.

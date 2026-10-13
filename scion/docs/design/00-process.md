@@ -24,6 +24,7 @@ From here on, no code changes until this package is reviewed and approved. The g
 | 11 | Traceability and gap analysis | Is everything covered, and how does the existing code measure up? | [11-traceability.md](11-traceability.md) | requirement → use case → design → test matrix; gaps listed and prioritized | Draft for review |
 | 12 | Project plan | In what order do we build it, and when are we done? | [12-project-plan.md](12-project-plan.md) | work breakdown, milestones, Definition of Ready/Done, change control | Draft for review |
 | — | Glossary | What do the words mean? | [13-glossary.md](13-glossary.md) | every domain term used in the package is defined | Draft for review |
+| 14 | Cross-check against the article | Does every word of the article land somewhere, and does every claim attributed to it match it exactly? | [14-article-crosscheck.md](14-article-crosscheck.md) | every sentence mapped; every term reviewed; every quote, number and section citation verified; discrepancies fixed | Done (this pass) |
 
 ## How to review
 
@@ -43,4 +44,16 @@ From here on, no code changes until this package is reviewed and approved. The g
 * **Sources:** "Article §…" points to a section of
   [the article](https://www.anthropic.com/engineering/redesigning-source-control).
   "Derived" means engineering analysis needed to make an article statement work.
+  The section labels are:
+
+  | Label | Article section |
+  |---|---|
+  | §Opening | the untitled introduction, before "Growing our monorepo" |
+  | §Growing our monorepo | "Growing our monorepo" |
+  | §Principles | "Principles for agent-scale source control" |
+  | §Data structures | "How Scion works" › "Data structures" |
+  | §Scaling Scion | "How Scion works" › "Scaling Scion" |
+  | §What we learned | "What we learned building Scion" |
+  | §Contributing to the wider ecosystem | "Contributing to the wider ecosystem" |
+  | footnote 1 | "Footnotes" |
 * **Diagrams:** Mermaid, so they render on GitHub and are checked by a renderer before commit.

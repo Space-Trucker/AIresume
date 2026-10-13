@@ -13,7 +13,7 @@
 | SRE / operators | reliability with a tiny team | cascading failures; maintenance toil | stateless tiers; isolated failure domains; no gc or repack |
 | Release managers | ship known-good revisions | broken main after lock-free landing | post-merge results and a deploy gate |
 | Migration team | move off git safely | divergence between git and Scion | streaming, incremental, verifiable ingestion |
-| Wider ecosystem (git forges, OSS) | learn from the design | — | the design ideas are documented (article §Contributing to the wider ecosystem) |
+| Wider ecosystem (GitHub, GitLab, the OSS community, other git forges) | learn from the design; the article hopes to partner with them | — | the design ideas are documented (article §Contributing to the wider ecosystem) |
 
 ## 2.2 Actors
 

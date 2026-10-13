@@ -2,7 +2,7 @@
 
 Every claim in the article that describes *what the system does* is listed here with an ID,
 and mapped to the code that implements it. Claims that are about Anthropic's organization,
-scale numbers, or history (e.g. "30,000 merges per day") are context, not features, and are
+scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are
 listed at the end for completeness.
 
 Legend: **Done** = implemented and covered by tests (`tests/`, 79 tests). **Partial** = implemented with a documented
@@ -97,7 +97,7 @@ simplification. **Out of scope** = cannot be reproduced in a repository (explain
 | L15 | "Superfans": per-component monitors that watch telemetry and flag subtle, novel issues | `superfan.py` (adaptive baselines per metric, per component) | Partial (statistical watcher; the LLM agent in Slack is out of scope) |
 | L16 | Traditional alerts alongside superfans | `superfan.py` static thresholds | Done |
 
-## 5. "Contributing to the ecosystem" ideas
+## 5. "Contributing to the wider ecosystem" ideas
 
 | ID | Idea | Where | Status |
 |----|------|-------|--------|
@@ -111,7 +111,7 @@ simplification. **Out of scope** = cannot be reproduced in a repository (explain
 These describe Anthropic's situation and are not reproducible as code: merges per day (2,500 → 30,000),
 100 GB of history and a 25 GB working copy, 25 million checkouts per day, roughly 600 PB per day of
 naive git traffic, several hundred git mirrors, a 200x smaller footprint, checkouts two orders of
-magnitude faster, a 25% CPU saving in CI, a seven-person team, five months, the Claude Mythos
+magnitude faster, a 25% CPU capacity win in CI, a seven-person team, five months, the Claude Mythos
 Preview rewrite (20x less memory, 4x faster), and Claude Tag. Spanner is replaced by SQLite (WAL
 mode) and cloud storage by a directory. Both sit behind narrow interfaces (`meta.py`, `storage.py`),
 so they can be swapped.

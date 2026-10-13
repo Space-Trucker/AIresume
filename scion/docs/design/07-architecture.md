@@ -23,6 +23,13 @@
   similar to event sourcing with materialized views.
 * **Optimistic concurrency.** Refs are the only mutable state, and they change only by
   compare-and-swap.
+* **Prior art.** Source control for huge monorepos has prior art, notably Google's Piper and
+  Meta's Sapling. The article says Scion was built with their hard-won lessons in mind.
+* **Ecosystem relevance.** The design embodies the ideas the article offers to git platforms:
+  * a server that does not work like the client;
+  * comprehensive server-side RPCs that could be standardized across forges ([../API.md](../API.md));
+  * a negotiation protocol unlike today's (want-only, ADR-04);
+  * sparse and shallow features that compose (sparse and virtual checkouts with no history on the client).
 
 ## 7.3 Logical view
 
@@ -115,7 +122,7 @@ with `id = sha256("changeset\0" || json)`.
 |---|---|---|
 | Landings | 30,000/day ≈ 0.35/s average; design target 3.5/s sustained | 10× headroom (NFR-01) |
 | Landing work per CAS | one rebase chain per batch | group commit makes the number of CAS attempts sublinear in the number of landers |
-| Checkouts | 25M/day ≈ 290/s average | Article §Growing |
+| Checkouts (CI alone) | 25M/day ≈ 290/s average | Article §Growing our monorepo; more with developer environments, agent sandboxes and research jobs |
 | Naive git transfer | 25M × 25 GB ≈ 625 PB/day | matches the article's "over 600 PB" |
 | Sparse checkout size (assumed) | 5,000 objects × 4 KB ≈ 20 MB | sparse by default (FR-CL-01) |
 | Bytes served by daemons | 290/s × 20 MB ≈ 5.8 GB/s fleet-wide, all local | node-local Unix socket |
@@ -151,15 +158,19 @@ with `id = sha256("changeset\0" || json)`.
 
 ## 7.11 Architecture decision records
 
+The article notes that engineers' irreplaceable contribution was "the design-level tradeoffs":
+which problems to solve and at what scale. These records are where those tradeoffs are written
+down, owned by humans and changed only by superseding them (12 §12.6).
+
 | ADR | Decision | Context | Consequences | Alternatives rejected |
 |---|---|---|---|---|
-| ADR-01 | Centralized service for always-online clients | clients are agents and jobs (AS-01) | no offline mode; the server must be highly available | git with mirrors (stopped scaling: §Growing) |
+| ADR-01 | Centralized service for always-online clients | clients are agents and jobs (AS-01) | no offline mode; the server must be highly available | git with mirrors (stopped scaling: §Growing our monorepo) |
 | ADR-02 | Changesets record changes relative to the first parent | write cost should track change size; main-line history (footnote) | trees are derived; merges' second-parent diffs aren't stored | storing full trees per commit (git) |
 | ADR-03 | One generic, recursive derived-data mechanism | many indexes, small team | uniform backfill, eager or deferred, invisible to clients | bespoke indexes per feature |
 | ADR-04 | Want-only fetch protocol | negotiation over "haves" is CPU-heavy on servers | more round trips (one per tree level), but every response is cacheable | git pack negotiation |
 | ADR-05 | Identical RPC on every tier, strict tiering | topology-agnostic clients; failure isolation | tiers must authenticate their callers | free-form routing between tiers |
 | ADR-06 | Restricted objects never cached; servers re-authorize | shared nodes, end-to-end confidentiality | restricted reads always reach the servers (more load for sensitive code) | per-user caches; encryption at rest per ACL |
-| ADR-07 | Land with server-side rebase plus ref CAS, and per-server group commit | a global merge-queue lock doesn't scale (§Rethinking priors) | concurrent landings can conflict; post-merge testing is required | serialized merge queue |
+| ADR-07 | Land with server-side rebase plus ref CAS, and per-server group commit | a global merge-queue lock doesn't scale (§What we learned, "We're completely rethinking our priors") | concurrent landings can conflict; post-merge testing is required | serialized merge queue |
 | ADR-08 | Post-merge testing with auto-revert and a deploy gate | pre-merge CI can't keep up | main can be briefly red; the deploy gate protects production | pre-merge testing of every change against the tip |
 | ADR-09 | Semantic approval classes (docs, comment-only, logic) with owners | human attention is scarce | the classifier must be conservative (unknown means logic) | uniform approval counts |
 | ADR-10 | SQLite (WAL) and a directory stand in for Spanner and blob storage | prototype; CON-01/02 | single host; interfaces kept narrow for a swap | embedding a distributed store |

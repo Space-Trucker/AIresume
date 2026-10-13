@@ -71,7 +71,7 @@ at least one feature (checked in [11](11-traceability.md)).
 | F-38 | Revert pipeline | Revert and land through the server's landing path | Pipeline | FR-AUT-02, FR-LD-06 | M |
 | F-39 | Code search | Path search on a derived index; server-side content search; permission-filtered | Developer, Agent | FR-SR-01…04, FR-DD-12 | M |
 | F-40 | Telemetry | Health, stats, hit rates and latency on every component | Operator | FR-OP-01, FR-OP-02 | M |
-| F-41 | Superfans and alerts | Adaptive per-component anomaly detection, threshold alerts, chat webhook | Operator, Superfan | FR-OP-03…05 | S |
+| F-41 | Superfans and alerts | Adaptive per-component anomaly detection (telemetry and logs), threshold alerts, chat webhook | Operator, Superfan | FR-OP-03…05, FR-OP-08 | S |
 | F-42 | Rate limiting | Per-principal token buckets and concurrency caps; 429 with Retry-After | Operator | FR-OP-06 | M |
 | F-43 | Admin toolkit | init, snapshot, derive, reindex-acl, set-ref, bench, backup and restore | Admin, Operator | FR-AD-01…06, FR-OP-07 | M |
 | F-44 | Multi-repository hosting | Several repositories per deployment, each with its own policy | Admin | FR-IAM-02 | S |

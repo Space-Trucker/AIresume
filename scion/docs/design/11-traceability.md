@@ -142,6 +142,7 @@ against the code itself:
 | FR-OP-03 | UC-26 | F-41 | Superfan baselines | T-OPS-02 | I | |
 | FR-OP-04 | UC-26 | F-41 | Superfan rules | T-OPS-02 | I | |
 | FR-OP-05 | UC-26 | F-41 | Superfan.notify webhook | — | I\* | no test |
+| FR-OP-08 | UC-26 | F-41 | — | — | G | superfans read /stats only (added by the article cross-check) |
 | FR-OP-06 | UC-25 | F-42 | ratelimit; 429 handling | T-OPS-01 | I | |
 | FR-OP-07 | UC-25 | F-43 | tools.bench | T-PERF-01 | I | |
 | FR-AD-01 | UC-23 | F-43 | scion-admin init | T-E2E-01 | I | |
@@ -182,14 +183,14 @@ Computed by the T-DOC-02 cross-check, not by hand.
 
 | | Total | I | I\* | P | G |
 |---|---|---|---|---|---|
-| Functional | 137 | 118 | 9 | 3 | 7 |
+| Functional | 138 | 118 | 9 | 3 | 8 |
 | Must (functional) | 104 | 98 | 4 | 2 | 0 |
 
 No **Must** requirement is missing.
 
 * **Partial Musts:** FR-FP-03 (resumable checkout) and FR-AD-05 (the admin tool bypasses ref protections).
 * **Musts without an automated acceptance test:** FR-CS-09, FR-IAM-01, FR-MG-04 and FR-PM-01.
-* **The 7 gaps (G)** are all Should or Could requirements.
+* **The 8 gaps (G)** are all Should or Could requirements. FR-OP-08 was added by the article cross-check (14).
 
 ## 11.4 Gap list (the proposed work queue, pending your approval)
 
@@ -208,6 +209,7 @@ No **Must** requirement is missing.
 | GAP-11 | FR-REF-05 | S | release-branch command and test |
 | GAP-12 | FR-DD-06, FR-IAM-09, FR-OP-05 | S | missing tests for implemented features |
 | GAP-13 | FR-RV-10 | C | reviewer notifications |
+| GAP-14 | FR-OP-08 | S | superfan access to component logs (added by the article cross-check) |
 
 ## 11.5 Findings from the review against the design
 

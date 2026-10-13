@@ -27,7 +27,7 @@
 | On-behalf-of | a service principal forwarding the identity of the end user whose permissions apply |
 | Post-merge testing | testing changes after they land, with automatic revert, instead of a pre-merge queue |
 | Principal | an authenticated identity: a user, a group member, or a service (`antique`, `scion-cache`, `scion-daemon`, `postmerge`) |
-| Ref | a named pointer to a changeset (for example `main`, `release/x`); optional |
+| Ref | a pointer to a changeset, such as a branch or tag (the article: "pointers to commits, such as branches and tags"); discouraged except for `main` and release branches |
 | Restricted object | an object under a read-restricted directory; never cached by shared tiers |
 | Revision | a changeset reference: id, prefix, ref, with `~N` / `^N` suffixes; also, one upload of a CR |
 | Root tree | the tree object describing a changeset's full directory structure (derived) |
