@@ -12,6 +12,11 @@ stands in for cloud blob storage, each behind a narrow interface.
 
 Every feature in the article is mapped to code in [`docs/FEATURES.md`](docs/FEATURES.md).
 
+**Design baseline:** [`docs/design/`](docs/design/00-process.md) holds the full pre-code package:
+vision, stakeholders, requirements, feature list, use cases, UML, architecture and ADRs, threat
+model, risks, test plan, traceability with gap analysis, project plan, and glossary. Code changes
+follow its gap list.
+
 ## How it works
 
 ```
