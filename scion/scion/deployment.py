@@ -47,6 +47,7 @@ class Deployment:
         self._policy_stamps: dict[str, tuple] = {}
         self._identity_stamp = _stamp(self.identity_path)
         self.identity = Identity.load(self.identity_path)
+        self.log = lambda level, message, **fields: None  # the serving component's log (ADR-18)
 
     @property
     def identity_path(self) -> str:
@@ -88,14 +89,26 @@ class Deployment:
             return r
 
     def _load_policy(self, r: Repository) -> None:
-        """(Re)load a repository's policy and audit it when its content changed (ADR-15)."""
+        """(Re)load a repository's policy and audit it when its content changed (ADR-15). A policy
+        file that doesn't parse leaves the last good policy in force, audited and logged as an error,
+        until the file changes again; only a repository's first load fails outright."""
         path = self.policy_path(r.name)
         self._policy_stamps[r.name] = _stamp(path)
-        r.policy = self.policy_for(r.name)
+        try:
+            policy = self.policy_for(r.name)
+        except (OSError, ValueError) as e:
+            if getattr(r.policy, "identity", None) is None:  # never loaded: nothing to fall back on
+                raise
+            r.audit.append("policy.invalid", None, "policy.json", {"error": str(e)[:500]})
+            self.log("error", f"the policy of {r.name} is invalid; the last good one stays in force: {e}",
+                     repo=r.name)
+            return
+        r.policy = policy
         hashes = {"policy": _file_hash(path), "identity": _file_hash(self.identity_path)}
         last = r.audit.last("policy.load")
         if last is None or last["detail"] != hashes:
             r.audit.append("policy.load", None, "policy.json", hashes)
+            self.log("info", f"loaded the policy of {r.name}", repo=r.name, sha256=(hashes["policy"] or "")[:16])
 
     def maybe_reload(self) -> None:
         """Pick up a changed deployment.json: groups, tokens, admins and services (FR-IAM-06)."""
@@ -118,7 +131,12 @@ class Deployment:
         """Re-read deployment.json and every open repository's policy (UC-22 step 2)."""
         with self._lock:
             self._identity_stamp = _stamp(self.identity_path)
-            self.identity = Identity.load(self.identity_path)
+            try:
+                self.identity = Identity.load(self.identity_path)
+            except (OSError, ValueError) as e:  # keep serving with the last good identity document
+                self.log("error", f"deployment.json is invalid; the last good one stays in force: {e}")
+                return
+            self.log("info", "loaded deployment.json")
             for r in self._repos.values():
                 self._load_policy(r)
 

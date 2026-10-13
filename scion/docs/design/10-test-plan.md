@@ -13,11 +13,11 @@
 |---|---|---|---|
 | Unit | objects, storage, changesets, trees, merge3, classifier, rate limiter | `unittest`, deterministic inputs | `tests/test_core.py`, `tests/test_ops.py`, `tests/test_antique.py` |
 | Property / fuzz | trees, diffs, history, blame, ancestry, merge bases, search vs. a naive model and algorithm-independent invariants | seeded random histories with edits, renames, file↔directory swaps and merges; `SCION_FUZZ_SEEDS`, `SCION_FUZZ_STEPS` | `tests/test_fuzz.py` |
-| Integration | server + cache + daemon(s) in-process over real sockets | the hermetic `Cluster` helper | `tests/test_tiers.py`, `tests/test_iam.py`, `tests/test_client.py`, `tests/test_antique.py`, `tests/test_ops.py` |
+| Integration | server + cache + daemon(s) in-process over real sockets | the hermetic `Cluster` helper | `tests/test_tiers.py`, `tests/test_iam.py`, `tests/test_client.py`, `tests/test_antique.py`, `tests/test_ops.py`, `tests/test_automation.py`, `tests/test_search.py`, `tests/test_superfan.py`, `tests/test_admin.py` |
 | Simulation / stress | swarm of agents doing clone, commit, review and land concurrently on 2 servers | `SCION_SIM_AGENTS`, `SCION_SIM_ROUNDS` | `tests/test_simulation.py` |
 | Migration | real git repositories with branches, merges, renames, modes, symlinks, file↔directory swaps | `git` CLI in a temp directory | `tests/test_ingest.py` |
 | System / E2E | separate processes: server, cache, daemon (Unix socket), CLI | shell script | `examples/demo.sh` |
-| Performance | commit scaling, ancestry, tiered checkout | `scion-admin bench` | `scion/tools/bench.py` |
+| Performance | commit scaling, ancestry, tiered checkout | `scion-admin bench` (invariants asserted by T-PERF-01) | `scion/tools/bench.py`, `tests/test_admin.py` |
 | Documentation | every Mermaid diagram renders; every requirement ID is traced | `mmdc` render check; ID cross-check script | T-DOC-01, T-DOC-02 |
 
 ## 10.3 Environments
@@ -85,16 +85,16 @@
 | T-LD-01 | FR-LD-01/05, FR-REF-01 | lock-free landing, rebase, landing index | test_antique |
 | T-LD-02 | FR-LD-04 | structured conflicts and resolution | test_antique |
 | T-RV-06 | FR-RV-08 | HTML view with escaping and diff | test_antique |
-| T-PM-01 | FR-PM-01…05, FR-LD-06/07, FR-AUT-02 | post-merge worker, auto-revert, deploy gate | test_antique |
+| T-PM-01 | FR-PM-01…05, FR-LD-06/07, FR-AUT-02 | post-merge worker with a reused checkout, auto-revert only on a passing base, deploy gate | test_automation |
 | T-SIM-01 | FR-LD-02/03, FR-REF-04, FR-CS-05/06, NFR-01 | swarm of agents on 2 servers; no lost updates; CAS-chained ref log | test_simulation |
-| T-MG-01 | FR-MG-01/03/05/07 | ingest, verify, incremental | test_ingest |
-| T-MG-02 | FR-MG-01, FR-DD-09 | blame parity with `git blame` | test_ingest |
+| T-MG-01 | FR-MG-01/03/05/07 | ingest, verify, incremental, the git map both ways | test_ingest |
+| T-MG-02 | FR-MG-01, FR-DD-09 | blame parity with `git blame --first-parent` | test_ingest |
 | T-MG-03 | FR-MG-02 | ordering invariant | test_ingest |
 | T-OPS-01 | FR-OP-06 | token bucket, concurrency, 429 plus client backoff | test_ops |
-| T-OPS-02 | FR-OP-03/04 | superfan novel and threshold findings; unreachable | test_ops |
-| T-SR-01 | FR-SR-01/02, FR-DD-12 | bloom pruning; grep | test_ops |
-| T-AUT-01 | FR-AUT-01 | bisect without checkout | test_ops |
-| T-AUT-02 | FR-AUT-02, FR-LD-06 | revert pipeline under contention | test_ops |
+| T-OPS-02 | FR-OP-03/04 | superfan novel (hit-rate drop), threshold, restart and unreachable findings; each raised once and resolved; cache and landing-queue profiles | test_superfan |
+| T-SR-01 | FR-SR-01/02/04, FR-DD-12 | bloom pruning; grep (regex, fixed, case-insensitive, limits) filtered by permissions | test_search |
+| T-AUT-01 | FR-AUT-01 | bisect without a checkout in ⌈log₂ n⌉ probes | test_automation |
+| T-AUT-02 | FR-AUT-02, FR-LD-06 | revert pipeline under contention | test_automation |
 | T-CORE-10 | FR-CS-09, NFR-05 | one-file commit time is flat (±25%) across 10² and 10⁴ files (asserted) | test_core |
 | T-DD-07 | FR-DD-06 | backfilling a deferred type computes it for a revision and all ancestors | test_core |
 | T-DD-08 | BR-06 | history and blame follow the first parent only; merge-introduced lines belong to the merge | test_core |
@@ -119,17 +119,20 @@
 | T-AUD-01 | FR-IAM-10, ADR-15 | policy loads, denials and admin actions are audited; the hash chain verifies and detects tampering | test_iam |
 | T-REF-01 | FR-REF-05 | release branches: created by the release role only, moved by CAS, logged | test_iam |
 | T-ADM-01 | FR-AD-05 | admin ref operations run as an explicit identity and respect protections | test_ops |
-| T-BAK-01 | FR-AD-06, NFR-13 | backup then restore reproduces refs, changesets and objects | test_ops |
+| T-BAK-01 | FR-AD-06, NFR-13 | backup while landings continue, then restore: refs, changesets, CRs, permissions and the audit chain as at the snapshot; damaged backups and non-empty targets refused; verify finds missing and corrupt objects | test_admin |
 | T-RV-07 | FR-RV-09, ADR-17 | approve, comment (inline) and land from the web UI; CSRF enforced | test_antique |
 | T-RV-08 | FR-RV-10 | CR events reach a notification webhook | test_antique |
 | T-LD-03 | FR-LD-01, D-02 | a CR shows `landing` while queued | test_antique |
-| T-PM-02 | FR-PM-01, D-01 | concurrent workers claim every job exactly once | test_antique |
-| T-SR-02 | FR-SR-03, ADR-16 | indexed content search reads only candidate blobs and matches a full scan | test_ops |
-| T-OPS-03 | FR-OP-05 | superfan findings are delivered to a webhook | test_ops |
-| T-OPS-04 | FR-OP-08, ADR-18 | superfans read component logs and attach them to findings | test_ops |
+| T-PM-02 | FR-PM-01, D-01 | concurrent workers claim every job exactly once | test_automation |
+| T-SR-02 | FR-SR-03, ADR-16 | indexed content search reads only candidate blobs and matches a full scan | test_search |
+| T-OPS-03 | FR-OP-05 | superfan findings are delivered to a webhook as a Slack-compatible payload | test_superfan |
+| T-OPS-04 | FR-OP-08, ADR-18 | superfans read component logs and attach the lines around a finding; logs need an administrator or a service principal | test_superfan |
 | T-MG-04 | FR-MG-04 | ingestion memory stays flat as history grows | test_ingest |
+| T-MG-05 | FR-MG-06 | metadata queries (resolve, ancestry, blame, git lookups) over ingested history, with no client | test_ingest |
+| T-PM-04 | FR-PM-01, D-01 | a lost worker's job returns to the queue after its lease; its late report is refused | test_automation |
+| T-ADM-02 | FR-AD-01…04/06, FR-MG-05 | the scion-admin commands end to end: init, create-repo, ingest --verify, derive, snapshot, reindex-acl, audit --verify, backup, restore, verify | test_admin |
 | T-E2E-01 | system | multi-process demo including git ingestion | examples/demo.sh |
-| T-PERF-01 | NFR-05/06, FR-OP-07 | benchmarks | scion-admin bench |
+| T-PERF-01 | NFR-05/06, NFR-02, FR-OP-07 | benchmark invariants: constant tree writes per commit, O(log n) ancestry steps, a second clone with zero cache requests | test_admin; `scion-admin bench` |
 | T-DOC-01 | 06 | all diagrams render (`mmdc`) | doc check: run for this baseline; the script is committed with WP-03 after M0 |
 | T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; coverage counts in 11.3 | doc check: run for this baseline; the script is committed with WP-03 after M0 |
 

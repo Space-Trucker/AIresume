@@ -167,8 +167,10 @@ class TestDirectoryPermissions(DirectoryTest):
         responses = [self.call("bob", m, **p) for m, p in (
             ("get_changeset", {"rev": "main"}), ("diff", {"b": "main", "text": True}), ("log", {"rev": "main"}),
             ("list_dir", {"rev": "main", "path": "secrets"}), ("search_paths", {"rev": "main", "query": "secret"}),
-            ("get_changesets", {"ids": [self.seed]}))]
+            ("get_changesets", {"ids": [self.seed]}), ("grep", {"rev": "main", "pattern": "TOP-SECRET"}),
+            ("grep", {"rev": "main", "pattern": r"[A-Z]+-\w+"}))]  # indexed and full-scan grep
         self.assertNotIn(SECRET, json.dumps(responses))
+        self.assertEqual(self.call("sam", "grep", rev="main", pattern="TOP-SECRET")["matches"][0]["path"], "secrets/key.txt")
         self.assertIn(SECRET, json.dumps(self.call("sam", "diff", b="main", text=True)))
 
     def test_T_IAM_04_restricted_objects_through_every_tier(self):
@@ -188,6 +190,17 @@ class TestDirectoryPermissions(DirectoryTest):
         sam_view = self.c.client("sam", url=self.c.daemon_urls[0]).get_objects(REPO, [secret_blob])
         self.assertEqual(sam_view[0][1], F_RESTRICTED)
         self.assertGreater(cache.counters["restricted_passthrough"], 0)
+        # an object denied to anyone is never public: after one denial, tiers forward it without
+        # counting a miss or touching their store (the hit rate superfans watch is about public objects)
+        self.commit("sam", self.seed, {"secrets/only-sam.txt": "never fetched by sam\n"})
+        fresh = blob_id(b"never fetched by sam\n")
+        bob_daemon = self.c.client("bob", url=self.c.daemon_urls[0])
+        before = daemon.counters["misses"], daemon.counters["restricted_passthrough"]
+        self.assertEqual(bob_daemon.get_objects(REPO, [fresh])[0][1], F_DENIED)
+        self.assertEqual(bob_daemon.get_objects(REPO, [fresh])[0][1], F_DENIED)
+        self.assertEqual((daemon.counters["misses"], daemon.counters["restricted_passthrough"]),
+                         (before[0] + 1, before[1] + 1))
+        self.assertIn(f"{REPO}/{fresh}", daemon.restricted)
         store = self.c.daemon_services[0].source.store
         stored = b"".join(zlib.decompress(store.get_stored(key)) for key in store.iter_ids())
         self.assertTrue(stored)
@@ -294,6 +307,48 @@ class TestPolicyChanges(DirectoryTest):
         os.replace(ident_path + ".tmp", ident_path)
         content = self.call("bob", "read_file", rev="main", path="secrets/key.txt")["content_b64"]
         self.assertEqual(base64.b64decode(content), (SECRET + "\n").encode())
+
+    def test_checkout_probes_of_unreadable_directories_are_not_audited_denials(self):
+        """A clone probes each directory whose tree it was denied, in case something beneath is
+        readable (UC-01 3b). Those routine probes must not flood the audit log; explicit requests
+        still get 403 and an audit entry."""
+        self.write_policy({**POLICY, "paths": POLICY["paths"] + [{"prefix": "vault", "read": ["sec-team"]}]})
+        self.commit("root", self.call("root", "resolve", rev="main"), {"vault/v.txt": "private\n"}, move_main=True)
+        repo = self.c.repo()
+
+        def denials():
+            return len([e for e in repo.audit.entries(1000) if e["action"] == "denied"])
+
+        before = denials()
+        wc = self.clone("bob-probe", "bob")
+        self.assertFalse(os.path.exists(os.path.join(wc.root, "vault")))
+        self.assertTrue(os.path.exists(os.path.join(wc.root, "secrets", "public", "readme.txt")))
+        self.assertEqual(denials(), before)
+        self.assertIsNone(self.call("bob", "list_dir", rev="main", path="vault", probe=True))
+        self.assertEqual([e["name"] for e in self.call("bob", "list_dir", rev="main", path="secrets", probe=True)],
+                         ["public"])
+        self.denied(lambda: self.call("bob", "list_dir", rev="main", path="vault"))
+        self.assertEqual(denials(), before + 1)
+
+    def test_an_invalid_policy_or_identity_keeps_the_last_good_one(self):
+        """A typo in policy.json or deployment.json must neither open nor close the repository: the
+        last good document stays in force, and the error is audited and logged (UC-22)."""
+        path = os.path.join(self.c.dep_root, "repos", REPO, "policy.json")
+        with open(path, "w") as f:
+            f.write('{"read": ["*"], "paths": [')  # truncated
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))
+        self.assertEqual(self.call("bob", "resolve", rev="main"), self.call("root", "resolve", rev="main"))
+        invalid = [e for e in self.call("root", "audit_log", limit=100) if e["action"] == "policy.invalid"]
+        self.assertEqual(len(invalid), 1)  # once per change of the file, not once per request
+        logs = self.c.client("root").get_json("/logs?level=error")["entries"]
+        self.assertTrue(any("invalid" in e["message"] and REPO in e["message"] for e in logs), logs)
+        ident = os.path.join(self.c.dep_root, "deployment.json")
+        with open(ident, "w") as f:
+            f.write("[]")  # valid JSON, but not an identity document
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))
+        self.assertTrue(self.call("root", "audit_verify")["ok"])  # root is still an administrator
+        self.write_policy({**POLICY, "paths": [{"prefix": "secrets", "read": ["sec-team", "bob"]}]})
+        self.call("bob", "read_file", rev="main", path="secrets/key.txt")  # a valid file applies at once
 
     def test_T_AUD_01_audit_log(self):
         self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))

@@ -41,7 +41,7 @@ import os
 from dataclasses import dataclass
 
 ANY = "*"
-DEFAULT_SERVICE_PRINCIPALS = ("scion-cache", "scion-daemon", "antique", "postmerge")
+DEFAULT_SERVICE_PRINCIPALS = ("scion-cache", "scion-daemon", "antique", "postmerge", "superfan")
 TIER_PRINCIPALS = {"cache": "scion-cache", "daemon": "scion-daemon"}
 DEFAULT_LIMITS = {"max_file_bytes": 100 * 1024 * 1024}
 

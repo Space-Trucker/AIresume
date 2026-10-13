@@ -258,33 +258,36 @@ flowchart LR
 
 ## 6.4 Packages
 
+Generated from the package's imports (type-only imports left out). Modules without arrows depend on
+the standard library alone.
+
 ```mermaid
 flowchart TB
-  objects --> storage
+  storage --> objects
   changeset --> objects
-  meta
   trees --> objects & storage
   derived --> changeset & storage
-  derived_types --> derived & trees & objects
-  merge3
-  repo --> derived & derived_types & trees & meta & storage & iam & merge3 & changeset
-  iam
-  ratelimit
-  rpc --> iam & ratelimit
-  search --> repo
-  classify
+  derived_types --> derived & trees & objects & changeset
+  repo --> derived & derived_types & trees & meta & storage & iam & merge3 & changeset & objects
+  deployment --> repo & iam & audit & objects
+  rpc --> iam & ratelimit & objects & repo
+  search --> derived_types & iam & objects
+  snapshot --> objects & storage
+  tiers --> rpc & storage & snapshot & iam & objects
   antique --> repo & classify & iam
-  server --> rpc & repo & antique & search & tiers
-  snapshot --> objects
-  tiers --> rpc & storage & snapshot & repo
-  fsmonitor
+  ui --> antique & repo & iam & objects
+  server --> rpc & deployment & repo & antique & search & ingest & notify & ui & iam
   client --> rpc & storage & objects & fsmonitor
-  ingest --> repo
-  tools_bisect[tools.bisect] --> client
-  tools_revert[tools.revert] --> client
-  postmerge --> client & tools_revert
-  superfan --> rpc
-  cli --> client & server & tiers & ingest & postmerge & superfan & tools_bisect & tools_revert
+  ingest --> repo & objects & storage
+  backup --> deployment & changeset & storage & objects
+  tools_bisect[tools.bisect] --> rpc
+  tools_revert[tools.revert]
+  tools_certs[tools.certs]
+  tools_bench[tools.bench] --> client & deployment & repo & rpc & server & tiers
+  postmerge --> client & rpc & tools_revert
+  superfan --> rpc & notify
+  cli --> client & server & tiers & deployment & ingest & postmerge & superfan & backup & snapshot
+  cli --> tools_bisect & tools_revert & tools_certs & tools_bench
 ```
 
 ## 6.5 Design classes
@@ -1036,6 +1039,7 @@ erDiagram
     int cr FK
     string ref
     float landed_at
+    string head
   }
   AUDIT {
     int seq PK
@@ -1047,6 +1051,10 @@ erDiagram
     string prev_hash
     string hash
   }
+  CONTENT_BLOBS {
+    string blob PK
+    string status
+  }
   CONTENT_TRIGRAMS {
     string trigram PK
     string blob PK
@@ -1055,7 +1063,10 @@ erDiagram
     int id PK
     string cs FK
     int cr FK
+    string ref
     string status
+    float started
+    string worker
     string log
   }
   REFS }o--|| CHANGESETS : targets
@@ -1068,4 +1079,10 @@ erDiagram
   CRS ||--o{ LANDINGS : landed
   LANDINGS }o--|| CHANGESETS : "landed as"
   POSTMERGE }o--|| CHANGESETS : tests
+  CONTENT_BLOBS ||--o{ CONTENT_TRIGRAMS : "indexed as"
+  BLOB_INDEX }o--|| CONTENT_BLOBS : "found at"
 ```
+
+`CONTENT_BLOBS.status` records how a blob was indexed: its trigrams (`i`), binary (`b`), or too large
+to index (`l`, always read by grep). `POSTMERGE.worker` holds the claim token of the worker running
+the job; a job `running` for longer than the lease returns to `queued` (T-PM-04).

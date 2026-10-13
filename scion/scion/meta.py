@@ -57,6 +57,15 @@ CREATE TABLE IF NOT EXISTS object_acl (
     prefix TEXT NOT NULL,
     PRIMARY KEY (oid, prefix)
 ) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS content_blobs (
+    blob   TEXT PRIMARY KEY,
+    status TEXT NOT NULL
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS content_trigrams (
+    trigram TEXT NOT NULL,
+    blob    TEXT NOT NULL,
+    PRIMARY KEY (trigram, blob)
+) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS object_grants (
     oid  TEXT NOT NULL,
     user TEXT NOT NULL,
@@ -205,6 +214,27 @@ class MetaStore:
     # -- copy-detection index (FR-DD-11) ------------------------------------------------------
     def blob_index_add(self, rows) -> None:
         self.executemany("INSERT OR IGNORE INTO blob_index (blob, path) VALUES (?, ?)", rows)
+
+    # -- content index (FR-SR-03, ADR-16) -------------------------------------------------------------
+    def content_status(self, blob: str) -> str | None:
+        row = self.execute("SELECT status FROM content_blobs WHERE blob = ?", (blob,)).fetchone()
+        return row[0] if row else None
+
+    def content_add(self, blob: str, status: str, grams) -> None:
+        with self.transaction() as c:
+            c.executemany("INSERT OR IGNORE INTO content_trigrams (trigram, blob) VALUES (?, ?)",
+                          ((g, blob) for g in grams))
+            c.execute("INSERT OR IGNORE INTO content_blobs (blob, status) VALUES (?, ?)", (blob, status))
+
+    def content_count(self, gram: str) -> int:
+        return self.execute("SELECT COUNT(*) FROM content_trigrams WHERE trigram = ?", (gram,)).fetchone()[0]
+
+    def content_postings(self, gram: str) -> set[str]:
+        return {r[0] for r in self.execute("SELECT blob FROM content_trigrams WHERE trigram = ?", (gram,))}
+
+    def content_unindexed(self) -> list[str]:
+        """Text blobs too large to index: content search always reads them."""
+        return [r[0] for r in self.execute("SELECT blob FROM content_blobs WHERE status = 'l'")]
 
     def blob_index_paths(self, blob: str, limit: int = 50) -> list[str]:
         return [r[0] for r in self.execute("SELECT path FROM blob_index WHERE blob = ? ORDER BY path LIMIT ?",

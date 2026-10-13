@@ -106,14 +106,15 @@ class PlainTreeCodec(TreeCodec):
 class TreeOps:
     def __init__(self, store: ObjectStore, cache: LRUCache | None = None):
         self.store = store
-        self.cache = cache or LRUCache()
+        self.cache = cache if cache is not None else LRUCache()
         self.writes = 0  # tree objects written (incrementality is measured on this, T-CORE-08)
 
     def read(self, tid: str) -> dict:
         hit = self.cache.get(("tree", tid))
         if hit is None:
-            hit = decode_tree(self.store.get_payload(tid, "tree"))
-            self.cache.put(("tree", tid), hit)
+            payload = self.store.get_payload(tid, "tree")
+            hit = decode_tree(payload)
+            self.cache.put(("tree", tid), hit, len(payload))
         return hit
 
     def write(self, entries: dict) -> str:

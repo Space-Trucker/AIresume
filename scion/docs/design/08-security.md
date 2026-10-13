@@ -49,18 +49,21 @@ flowchart LR
 | T3 | Landing without the required approvals | TB4 | Tampering | requirements evaluated server-side at land time; self-approval excluded; approvals per revision; post-merge results reported only by services and administrators | FR-RV-02/04/06, BR-01/02 | admins can force-land (audited, R-12) |
 | T4 | Uploading crafted trees to bypass ACL indexing | TB4 | Tampering | clients may upload only blobs; trees are always derived on the server | FR-CS-01 | — |
 | R1 | Denying having moved a ref | TB4 | Repudiation | ref log with actor and time; every move also in the hash-chained audit log (ADR-15) | FR-REF-04, FR-IAM-10 | removing the newest audit entries is not detectable without an external copy of the chain head |
-| R2 | Unaudited policy changes or denials | — | Repudiation | hash-chained audit log of policy loads, denials and administrative actions (ADR-15) | FR-IAM-10 | as R1 |
+| R2 | Unaudited policy changes or denials | — | Repudiation | hash-chained audit log of policy loads (and invalid policy files, ADR-23), denials, administrative actions, backups and restores (ADR-15) | FR-IAM-10 | as R1 |
 | I1 | Reading restricted files through APIs | TB4 | Information disclosure | per-path checks on read_file, list_dir, blame, history, diff, grep, search, changeset listings | FR-IAM-04 | — |
 | I2 | Reading restricted objects by id through caches | TB1–TB3 | Information disclosure | object ACL index; restricted flag; caches never store; server re-authorizes every request; `has_objects` reports unreadable objects as missing; a restricted object can be committed by id only by someone who uploaded its bytes | FR-IAM-04/05 | objects public before a policy change can still be served by a tier for about two epoch intervals after it takes effect (ADR-20), or while that tier can't reach its upstream (R-07) |
 | I3 | Restricted objects in daemon snapshots | — | Information disclosure | snapshots exclude restricted objects | FR-IAM-04 | — |
 | I4 | Inferring restricted names from parent trees | TB1 | Information disclosure | parent tree objects list child names and ids | — | accepted: names of restricted directories are visible; their contents are not |
 | I5 | Identical bytes at public and restricted paths | — | Information disclosure (false positive) | bytes seen at a public path are public | FR-IAM-11 | — |
 | I6 | Traffic sniffing | TB2–TB4 | Information disclosure | TLS on every TCP hop; mutual TLS between tiers (ADR-14) | NFR-20 | plaintext remains possible for localhost development |
+| I7 | Learning about repositories, paths or users from operational endpoints | TB4 | Information disclosure | `/stats` reports totals only and names no repository; `/logs` (which may name repositories, paths and principals) is for administrators and service principals | FR-OP-01/08 | `/healthz` and `/stats` stay unauthenticated so load balancers and monitors can read them |
+| I8 | A backup leaking restricted content | — | Information disclosure | backups hold the full stores, like the servers' own storage; a restore refuses a backup whose policy or metadata files changed since it was taken, so an edited policy can't open restricted directories | FR-AD-06 | backups must be stored with the same protection as the primary stores |
 | D1 | API flooding by one principal | TB4 | Denial of service | token buckets per class; concurrency caps; 429 | FR-OP-06 | limits are per server process, not global |
 | D2 | A cache outage stampeding the servers | TB3 | Denial of service | strict tiering, single flight, failover | FR-TIER-07/10, NFR-08 | — |
 | D3 | Huge uploads | TB4 | Denial of service | request body cap (512 MB); per-file limit with bounded decompression, 413 (FR-WR-07) | FR-WR-07 | — |
 | E1 | Using a service principal from a sandbox | TB1 | Elevation of privilege | service tokens kept off job nodes; the daemon authenticates upstream with its own identity | FR-IAM-08 | deployment discipline |
-| E2 | Admin endpoints exposed to users | TB4 | Elevation of privilege | `derive`, `reindex_acl`, `audit_log`, `land_changeset`, post-merge reporting and force-land require admin or service; the review pages use the same checks plus CSRF tokens | FR-IAM-06, FR-RV-09 | — |
+| E2 | Admin endpoints exposed to users | TB4 | Elevation of privilege | `derive`, `reindex_acl`, `audit_log`, `land_changeset`, post-merge claims and reports, `/logs` and force-land require admin or service; a post-merge report must carry the claim token of a live lease (ADR-22); the review pages use the same checks plus CSRF tokens | FR-IAM-06, FR-RV-09, FR-PM-01 | — |
+| E3 | A typo in a policy file opening a repository | — | Elevation of privilege | an invalid policy or identity file leaves the last good one in force (ADR-23) | FR-IAM-06 | a valid but wrong policy still applies: policy files deserve review like code |
 
 ## 8.4 Security requirements carried into implementation
 
@@ -69,3 +72,4 @@ flowchart LR
 3. Audit log of policy changes, access denials and admin actions (FR-IAM-10). Built in B3 (ADR-15).
 4. Re-index ACLs as part of the policy-change procedure (UC-22); the tiers purge through ACL epochs (ADR-20). Built in B3 and the B2 review fixes.
 5. A per-file size limit on uploads (R-10). Built in B2 (FR-WR-07).
+6. Operational endpoints that name repositories (`/logs`) for administrators and services only; backups verified before restore (FR-OP-08, FR-AD-06). Built in B4.

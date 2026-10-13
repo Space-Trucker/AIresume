@@ -115,38 +115,38 @@ requirement is built and its acceptance tests pass.
 | FR-LD-05 | UC-17 | F-31 | landings index (landed and source ids) | T-LD-01, T-SIM-01 | I |  |
 | FR-LD-06 | UC-21 | F-38 | antique.land_changeset (services and admins) | T-LD-05 | I |  |
 | FR-LD-07 | UC-15 | F-35 | postmerge queue row per landing | T-LD-01, T-PM-03 | I |  |
-| FR-PM-01 | UC-18 | F-35 | postmerge_claim (conditional UPDATE) | T-PM-02 | B4 | |
-| FR-PM-02 | UC-18 | F-35 | run_worker reuses checkout | T-PM-01 | B4 | |
-| FR-PM-03 | UC-18 | F-35 | postmerge_report | T-PM-01 | B4 | |
-| FR-PM-04 | UC-18 | F-35 | revert_landing | T-PM-01 | B4 | |
-| FR-PM-05 | UC-19 | F-36 | deploy_gate | T-PM-01 | B4 | |
-| FR-AUT-01 | UC-20 | F-37 | tools.bisect | T-AUT-01 | B4 | |
-| FR-AUT-02 | UC-21 | F-38 | tools.revert | T-AUT-02 | B4 | |
-| FR-SR-01 | UC-12 | F-39 | search_paths | T-SR-01 | B4 | |
-| FR-SR-02 | UC-12 | F-39 | grep | T-SR-01 | B4 | |
-| FR-SR-03 | UC-12 | F-45 | content index derived type (ADR-16) | T-SR-02 | B4 | |
-| FR-SR-04 | UC-12 | F-39 | per-path filtering | T-IAM-03 | B4 | |
-| FR-MG-01 | UC-23 | F-33 | GitIngester.ingest | T-MG-01 | B4 | |
-| FR-MG-02 | UC-23 | F-33 | missing-parent check | T-MG-03 | B4 | |
-| FR-MG-03 | UC-23 | F-33 | git_map skip | T-MG-01 | B4 | |
-| FR-MG-04 | UC-23 | F-33 | streaming rev-list and cat-file; bounded blob map | T-MG-04 | B4 | |
-| FR-MG-05 | UC-23 | F-33 | GitIngester.verify | T-MG-01 | B4 | |
-| FR-MG-06 | UC-23 | F-34 | server API over ingested history | T-E2E-01 | B4 | |
-| FR-MG-07 | UC-23 | F-33 | git_map; changeset extra["git"] | T-MG-01 | B4 | |
+| FR-PM-01 | UC-18 | F-35 | Antique.postmerge_claim: conditional UPDATE, retried until the queue is empty (D-01); a lease re-queues the jobs of lost workers, and a claim token refuses their late reports | T-PM-02, T-PM-04 | I |  |
+| FR-PM-02 | UC-18 | F-35 | PostMergeWorker._checkout: one working copy moved by `update` | T-PM-01 | I |  |
+| FR-PM-03 | UC-18 | F-35 | Antique.postmerge_report (status, log, claim) | T-PM-01 | I |  |
+| FR-PM-04 | UC-18 | F-35 | PostMergeWorker: tools.revert.revert_landing when the base passed; postmerge_reverted | T-PM-01 | I |  |
+| FR-PM-05 | UC-19 | F-36 | Antique.deploy_gate (first-parent walk; only `passed`) | T-PM-01 | I |  |
+| FR-AUT-01 | UC-20 | F-37 | tools.bisect over first-parent ranges, server-side predicates; `scn bisect` | T-AUT-01 | I |  |
+| FR-AUT-02 | UC-21 | F-38 | tools.revert (revert, then land_changeset); `scn revert` | T-AUT-02 | I |  |
+| FR-SR-01 | UC-12 | F-39 | search.search_paths over the bloom-filtered search tree | T-SR-01 | I |  |
+| FR-SR-02 | UC-12 | F-39 | search.grep on the server; `grep` RPC; `scn grep` | T-SR-01 | I |  |
+| FR-SR-03 | UC-12 | F-45 | ContentIndexType (deferred trigram postings) + blob_index (ADR-16) | T-SR-02 | I |  |
+| FR-SR-04 | UC-12 | F-39 | per-path filtering of every search result | T-SR-01, T-IAM-03 | I |  |
+| FR-MG-01 | UC-23 | F-33 | GitIngester.ingest (graph and first parents preserved) | T-MG-01, T-MG-02 | I |  |
+| FR-MG-02 | UC-23 | F-33 | GitIngester.check_boundary (refuses before writing) | T-MG-03 | I |  |
+| FR-MG-03 | UC-23 | F-33 | git_map skip of ingested commits | T-MG-01 | I |  |
+| FR-MG-04 | UC-23 | F-33 | one `cat-file --batch` stream; tree diffs skip identical subtrees; byte-bounded caches | T-MG-04 | I |  |
+| FR-MG-05 | UC-23 | F-33 | GitIngester.verify; `scion-admin ingest --verify` | T-MG-01, T-ADM-02 | I |  |
+| FR-MG-06 | UC-23 | F-34 | server API over ingested history; `git_lookup` RPC | T-MG-05, T-E2E-01 | I |  |
+| FR-MG-07 | UC-23 | F-33 | git_map in both directions; changeset extra["git"] | T-MG-01 | I |  |
 | FR-OP-01 | UC-26 | F-40 | /healthz and /stats on every tier | T-OPS-05 | I |  |
 | FR-OP-02 | UC-26 | F-40 | Metrics (p50/p90/p99, errors by status); CachingSource.stats (hit rate) | T-OPS-05, T-TIER-01 | I |  |
-| FR-OP-03 | UC-26 | F-41 | Superfan baselines | T-OPS-02 | B4 | |
-| FR-OP-04 | UC-26 | F-41 | Superfan rules | T-OPS-02 | B4 | |
-| FR-OP-05 | UC-26 | F-41 | Superfan.notify webhook | T-OPS-03 | B4 | |
-| FR-OP-08 | UC-26 | F-41 | per-component log ring buffer, GET /logs (ADR-18) | T-OPS-04 | B4 | |
+| FR-OP-03 | UC-26 | F-41 | superfan.Superfan: EWMA baselines and novel findings; daemon, cache and landing-queue profiles; `scion-superfan` | T-OPS-02 | I |  |
+| FR-OP-04 | UC-26 | F-41 | superfan.Rule threshold rules (`for N`, severity) | T-OPS-02 | I |  |
+| FR-OP-05 | UC-26 | F-41 | Superfan webhook through notify.Notifier.send (`text` payload) | T-OPS-03 | I |  |
+| FR-OP-08 | UC-26 | F-41 | rpc.LogRing per component, GET /logs (ADR-18); findings attach the lines of the last two intervals | T-OPS-04 | I |  |
 | FR-OP-06 | UC-25 | F-42 | RateLimiter; 429 with Retry-After; RpcClient backs off | T-OPS-01 | I |  |
-| FR-OP-07 | UC-25 | F-43 | tools.bench | T-PERF-01 | B4 | |
-| FR-AD-01 | UC-23 | F-43 | scion-admin init | T-E2E-01 | B4 | |
-| FR-AD-02 | UC-24 | F-43 | scion-admin snapshot | T-E2E-01 | B4 | |
-| FR-AD-03 | UC-27 | F-43 | scion-admin derive | T-DD-07 | B4 | |
-| FR-AD-04 | UC-22 | F-43 | scion-admin reindex-acl | T-IAM-10 | B4 | |
+| FR-OP-07 | UC-25 | F-43 | tools.bench; `scion-admin bench` | T-PERF-01 | I |  |
+| FR-AD-01 | UC-23 | F-43 | `scion-admin init`, `create-repo` | T-ADM-02, T-E2E-01 | I |  |
+| FR-AD-02 | UC-24 | F-43 | `scion-admin snapshot` | T-TIER-05, T-ADM-02 | I |  |
+| FR-AD-03 | UC-27 | F-43 | `scion-admin derive` | T-DD-07, T-ADM-02 | I |  |
+| FR-AD-04 | UC-22 | F-43 | `scion-admin reindex-acl` | T-IAM-10, T-ADM-02 | I |  |
 | FR-AD-05 | UC-28 | F-43 | scion-admin set-ref --as (protections apply; audited) | T-ADM-01 | I |  |
-| FR-AD-06 | UC-30 | F-43 | SQLite online backup + object copy | T-BAK-01 | B4 | |
+| FR-AD-06 | UC-30 | F-43 | backup.backup (SQLite online backup, then objects), restore, verify; `scion-admin backup/restore/verify` | T-BAK-01, T-E2E-01 | I |  |
 
 ## 11.2 Non-functional requirements
 
@@ -182,7 +182,7 @@ Updated at the end of every milestone (computed by the T-DOC-02 cross-check).
 | B1 | version control core | **done**: 45 requirements built and tested (21 core tests; fuzzing 8 seeds × 70 steps in the suite, 200 × 120 in a stress run) |
 | B2 | service, tiers, client, multi-repository, TLS | **done**: 48 requirements built and tested (41 FR, 7 NFR; 39 new tests across tiers, client, CLI, multi-repository, TLS, IAM and operations) |
 | B3 | IAM, audit, review and landing | **done**: 30 requirements built and tested (28 FR, 2 NFR); the 32 × 5 swarm landed all 160 changes on 2 servers with 31 ref moves |
-| B4 | migration, automation, search, operations, backup | planned |
+| B4 | migration, automation, search, operations, backup | **done**: 28 requirements built and tested (31 new tests: 30 in five new suites for ingestion, automation, search, superfans and the admin toolkit, 1 in IAM; the IAM leak sweep now covers grep); the 32 × 5 swarm landed all 160 changes on 2 servers with 31 ref moves; the end-to-end demo (T-E2E-01) passes with every component in its own process |
 | B5 | system verification of the non-functional requirements | planned |
 
 ## 11.4 Findings carried into the rebuild

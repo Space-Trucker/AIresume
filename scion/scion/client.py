@@ -257,7 +257,7 @@ class WorkingCopy:
             "mtime_ns INTEGER, state TEXT NOT NULL);"
             "CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);")
         c = self.config
-        tls = ClientTls(c["tls_ca"]) if c.get("tls_ca") else None
+        tls = ClientTls(c["tls_ca"], c.get("tls_cert"), c.get("tls_key")) if c.get("tls_ca") else None
         token = _token(c)
         self.api = ServerApi(c["server"], c["repo"], c.get("user"), token, tls)
         self.local = BoundedFileObjectStore(c.get("cache_dir") or os.path.join(self.dot, "objects"),
@@ -276,8 +276,10 @@ class WorkingCopy:
     def clone(cls, dest: str, server: str, repo: str, objects: str | None = None, rev: str = "main",
               mode: str = "full", sparse: list[str] | None = None, user: str | None = None,
               token_file: str | None = None, tls_ca: str | None = None, cache_bytes: int = DEFAULT_CACHE_BYTES,
-              cache_dir: str | None = None) -> "WorkingCopy":
-        """Check out ``rev`` (UC-01). Running it again on an interrupted clone resumes it."""
+              cache_dir: str | None = None, tls_cert: str | None = None, tls_key: str | None = None) -> "WorkingCopy":
+        """Check out ``rev`` (UC-01). Running it again on an interrupted clone resumes it. A service
+        principal (such as a post-merge worker) presents ``tls_cert`` where the server requires
+        client certificates of services (ADR-14)."""
         if mode not in ("full", "sparse", "virtual"):
             raise ClientError(f"unknown mode {mode!r}")
         if mode == "sparse" and not sparse:
@@ -294,7 +296,7 @@ class WorkingCopy:
             raise ClientError(f"{dest} exists and is not empty")
         os.makedirs(os.path.join(dest, SCN_DIR), exist_ok=True)
         config = {"server": server, "repo": repo, "objects": objects, "user": user, "token_file": token_file,
-                  "tls_ca": tls_ca, "mode": mode, "sparse": SparseProfile(sparse or []).prefixes, "track": rev,
+                  "tls_ca": tls_ca, "tls_cert": tls_cert, "tls_key": tls_key, "mode": mode, "sparse": SparseProfile(sparse or []).prefixes, "track": rev,
                   "cache_bytes": cache_bytes, "cache_dir": cache_dir}
         with open(cfg_path, "w") as f:
             json.dump(config, f, indent=2)
@@ -424,9 +426,12 @@ class WorkingCopy:
                 entries = trees.get(tid)
                 if entries is None:
                     try:
-                        entries = {e["name"]: (e["kind"], e["id"]) for e in self.api.list_dir(rev=rev, path=pfx)}
+                        listing = self.api.list_dir(rev=rev, path=pfx, probe=True)
                     except RemoteError:
                         continue
+                    if listing is None:
+                        continue  # nothing beneath is readable
+                    entries = {e["name"]: (e["kind"], e["id"]) for e in listing}
                 for name, (kind, oid) in entries.items():
                     path = join(pfx, name)
                     if reserved(path):

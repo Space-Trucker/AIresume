@@ -50,9 +50,11 @@ def make_cert(directory: str, name: str, common_name: str, ca: str = "ca",
 
 
 def make_dev_pki(directory: str) -> dict:
-    """A CA plus certificates for a server, a cache and a daemon."""
+    """A CA plus certificates for a server, a cache and a daemon, and client certificates for the
+    service principals that call servers: the post-merge worker and the superfan."""
     make_ca(directory)
     out = {"ca": os.path.join(directory, "ca.pem")}
-    for name, cn in (("server", "scion-server"), ("cache", "scion-cache"), ("daemon", "scion-daemon")):
+    for name, cn in (("server", "scion-server"), ("cache", "scion-cache"), ("daemon", "scion-daemon"),
+                     ("postmerge", "postmerge"), ("superfan", "superfan")):
         out[name] = make_cert(directory, name, cn)
     return out

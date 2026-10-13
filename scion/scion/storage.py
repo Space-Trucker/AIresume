@@ -232,23 +232,56 @@ class BoundedFileObjectStore(FileObjectStore):
 
 
 class LRUCache:
-    """Thread-safe LRU for decoded immutable values."""
+    """Thread-safe LRU for decoded immutable values, bounded by entries and by approximate size:
+    callers pass the size of what they decoded (the encoded payload's length), so memory is bounded
+    whatever the history size (FR-MG-04)."""
 
-    def __init__(self, capacity: int = 200_000):
-        self.capacity = capacity
-        self._d: OrderedDict = OrderedDict()
+    ENTRY_OVERHEAD = 64
+
+    def __init__(self, capacity: int = 200_000, max_bytes: int | None = None):
+        self.capacity, self.max_bytes = capacity, max_bytes
+        self._d: OrderedDict = OrderedDict()  # key -> (value, size)
+        self._size = 0
         self._lock = threading.Lock()
 
     def get(self, key):
         with self._lock:
-            v = self._d.get(key)
-            if v is not None:
-                self._d.move_to_end(key)
-            return v
-
-    def put(self, key, value):
-        with self._lock:
-            self._d[key] = value
+            hit = self._d.get(key)
+            if hit is None:
+                return None
             self._d.move_to_end(key)
-            while len(self._d) > self.capacity:
-                self._d.popitem(last=False)
+            return hit[0]
+
+    def put(self, key, value, size: int = 0):
+        size = self.ENTRY_OVERHEAD + size
+        with self._lock:
+            old = self._d.pop(key, None)
+            if old is not None:
+                self._size -= old[1]
+            self._d[key] = (value, size)
+            self._size += size
+            self._shrink()
+
+    def _shrink(self) -> None:
+        while len(self._d) > 1 and (len(self._d) > self.capacity
+                                    or (self.max_bytes is not None and self._size > self.max_bytes)):
+            _, (_, size) = self._d.popitem(last=False)
+            self._size -= size
+
+    def limit(self, capacity: int | None = None, max_bytes: int | None = None) -> tuple:
+        """Change the bounds and return the old ones, so a caller can restore them. ``capacity=None``
+        keeps the entry bound; ``max_bytes=None`` removes the byte bound."""
+        with self._lock:
+            old = (self.capacity, self.max_bytes)
+            if capacity is not None:
+                self.capacity = capacity
+            self.max_bytes = max_bytes
+            self._shrink()
+            return old
+
+    @property
+    def size_bytes(self) -> int:
+        return self._size
+
+    def __len__(self) -> int:
+        return len(self._d)

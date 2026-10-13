@@ -3,8 +3,8 @@
 Every query the `scn` client makes is one of these RPCs, so any CI job or tool can use them
 without a checkout. The article suggests forges could standardize something similar.
 
-> **Availability.** The rebuild delivers these in milestones: everything below except `grep` is
-> built (B2 and B3); `grep` arrives in B4 ([design/11-traceability.md](design/11-traceability.md)).
+> **Availability.** Everything below is built and tested (milestones B2–B4; see
+> [design/11-traceability.md](design/11-traceability.md)).
 
 **Transport.** Requests are `POST /rpc/<method>` with the body `{"params": {...}}` and a
 `Content-Length` (chunked bodies get 411), and responses are `{"result": ...}`. Errors return
@@ -58,7 +58,7 @@ from every RPC on it, and DENIED for its objects.
 | `get_changesets` | `ids` | list of the above | read |
 | `log` | `rev`, `limit`, `skip`, `path?`, `first_parent=true`, `ids_only?` | changesets, newest first (`path` → that path's history) | read |
 | `root_tree` | `rev` | tree id | read |
-| `list_dir` | `rev`, `path` | entries `{name, path, kind, id}`, filtered by the caller's permissions | read |
+| `list_dir` | `rev`, `path`, `probe?` | entries `{name, path, kind, id}`, filtered by the caller's permissions; 403 if nothing beneath is readable, or `null` with `probe` (how checkouts look past a denied tree without an audited denial) | read |
 | `read_file` | `rev`, `path` | `{kind, blob, content_b64}` | read |
 | `diff` | `b`, `a?` (default: first parent of `b`), `merge_base?`, `paths?`, `text?`, `context?` | `{a, b, files: [{path, status, old, new}], text?}` | read |
 | `merge_base` | `a`, `b` | `{base, all}` | read |
@@ -67,7 +67,8 @@ from every RPC on it, and DENIED for its objects.
 | `file_history` | `rev`, `path`, `limit`, `follow_copies=true` | `[{cs, path}]` for a file or directory | heavy |
 | `blame` | `rev`, `path` | `{lines: [{line, cs, origin_line, text}], changesets: {id: {author, timestamp, summary}}}` | heavy |
 | `search_paths` | `rev`, `query`, `limit` | `{paths, trees_visited}` | heavy |
-| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, truncated}` | heavy |
+| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, indexed, truncated}`: with 3 or more literal characters, the trigram content index narrows the files read (`indexed`) | heavy |
+| `git_lookup` | `git` or `cs` | `{git, cs}` for an ingested commit, either way round; `null` if not ingested | read |
 | `list_refs` / `get_ref` / `ref_log` | `name` | refs and their compare-and-swap history | read |
 
 ## Writes
@@ -124,9 +125,14 @@ Each tier accepts requests only from the tier directly below it:
 | `antique.land` | `id`, `force?` | the author, a service or an admin; 403 listing the unmet scopes; the CR shows `landing` while queued; server-side rebase and one compare-and-swap with per-server group commit; 409 `conflict` with `data.conflicts`; 503 `retry` if contention outlasts the deadline; landing a landed CR returns it |
 | `antique.abandon` | `id` | the author or an admin |
 | `antique.land_changeset` | `cs`, `ref` | services and admins: land a changeset without a CR (e.g. reverts) |
-| `antique.find_landing` | `cs` (landed id or pre-rebase id) | `{cs, source, cr, ref, landed_at}`, an indexed lookup; `null` if it never landed |
-| `antique.postmerge_claim` / `postmerge_report` | `—` / `id`, `passed`, `log?` | services and admins: claim the oldest queued job; report its result |
+| `antique.find_landing` | `cs` (landed id or pre-rebase id) | `{cs, source, cr, ref, landed_at, head}`, an indexed lookup; `null` if it never landed |
+| `antique.landing_stack` | `cs` | every changeset of the landing that produced `cs`, newest first (what a revert must undo) |
+| `antique.postmerge_claim` | | services and admins: claim the oldest queued job: `{id, cs, cr, ref, claim}`, or `null`. A job not reported within the lease (the policy's `review.postmerge_lease_seconds`, default 7200) is queued again |
+| `antique.postmerge_report` | `id`, `passed`, `log?`, `claim?` | services and admins: record the result; with the `claim` from the claim, a report whose lease ran out (the job was claimed again) gets 400 |
+| `antique.postmerge_reverted` | `id`, `reverts` | services and admins: mark a failed job's landing as reverted by these changesets |
 | `antique.postmerge_status` | `ref`, `limit` | the post-merge testing queue, newest first |
+| `antique.job_for` | `cs` | the newest post-merge job of a changeset, or `null` |
+| `antique.deploy_gate` | `ref` | the newest changeset on `ref` whose tests passed, walking the main line from the tip: `{cs, job, cr, behind_tip}`, or `null`; never a failed, reverted or untested changeset |
 
 Review rules, owners and webhooks live in the repository's `policy.json` under `review` (see
 `antique.py`). Webhooks receive `{event, repo, text, cr, actor}` for `cr.created`, `cr.updated`,
@@ -137,7 +143,7 @@ Review rules, owners and webhooks live in the repository's `policy.json` under `
 | Method | Params | Notes |
 |---|---|---|
 | `create_release` | `name`, `rev` | creates `release/<name>` (it must not exist) for principals allowed to move `release/*` |
-| `audit_log` | `limit?`, `action?`, `before?` | admins: the repository's audit entries, newest first: `policy.load`, `denied`, `ref.update`, `derive`, `acl.reindex`, `release.create`, `cr.force_land`, `land_changeset`, `admin.set_ref` |
+| `audit_log` | `limit?`, `action?`, `before?` | admins: the repository's audit entries, newest first: `policy.load`, `policy.invalid`, `denied`, `ref.update`, `derive`, `acl.reindex`, `release.create`, `cr.force_land`, `land_changeset`, `admin.set_ref`, `ingest`, `backup`, `restore` |
 | `audit_verify` | | admins: recompute the hash chain: `{ok, entries, first_bad, head}` |
 | `reindex_acl` | | admins: rebuild the object index after a policy change (UC-22) |
 
@@ -156,4 +162,17 @@ configured); the session cookie is HttpOnly and SameSite=Strict (Secure over TLS
 and land are forms that post to `/antique/<repo>/cr/<id>/{approve,comment,land}` with the session's
 CSRF token, and run the same code as the RPCs.
 
-Every tier also serves `GET /healthz` and `GET /stats`.
+## Health, stats and logs
+
+Every tier serves `GET /healthz`, `GET /stats` and `GET /logs`.
+
+* `/stats` (unauthenticated, so it names no repository): uptime; counters per RPC; errors by HTTP
+  status; p50/p90/p99 latency per method; rate-limiter rejections. Caches and daemons add their
+  object cache (`hits`, `misses`, `hit_rate`, `coalesced`, `upstream_requests`, bytes, evictions,
+  `rejected_objects`, ACL-epoch purges and check failures); daemons add snapshot imports; servers
+  add repository totals and the Antique landing queue (`land.*` counters, `land.queue_depth`,
+  `postmerge.queued`, `postmerge.running`).
+* `/logs?since=SEQ&limit=N&level=info` (administrators and service principals): the component's
+  recent structured log entries, `{tier, last_seq, entries: [{seq, at, level, message, fields,
+  repeats}]}`, oldest first. The ring keeps the last 2,000 entries; a message repeated back to back
+  updates one entry and counts `repeats` (ADR-18). Superfans read it (FR-OP-08).
