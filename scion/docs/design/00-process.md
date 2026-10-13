@@ -4,9 +4,9 @@ The work behind this package was done in the wrong order: code was written first
 puts it right. It is written **from the article and from engineering analysis, not from the
 code**, so the existing code can be checked against it instead of shaping it.
 
-**Status: approved at M0 (2026-10-13).** The decisions are in
-[12-project-plan.md](12-project-plan.md) §12.7. The prototype was deleted, and the system is being rebuilt
-from this baseline in milestones B1–B5. Progress is tracked in
+**Status: approved at M0 (2026-10-13); built.** The decisions are in
+[12-project-plan.md](12-project-plan.md) §12.7. The prototype was deleted, and the system was rebuilt
+from this baseline in milestones B1–B5. Every requirement is built and tested; the evidence is in
 [11-traceability.md](11-traceability.md).
 
 ## The pre-code steps, in order

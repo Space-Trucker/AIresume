@@ -147,26 +147,37 @@ class TestChangesets(RepoCase):
         self.assertIn("+3\n", text)
 
     def test_T_CORE_10_commit_cost_is_flat_in_repository_size(self):
+        """NFR-05: a one-file commit costs the same in a repository of 10² files as in one of 10⁴.
+
+        The work is identical at both sizes: the same 3 trees and 10 objects written (a tree, a
+        history tree and a search tree for each directory on the path, plus the blob). Time is
+        measured with the objects in memory, so the comparison is of the algorithm, not of the
+        shared disk this suite runs on, whose speed varies with how full and how busy it is
+        (the benchmark reports both). Commits to the two repositories are interleaved, so load
+        from anything else on the machine falls on both alike."""
+        from scion.trees import TreeOps
+
         repos, heads = {}, {}
         for n in (100, 10_000):
             r = repos[n] = Repository(os.path.join(self.tmp, f"s{n}"))
+            r.objects = MemoryObjectStore(None)
+            r.trees = TreeOps(r.objects, r.cache)
+            r.objects.put("tree", b"")
             heads[n] = r.create_changeset([], [{"path": f"d{i % 100:03d}/sub{i % 7}/f{i}.txt",
                                                 "content": f"{i}\n".encode()} for i in range(n)], "b", "import")
-        # Commits to the two repositories are interleaved, so load from anything else running on the
-        # machine falls on both measurements alike.
         samples = {n: [] for n in repos}
-        for k in range(45):
+        for k in range(60):
             for n, r in repos.items():
-                w = r.trees.writes
+                trees, objects = r.trees.writes, len(r.objects)
                 t0 = time.perf_counter()
                 heads[n] = r.create_changeset([heads[n]], [{"path": "d001/sub1/hot.txt",
                                                             "content": f"{k}{time.time()}".encode()}], "b", "e")
                 samples[n].append(time.perf_counter() - t0)
-                self.assertEqual(r.trees.writes - w, 3)  # root, d001, d001/sub1: independent of n
+                self.assertEqual((r.trees.writes - trees, len(r.objects) - objects), (3, 10))  # independent of n
         for r in repos.values():
             r.close()
         timings = {n: statistics.median(v) for n, v in samples.items()}
-        self.assertLessEqual(timings[10_000], timings[100] * 1.25 + 0.002, timings)
+        self.assertLessEqual(timings[10_000], timings[100] * 1.25 + 0.0003, timings)
 
 
 class TestDerived(RepoCase):

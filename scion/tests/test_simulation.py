@@ -1,11 +1,13 @@
 """T-SIM-01: a swarm of agents cloning, committing, getting reviewed and landing concurrently on two
 servers (FR-LD-02/03, FR-REF-04, FR-CS-05/06, NFR-01). No lost updates; the ref log of main is a
-chain of compare-and-swaps.
+chain of compare-and-swaps; no agent starves. At stress size the swarm, which also clones, commits,
+gets reviewed and updates, must land faster than NFR-01's design rate of 3.5 landings a second.
 
 SCION_SIM_AGENTS and SCION_SIM_ROUNDS scale it (the stress run is 32 × 5)."""
 import base64
 import os
 import shutil
+import statistics
 import tempfile
 import threading
 import time
@@ -29,7 +31,7 @@ class TestSwarm(unittest.TestCase):
                      for i in range(AGENTS)]
             root = c.client("root").call("create_changeset", repo=REPO, parents=[], message="seed", files=files,
                                          update_ref={"name": "main", "old": None})["id"]
-            errors, landed, lock = [], [], threading.Lock()
+            errors, landed, waits, lock = [], [], [], threading.Lock()
 
             def agent(i):
                 me = f"agent{i}"
@@ -43,8 +45,10 @@ class TestSwarm(unittest.TestCase):
                         head = wc.commit(f"{me} round {r}")
                         cr = wc.api.call("antique.create", title=f"{me} round {r}", head=head)
                         peer.call("antique.approve", repo=REPO, id=cr["id"])
+                        t0 = time.time()
                         done = wc.api.call("antique.land", id=cr["id"])
                         with lock:
+                            waits.append(time.time() - t0)
                             landed.append((cr["id"], head, done["landed_cs"], done["state"]))
                         wc.update("main")
                 except Exception as e:  # noqa: BLE001 - collected and reported below
@@ -86,9 +90,15 @@ class TestSwarm(unittest.TestCase):
             jobs = api.call("antique.postmerge_status", repo=REPO, ref="main", limit=10_000)
             self.assertEqual(len(jobs), AGENTS * ROUNDS)
             stats = [s.antique(REPO).counters for s in c.services]
-            print(f"\n  swarm: {AGENTS} agents x {ROUNDS} rounds on 2 servers in {elapsed:.1f}s; "
+            rate = AGENTS * ROUNDS / elapsed
+            print(f"\n  swarm: {AGENTS} agents x {ROUNDS} rounds on 2 servers in {elapsed:.1f}s ({rate:.1f} landings/s); "
                   f"{moves} ref moves for {AGENTS * ROUNDS} landings; "
-                  f"retries {sum(x['land.retries'] for x in stats)}, max batch {max(x['land.max_batch'] for x in stats)}")
+                  f"retries {sum(x['land.retries'] for x in stats)}, max batch {max(x['land.max_batch'] for x in stats)}; "
+                  f"time to land median {statistics.median(waits):.2f}s, max {max(waits):.2f}s")
+            # no starvation: every landing finished well inside the landing deadline (300 s)
+            self.assertLess(max(waits), 60)
+            if AGENTS * ROUNDS >= 100:  # NFR-01 at stress size
+                self.assertGreater(rate, 3.5)
         finally:
             c.close()
             shutil.rmtree(tmp, ignore_errors=True)

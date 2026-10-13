@@ -1,16 +1,15 @@
 # Scion: agent-scale source control
 
-> **Status: rebuilt through B4; B5 (system verification) remains.** The design baseline in
-> [`docs/design/`](docs/design/00-process.md) was approved at M0 (2026-10-13). The earlier prototype was
-> deleted by decision, and the system was rebuilt from the baseline in milestones: B1, the version control
-> core; B2, the server API, the daemon → cache → server tiers with snapshots, the `scn` client (full,
-> sparse and virtual checkouts), multiple repositories per deployment, and TLS with mutual TLS between
-> tiers; B3, directory permissions enforced on every read path and tier, protected refs and release
-> branches, a hash-chained audit log, and Antique: semantic review rules, review pages, webhooks and
-> lock-free group-commit landing; and B4, git ingestion, post-merge testing with a deploy gate, bisect and
-> revert pipelines, indexed grep, superfans reading telemetry and logs, benchmarks, and backup and restore.
-> All 138 functional requirements are built and tested; B5 verifies the non-functional ones end to end.
-> Progress is in [`docs/design/11-traceability.md`](docs/design/11-traceability.md).
+> **Status: built and verified (B1–B5).** The design baseline in [`docs/design/`](docs/design/00-process.md)
+> was approved at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system was rebuilt
+> from the baseline in milestones: B1, the version control core; B2, the server API, the daemon → cache →
+> server tiers with snapshots, the `scn` client (full, sparse and virtual checkouts), multiple repositories
+> per deployment, and TLS with mutual TLS between tiers; B3, directory permissions enforced on every read
+> path and tier, protected refs and release branches, a hash-chained audit log, and Antique: semantic review
+> rules, review pages, webhooks and lock-free group-commit landing; B4, git ingestion, post-merge testing
+> with a deploy gate, bisect and revert pipelines, indexed grep, superfans reading telemetry and logs,
+> benchmarks, and backup and restore; and B5, system verification of the non-functional requirements.
+> All 158 requirements are built and tested ([`docs/design/11-traceability.md`](docs/design/11-traceability.md)).
 
 A working implementation of the system described in Anthropic's engineering post
 [*Redesigning source control at Anthropic*](https://www.anthropic.com/engineering/redesigning-source-control).
@@ -156,14 +155,20 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 
 ## Measured here (4-core container)
 
-These numbers come from the deleted prototype; the rebuild re-measures them in B5 (T-PERF-01).
+Measured on the rebuild at B5 (`scion-admin bench`, the tests named, and `examples/demo.sh`). Servers,
+caches and daemons run in one process for the benchmarks, so absolute times include their contention;
+the end-to-end demo runs each in its own process.
 
 | Benchmark | Result |
 |---|---|
-| One-file commit, repo of 100 / 1,000 / 10,000 files | 10.1 / 8.6 / 8.4 ms: the cost tracks the size of the change, not of the repo |
-| `is_ancestor(root, tip)` over 3,001 linear changesets | 8 steps (0.11 ms) with skip lists vs 3,001 steps (4.5 ms) naive |
-| 32 concurrent agents × 5 landings on 2 servers | all 160 landed, no lost updates, CAS-chained ref log |
-| Second checkout on the same node | 0 requests to the cache: served by the node's daemon |
+| One-file commit, repository of 100 / 1,000 / 10,000 files | 4.0 / 4.1 / 5.0 ms on disk; 1.8 / 1.8 / 2.1 ms with objects in memory; 3 trees written at every size. The cost tracks the change, not the repository (T-CORE-10, T-PERF-01) |
+| Ancestry on a 10,000-changeset line | `is_ancestor(root, tip)` in 9 steps (0.13 ms), `merge_base` in 19, against 10,000 for a naive walk |
+| 32 agents × 5 landings on 2 servers | all 160 landed at 21.7 landings/s with 32 ref moves (group commit); median time to land 0.33 s (T-SIM-01) |
+| 64 agents × 10 landings on 2 servers | all 640 landed at 20.9 landings/s with 61 ref moves |
+| Hit rates in steady state | 99.5% at a node serving 100 jobs; 99.0% at a cache behind 100 nodes, cold start included (T-SYS-01) |
+| Checkout of 5,000 files through daemon → cache → server | cold 7.5 s; a second clone on the node 4.7 s with 0 cache requests; a sparse checkout of one 250-file project 0.22 s |
+| Path queries at 500 and at 10,000 files | the same 27 object reads for read, list, history, blame and diff of one path (T-SYS-03) |
+| Footprint | server, cache and daemon each 26–28 MB resident after the end-to-end demo |
 
 ## Deliberate simplifications
 

@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Inception | vision, scope, stakeholders | M0a: 01–02 approved | approved 2026-10-13 |
 | Elaboration | requirements, use cases, UML, architecture, risks, test plan, traceability, article cross-check | **M0: design baseline approved** | approved 2026-10-13, with the decisions in 12.7 |
-| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B5 | in progress |
+| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B5 | done (B5: every requirement **I**) |
 | Transition | migration pilot, cut-over, operations | M4–M5 | not started |
 
 > **Note on order.** A prototype was built before elaboration. At M0 the project lead decided to
@@ -37,7 +37,7 @@ A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 | WP-B4.2 | B4 | post-merge testing, deploy gate, bisect, revert pipeline | FR-PM-01…05, FR-AUT-01/02 | T-PM-01/02/04, T-AUT-01/02 |
 | WP-B4.3 | B4 | code search: path index, grep, content index | FR-SR-01…04 | T-SR-01/02 |
 | WP-B4.4 | B4 | superfans, alerts, logs; admin toolkit; backup and restore; the end-to-end demo | FR-OP-03…05/07/08, FR-AD-01…04/06 | T-OPS-02…04, T-BAK-01, T-PERF-01, T-ADM-02, T-E2E-01 |
-| WP-B5.1 | B5 | system verification: stress, end to end, benchmarks, docs and traceability | NFR-01…04, NFR-13, NFR-15, NFR-17 | T-SIM-01, T-E2E-01, T-PERF-01, T-DOC-01/02 |
+| WP-B5.1 | B5 | system verification: stress, end to end, benchmarks, docs and traceability | NFR-01…04, NFR-13, NFR-15, NFR-17 | T-SIM-01, T-SYS-01…03, T-E2E-01, T-PERF-01, T-DOC-01/02 |
 | WP-X | later | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | needs infrastructure |
 
 ## 12.3 Milestones

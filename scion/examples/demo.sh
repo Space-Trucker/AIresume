@@ -225,5 +225,13 @@ step "13. the audit log verifies, with the security-relevant actions recorded (F
 scn root audit --verify
 scn root audit --limit 200 | awk '{print $5}' | sort | uniq -c | sort -rn | head -8
 
+step "14. footprint of each process after all of this (NFR-17)"
+for name in server2 cache daemon; do
+  pid_var="PID_$name"
+  rss=$(awk '/^VmRSS/ {print $2}' "/proc/${!pid_var}/status" 2>/dev/null || echo "?")
+  echo "   $name: $((${rss:-0} / 1024)) MB resident"
+done
+echo "   node daemon store: $(du -sk "$W/node" | cut -f1) KB on disk"
+
 echo
 echo "E2E OK in $(( $(date +%s) - STARTED )) s"

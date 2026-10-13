@@ -118,8 +118,13 @@ class TreeOps:
         return hit
 
     def write(self, entries: dict) -> str:
+        """Store a tree. The decoded entries go into the cache too: the next commit on this path
+        starts from this tree, and shouldn't read back what was just written (NFR-05)."""
         self.writes += 1
-        return self.store.put("tree", encode_tree(entries))
+        payload = encode_tree(entries)
+        tid = self.store.put("tree", payload)
+        self.cache.put(("tree", tid), dict(entries), len(payload))
+        return tid
 
     def lookup(self, root: str | None, path: str):
         if root is None:

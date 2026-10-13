@@ -235,6 +235,7 @@ class TestBenchmarks(unittest.TestCase):
         self.assertEqual(k["warm_clone"]["cache_requests"], 0)  # NFR-02: the daemon answers the node
         self.assertEqual(k["sparse_checkout"]["cache_requests"], 0)
         self.assertLess(k["sparse_checkout"]["objects"], k["cold_clone"]["objects"] / 4)
+        self.assertLess(k["sparse_checkout"]["seconds"], 10)  # NFR-04: a project in seconds from a warm daemon
         self.assertTrue(k["clones_identical"])
         self.assertIn("Commit scaling", bench.report(r))
 

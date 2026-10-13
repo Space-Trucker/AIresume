@@ -594,4 +594,17 @@ Every requirement that cites a section was checked automatically: at least one s
 
 ## 14.8 How to re-run
 
-The checks are scripted (sentence segmentation, token-identity proof, term search, quote/number/citation verification). Like T-DOC-01/02, the scripts will be committed with WP-03 after M0, because code is frozen until the baseline is approved.
+The checks are scripted (sentence segmentation, token-identity proof, term search, quote/number/citation verification). Those scripts work on the article's full text, which this repository deliberately does not republish, so they are not committed. The documentation checks that need only the package, T-DOC-01 and T-DOC-02, are committed as `scripts/check_docs.py` (10 §10.7).
+
+## 14.9 Re-verification after the rebuild (B5)
+
+At B5 every requirement is built and tested (11). The article items whose verdict the rebuild changed:
+
+| ID | Article item | At M0 | After B5 | Evidence |
+|---|---|---|---|---|
+| A098 | Fetching is efficient and resumable | Partial (GAP-01) | Covered | FR-FP-03: an interrupted clone resumes in place and reuses what it received (T-CL-13) |
+| A152 | Superfans have access to telemetry and logs | Partial (GAP-14) | Covered | FR-OP-08: `GET /logs` on every component; findings carry the log lines around them (T-OPS-04) |
+| A145 | Rich access control on repositories | Covered (GAP-06 open) | Covered | FR-IAM-02: many repositories per deployment, each with its own policy (T-MR-01) |
+| A109 | Cache hit rate over 99% on each tier | Covered | Covered, measured | a node with 100 jobs hits 99.5%; a cache behind 100 nodes hits 99.0% over its life (T-SYS-01) |
+
+Still partial, for the reasons recorded at M0: distributed data (A053; one host's SQLite stands in for Spanner, ADR-10), CPU compared with git servers (A094; not measured against git), and superfans as Claude agents in Slack (A148, A149; the watcher and its Slack-compatible webhook are built, the agent is out of scope). The verdicts are now: Covered 112 · Context recorded 14 · Fixed in the M0 pass 25 · Partial 4 · Not applicable 27.
