@@ -99,6 +99,11 @@ Caches and daemons key what they store by (repository, id) and never store an ob
 restricted: every object of a repository whose reads are not open to everyone is restricted. A
 tier acting for a user sends `X-Scion-On-Behalf-Of`, so the user's permissions apply.
 
+`acl_epochs {repos}` (same tiering as `get_objects`) returns each repository's ACL epoch. It changes
+when a repository stops being readable by everyone and at every re-index; a tier checks it at least
+every `--epoch-seconds` before serving a repository's objects and purges that repository when it
+changed (ADR-20). Snapshots record the epoch they were taken under and are imported only under it.
+
 Each tier accepts requests only from the tier directly below it:
 
 | Tier | Accepts requests from |

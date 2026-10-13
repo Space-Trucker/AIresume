@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import tempfile
+import time
 import unittest
 import zlib
 
@@ -187,11 +188,9 @@ class TestDirectoryPermissions(DirectoryTest):
         sam_view = self.c.client("sam", url=self.c.daemon_urls[0]).get_objects(REPO, [secret_blob])
         self.assertEqual(sam_view[0][1], F_RESTRICTED)
         self.assertGreater(cache.counters["restricted_passthrough"], 0)
-        stored = b""
-        for dp, _, fs in os.walk(os.path.join(self.tmp, "daemon0")):
-            for name in fs:
-                with open(os.path.join(dp, name), "rb") as f:
-                    stored += zlib.decompress(f.read())
+        store = self.c.daemon_services[0].source.store
+        stored = b"".join(zlib.decompress(store.get_stored(key)) for key in store.iter_ids())
+        self.assertTrue(stored)
         self.assertNotIn(SECRET.encode(), stored)
 
     def test_T_IAM_11_restricted_bytes_can_be_committed_by_someone_who_has_them(self):
@@ -329,6 +328,99 @@ class TestPolicyChanges(DirectoryTest):
         self.assertTrue(self.call("rita", "update_ref", name="release/1.0", old=self.seed, new=fix))
         log = self.call("rita", "ref_log", name="release/1.0")
         self.assertEqual([(x["old"], x["new"], x["who"]) for x in log], [(self.seed, fix, "rita"), (None, self.seed, "rita")])
+
+
+class TestPolicyChangesReachTheTiers(unittest.TestCase):
+    """T-IAM-14 (FR-IAM-05/09, ADR-20): objects a tier cached while they were public are purged
+    within the epoch interval after the repository turns private or a re-index restricts them,
+    including from a restarted daemon's disk store and from snapshots."""
+
+    EPOCH = 0.3
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="scion-epoch-")
+        self.c = Cluster(self.tmp, repos={REPO: {"read": ["*"], "write": ["*"],
+                                                 "paths": [{"prefix": "vault", "read": ["sec-team"]}]}},
+                         identity={"groups": {"sec-team": ["sam"]}, "admins": ["root"]}, epoch_seconds=self.EPOCH)
+        self.api = self.c.client("root")
+        self.cs = self.api.call("create_changeset", repo=REPO, parents=[], message="m",
+                                files=[{"path": "open/a.txt", "content_b64": b64("cached while public\n")},
+                                       {"path": "plans/p.txt", "content_b64": b64("plans\n")}],
+                                update_ref={"name": "main", "old": None})["id"]
+        self.oid = blob_id(b"cached while public\n")
+
+    def tearDown(self):
+        self.c.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def fetch(self, user, oid, url=None):
+        return self.c.client(user, url=url or self.c.daemon_urls[0]).get_objects(REPO, [oid])[0]
+
+    def policy(self, policy):
+        path = os.path.join(self.c.dep_root, "repos", REPO, "policy.json")
+        with open(path + ".tmp", "w") as f:
+            json.dump(policy, f)
+        os.replace(path + ".tmp", path)
+
+    def held(self, oid):
+        key = f"{REPO}/{oid}"
+        return (self.c.daemon_services[0].source.store.has(key), self.c.cache_services[0].source.store.has(key))
+
+    def test_T_IAM_14_a_repository_turning_private_is_purged_from_the_tiers(self):
+        self.assertEqual(self.fetch("bob", self.oid)[1], 0)
+        self.assertEqual(self.held(self.oid), (True, True))
+        self.policy({"read": ["alice"], "write": ["alice"]})
+        time.sleep(2 * self.EPOCH + 0.1)
+        self.assertEqual(self.fetch("bob", self.oid)[1:], (F_DENIED, b""))
+        self.assertEqual(self.held(self.oid), (False, False))
+        self.assertEqual(self.fetch("alice", self.oid)[1], F_RESTRICTED)
+        self.assertEqual(self.held(self.oid), (False, False))
+
+    def test_T_IAM_14_a_restarted_daemon_purges_its_disk_store(self):
+        from scion.rpc import RpcServer
+        from scion.tiers import DaemonService
+        store = os.path.join(self.tmp, "node")
+        d1 = DaemonService(store, self.c.cache_urls, 1 << 20, epoch_seconds=self.EPOCH)
+        s1 = RpcServer(d1, f"unix:{self.c.sockdir}/n1.sock").start()
+        self.assertEqual(self.fetch("bob", self.oid, s1.url)[1], 0)
+        s1.stop()
+        d1.stop()
+        self.policy({"read": ["alice"], "write": ["alice"]})  # while the daemon is down
+        time.sleep(self.EPOCH + 0.1)
+        d2 = DaemonService(store, self.c.cache_urls, 1 << 20, epoch_seconds=self.EPOCH)
+        s2 = RpcServer(d2, f"unix:{self.c.sockdir}/n2.sock").start()
+        try:
+            self.assertTrue(d2.source.store.has(f"{REPO}/{self.oid}"))  # still on disk ...
+            self.assertEqual(self.fetch("bob", self.oid, s2.url)[1:], (F_DENIED, b""))  # ... but not served
+            self.assertFalse(d2.source.store.has(f"{REPO}/{self.oid}"))
+        finally:
+            s2.stop()
+            d2.stop()
+
+    def test_T_IAM_14_a_reindex_purges_newly_restricted_objects_and_stale_snapshots(self):
+        from scion.rpc import RpcServer
+        from scion.snapshot import create_snapshot
+        from scion.tiers import DaemonService
+        plans = blob_id(b"plans\n")
+        self.assertEqual(self.fetch("bob", plans)[1], 0)
+        snaps = os.path.join(self.tmp, "snaps")
+        create_snapshot(self.c.repo(), "main", os.path.join(snaps, REPO))
+        self.policy({"read": ["*"], "write": ["*"], "paths": [{"prefix": "vault", "read": ["sec-team"]},
+                                                             {"prefix": "plans", "read": ["sec-team"]}]})
+        self.api.call("reindex_acl", repo=REPO)
+        time.sleep(2 * self.EPOCH + 0.1)
+        self.assertEqual(self.fetch("bob", plans)[1:], (F_DENIED, b""))
+        self.assertEqual(self.held(plans), (False, False))
+        self.assertEqual(self.fetch("bob", self.oid)[1], 0)  # still public, cached again
+        # a snapshot taken under the old epoch is not imported
+        fresh = DaemonService(os.path.join(self.tmp, "fresh"), self.c.cache_urls, 1 << 20, snapshot_dir=snaps,
+                              refresh_seconds=3600, epoch_seconds=self.EPOCH)
+        try:
+            self.assertEqual(fresh.snapshot_objects, 0)
+            self.assertEqual(fresh.metrics.counters["snapshot.stale"], 1)
+            self.assertFalse(fresh.source.store.has(f"{REPO}/{plans}"))
+        finally:
+            fresh.stop()
 
 
 if __name__ == "__main__":

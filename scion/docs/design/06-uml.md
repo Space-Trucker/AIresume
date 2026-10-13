@@ -435,7 +435,14 @@ classDiagram
     +store : ObjectStore
     +upstream : ObjectSource
     +restricted : bounded set
+    +guard : EpochGuard
     +fetch(repo, ids, user) list
+    +purge(repo)
+  }
+  class EpochGuard {
+    +interval
+    +epochs
+    +ensure(repo) epoch
   }
   class Caller {
     +principal
@@ -472,6 +479,7 @@ classDiagram
   ObjectSource <|.. RemoteSource
   ObjectSource <|.. CachingSource
   CachingSource --> ObjectSource : upstream
+  CachingSource --> EpochGuard
   RemoteSource --> RpcClient
   FailoverClient --> RpcClient
   RpcServer --> Service

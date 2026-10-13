@@ -106,6 +106,7 @@
 | T-IAM-11 | FR-IAM-04/11 | a restricted object can't be republished by its id; an uploader who has the bytes can commit them | test_iam |
 | T-IAM-12 | FR-IAM-04 | snapshots leave out restricted objects | test_iam |
 | T-IAM-13 | FR-IAM-06 | group membership changes apply to the next request | test_iam |
+| T-IAM-14 | FR-IAM-05/09, ADR-20 | after a repository turns private or a re-index restricts objects, caches and daemons (also restarted ones) purge them within the epoch interval; stale snapshots are not imported | test_iam |
 | T-RV-09 | FR-RV-03 | comments are stored with revision, path and line | test_antique |
 | T-LD-04 | FR-LD-03 | concurrent landings on one server are group-committed | test_antique |
 | T-LD-05 | FR-LD-06 | landing without a CR is for services and administrators | test_antique |

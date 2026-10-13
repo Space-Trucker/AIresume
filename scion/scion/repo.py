@@ -8,6 +8,7 @@ changesets it needs.
 from __future__ import annotations
 
 import difflib
+import hashlib
 import heapq
 import json
 import os
@@ -177,6 +178,14 @@ class Repository:
         return [oid for oid in ids if not (is_object_id(oid) and self.objects.has(oid))
                 or (oid in acl and not self.can_read_object(oid, user, acl))]
 
+    def acl_epoch(self) -> str:
+        """Changes whenever objects shared tiers already hold may have stopped being cacheable:
+        when the repository stops being readable by everyone, and at every re-index of the object
+        index. Tiers compare it and purge the repository's objects when it changes (ADR-20)."""
+        public = getattr(self.policy, "public", True)
+        marker = self.meta.kv_get("acl_reindexed") or ""
+        return hashlib.sha256(f"public={public};reindexed={marker}".encode()).hexdigest()[:16]
+
     def reindex_acl(self) -> dict:
         """Rebuild the object index under the current policy (FR-IAM-09, UC-22 step 3): every
         object every changeset wrote, at every place it appeared. Run it after a policy change, then
@@ -204,8 +213,10 @@ class Repository:
                     if e is not None and e[0] == KIND_DIR:
                         rows.add((e[1], prefix_of(d) or ""))
         self.meta.acl_replace(sorted(rows))
+        self.meta.kv_set("acl_reindexed", f"{time.time()}:{os.getpid()}")  # a new ACL epoch (ADR-20)
         restricted = sum(1 for _, p in rows if p)
-        return {"changesets": changesets, "entries": len(rows), "restricted_entries": restricted}
+        return {"changesets": changesets, "entries": len(rows), "restricted_entries": restricted,
+                "epoch": self.acl_epoch()}
 
     def put_objects(self, items, user=None) -> int:
         """Store uploaded blobs after verifying each against its id. Trees are always derived on
@@ -312,6 +323,7 @@ class Repository:
             raise ValueError("duplicate parents")
         base = self.root_tree(parents[0]) if parents else None
         changes, tree_changes, seen, pending = [], {}, set(), []
+        inline = {blob_id(f["content"]) for f in files if not f.get("blob") and isinstance(f.get("content"), bytes)}
         for f in files:
             path = normalize_path(f.get("path", ""))
             if not path:
@@ -334,9 +346,11 @@ class Repository:
                 raise ValueError(f"bad kind {kind!r} for {path}")
             if f.get("blob"):
                 blob = f["blob"]
-                if not self.objects.has(blob):
+                if blob in inline:
+                    pass  # the bytes come with this very request
+                elif not self.objects.has(blob):
                     raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
-                if user is not None and not self.can_read_object(blob, user) and not self.meta.grant_has(blob, user):
+                elif user is not None and not self.can_read_object(blob, user) and not self.meta.grant_has(blob, user):
                     # an object you may not read can't be republished somewhere else by its id,
                     # unless you uploaded its bytes yourself
                     raise PermissionDenied(f"{user} may not use object {blob[:12]}")

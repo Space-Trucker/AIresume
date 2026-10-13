@@ -91,11 +91,11 @@ requirement is built and its acceptance tests pass.
 | FR-IAM-02 | UC-22 | F-44 | Deployment; repo-scoped RPCs; caches keyed by (repo, id) (ADR-13) | T-MR-01 | I |  |
 | FR-IAM-03 | UC-22 | F-22 | Policy path rules (most specific wins; read and write inherit separately) | T-IAM-01, T-IAM-05 | I |  |
 | FR-IAM-04 | UC-01, UC-08…12 | F-23 | Policy.can_read on every read RPC; object index (object_acl); filtered CR views; snapshots | T-IAM-03, T-IAM-01, T-IAM-11, T-IAM-12 | I |  |
-| FR-IAM-05 | UC-01 | F-23 | restricted flag from the object index; CachingSource never stores it | T-IAM-04 | I |  |
+| FR-IAM-05 | UC-01 | F-23 | restricted flag from the object index; CachingSource never stores it; ACL epochs purge what became restricted (ADR-20) | T-IAM-04, T-IAM-14 | I |  |
 | FR-IAM-06 | UC-22 | F-22 | Identity groups, admins, services; Deployment.maybe_reload per request | T-IAM-13, T-IAM-07 | I |  |
 | FR-IAM-07 | UC-22 | F-24 | Identity.check_token; Service.authenticate (401); client certificates for tiers | T-IAM-08, T-TLS-01 | I |  |
 | FR-IAM-08 | UC-01 | F-24 | X-Scion-On-Behalf-Of; Caller.user | T-MR-01, T-IAM-04 | I |  |
-| FR-IAM-09 | UC-22 | F-26 | Repository.reindex_acl; reindex_acl RPC; scion-admin reindex-acl | T-IAM-10 | I |  |
+| FR-IAM-09 | UC-22 | F-26 | Repository.reindex_acl; reindex_acl RPC; scion-admin reindex-acl; a new ACL epoch | T-IAM-10, T-IAM-14 | I |  |
 | FR-IAM-10 | UC-22 | F-26 | audit.AuditLog (hash chain): policy loads, denials, ref moves, admin actions | T-AUD-01, T-ADM-01 | I |  |
 | FR-IAM-11 | UC-22 | F-23 | "" entries in the object index; possession grants for uploaders | T-IAM-02, T-IAM-11 | I |  |
 | FR-RV-01 | UC-13 | F-27 | antique.create from a changeset id | T-LD-01 | I |  |
@@ -161,7 +161,7 @@ requirement is built and its acceptance tests pass.
 | NFR-07 | I | T-TIER-06: two servers serve one deployment root; caches and daemons hold only caches, so adding or restarting one needs no data migration |
 | NFR-08 | I | T-TIER-03 strict tiering; T-TIER-07 single flight; T-OPS-01 rate limits |
 | NFR-09 | I | T-TIER-06: with one of two servers and one of two caches down, a clone succeeds with no client change |
-| NFR-10 | I | T-IAM-01…04, T-IAM-11/12: no response, object fetch, snapshot or shared store gives restricted bytes to an unauthorized user (the leak sweep in T-IAM-03 checks every read RPC) |
+| NFR-10 | I | T-IAM-01…04, T-IAM-11/12/14: no response, object fetch, snapshot or shared store gives restricted bytes to an unauthorized user (the leak sweep in T-IAM-03 checks every read RPC) |
 | NFR-11 | I | T-TIER-08: the daemon and the client reject a forged object; every object they receive is checked against its id |
 | NFR-12 | I | T-CORE-05: concurrent CAS, exactly one winner, unbroken ref log; T-DD-01: deterministic derived values across two servers |
 | NFR-13 | B5 | planned verification: 10 §10.4 |

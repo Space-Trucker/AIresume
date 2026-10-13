@@ -51,7 +51,7 @@ flowchart LR
 | R1 | Denying having moved a ref | TB4 | Repudiation | ref log with actor and time; every move also in the hash-chained audit log (ADR-15) | FR-REF-04, FR-IAM-10 | removing the newest audit entries is not detectable without an external copy of the chain head |
 | R2 | Unaudited policy changes or denials | — | Repudiation | hash-chained audit log of policy loads, denials and administrative actions (ADR-15) | FR-IAM-10 | as R1 |
 | I1 | Reading restricted files through APIs | TB4 | Information disclosure | per-path checks on read_file, list_dir, blame, history, diff, grep, search, changeset listings | FR-IAM-04 | — |
-| I2 | Reading restricted objects by id through caches | TB1–TB3 | Information disclosure | object ACL index; restricted flag; caches never store; server re-authorizes every request; `has_objects` reports unreadable objects as missing; a restricted object can be committed by id only by someone who uploaded its bytes | FR-IAM-04/05 | objects public before a policy change remain cached until re-index and cache restart (R-07) |
+| I2 | Reading restricted objects by id through caches | TB1–TB3 | Information disclosure | object ACL index; restricted flag; caches never store; server re-authorizes every request; `has_objects` reports unreadable objects as missing; a restricted object can be committed by id only by someone who uploaded its bytes | FR-IAM-04/05 | objects public before a policy change can still be served by a tier for about two epoch intervals after it takes effect (ADR-20), or while that tier can't reach its upstream (R-07) |
 | I3 | Restricted objects in daemon snapshots | — | Information disclosure | snapshots exclude restricted objects | FR-IAM-04 | — |
 | I4 | Inferring restricted names from parent trees | TB1 | Information disclosure | parent tree objects list child names and ids | — | accepted: names of restricted directories are visible; their contents are not |
 | I5 | Identical bytes at public and restricted paths | — | Information disclosure (false positive) | bytes seen at a public path are public | FR-IAM-11 | — |
@@ -67,5 +67,5 @@ flowchart LR
 1. Tokens required in every non-development deployment (FR-IAM-07). Built in B2.
 2. TLS/mTLS between all tiers before production (NFR-20). Built in B2 (ADR-14).
 3. Audit log of policy changes, access denials and admin actions (FR-IAM-10). Built in B3 (ADR-15).
-4. Re-index ACLs and restart caches as part of the policy-change procedure (UC-22). Re-indexing built in B3.
+4. Re-index ACLs as part of the policy-change procedure (UC-22); the tiers purge through ACL epochs (ADR-20). Built in B3 and the B2 review fixes.
 5. A per-file size limit on uploads (R-10). Built in B2 (FR-WR-07).

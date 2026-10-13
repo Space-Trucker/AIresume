@@ -35,7 +35,7 @@ class Cluster:
     def __init__(self, root: str, servers: int = 1, caches: int = 1, daemons: int = 1,
                  identity: dict | None = None, repos: dict | None = None, allow_direct_objects: bool = False,
                  cache_bytes: int = 64 << 20, daemon_bytes: int = 64 << 20, snapshot_dir: str | None = None,
-                 pki: dict | None = None, tokens: dict | None = None):
+                 pki: dict | None = None, tokens: dict | None = None, epoch_seconds: float = 10.0):
         self.root, self.pki, self.tokens = root, pki, tokens or {}
         self.dep_root = os.path.join(root, "deployment")
         os.makedirs(self.dep_root, exist_ok=True)
@@ -62,7 +62,8 @@ class Cluster:
         for _ in range(caches):
             svc = make_cache_service(self.server_urls, cache_bytes, identity=self._identity(),
                                      token=self.tokens.get("scion-cache"),
-                                     tls=ClientTls(pki["ca"], *pki["cache"]) if pki else None)
+                                     tls=ClientTls(pki["ca"], *pki["cache"]) if pki else None,
+                                     epoch_seconds=epoch_seconds)
             self.cache_services.append(svc)
             self.caches.append(RpcServer(svc, f"{scheme}://127.0.0.1:0", tls=cache_tls).start())
         self.cache_urls = [c.url for c in self.caches]
@@ -71,7 +72,8 @@ class Cluster:
             svc = DaemonService(os.path.join(root, f"daemon{i}"), self.cache_urls, daemon_bytes,
                                 snapshot_dir=snapshot_dir, refresh_seconds=3600,
                                 token=self.tokens.get("scion-daemon"),
-                                tls=ClientTls(pki["ca"], *pki["daemon"]) if pki else None)
+                                tls=ClientTls(pki["ca"], *pki["daemon"]) if pki else None,
+                                epoch_seconds=epoch_seconds)
             self.daemon_services.append(svc)
             self.daemons.append(RpcServer(svc, f"unix:{self.sockdir}/d{i}.sock").start())
         self.daemon_urls = [d.url for d in self.daemons]

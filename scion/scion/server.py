@@ -13,12 +13,13 @@ import binascii
 import json
 import re
 import threading
+from collections import Counter
 
 from .antique import Antique
 from .deployment import Deployment
 from .iam import PermissionDenied
 from .notify import Notifier
-from .repo import Repository
+from .repo import NotFound, Repository
 from .rpc import MAX_IDS_PER_REQUEST, Service, ids_cost, pack_objects, unpack_objects
 from .search import search_paths
 from .ui import ReviewUI
@@ -90,6 +91,7 @@ class ScionService(Service):
           cost=ids_cost)
         r("has_objects", lambda c, p: self._repo(c, p).missing_objects(_ids(p), c.user), klass="objects",
           cost=ids_cost)
+        r("acl_epochs", self._acl_epochs, tiers=self.object_callers)
         r("put_objects", self._put_objects, klass="write", binary_in=True)
         # -- writes (FR-WR-*) ----------------------------------------------------------------------
         r("create_changeset", self._create_changeset, klass="write")
@@ -255,6 +257,19 @@ class ScionService(Service):
         repo = self.deployment.repo(p.get("repo"))  # unreadable repositories come back DENIED per object
         return pack_objects(repo.fetch_objects(_ids(p), c.user))
 
+    def _acl_epochs(self, c, p):
+        """Each repository's ACL epoch, for the tiers (ADR-20); unknown repositories map to None."""
+        repos = p.get("repos")
+        if not isinstance(repos, list) or len(repos) > 1000 or not all(isinstance(x, str) for x in repos):
+            raise ValueError("repos must be a list of at most 1000 names")
+        out = {}
+        for name in repos:
+            try:
+                out[name] = self.deployment.repo(name).acl_epoch()
+            except (NotFound, ValueError):
+                out[name] = None
+        return out
+
     def _put_objects(self, c, p):
         repo = self._repo(c, p, write=True)
         return {"stored": repo.put_objects(unpack_objects(p["_body"]), c.user)}
@@ -409,8 +424,15 @@ class ScionService(Service):
                                                None if line is None else _int(p, "line", 1, 1, 1 << 31)))
 
     def stats(self) -> dict:
+        """Totals over all repositories: /stats is unauthenticated, so it names none of them."""
         s = super().stats()
-        s["repos"] = {name: dict(r.stats) for name, r in list(self.deployment._repos.items())}
-        s["antique"] = {name: dict(a.counters) for name, a in list(self._antiques.items())}
+        repos, antique = Counter(), Counter()
+        for r in list(self.deployment._repos.values()):
+            repos.update(r.stats)
+        for a in list(self._antiques.values()):
+            antique.update({k: v for k, v in a.counters.items() if k != "land.max_batch"})
+            antique["land.max_batch"] = max(antique["land.max_batch"], a.counters["land.max_batch"])
+        s["repos"] = {"open": len(self.deployment._repos), **repos}
+        s["antique"] = dict(antique)
         s["notify"] = dict(self.notifier.counters)
         return s

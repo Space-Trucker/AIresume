@@ -551,13 +551,14 @@ def cache_main(argv=None) -> int:
     p.add_argument("--max-bytes", type=int, default=8 << 30)
     p.add_argument("--identity", help="deployment.json: tokens of the daemons that may connect")
     p.add_argument("--token-file", help="this cache's token for the servers (without mutual TLS)")
+    p.add_argument("--epoch-seconds", type=float, default=10.0, help="how often each repository's ACL epoch is checked")
     p.add_argument("-v", "--verbose", action="store_true")
     _tls_server_args(p)
     _tls_client_args(p)
     a = p.parse_args(argv)
     tls = ClientTls(a.ca, a.cert, a.key) if a.ca else None
     svc = make_cache_service(a.upstream, a.max_bytes, Identity.load(a.identity), _read_token(a.token_file), tls,
-                             verbose=a.verbose)
+                             verbose=a.verbose, epoch_seconds=a.epoch_seconds)
     return _serve(RpcServer(svc, _listen(a), tls=_server_tls(a)))
 
 
@@ -573,12 +574,13 @@ def daemon_main(argv=None) -> int:
     p.add_argument("--snapshots", help="snapshot directory to warm-start from and refresh")
     p.add_argument("--refresh", type=float, default=300.0, help="seconds between snapshot checks")
     p.add_argument("--token-file", help="this daemon's token for the caches (without mutual TLS)")
+    p.add_argument("--epoch-seconds", type=float, default=10.0, help="how often each repository's ACL epoch is checked")
     p.add_argument("-v", "--verbose", action="store_true")
     _tls_client_args(p)
     a = p.parse_args(argv)
     tls = ClientTls(a.ca, a.cert, a.key) if a.ca else None
     svc = DaemonService(a.store, a.upstream, a.max_bytes, a.snapshots, a.refresh, token=_read_token(a.token_file),
-                        tls=tls, verbose=a.verbose)
+                        tls=tls, verbose=a.verbose, epoch_seconds=a.epoch_seconds)
     return _serve(RpcServer(svc, f"unix:{a.socket}", socket_mode=int(a.socket_mode, 8)), svc.stop)
 
 

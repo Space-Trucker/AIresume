@@ -64,8 +64,9 @@ Domain model: [6.1](06-uml.md#61-domain-model).
 * **Changesets and objects:** immutable, read-your-writes from any server sharing the store.
 * **Refs:** linearizable through compare-and-swap.
 * **Derived data:** eventually present and always identical (a deterministic function of immutable inputs).
-* **Tiers:** never stale for content (it is immutable). Only the ACL classification can change, by policy
-  update, which requires re-indexing and a cache restart (R-07).
+* **Tiers:** never stale for content (it is immutable). Only the ACL classification can change: at once
+  for a repository that turns private, at re-index for directory rules; every tier learns of it through the
+  repository's ACL epoch within about two epoch intervals and purges what it held (ADR-20, R-07).
 
 ## 7.5 Deployment and scaling view
 
@@ -202,3 +203,4 @@ down, owned by humans and changed only by superseding them (12 §12.6).
 | ADR-17 | Interactive review UI as server-rendered HTML forms with a session cookie and a per-session CSRF token, calling the same Antique code paths as the RPCs | FR-RV-09; standard library only | no client-side framework; page reloads per action | a separate web application |
 | ADR-18 | Reviewer notifications and component logs as small built-in mechanisms: webhooks with retry on CR events; an in-memory ring buffer of structured warnings and errors per component, exposed at `GET /logs` for superfans | FR-RV-10, FR-OP-08 | best-effort delivery; logs are recent-only | external queues and log stacks |
 | ADR-19 | History and blame follow the first parent only, merges included (BR-06, decided at M0) | footnote 1; decision 4 | lines brought in by a merge are attributed to the merge | crediting the other parent's authors (rejected at M0) |
+| ADR-20 | ACL epochs: each repository has an epoch that changes when it stops being readable by everyone and at every re-index of the object index; caches and daemons check it upstream at least every `epoch_seconds` (default 10) before serving a repository's objects, purge that repository when it changed, and save it beside a daemon's disk store; snapshots carry the epoch they were taken under and are imported only under the same epoch | the B2 review found that objects cached while public stayed on a daemon's disk, and in snapshots, after the repository turned private, surviving the restart that R-07 prescribed; restarting every daemon on every node is not an operation at this scale | a policy change reaches every tier within about two epoch intervals, without restarts; one small upstream call per repository per interval per tier; tiers that can't reach upstream keep serving what they hold | manual purges and restarts (the earlier procedure); per-object revalidation (one upstream call per hit) |

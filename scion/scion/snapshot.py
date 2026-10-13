@@ -32,7 +32,9 @@ def create_snapshot(repo, rev: str, out_dir: str) -> dict:
     count, seen = 0, set()
     try:
         with os.fdopen(fd, "wb") as f:
-            f.write(json.dumps({"repo": repo.name, "cs": cs, "root": root, "created": time.time()}).encode() + b"\n")
+            epoch = repo.acl_epoch()  # daemons import a snapshot only under the same ACL epoch (ADR-20)
+            f.write(json.dumps({"repo": repo.name, "cs": cs, "root": root, "created": time.time(),
+                                "epoch": epoch}).encode() + b"\n")
             level = [root]
             while level:  # breadth first, so a partial import still holds whole upper levels
                 restricted = repo.restricted_objects(level)
@@ -60,7 +62,7 @@ def create_snapshot(repo, rev: str, out_dir: str) -> dict:
         if os.path.exists(tmp):
             os.unlink(tmp)
         raise
-    pointer = {"file": name, "cs": cs, "objects": count}
+    pointer = {"file": name, "cs": cs, "objects": count, "epoch": epoch}
     ptmp = os.path.join(out_dir, ".LATEST.tmp")
     with open(ptmp, "w") as f:
         json.dump(pointer, f)
@@ -81,14 +83,16 @@ def latest_snapshot(repo_snapshot_dir: str) -> dict | None:
         return None
 
 
-def load_snapshot(path: str, store, repo: str | None) -> int:
+def load_snapshot(path: str, store, repo: str | None, expect_epoch: str | None = None) -> int:
     """Import a snapshot's objects that ``store`` lacks, verifying each (FR-OBJ-04). Returns how
-    many were new."""
+    many were new. With ``expect_epoch``, a snapshot taken under another ACL epoch is refused."""
     imported = 0
     with open(path, "rb") as f:
         header = json.loads(f.readline() or b"{}")
         if repo is not None and header.get("repo") not in (None, repo):
             raise ValueError(f"{path} is a snapshot of {header.get('repo')}, not {repo}")
+        if expect_epoch is not None and header.get("epoch") != expect_epoch:
+            raise ValueError(f"{path} was taken under another ACL epoch")
         while True:
             head = f.read(_FRAME.size)
             if not head:

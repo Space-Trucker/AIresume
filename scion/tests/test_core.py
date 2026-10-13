@@ -147,23 +147,25 @@ class TestChangesets(RepoCase):
         self.assertIn("+3\n", text)
 
     def test_T_CORE_10_commit_cost_is_flat_in_repository_size(self):
-        timings = {}
+        repos, heads = {}, {}
         for n in (100, 10_000):
-            r = Repository(os.path.join(self.tmp, f"s{n}"))
-            root = r.create_changeset([], [{"path": f"d{i % 100:03d}/sub{i % 7}/f{i}.txt", "content": f"{i}\n".encode()}
-                                           for i in range(n)], "b", "import")
-            meds, cur = [], root
-            for _ in range(3):  # best of three medians absorbs scheduler noise
-                samples = []
-                for k in range(15):
-                    w = r.trees.writes
-                    t0 = time.perf_counter()
-                    cur = r.create_changeset([cur], [{"path": "d001/sub1/hot.txt", "content": f"{k}{time.time()}".encode()}], "b", "e")
-                    samples.append(time.perf_counter() - t0)
-                    self.assertEqual(r.trees.writes - w, 3)  # root, d001, d001/sub1: independent of n
-                meds.append(statistics.median(samples))
-            timings[n] = min(meds)
+            r = repos[n] = Repository(os.path.join(self.tmp, f"s{n}"))
+            heads[n] = r.create_changeset([], [{"path": f"d{i % 100:03d}/sub{i % 7}/f{i}.txt",
+                                                "content": f"{i}\n".encode()} for i in range(n)], "b", "import")
+        # Commits to the two repositories are interleaved, so load from anything else running on the
+        # machine falls on both measurements alike.
+        samples = {n: [] for n in repos}
+        for k in range(45):
+            for n, r in repos.items():
+                w = r.trees.writes
+                t0 = time.perf_counter()
+                heads[n] = r.create_changeset([heads[n]], [{"path": "d001/sub1/hot.txt",
+                                                            "content": f"{k}{time.time()}".encode()}], "b", "e")
+                samples[n].append(time.perf_counter() - t0)
+                self.assertEqual(r.trees.writes - w, 3)  # root, d001, d001/sub1: independent of n
+        for r in repos.values():
             r.close()
+        timings = {n: statistics.median(v) for n, v in samples.items()}
         self.assertLessEqual(timings[10_000], timings[100] * 1.25 + 0.002, timings)
 
 

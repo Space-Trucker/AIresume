@@ -35,6 +35,19 @@ class TestRateLimits(unittest.TestCase):
         time.sleep(wait)
         self.assertEqual(b.take(1), 0.0)
 
+    def test_idle_principals_are_forgotten(self):
+        lim = RateLimiter()
+        lim.MAX_BUCKETS = 50
+        for i in range(500):
+            with lim.acquire(f"agent{i}", "read"):
+                pass
+        time.sleep(0.05)  # their buckets refill: nothing would change for them
+        with lim.acquire("busy", "write"):  # a principal with a request in flight is kept
+            with lim.acquire("newcomer", "read"):
+                pass
+            self.assertLessEqual(len(lim._buckets), 50)
+            self.assertIn(("busy", "write"), lim._buckets)
+
     def test_concurrency_cap_and_exemptions(self):
         lim = RateLimiter({"default": {"heavy": {"concurrency": 1}}}, exempt={"scion-cache"})
         with lim.acquire("alice", "heavy"):
@@ -103,6 +116,7 @@ class TestHealthAndStats(unittest.TestCase):
                 probe = RpcClient(url)
                 self.assertEqual(probe.get_json("/healthz"), {"ok": True, "tier": tier})
                 s = probe.get_json("/stats")
+                self.assertNotIn(REPO, json.dumps(s), "the unauthenticated stats name no repository")
                 self.assertEqual(s["tier"], tier)
                 self.assertIn("uptime_s", s)
                 if tier == "server":
@@ -169,6 +183,13 @@ class TestUploadLimits(unittest.TestCase):
         self.assertEqual(wc.base, self.base)
         self.assertEqual(wc.status().untracked, ["huge.bin"])
         wc.close()
+
+    def test_a_blob_reference_may_name_content_given_inline(self):
+        data = base64.b64encode(b"same bytes\n").decode()
+        r = self.api.call("create_changeset", repo=REPO, parents=[self.base], message="m",
+                          files=[{"path": "x", "content_b64": data}, {"path": "y", "blob": blob_id(b"same bytes\n")}])
+        changes = self.api.call("get_changeset", repo=REPO, rev=r["id"])["changes"]
+        self.assertEqual({c["path"]: c["blob"] for c in changes}, {"x": blob_id(b"same bytes\n"), "y": blob_id(b"same bytes\n")})
 
     def test_request_body_cap(self):
         host, port = self.c.server_urls[0][7:].split(":")
