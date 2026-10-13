@@ -4,27 +4,29 @@ The work behind this package was done in the wrong order: code was written first
 puts it right. It is written **from the article and from engineering analysis, not from the
 code**, so the existing code can be checked against it instead of shaping it.
 
-From here on, no code changes until this package is reviewed and approved. The gap list in
-[11-traceability.md](11-traceability.md) then becomes the work queue.
+**Status: approved at M0 (2026-10-13).** The decisions are in
+[12-project-plan.md](12-project-plan.md) §12.7. The prototype was deleted, and the system is being rebuilt
+from this baseline in milestones B1–B5. Progress is tracked in
+[11-traceability.md](11-traceability.md).
 
 ## The pre-code steps, in order
 
 | # | Step | Question it answers | Output | Exit criteria | Status |
 |---|---|---|---|---|---|
-| 1 | Vision and scope | Why build this, for whom, and what is out of scope? | [01-vision-and-scope.md](01-vision-and-scope.md) | problem, goals, measurable success criteria, non-goals, constraints and assumptions agreed | Draft for review |
-| 2 | Stakeholders and actors | Who uses, operates, funds or is affected by it? | [02-stakeholders-and-actors.md](02-stakeholders-and-actors.md) | every actor has goals and a primary interface; no use case has an unnamed actor | Draft for review |
-| 3 | Requirements (SRS) | What must the system do, and how well? | [03-requirements.md](03-requirements.md) | every requirement is atomic, testable, prioritized (MoSCoW) and traced to a source | Draft for review |
-| 4 | Feature list | Which user-visible capabilities do we ship, and in which release? | [04-feature-list.md](04-feature-list.md) | every feature maps to requirements; every Must requirement maps to a feature | Draft for review |
-| 5 | Use cases | How does each actor reach each goal, including failures? | [05-use-cases.md](05-use-cases.md) | use case diagrams plus a fully dressed use case for every actor goal, with extensions | Draft for review |
-| 6 | UML models | What are the concepts, components, deployments, interactions and states? | [06-uml.md](06-uml.md) | domain, component, deployment, class, sequence, state, activity and ER diagrams, all rendering without errors | Draft for review |
-| 7 | Architecture and decisions | How is it structured, and why this way? | [07-architecture.md](07-architecture.md) | architectural drivers, views, data model, protocols, capacity estimate, ADRs | Draft for review |
-| 8 | Security and threat model | What can go wrong on purpose? | [08-security.md](08-security.md) | STRIDE per trust boundary, with mitigations mapped to requirements | Draft for review |
-| 9 | Risks | What can go wrong by accident? | [09-risks.md](09-risks.md) | each risk has likelihood, impact, owner, mitigation and trigger | Draft for review |
-| 10 | Verification and test plan | How will we know each requirement is met? | [10-test-plan.md](10-test-plan.md) | test levels, environments, acceptance criteria, and a test approach per requirement | Draft for review |
-| 11 | Traceability and gap analysis | Is everything covered, and how does the existing code measure up? | [11-traceability.md](11-traceability.md) | requirement → use case → design → test matrix; gaps listed and prioritized | Draft for review |
-| 12 | Project plan | In what order do we build it, and when are we done? | [12-project-plan.md](12-project-plan.md) | work breakdown, milestones, Definition of Ready/Done, change control | Draft for review |
-| — | Glossary | What do the words mean? | [13-glossary.md](13-glossary.md) | every domain term used in the package is defined | Draft for review |
-| 14 | Cross-check against the article | Does every word of the article land somewhere, and does every claim attributed to it match it exactly? | [14-article-crosscheck.md](14-article-crosscheck.md) | every sentence mapped; every term reviewed; every quote, number and section citation verified; discrepancies fixed | Done (this pass) |
+| 1 | Vision and scope | Why build this, for whom, and what is out of scope? | [01-vision-and-scope.md](01-vision-and-scope.md) | problem, goals, measurable success criteria, non-goals, constraints and assumptions agreed | Approved (M0) |
+| 2 | Stakeholders and actors | Who uses, operates, funds or is affected by it? | [02-stakeholders-and-actors.md](02-stakeholders-and-actors.md) | every actor has goals and a primary interface; no use case has an unnamed actor | Approved (M0) |
+| 3 | Requirements (SRS) | What must the system do, and how well? | [03-requirements.md](03-requirements.md) | every requirement is atomic, testable, prioritized (MoSCoW) and traced to a source | Approved (M0) |
+| 4 | Feature list | Which user-visible capabilities do we ship, and in which release? | [04-feature-list.md](04-feature-list.md) | every feature maps to requirements; every Must requirement maps to a feature | Approved (M0) |
+| 5 | Use cases | How does each actor reach each goal, including failures? | [05-use-cases.md](05-use-cases.md) | use case diagrams plus a fully dressed use case for every actor goal, with extensions | Approved (M0) |
+| 6 | UML models | What are the concepts, components, deployments, interactions and states? | [06-uml.md](06-uml.md) | domain, component, deployment, class, sequence, state, activity and ER diagrams, all rendering without errors | Approved (M0) |
+| 7 | Architecture and decisions | How is it structured, and why this way? | [07-architecture.md](07-architecture.md) | architectural drivers, views, data model, protocols, capacity estimate, ADRs | Approved (M0) |
+| 8 | Security and threat model | What can go wrong on purpose? | [08-security.md](08-security.md) | STRIDE per trust boundary, with mitigations mapped to requirements | Approved (M0) |
+| 9 | Risks | What can go wrong by accident? | [09-risks.md](09-risks.md) | each risk has likelihood, impact, owner, mitigation and trigger | Approved (M0) |
+| 10 | Verification and test plan | How will we know each requirement is met? | [10-test-plan.md](10-test-plan.md) | test levels, environments, acceptance criteria, and a test approach per requirement | Approved (M0) |
+| 11 | Traceability and gap analysis | Is everything covered, and how does the existing code measure up? | [11-traceability.md](11-traceability.md) | requirement → use case → design → test matrix; gaps listed and prioritized | Approved (M0) |
+| 12 | Project plan | In what order do we build it, and when are we done? | [12-project-plan.md](12-project-plan.md) | work breakdown, milestones, Definition of Ready/Done, change control | Approved (M0) |
+| — | Glossary | What do the words mean? | [13-glossary.md](13-glossary.md) | every domain term used in the package is defined | Approved (M0) |
+| 14 | Cross-check against the article | Does every word of the article land somewhere, and does every claim attributed to it match it exactly? | [14-article-crosscheck.md](14-article-crosscheck.md) | every sentence mapped; every term reviewed; every quote, number and section citation verified; discrepancies fixed | Approved (M0) |
 
 ## How to review
 

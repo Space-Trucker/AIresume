@@ -1,5 +1,10 @@
 # Scion: agent-scale source control
 
+> **Status: being rebuilt.** The design baseline in [`docs/design/`](docs/design/00-process.md) was approved
+> at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system is being rebuilt from the
+> baseline in milestones B1–B5. Progress is in [`docs/design/11-traceability.md`](docs/design/11-traceability.md).
+> The sections below describe the target system.
+
 A working implementation of the system described in Anthropic's engineering post
 [*Redesigning source control at Anthropic*](https://www.anthropic.com/engineering/redesigning-source-control).
 It includes the version control system (Scion), the code review and landing tool (Antique), code

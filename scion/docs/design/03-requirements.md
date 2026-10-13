@@ -37,7 +37,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-OBJ-01 | All source-control data is content-addressed and immutable. | M | §Scaling Scion | Rewriting stored bytes is detected as an integrity failure. |
 | FR-OBJ-02 | Objects are stored individually and compressed. There are no packfiles. | M | §Principles: horizontally scalable | The storage layout has one entry per object. |
 | FR-OBJ-03 | No server, cache or client needs repository maintenance (gc, repack). | M | §Principles; §Scaling Scion | No maintenance command exists or is needed. Bounded stores evict on their own. |
-| FR-OBJ-04 | Any consumer can verify an object's integrity from its id alone. | M | Derived (AS-05). Not stated in the article; kept because a hash check is cheap. Flagged for review in light of the article's warning about over-defensive validation (cross-check A135). | A tampered object is rejected by the daemon and the client. |
+| FR-OBJ-04 | Any consumer can verify an object's integrity from its id alone. | M | Derived (AS-05). Not stated in the article. *Kept by decision at M0 (decision 3)*: a hash check is cheap, and it catches corrupted or tampered cache data. | A tampered object is rejected by the daemon and the client. |
 | FR-OBJ-05 | No component holds a fully materialized copy of the repository, not even the server. | M | §Principles: horizontally scalable | Trees are built on demand from changesets; no full working copy exists on the server. |
 
 ### FR-DD Derived data
@@ -268,7 +268,7 @@ means the requirement is engineering analysis needed to make an article statemen
 | BR-03 | Comment-only and docs-only changes may need fewer approvals than logic changes, as configured. |
 | BR-04 | Only the landing service and administrators move `main`; only release managers move `release/*`. |
 | BR-05 | Restricted content is never stored by shared caches. |
-| BR-06 | A changeset's history and blame follow its first parent (footnote 1), except for lines or files taken verbatim from another parent. **The exception goes beyond the article**, which calls first-parent storage "a stylistic choice" and says people "only care about history or blame for commits on the main line". It is kept because it costs nothing at write time; flagged for review. |
+| BR-06 | A changeset's history and blame follow its first parent only (footnote 1). Lines and files that a merge brings in are attributed to the merge changeset itself, as the article describes ("people only care about history or blame for commits on the main line"). *Decided at M0 (decision 4): main line only.* |
 
 ## 3.4 External interfaces
 

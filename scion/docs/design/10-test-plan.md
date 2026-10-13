@@ -93,15 +93,31 @@
 | T-SR-01 | FR-SR-01/02, FR-DD-12 | bloom pruning; grep | test_ops |
 | T-AUT-01 | FR-AUT-01 | bisect without checkout | test_ops |
 | T-AUT-02 | FR-AUT-02, FR-LD-06 | revert pipeline under contention | test_ops |
+| T-CORE-10 | FR-CS-09, NFR-05 | one-file commit time is flat (±25%) across 10² and 10⁴ files (asserted) | test_core |
+| T-DD-07 | FR-DD-06 | backfilling a deferred type computes it for a revision and all ancestors | test_core |
+| T-DD-08 | BR-06 | history and blame follow the first parent only; merge-introduced lines belong to the merge | test_core |
+| T-MR-01 | FR-IAM-02, ADR-13 | two repositories with different policies on one deployment; caches key by repository; a private repository's objects are never cached | test_multirepo |
+| T-TLS-01 | NFR-20, ADR-14 | TLS on every TCP hop; mutual TLS identifies tiers; plaintext and wrong certificates are refused | test_tls |
+| T-LIM-01 | FR-WR-07 | an oversized upload gets 413 and stores nothing | test_ops |
+| T-CL-13 | FR-FP-03 | an interrupted clone resumes in place and reuses received objects | test_client |
+| T-IAM-09 | FR-IAM-01 | repository-level read restriction, through the API and through the caches | test_iam |
+| T-IAM-10 | FR-IAM-09 | re-indexing ACLs after a policy change restricts existing objects | test_iam |
+| T-AUD-01 | FR-IAM-10, ADR-15 | policy loads, denials and admin actions are audited; the hash chain verifies and detects tampering | test_iam |
+| T-REF-01 | FR-REF-05 | release branches: created by the release role only, moved by CAS, logged | test_iam |
+| T-ADM-01 | FR-AD-05 | admin ref operations run as an explicit identity and respect protections | test_ops |
+| T-BAK-01 | FR-AD-06, NFR-13 | backup then restore reproduces refs, changesets and objects | test_ops |
+| T-RV-07 | FR-RV-09, ADR-17 | approve, comment (inline) and land from the web UI; CSRF enforced | test_antique |
+| T-RV-08 | FR-RV-10 | CR events reach a notification webhook | test_antique |
+| T-LD-03 | FR-LD-01, D-02 | a CR shows `landing` while queued | test_antique |
+| T-PM-02 | FR-PM-01, D-01 | concurrent workers claim every job exactly once | test_antique |
+| T-SR-02 | FR-SR-03, ADR-16 | indexed content search reads only candidate blobs and matches a full scan | test_ops |
+| T-OPS-03 | FR-OP-05 | superfan findings are delivered to a webhook | test_ops |
+| T-OPS-04 | FR-OP-08, ADR-18 | superfans read component logs and attach them to findings | test_ops |
+| T-MG-04 | FR-MG-04 | ingestion memory stays flat as history grows | test_ingest |
 | T-E2E-01 | system | multi-process demo including git ingestion | examples/demo.sh |
 | T-PERF-01 | NFR-05/06, FR-OP-07 | benchmarks | scion-admin bench |
 | T-DOC-01 | 06 | all diagrams render (`mmdc`) | doc check: run for this baseline; the script is committed with WP-03 after M0 |
 | T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; coverage counts in 11.3 | doc check: run for this baseline; the script is committed with WP-03 after M0 |
-
-**Test cases still to write** (they are on the gap list in [11](11-traceability.md)): automated
-commit-scaling assertion (FR-CS-09), derived backfill (FR-DD-06), repository-level read
-restriction (FR-IAM-01), ACL re-index (FR-IAM-09), concurrent post-merge claim (FR-PM-01),
-ingestion memory bound (FR-MG-04), webhook delivery (FR-OP-05), release-branch workflow (FR-REF-05).
 
 ## 10.5 Entry and exit criteria
 

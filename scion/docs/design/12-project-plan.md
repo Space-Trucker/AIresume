@@ -4,73 +4,56 @@
 
 | Phase | Goal | Exit milestone | Status |
 |---|---|---|---|
-| Inception | vision, scope, stakeholders | M0a: 01–02 approved | awaiting review |
-| Elaboration | requirements, use cases, UML, architecture, risks, test plan, traceability | **M0: design baseline approved** (01–13 signed off) | awaiting review |
-| Construction | close the gap list, one traced work item at a time | M1–M3 | not started (code frozen until M0) |
+| Inception | vision, scope, stakeholders | M0a: 01–02 approved | approved 2026-10-13 |
+| Elaboration | requirements, use cases, UML, architecture, risks, test plan, traceability, article cross-check | **M0: design baseline approved** | approved 2026-10-13, with the decisions in 12.7 |
+| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B5 | in progress |
 | Transition | migration pilot, cut-over, operations | M4–M5 | not started |
 
-> **Note on order.** A prototype was built before elaboration. Its code is treated as a spike:
-> it is kept, but it is measured against this baseline (11) and changes only through the gap list
-> below.
+> **Note on order.** A prototype was built before elaboration. At M0 the project lead decided to
+> delete it and rebuild from this baseline (decision 2). It stays in git history (commits
+> `31ab393`–`5914fad`), and its lessons are carried forward as findings D-01 to D-04 (11 §11.4).
 
-## 12.2 Work breakdown (remaining work)
+## 12.2 Work breakdown
 
-Estimates are in ideal engineering days for one engineer working with an agent.
+Each work package (WP) lists the requirements it delivers and the tests that prove them (10 §10.4).
+A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 
-| WP | Gap / item | Work | Requirements | Estimate |
+| WP | Milestone | Work | Requirements | Tests |
 |---|---|---|---|---|
-| WP-01 | GAP-01 | resumable checkout | FR-FP-03 | 1 |
-| WP-02 | GAP-02 | admin ref operations with an explicit identity and protections | FR-AD-05 | 0.5 |
-| WP-03 | GAP-03 | missing acceptance tests for Musts, plus the D-01 fix | FR-CS-09, FR-IAM-01, FR-MG-04, FR-PM-01 | 1.5 |
-| WP-04 | GAP-04 | TLS/mTLS between tiers and for clients | NFR-20 | 2 |
-| WP-05 | GAP-05 | audit log (policy, denials, admin actions) | FR-IAM-10 | 1.5 |
-| WP-06 | GAP-06 | multi-repository hosting | FR-IAM-02 | 3 |
-| WP-07 | GAP-07 | backup and restore | FR-AD-06 | 1.5 |
-| WP-08 | GAP-08 | per-file upload limit | FR-WR-07 | 0.5 |
-| WP-09 | GAP-09 | trigram content index (a derived type) | FR-SR-03 | 3 |
-| WP-10 | GAP-10 | interactive review UI with inline comments | FR-RV-09 | 3 |
-| WP-11 | GAP-11 | release-branch command and test | FR-REF-05 | 0.5 |
-| WP-12 | GAP-12 | remaining test gaps | FR-DD-06, FR-IAM-09, FR-OP-05 | 1 |
-| WP-13 | GAP-13 | reviewer notifications | FR-RV-10 | 1 |
-| WP-14 | D-02 | decide: a `Landing` CR state, or amend the design | — | 0.5 |
-| WP-15 | — | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | 10+ (needs infrastructure) |
+| WP-B1.1 | B1 | objects, storage, metadata store | FR-OBJ-01…05, FR-CS-03 | T-CORE-01/02 |
+| WP-B1.2 | B1 | changesets, refs, revisions | FR-CS-01…08, FR-REF-01/02/04 | T-CORE-03…07 |
+| WP-B1.3 | B1 | incremental trees and diffs | FR-CS-09, FR-QRY-03, NFR-05 | T-CORE-08/09/10 |
+| WP-B1.4 | B1 | derived-data engine and the six types (main-line history and blame) | FR-DD-01…12, BR-06 | T-DD-01…08, T-FUZZ-01 |
+| WP-B1.5 | B1 | queries, ancestry, merge, rebase, revert | FR-QRY-01…09, FR-WR-02…04, NFR-06, NFR-12 | T-DD-06, T-WR-01, T-FUZZ-01 |
+| WP-B2.1 | B2 | RPC layer, deployment of many repositories, TLS and mutual TLS, rate limiting | FR-IAM-02, FR-IAM-07/08, FR-OP-01/02/06, NFR-20 | T-MR-01, T-TLS-01, T-OPS-01 |
+| WP-B2.2 | B2 | server API and checkout-less writes; upload limit | FR-QRY-10, FR-WR-01/05/06/07 | T-CL-10, T-LIM-01 |
+| WP-B2.3 | B2 | object protocol, daemon, cache, snapshots, strict tiering | FR-FP-01…07, FR-TIER-01…11 | T-TIER-01…08 |
+| WP-B2.4 | B2 | `scn` client: full, sparse, virtual; resumable clone; fsmonitor; CLI | FR-CL-01…12, FR-FP-03 | T-CL-01…13 |
+| WP-B3.1 | B3 | IAM: repository and directory rules, protected refs, release branches, re-index, audit log | FR-IAM-01/03…06/09…11, FR-REF-03/05, FR-AD-05, NFR-10 | T-IAM-01…10, T-AUD-01, T-REF-01, T-ADM-01 |
+| WP-B3.2 | B3 | Antique: change requests, classification, semantic rules | FR-RV-01…08 | T-RV-01…06 |
+| WP-B3.3 | B3 | landing: group commit, `landing` state, conflicts, landing index | FR-LD-01…07 | T-LD-01…03, T-SIM-01 |
+| WP-B3.4 | B3 | interactive review UI and notifications | FR-RV-09/10 | T-RV-07/08 |
+| WP-B4.1 | B4 | git ingestion | FR-MG-01…07 | T-MG-01…04 |
+| WP-B4.2 | B4 | post-merge testing, deploy gate, bisect, revert pipeline | FR-PM-01…05, FR-AUT-01/02 | T-PM-01/02, T-AUT-01/02 |
+| WP-B4.3 | B4 | code search: path index, grep, content index | FR-SR-01…04 | T-SR-01/02 |
+| WP-B4.4 | B4 | superfans, alerts, logs; admin toolkit; backup and restore | FR-OP-03…05/07/08, FR-AD-01…04/06 | T-OPS-02…04, T-BAK-01, T-PERF-01 |
+| WP-B5.1 | B5 | system verification: stress, end to end, benchmarks, docs and traceability | NFR-01…04, NFR-13, NFR-15, NFR-17 | T-SIM-01, T-E2E-01, T-PERF-01, T-DOC-01/02 |
+| WP-X | later | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | needs infrastructure |
 
 ## 12.3 Milestones
 
 | Milestone | Contents | Exit criteria |
 |---|---|---|
-| **M0: design baseline** | documents 01–13 | approved by the project lead; open questions answered (12.7) |
-| **M1: every Must complete** | WP-01, WP-02, WP-03, WP-14 | every Must requirement has status **I** in 11; full suite plus 32×5 stress green |
-| **M2: production hardening** | WP-04, WP-05, WP-07, WP-08 | security requirements of 08 §8.4 closed; R-08 retired |
-| **M3: Shoulds** | WP-06, WP-09, WP-10, WP-11, WP-12, WP-13 | every Should is **I**; docs check (T-DOC-01/02) green |
-| **M4: migration pilot** | ingest a real repository; a metadata-only service for CI | verify reports zero mismatches; CI queries served from Scion |
-| **M5: cut-over** | daemons on the nodes, caches per region, landing through Antique | git becomes read-only; success criteria of 01 §1.7 measured |
+| **M0: design baseline** | documents 00–14 | approved 2026-10-13 (12.7) |
+| **B1: core** | WP-B1.* | B1 rows in 11 read **I**; core and fuzz tests green |
+| **B2: service and checkout** | WP-B2.* | B2 rows **I**; tier, client, multi-repository and TLS tests green |
+| **B3: security, review, landing** | WP-B3.* | B3 rows **I**; 32×5 stress simulation green |
+| **B4: migration, automation, operations** | WP-B4.* | B4 rows **I**; end-to-end demo green |
+| **B5: system verification** | WP-B5.1 | every requirement **I**, or **P** with a recorded reason; docs checks green |
+| **M4: migration pilot** | ingest a real repository; a metadata-only service for CI | verify reports zero mismatches |
+| **M5: cut-over** | daemons on the nodes, caches per region, landing through Antique | git becomes read-only; 01 §1.7 measured |
 
-```mermaid
-gantt
-  title Construction sequence (ideal days, illustrative)
-  dateFormat YYYY-MM-DD
-  axisFormat %d %b
-  section M0
-  Design review and approval      :m0, 2026-10-19, 2d
-  section M1 Musts
-  WP-14 Landing state decision     :w14, after m0, 1d
-  WP-02 Admin ref ops              :w2, after m0, 1d
-  WP-03 Must acceptance tests      :w3, after w2, 2d
-  WP-01 Resumable checkout         :w1, after w3, 1d
-  section M2 Hardening
-  WP-08 Upload limit               :w8, after w1, 1d
-  WP-05 Audit log                  :w5, after w8, 2d
-  WP-07 Backup and restore         :w7, after w5, 2d
-  WP-04 TLS and mTLS               :w4, after w7, 2d
-  section M3 Shoulds
-  WP-11 Release branches           :w11, after w4, 1d
-  WP-12 Remaining tests            :w12, after w11, 1d
-  WP-06 Multi-repository           :w6, after w12, 3d
-  WP-09 Content index              :w9, after w6, 3d
-  WP-10 Review UI                  :w10, after w9, 3d
-  WP-13 Notifications              :w13, after w10, 1d
-```
+Each milestone ends with a commit and push, and an update to 11 §11.3.
 
 ## 12.4 Definition of Ready (a work item may start when)
 
@@ -102,12 +85,16 @@ gantt
   rejected in review.
 * **Code changes without a work item:** not allowed after M0, except fixes for severity-1 defects, which get a work item retroactively within the day.
 
-## 12.7 Open questions for the project lead (needed for M0)
+## 12.7 Decisions at M0 (2026-10-13)
 
-1. **Scope.** Is the gap list's priority right? In particular, should multi-repository hosting (FR-IAM-02) be a Must?
-2. **D-02.** Should a change request show a `Landing` state while it is queued (UI clarity), or should the design drop that state?
-3. **Production intent.** Is this a reference implementation for study, or is M2 (hardening) in scope? This decides whether WP-04, WP-05 and WP-07 are needed at all.
-4. **Code.** Should the prototype be kept as the construction baseline (recommended), or removed and rebuilt from this package?
+| # | Question | Decision |
+|---|---|---|
+| 1 | What is the project for? | **Everything in the plan**: required items, production hardening (TLS, audit, backup, upload limits) and every Should (multiple repositories, content index, interactive review UI, notifications, superfan logs) |
+| 2 | Keep the prototype code or rebuild? | **Delete and rebuild** from this baseline |
+| 3 | Keep hash verification of every object (FR-OBJ-04)? | **Keep** |
+| 4 | Blame through merges (BR-06)? | **Main line only**, as the article describes (ADR-19) |
+| 5 | Is multi-repository hosting a Must? | stays **Should**, and is in scope through decision 1 (default, not objected to) |
+| 6 | D-02: a `landing` CR state? | **Yes**, as designed (default, not objected to) |
 
 ## 12.8 Roles
 

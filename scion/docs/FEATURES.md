@@ -1,5 +1,9 @@
 # Feature map: "Redesigning source control at Anthropic" → this implementation
 
+> The prototype this map pointed to was deleted at M0 (see `design/12-project-plan.md` §12.7). The rebuild
+> follows the same module layout. This map is re-verified against the rebuilt code at milestone B5. The
+> authoritative trace is `design/11-traceability.md`.
+
 Every claim in the article that describes *what the system does* is listed here with an ID,
 and mapped to the code that implements it. Claims that are about Anthropic's organization,
 scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are

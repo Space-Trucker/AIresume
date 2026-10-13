@@ -21,6 +21,9 @@ statuses:
 - `X-Scion-On-Behalf-Of`: lets a service principal pass along the end user's identity, whose
   permissions then apply.
 
+**Repositories (ADR-13).** One deployment hosts many repositories. Every RPC below and the object
+protocol take a `repo` parameter that names the repository (the CLI reads it from the working copy).
+
 **Revisions.** Any `rev` accepts a ref name, a full changeset id, a unique id prefix of at least
 4 hex characters, and `~N` (first-parent ancestor) and `^N` (Nth parent) suffixes, for example
 `main~3` or `3fa2c9^2`.

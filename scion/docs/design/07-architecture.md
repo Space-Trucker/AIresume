@@ -79,6 +79,11 @@ Deployment diagram: [6.3](06-uml.md#63-deployment).
 
 ## 7.6 Data view
 
+**Repositories (ADR-13).** A deployment root holds `repos/<name>/` directories, each with
+`objects/`, `meta.db` and `policy.json`. A server serves every repository under its root. RPC
+parameters and the object protocol carry `repo`; working copies record which repository they
+belong to.
+
 **Object identity:** `id = sha256(type || 0x00 || payload)`. Objects are stored as
 `zlib(type || 0x00 || payload)`, which is exactly what crosses the wire.
 
@@ -111,7 +116,7 @@ with `id = sha256("changeset\0" || json)`.
 * **RPC:** `POST /rpc/<method>`, JSON in and out; error envelope `{error: {code, message, data}}`;
   stable HTTP statuses 400/401/403/404/409/429/500.
 * **Identity headers:** `X-Scion-User`, `Authorization: Bearer`, `X-Scion-Tier`, `X-Scion-On-Behalf-Of`.
-* **Objects:** `get_objects {ids}` returns repeated `[32B id][1B flags][4B len][stored bytes]`.
+* **Objects:** `get_objects {repo, ids}` returns repeated `[32B id][1B flags][4B len][stored bytes]`.
   The flags are RESTRICTED, MISSING and DENIED.
 * **Daemon transport:** the same HTTP over a Unix domain socket.
 * Full reference: [../API.md](../API.md).
@@ -176,3 +181,10 @@ down, owned by humans and changed only by superseding them (12 §12.6).
 | ADR-10 | SQLite (WAL) and a directory stand in for Spanner and blob storage | prototype; CON-01/02 | single host; interfaces kept narrow for a swap | embedding a distributed store |
 | ADR-11 | Python standard library only | CON-01; reviewable, portable | slower than a compiled implementation | adding dependencies (gRPC, FUSE, RocksDB) |
 | ADR-12 | Generation numbers plus first-parent skip lists for ancestry | O(log n) queries on very long histories | an extra derived row per changeset | BFS over parents; reachability bitmaps |
+| ADR-13 | Multi-repository hosting: one deployment hosts many named repositories, each with its own storage namespace and policy; every RPC and object request names its repository; caches key objects by (repository, id); objects of a repository whose repository-level read is not open to everyone are flagged restricted | FR-IAM-01/02; caches cannot evaluate repository-level read rules | private repositories bypass shared caching (always re-authorized at the server); public bytes are cached per repository | sharing objects across repositories in caches (leaks private bytes by id); per-user caches |
+| ADR-14 | TLS for every TCP endpoint (stdlib `ssl`); mutual TLS between tiers, where the client certificate's common name is the service principal; users authenticate with bearer tokens over TLS; the daemon's Unix socket relies on file permissions | NFR-20; threats S1, S2, I6 | certificates to manage; dev mode can still run plaintext on localhost | trusting the network |
+| ADR-15 | Hash-chained, append-only audit log per repository (policy loads, denials, admin actions, force-lands, releases, backups) with an RPC to read and verify it | FR-IAM-10; threats R1, R2 | tampering with the history is detectable by verifying the chain | plain log files |
+| ADR-16 | Content search via a deferred derived index of trigram → blob postings over newly seen text blobs; a query intersects the postings of its literal trigrams, walks the tree under the path prefix, and reads only candidate blobs | FR-SR-03; grep cost should not be "read every file" | an index row per (blob, trigram); regexes without a 3-character literal fall back to a scan | an external search engine (violates CON-01) |
+| ADR-17 | Interactive review UI as server-rendered HTML forms with a session cookie and a per-session CSRF token, calling the same Antique code paths as the RPCs | FR-RV-09; standard library only | no client-side framework; page reloads per action | a separate web application |
+| ADR-18 | Reviewer notifications and component logs as small built-in mechanisms: webhooks with retry on CR events; an in-memory ring buffer of structured warnings and errors per component, exposed at `GET /logs` for superfans | FR-RV-10, FR-OP-08 | best-effort delivery; logs are recent-only | external queues and log stacks |
+| ADR-19 | History and blame follow the first parent only, merges included (BR-06, decided at M0) | footnote 1; decision 4 | lines brought in by a merge are attributed to the merge | crediting the other parent's authors (rejected at M0) |

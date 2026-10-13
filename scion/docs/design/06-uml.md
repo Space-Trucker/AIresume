@@ -21,8 +21,18 @@ Every diagram is Mermaid. All of them are rendered with `mmdc` before commit (se
 ```mermaid
 classDiagram
   direction LR
+  class Deployment {
+    root
+  }
   class Repository {
     name
+  }
+  class AuditEvent {
+    seq
+    actor
+    action
+    target
+    hash
   }
   class Changeset {
     id : ChangesetId
@@ -117,6 +127,8 @@ classDiagram
     created
   }
 
+  Deployment "1" *-- "*" Repository
+  Repository "1" *-- "*" AuditEvent
   Repository "1" *-- "*" Changeset
   Repository "1" *-- "*" Ref
   Repository "1" *-- "1" Policy
@@ -958,6 +970,20 @@ erDiagram
     int cr FK
     string ref
     float landed_at
+  }
+  AUDIT {
+    int seq PK
+    float at
+    string actor
+    string action
+    string target
+    string detail
+    string prev_hash
+    string hash
+  }
+  CONTENT_TRIGRAMS {
+    string trigram PK
+    string blob PK
   }
   POSTMERGE {
     int id PK

@@ -43,7 +43,7 @@ The article was re-downloaded for this check. The page HTML is byte-identical to
 - 02: GitHub, GitLab and the OSS community as named ecosystem partners. 08: 'safety, security, and compliance'. 13: refs are 'pointers to commits, such as branches and tags'.
 - 12 §12.5/§12.6/§12.8: the process lessons. Engineers tell agents 'no'; agents may violate core constraints (the linear commit-log scan example); adversarial review can be myopic and must not drive over-engineering; reviewers examine intent rather than every line.
 
-**Items flagged for your decision**
+**Items flagged for your decision** (decided at M0, see 12 §12.7: FR-OBJ-04 kept; BR-06 changed to main line only)
 - **FR-OBJ-04** (hash verification at the daemon and client) is not stated in the article. Given the article's warning about over-defensive validation (A135), it is flagged; it is kept because a hash check is cheap.
 - **BR-06** goes beyond footnote 1: lines and files taken verbatim from another parent keep their original history. The article calls first-parent storage 'a stylistic choice' and says people only care about main-line history.
 - **Partial items:** distributed data (A053, single-host metadata store in the prototype), lower CPU than git servers (A094, not measured), resumability (A098, GAP-01), superfans as Claude agents in Slack (A148–A149, out of scope), and superfan access to logs (A152, new FR-OP-08, GAP-14).
