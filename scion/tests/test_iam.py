@@ -1,8 +1,11 @@
-"""IAM tests. B2: token authentication (T-IAM-08) and delegation by service principals (FR-IAM-08)."""
+"""IAM: tokens and delegation (B2); directory permissions, refs, re-indexing and audit (B3)."""
 import base64
+import json
+import os
 import shutil
 import tempfile
 import unittest
+import zlib
 
 import helpers  # noqa: F401
 from helpers import REPO, Cluster
@@ -57,6 +60,275 @@ class TestTokens(unittest.TestCase):
         with self.assertRaises(RemoteError) as e:
             self.c.client("alice", token="alice-plain").get_objects(REPO, [oid], on_behalf="bob")
         self.assertEqual(e.exception.status, 403)
+
+
+# ================================================================================================ B3
+POLICY = {"read": ["*"], "write": ["*"],
+          "paths": [{"prefix": "secrets", "read": ["sec-team"], "write": ["sec-team"]},
+                    {"prefix": "secrets/public", "read": ["*"]},
+                    {"prefix": "infra", "write": ["sre"]}],
+          "protected_refs": {"main": ["antique", "maintainers"], "release/*": ["release-managers"]}}
+IDENTITY = {"groups": {"sec-team": ["sam"], "sre": ["sally"], "maintainers": ["mona"], "release-managers": ["rita"]},
+            "admins": ["root"]}
+SECRET = "TOP-SECRET-KEY"
+
+
+def b64(s: str) -> str:
+    return base64.b64encode(s.encode()).decode()
+
+
+class DirectoryTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="scion-iam3-")
+        self.c = Cluster(self.tmp, repos={REPO: POLICY}, identity=IDENTITY)
+        self.seed = self.commit("root", None, {"src/app.py": "print('app')\n", "secrets/key.txt": SECRET + "\n",
+                                               "secrets/public/readme.txt": "public inside secrets\n",
+                                               "infra/deploy.sh": "deploy\n"}, move_main=True)
+        self.wcs = []
+
+    def tearDown(self):
+        for wc in self.wcs:
+            wc.close()
+        self.c.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def call(self, user, method, **params):
+        return self.c.client(user).call(method, repo=REPO, **params)
+
+    def commit(self, user, parent, files, move_main=False, **extra):
+        params = {"parents": [parent] if parent else [], "message": "m", **extra,
+                  "files": [{"path": p, "content_b64": b64(c)} for p, c in files.items()]}
+        if move_main:
+            params["update_ref"] = {"name": "main", "old": parent}
+        r = self.call(user, "create_changeset", **params)
+        if move_main:
+            self.assertTrue(r["ref_updated"])
+        return r["id"]
+
+    def clone(self, name, user, **kw):
+        from scion.client import WorkingCopy
+        wc = WorkingCopy.clone(os.path.join(self.tmp, name), self.c.server_urls[0], REPO,
+                               objects=self.c.daemon_urls[0], user=user, **kw)
+        self.wcs.append(wc)
+        return wc
+
+    def files(self, wc):
+        out = set()
+        for dp, dns, fns in os.walk(wc.root):
+            dns[:] = [d for d in dns if d != ".scn"]
+            out.update(os.path.relpath(os.path.join(dp, f), wc.root) for f in fns)
+        return out
+
+    def denied(self, fn):
+        with self.assertRaises(RemoteError) as e:
+            fn()
+        self.assertEqual(e.exception.status, 403)
+        return e.exception
+
+
+class TestDirectoryPermissions(DirectoryTest):
+    def test_T_IAM_01_clone_skips_unreadable_directories(self):
+        bob = self.clone("bob", "bob")
+        self.assertEqual(self.files(bob), {"src/app.py", "infra/deploy.sh", "secrets/public/readme.txt"})
+        self.assertFalse(bob.status().dirty)
+        sam = self.clone("sam", "sam")
+        self.assertEqual(self.files(sam), {"src/app.py", "infra/deploy.sh", "secrets/public/readme.txt",
+                                           "secrets/key.txt"})
+        with open(os.path.join(sam.root, "secrets/key.txt")) as f:
+            self.assertEqual(f.read(), SECRET + "\n")
+
+    def test_T_IAM_02_public_bytes_stay_public_in_both_orders(self):
+        daemon = lambda user: self.c.client(user, url=self.c.daemon_urls[0])  # noqa: E731
+        first_secret = self.commit("sam", self.seed, {"secrets/a.txt": "shared bytes one\n"})
+        oid_a = blob_id(b"shared bytes one\n")
+        self.assertEqual(daemon("bob").get_objects(REPO, [oid_a])[0][1], F_DENIED)
+        self.commit("alice", first_secret, {"src/a.txt": "shared bytes one\n"})  # the same bytes, now public
+        self.assertEqual(daemon("bob").get_objects(REPO, [oid_a])[0][1], 0)
+        first_public = self.commit("alice", self.seed, {"src/b.txt": "shared bytes two\n"})
+        self.commit("sam", first_public, {"secrets/b.txt": "shared bytes two\n"})
+        self.assertEqual(daemon("bob").get_objects(REPO, [blob_id(b"shared bytes two\n")])[0][1], 0)
+
+    def test_T_IAM_03_every_read_path_is_filtered(self):
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))
+        self.denied(lambda: self.call("bob", "blame", rev="main", path="secrets/key.txt"))
+        self.denied(lambda: self.call("bob", "file_history", rev="main", path="secrets/key.txt"))
+        self.denied(lambda: self.call("bob", "log", rev="main", path="secrets/key.txt"))
+        self.assertEqual([e["name"] for e in self.call("bob", "list_dir", rev="main", path="secrets")], ["public"])
+        self.assertIn("secrets", [e["name"] for e in self.call("bob", "list_dir", rev="main", path="")])
+        self.assertEqual(self.call("bob", "search_paths", rev="main", query="key")["paths"], [])
+        self.assertEqual(self.call("sam", "search_paths", rev="main", query="key")["paths"], ["secrets/key.txt"])
+        cs = self.call("bob", "get_changeset", rev=self.seed)
+        self.assertNotIn("secrets/key.txt", [c["path"] for c in cs["changes"]])
+        self.assertIn("secrets/public/readme.txt", [c["path"] for c in cs["changes"]])
+        d = self.call("bob", "diff", b=self.seed, text=True)
+        self.assertNotIn("secrets/key.txt", [f["path"] for f in d["files"]])
+        # NFR-10: no response to bob contains the secret, whichever read path he tries
+        responses = [self.call("bob", m, **p) for m, p in (
+            ("get_changeset", {"rev": "main"}), ("diff", {"b": "main", "text": True}), ("log", {"rev": "main"}),
+            ("list_dir", {"rev": "main", "path": "secrets"}), ("search_paths", {"rev": "main", "query": "secret"}),
+            ("get_changesets", {"ids": [self.seed]}))]
+        self.assertNotIn(SECRET, json.dumps(responses))
+        self.assertIn(SECRET, json.dumps(self.call("sam", "diff", b="main", text=True)))
+
+    def test_T_IAM_04_restricted_objects_through_every_tier(self):
+        sam = self.clone("sam", "sam")
+        repo = self.c.repo()
+        secret_blob = blob_id((SECRET + "\n").encode())
+        secret_tree = repo.lookup(repo.resolve("main"), "secrets")[1]
+        daemon = self.c.daemon_services[0].source
+        cache = self.c.cache_services[0].source
+        for oid in (secret_blob, secret_tree):
+            self.assertFalse(daemon.store.has(f"{REPO}/{oid}"), "the daemon must not keep restricted objects")
+            self.assertFalse(cache.store.has(f"{REPO}/{oid}"), "the cache must not keep restricted objects")
+            self.assertIn(f"{REPO}/{oid}", cache.restricted)
+        self.assertTrue(cache.store.has(f"{REPO}/{blob_id(b'public inside secrets' + bytes([10]))}"))
+        bob_view = self.c.client("bob", url=self.c.daemon_urls[0]).get_objects(REPO, [secret_blob, secret_tree])
+        self.assertEqual([f for _, f, _ in bob_view], [F_DENIED, F_DENIED])
+        sam_view = self.c.client("sam", url=self.c.daemon_urls[0]).get_objects(REPO, [secret_blob])
+        self.assertEqual(sam_view[0][1], F_RESTRICTED)
+        self.assertGreater(cache.counters["restricted_passthrough"], 0)
+        stored = b""
+        for dp, _, fs in os.walk(os.path.join(self.tmp, "daemon0")):
+            for name in fs:
+                with open(os.path.join(dp, name), "rb") as f:
+                    stored += zlib.decompress(f.read())
+        self.assertNotIn(SECRET.encode(), stored)
+
+    def test_T_IAM_11_restricted_bytes_can_be_committed_by_someone_who_has_them(self):
+        secret_blob = blob_id((SECRET + "\n").encode())
+        # without the bytes, a restricted object can't be republished by its id
+        self.denied(lambda: self.call("bob", "create_changeset", parents=[self.seed], message="m",
+                                      files=[{"path": "src/leak.txt", "blob": secret_blob}]))
+        # with them (an identical file, or an empty one), the client's upload proves possession
+        bob = self.clone("bob", "bob")
+        with open(os.path.join(bob.root, "src/same.txt"), "w") as f:
+            f.write(SECRET + "\n")
+        cs = bob.commit("bob has the same bytes", addremove=True)
+        self.assertEqual(self.call("bob", "get_changeset", rev=cs)["changes"][0]["blob"], secret_blob)
+        self.assertEqual(self.c.client("bob", url=self.c.daemon_urls[0]).get_objects(REPO, [secret_blob])[0][1], 0)
+
+    def test_T_IAM_12_snapshots_leave_out_restricted_objects(self):
+        from scion.snapshot import create_snapshot, load_snapshot
+        from scion.storage import MemoryObjectStore
+        out = os.path.join(self.tmp, "snaps")
+        pointer = create_snapshot(self.c.repo(), "main", out)
+        store = MemoryObjectStore()
+        load_snapshot(os.path.join(out, pointer["file"]), store, REPO)
+        repo = self.c.repo()
+        secret_tree = repo.lookup(repo.resolve("main"), "secrets")[1]
+        public_tree = repo.lookup(repo.resolve("main"), "secrets/public")[1]
+        self.assertFalse(store.has(f"{REPO}/{blob_id((SECRET + chr(10)).encode())}"))
+        self.assertFalse(store.has(f"{REPO}/{secret_tree}"))
+        self.assertFalse(store.has(f"{REPO}/{public_tree}"), "beneath a restricted tree: not reachable by walking")
+        self.assertTrue(store.has(f"{REPO}/{blob_id(b'deploy' + bytes([10]))}"))
+
+    def test_T_IAM_05_write_permissions(self):
+        before = self.c.repo().meta.count_changesets()
+        self.commit("bob", self.seed, {"src/x.py": "x\n"})
+        for user, path in (("bob", "secrets/x"), ("bob", "infra/x"), ("sam", "infra/x"), ("sally", "secrets/x")):
+            with self.subTest(user=user, path=path):
+                self.denied(lambda: self.commit(user, self.seed, {path: "x\n"}))
+        self.commit("sally", self.seed, {"infra/x": "x\n"})
+        self.commit("sam", self.seed, {"secrets/x": "x\n"})
+        self.assertEqual(self.c.repo().meta.count_changesets(), before + 3)
+
+    def test_T_IAM_06_protected_refs(self):
+        head = self.commit("alice", self.seed, {"src/x.py": "x\n"})
+        self.denied(lambda: self.call("alice", "update_ref", name="main", old=self.seed, new=head))
+        self.assertTrue(self.call("mona", "update_ref", name="main", old=self.seed, new=head))  # a maintainer
+        self.assertTrue(self.call("root", "update_ref", name="main", old=head, new=self.seed))  # an administrator
+        self.assertTrue(self.call("alice", "update_ref", name="feature/x", old=None, new=head))  # unprotected
+
+    def test_T_IAM_07_the_author_cannot_be_spoofed(self):
+        self.denied(lambda: self.commit("alice", self.seed, {"src/y.py": "y\n"}, author="bob"))
+        mine = self.commit("alice", self.seed, {"src/y.py": "y\n"})
+        self.assertEqual(self.call("alice", "get_changeset", rev=mine)["author"], "alice")
+        for privileged in ("root", "postmerge"):
+            cs = self.commit(privileged, self.seed, {"src/z.py": privileged + "\n"}, author="bob")
+            self.assertEqual(self.call("alice", "get_changeset", rev=cs)["author"], "bob")
+
+    def test_T_IAM_09_repository_level_read_restriction(self):
+        dep = self.c.deployment
+        dep.create_repo("private-repo", {"read": ["alice"], "write": ["alice"]})
+        alice, bob = self.c.client("alice"), self.c.client("bob")
+        cs = alice.call("create_changeset", repo="private-repo", parents=[], message="m",
+                        files=[{"path": "p.txt", "content_b64": b64("private\n")}],
+                        update_ref={"name": "main", "old": None})["id"]
+        for call in (lambda: bob.call("get_changeset", repo="private-repo", rev=cs),
+                     lambda: bob.call("create_changeset", repo="private-repo", parents=[cs], message="x", files=[])):
+            self.denied(call)
+        oid = blob_id(b"private\n")
+        daemon = lambda user: self.c.client(user, url=self.c.daemon_urls[0])  # noqa: E731
+        self.assertEqual(daemon("bob").get_objects("private-repo", [oid])[0][1], F_DENIED)
+        self.assertEqual(daemon("alice").get_objects("private-repo", [oid])[0][1], F_RESTRICTED)
+        self.assertFalse(any(k.startswith("private-repo/") for k in self.c.daemon_services[0].source.store.iter_ids()))
+
+
+class TestPolicyChanges(DirectoryTest):
+    def write_policy(self, policy):
+        path = os.path.join(self.c.dep_root, "repos", REPO, "policy.json")
+        with open(path + ".tmp", "w") as f:
+            json.dump(policy, f)
+        os.replace(path + ".tmp", path)
+
+    def test_T_IAM_10_reindexing_restricts_existing_objects(self):
+        plan = self.commit("alice", self.seed, {"classified/plan.txt": "the plan\n"}, move_main=False)
+        oid = blob_id(b"the plan\n")
+        as_cache = lambda user: self.c.client("scion-cache", tier="cache").get_objects(REPO, [oid], on_behalf=user)  # noqa: E731
+        self.assertEqual(as_cache("bob")[0][1], 0)
+        self.write_policy({**POLICY, "paths": POLICY["paths"] + [{"prefix": "classified", "read": ["sec-team"]}]})
+        # the new rule applies to paths at once (FR-IAM-06), but existing objects need a re-index (R-07)
+        self.denied(lambda: self.call("bob", "read_file", rev=plan, path="classified/plan.txt"))
+        self.assertEqual(as_cache("bob")[0][1], 0)
+        self.denied(lambda: self.call("bob", "reindex_acl"))
+        result = self.call("root", "reindex_acl")
+        self.assertGreater(result["restricted_entries"], 0)
+        self.assertEqual(as_cache("bob")[0][1], F_DENIED)
+        self.assertEqual(as_cache("sam")[0][1], F_RESTRICTED)
+
+    def test_T_IAM_13_membership_changes_take_effect_on_the_next_request(self):
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))
+        ident_path = os.path.join(self.c.dep_root, "deployment.json")
+        groups = {**IDENTITY["groups"], "sec-team": ["sam", "bob"]}
+        with open(ident_path + ".tmp", "w") as f:
+            json.dump({**IDENTITY, "groups": groups}, f)
+        os.replace(ident_path + ".tmp", ident_path)
+        content = self.call("bob", "read_file", rev="main", path="secrets/key.txt")["content_b64"]
+        self.assertEqual(base64.b64decode(content), (SECRET + "\n").encode())
+
+    def test_T_AUD_01_audit_log(self):
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))
+        self.call("root", "derive", type="blame", rev="main")
+        self.call("rita", "create_release", name="1.0", rev="main")
+        self.write_policy({**POLICY, "admins": ["ada"]})
+        self.call("ada", "resolve", rev="main")  # any request picks up the new policy
+        self.denied(lambda: self.call("bob", "audit_log"))
+        entries = self.call("root", "audit_log", limit=100)
+        actions = [e["action"] for e in entries]
+        for action in ("policy.load", "denied", "ref.update", "derive", "release.create"):
+            self.assertIn(action, actions)
+        self.assertEqual(actions.count("policy.load"), 2)
+        denial = next(e for e in entries if e["action"] == "denied" and e["target"] == "read_file")
+        self.assertEqual(denial["actor"], "bob")
+        self.assertGreater(denial["at"], 0)
+        self.assertEqual(self.call("root", "audit_verify")["ok"], True)
+        # tampering with any entry breaks the chain
+        self.c.repo().meta.execute("UPDATE audit SET actor = 'mallory' WHERE seq = 2")
+        check = self.call("root", "audit_verify")
+        self.assertEqual((check["ok"], check["first_bad"]), (False, 2))
+
+    def test_T_REF_01_release_branches(self):
+        r = self.call("rita", "create_release", name="1.0", rev="main")
+        self.assertEqual(r, {"ref": "release/1.0", "target": self.seed})
+        self.denied(lambda: self.call("alice", "create_release", name="2.0", rev="main"))
+        with self.assertRaises(RemoteError) as e:
+            self.call("rita", "create_release", name="1.0", rev="main")
+        self.assertEqual(e.exception.status, 400)
+        fix = self.commit("alice", self.seed, {"src/fix.py": "fix\n"})
+        self.denied(lambda: self.call("alice", "update_ref", name="release/1.0", old=self.seed, new=fix))
+        self.assertTrue(self.call("rita", "update_ref", name="release/1.0", old=self.seed, new=fix))
+        log = self.call("rita", "ref_log", name="release/1.0")
+        self.assertEqual([(x["old"], x["new"], x["who"]) for x in log], [(self.seed, fix, "rita"), (None, self.seed, "rita")])
 
 
 if __name__ == "__main__":

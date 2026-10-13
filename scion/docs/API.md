@@ -3,9 +3,8 @@
 Every query the `scn` client makes is one of these RPCs, so any CI job or tool can use them
 without a checkout. The article suggests forges could standardize something similar.
 
-> **Availability.** The rebuild delivers these in milestones: everything below except the
-> Antique methods and `grep` is built (B2); Antique arrives in B3 and `grep` in B4
-> ([design/11-traceability.md](design/11-traceability.md)).
+> **Availability.** The rebuild delivers these in milestones: everything below except `grep` is
+> built (B2 and B3); `grep` arrives in B4 ([design/11-traceability.md](design/11-traceability.md)).
 
 **Transport.** Requests are `POST /rpc/<method>` with the body `{"params": {...}}` and a
 `Content-Length` (chunked bodies get 411), and responses are `{"result": ...}`. Errors return
@@ -112,15 +111,44 @@ Each tier accepts requests only from the tier directly below it:
 
 | Method | Params | Notes |
 |---|---|---|
-| `antique.create` | `title`, `head`, `description?`, `target=main` | no branch is needed: the CR points at a changeset |
-| `antique.update` | `id`, `head` | a new revision resets approvals |
-| `antique.get` / `antique.list` | `id` / `state?`, `author?` | includes the evaluated requirements |
-| `antique.approve` / `antique.comment` | `id` / `id`, `body`, `path?`, `line?` | self-approval never counts |
+| `antique.create` | `title`, `head`, `description?`, `target=main` | writers; no branch is needed: the CR points at a changeset; refused if the head is already in the target |
+| `antique.update` | `id`, `head` | the author or an admin; a new revision resets approvals and clears a conflict |
+| `antique.get` / `antique.list` | `id` / `state?`, `author?`, `limit?` | `get` includes the evaluated requirements; files and comments under directories the caller can't read are left out |
+| `antique.approve` / `antique.comment` | `id` / `id`, `body`, `path?`, `line?` | approvals belong to the latest revision; self-approval never counts |
 | `antique.requirements` | `id` | per-scope category (docs, comment-only, logic), needed vs present approvals and owner approvals |
-| `antique.land` | `id`, `force?` | server-side rebase and a single compare-and-swap; per-server group commit; 409 on conflict |
+| `antique.land` | `id`, `force?` | the author, a service or an admin; 403 listing the unmet scopes; the CR shows `landing` while queued; server-side rebase and one compare-and-swap with per-server group commit; 409 `conflict` with `data.conflicts`; 503 `retry` if contention outlasts the deadline; landing a landed CR returns it |
+| `antique.abandon` | `id` | the author or an admin |
 | `antique.land_changeset` | `cs`, `ref` | services and admins: land a changeset without a CR (e.g. reverts) |
-| `antique.find_landing` | `cs` (landed id or pre-rebase id) | `{cs, source, cr, ref, landed_at}`, an indexed lookup |
-| `antique.postmerge_claim` / `postmerge_report` / `postmerge_status` | | the post-merge testing queue |
+| `antique.find_landing` | `cs` (landed id or pre-rebase id) | `{cs, source, cr, ref, landed_at}`, an indexed lookup; `null` if it never landed |
+| `antique.postmerge_claim` / `postmerge_report` | `—` / `id`, `passed`, `log?` | services and admins: claim the oldest queued job; report its result |
+| `antique.postmerge_status` | `ref`, `limit` | the post-merge testing queue, newest first |
 
-A read-only HTML view is served at `GET /antique` and `GET /antique/cr/<id>`. Every tier also
-serves `GET /healthz` and `GET /stats`.
+Review rules, owners and webhooks live in the repository's `policy.json` under `review` (see
+`antique.py`). Webhooks receive `{event, repo, text, cr, actor}` for `cr.created`, `cr.updated`,
+`cr.approved`, `cr.commented`, `cr.conflict`, `cr.landed` and `cr.abandoned`.
+
+## Refs, audit and administration
+
+| Method | Params | Notes |
+|---|---|---|
+| `create_release` | `name`, `rev` | creates `release/<name>` (it must not exist) for principals allowed to move `release/*` |
+| `audit_log` | `limit?`, `action?`, `before?` | admins: the repository's audit entries, newest first: `policy.load`, `denied`, `ref.update`, `derive`, `acl.reindex`, `release.create`, `cr.force_land`, `land_changeset`, `admin.set_ref` |
+| `audit_verify` | | admins: recompute the hash chain: `{ok, entries, first_bad, head}` |
+| `reindex_acl` | | admins: rebuild the object index after a policy change (UC-22) |
+
+## Error codes
+
+Every error has a stable `code`: `bad_request`, `integrity`, `unauthenticated`, `permission_denied`,
+`tiering`, `bad_tier`, `forbidden`, `not_found`, `unknown_method`, `conflict`, `too_large`,
+`length_required`, `rate_limited`, `retry`, `bad_upstream`, `upstream_unavailable` and `internal`.
+
+## Review pages
+
+`GET /antique` lists change requests by repository and state, and `GET /antique/<repo>/cr/<id>`
+shows one: requirements, approvals, comments (line comments inline in the diff) and the diff,
+filtered by what the viewer may read. Sign in at `/antique/login` (user, plus token when tokens are
+configured); the session cookie is HttpOnly and SameSite=Strict (Secure over TLS). Approve, comment
+and land are forms that post to `/antique/<repo>/cr/<id>/{approve,comment,land}` with the session's
+CSRF token, and run the same code as the RPCs.
+
+Every tier also serves `GET /healthz` and `GET /stats`.

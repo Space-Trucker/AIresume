@@ -103,6 +103,15 @@
 | T-LIM-01 | FR-WR-07 | an oversized upload gets 413 and stores nothing | test_ops |
 | T-OPS-05 | FR-OP-01/02, NFR-16 | health, stats, latency percentiles, error counts and hit rates on server, cache and daemon | test_ops |
 | T-STD-01 | NFR-19 | the package imports only the standard library | test_ops |
+| T-IAM-11 | FR-IAM-04/11 | a restricted object can't be republished by its id; an uploader who has the bytes can commit them | test_iam |
+| T-IAM-12 | FR-IAM-04 | snapshots leave out restricted objects | test_iam |
+| T-IAM-13 | FR-IAM-06 | group membership changes apply to the next request | test_iam |
+| T-RV-09 | FR-RV-03 | comments are stored with revision, path and line | test_antique |
+| T-LD-04 | FR-LD-03 | concurrent landings on one server are group-committed | test_antique |
+| T-LD-05 | FR-LD-06 | landing without a CR is for services and administrators | test_antique |
+| T-PM-03 | FR-LD-07 | post-merge jobs are claimed and reported only by services and administrators | test_antique |
+| T-ERR-01 | NFR-18 | errors are structured, with stable codes | test_ops |
+| T-CL-14 | FR-CL-11, FR-RV-07 | review from the CLI | test_client |
 | T-CL-13 | FR-FP-03 | an interrupted clone resumes in place and reuses received objects | test_client |
 | T-IAM-09 | FR-IAM-01 | repository-level read restriction, through the API and through the caches | test_iam |
 | T-IAM-10 | FR-IAM-09 | re-indexing ACLs after a policy change restricts existing objects | test_iam |

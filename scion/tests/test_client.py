@@ -426,6 +426,27 @@ class TestCli(ClientTest):
         served = {k[4:] for s in self.c.services for k in s.metrics.counters if k.startswith("rpc.")}
         self.assertTrue(served <= set(self.c.services[0].methods), served - set(self.c.services[0].methods))
 
+    def test_T_CL_14_review_from_the_cli(self):
+        server = self.c.server_urls[0]
+        dest = os.path.join(self.tmp, "wc")
+        self.ok("--server", server, "--repo", REPO, "--user", "alice", "clone", dest, "--objects", self.c.daemon_urls[0])
+        write(os.path.join(dest, "src/tool.py"), "print('reviewed')\n")  # code: it needs an approval
+        cs = self.ok("commit", "-A", "-m", "for review", cwd=dest).split()[1]
+        out = self.ok("review", "create", "--title", "Please look", cwd=dest)
+        cr = int(out.split()[3])
+        self.assertIn("Please look", self.ok("review", "list", cwd=dest))
+        code, out, _ = self.scn("review", "requirements", cr, cwd=dest)
+        self.assertEqual((code, json.loads(out)["satisfied"]), (1, False))
+        bob = ["--server", server, "--repo", REPO, "--user", "bob"]
+        self.ok(*bob, "review", "comment", cr, "looks fine", "--path", "src/tool.py", "--line", "1")
+        self.ok(*bob, "review", "approve", cr)
+        show = self.ok("review", "show", cr, cwd=dest)
+        self.assertIn("[bob src/tool.py:1] looks fine", show)
+        landed = self.ok("review", "land", cr, cwd=dest).split()[1]
+        self.assertEqual(self.api.call("resolve", repo=REPO, rev="main"), landed)
+        self.assertIn(f"through change request {cr}", self.ok("review", "landing", cs, cwd=dest))
+        self.assertIn("landed", self.ok("review", "list", "--state", "landed", cwd=dest))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -20,9 +20,9 @@ requirement is built and its acceptance tests pass.
 | FR-CS-09 | UC-04 | F-03 | trees.apply_augmented; incremental derived types | T-CORE-08, T-CORE-10 | I |  |
 | FR-REF-01 | UC-13, UC-15 | F-04 | meta.refs; antique.create | T-CORE-05, T-LD-01 | I |  |
 | FR-REF-02 | UC-15, UC-28 | F-04 | meta.cas_ref | T-CORE-05, T-SIM-01 | I |  |
-| FR-REF-03 | UC-28 | F-25 | iam.can_update_ref | T-IAM-06 | B3 | |
+| FR-REF-03 | UC-28 | F-25 | Policy.protected_refs; can_update_ref | T-IAM-06, T-LD-01 | I |  |
 | FR-REF-04 | UC-28 | F-04 | meta.ref_log | T-CORE-05 | I |  |
-| FR-REF-05 | UC-28 | F-25 | create_release RPC; release/* protection | T-REF-01 | B3 | |
+| FR-REF-05 | UC-28 | F-25 | create_release RPC; release/* protection | T-REF-01 | I |  |
 | FR-OBJ-01 | all (5.3) | F-02 | objects | T-CORE-01 | I |  |
 | FR-OBJ-02 | all (5.3) | F-02 | storage.FileObjectStore | T-CORE-01 | I |  |
 | FR-OBJ-03 | all (5.3) | F-02 | bounded stores; no gc | T-CORE-02 | I |  |
@@ -87,34 +87,34 @@ requirement is built and its acceptance tests pass.
 | FR-CL-10 | UC-02 | F-17 | materialize; read | T-CL-07 | I |  |
 | FR-CL-11 | all | F-21 | cli.scn_main | T-CL-11 | I |  |
 | FR-CL-12 | UC-01 | F-13 | one object endpoint in the config (the node daemon) | T-TIER-01, T-CL-11 | I |  |
-| FR-IAM-01 | UC-22 | F-22 | Policy.repo_read/repo_write | T-IAM-09 | B3 | |
+| FR-IAM-01 | UC-22 | F-22 | Policy.can_read_repo / can_write_repo; per-repository policy.json | T-IAM-09, T-MR-01 | I |  |
 | FR-IAM-02 | UC-22 | F-44 | Deployment; repo-scoped RPCs; caches keyed by (repo, id) (ADR-13) | T-MR-01 | I |  |
-| FR-IAM-03 | UC-22 | F-22 | PathRule | T-IAM-01, T-IAM-05 | B3 | |
-| FR-IAM-04 | UC-01, UC-08…12 | F-23 | per-path checks; fetch_objects; snapshots | T-IAM-01/03/04 | B3 | |
-| FR-IAM-05 | UC-01 | F-23 | F_RESTRICTED; CachingSource.restricted | T-IAM-04 | B3 | |
-| FR-IAM-06 | UC-22 | F-22 | groups, admins, service principals | T-IAM-01 | B3 | |
+| FR-IAM-03 | UC-22 | F-22 | Policy path rules (most specific wins; read and write inherit separately) | T-IAM-01, T-IAM-05 | I |  |
+| FR-IAM-04 | UC-01, UC-08…12 | F-23 | Policy.can_read on every read RPC; object index (object_acl); filtered CR views; snapshots | T-IAM-03, T-IAM-01, T-IAM-11, T-IAM-12 | I |  |
+| FR-IAM-05 | UC-01 | F-23 | restricted flag from the object index; CachingSource never stores it | T-IAM-04 | I |  |
+| FR-IAM-06 | UC-22 | F-22 | Identity groups, admins, services; Deployment.maybe_reload per request | T-IAM-13, T-IAM-07 | I |  |
 | FR-IAM-07 | UC-22 | F-24 | Identity.check_token; Service.authenticate (401); client certificates for tiers | T-IAM-08, T-TLS-01 | I |  |
 | FR-IAM-08 | UC-01 | F-24 | X-Scion-On-Behalf-Of; Caller.user | T-MR-01, T-IAM-04 | I |  |
-| FR-IAM-09 | UC-22 | F-26 | reindex_acl | T-IAM-10 | B3 | |
-| FR-IAM-10 | UC-22 | F-26 | audit table, hash chain (ADR-15) | T-AUD-01 | B3 | |
-| FR-IAM-11 | UC-22 | F-23 | _record_acl | T-IAM-02 | B3 | |
-| FR-RV-01 | UC-13 | F-27 | antique.create | T-LD-01 | B3 | |
-| FR-RV-02 | UC-14 | F-27 | antique.update | T-RV-05 | B3 | |
-| FR-RV-03 | UC-14 | F-27 | antique.comment | T-RV-06 | B3 | |
-| FR-RV-04 | UC-14 | F-27 | requirements (author excluded) | T-RV-03 | B3 | |
-| FR-RV-05 | UC-14 | F-28 | classify | T-RV-01 | B3 | |
-| FR-RV-06 | UC-14 | F-28 | review rules; owners | T-RV-04 | B3 | |
-| FR-RV-07 | UC-14 | F-28 | requirements() | T-RV-02 | B3 | |
-| FR-RV-08 | UC-14 | F-29 | server.handle_get /antique | T-RV-06 | B3 | |
-| FR-RV-09 | UC-14 | F-29 | HTML forms + session/CSRF (ADR-17) | T-RV-07 | B3 | |
-| FR-RV-10 | UC-13 | F-32 | notifier webhooks (ADR-18) | T-RV-08 | B3 | |
-| FR-LD-01 | UC-15 | F-30 | Antique._land_batch | T-LD-01, T-LD-03 | B3 | |
-| FR-LD-02 | UC-15 | F-30 | CAS only across servers | T-SIM-01 | B3 | |
-| FR-LD-03 | UC-15 | F-30 | group commit; backoff; deadline | T-SIM-01 (32×5 stress) | B3 | |
-| FR-LD-04 | UC-16 | F-30 | MergeConflict → 409; CR conflict state | T-LD-02 | B3 | |
-| FR-LD-05 | UC-17 | F-31 | landings table; find_landing | T-LD-01, T-SIM-01 | B3 | |
-| FR-LD-06 | UC-21 | F-38 | land_changeset | T-AUT-02, T-PM-01 | B3 | |
-| FR-LD-07 | UC-15 | F-35 | postmerge row on landing | T-PM-01 | B3 | |
+| FR-IAM-09 | UC-22 | F-26 | Repository.reindex_acl; reindex_acl RPC; scion-admin reindex-acl | T-IAM-10 | I |  |
+| FR-IAM-10 | UC-22 | F-26 | audit.AuditLog (hash chain): policy loads, denials, ref moves, admin actions | T-AUD-01, T-ADM-01 | I |  |
+| FR-IAM-11 | UC-22 | F-23 | "" entries in the object index; possession grants for uploaders | T-IAM-02, T-IAM-11 | I |  |
+| FR-RV-01 | UC-13 | F-27 | antique.create from a changeset id | T-LD-01 | I |  |
+| FR-RV-02 | UC-14 | F-27 | cr_revisions; approvals per revision | T-RV-05 | I |  |
+| FR-RV-03 | UC-14 | F-27 | cr_comments (revision, path, line) | T-RV-09, T-RV-07 | I |  |
+| FR-RV-04 | UC-14 | F-27 | requirements() drops the author's approval | T-RV-03 | I |  |
+| FR-RV-05 | UC-14 | F-28 | classify.classify_file | T-RV-01 | I |  |
+| FR-RV-06 | UC-14 | F-28 | review rules per directory and category; owners | T-RV-04, T-RV-02 | I |  |
+| FR-RV-07 | UC-14 | F-28 | Antique.requirements in the API, CLI and pages | T-RV-02, T-RV-06, T-CL-14 | I |  |
+| FR-RV-08 | UC-14 | F-29 | ui.ReviewUI pages with requirements, comments and the diff | T-RV-06 | I |  |
+| FR-RV-09 | UC-14 | F-29 | ui.ReviewUI forms (session cookie, CSRF) | T-RV-07 | I |  |
+| FR-RV-10 | UC-13 | F-32 | notify.Notifier webhooks on CR events | T-RV-08 | I |  |
+| FR-LD-01 | UC-15 | F-30 | Antique.land: server-side rebase, one CAS | T-LD-01, T-LD-03 | I |  |
+| FR-LD-02 | UC-15 | F-30 | no lock: per-server group commit, CAS only | T-SIM-01 | I |  |
+| FR-LD-03 | UC-15 | F-30 | group commit; jittered backoff; deadline (503 retry) | T-SIM-01, T-LD-04 | I |  |
+| FR-LD-04 | UC-16 | F-30 | MergeConflict -> 409 and CR state conflict | T-LD-02 | I |  |
+| FR-LD-05 | UC-17 | F-31 | landings index (landed and source ids) | T-LD-01, T-SIM-01 | I |  |
+| FR-LD-06 | UC-21 | F-38 | antique.land_changeset (services and admins) | T-LD-05 | I |  |
+| FR-LD-07 | UC-15 | F-35 | postmerge queue row per landing | T-LD-01, T-PM-03 | I |  |
 | FR-PM-01 | UC-18 | F-35 | postmerge_claim (conditional UPDATE) | T-PM-02 | B4 | |
 | FR-PM-02 | UC-18 | F-35 | run_worker reuses checkout | T-PM-01 | B4 | |
 | FR-PM-03 | UC-18 | F-35 | postmerge_report | T-PM-01 | B4 | |
@@ -145,7 +145,7 @@ requirement is built and its acceptance tests pass.
 | FR-AD-02 | UC-24 | F-43 | scion-admin snapshot | T-E2E-01 | B4 | |
 | FR-AD-03 | UC-27 | F-43 | scion-admin derive | T-DD-07 | B4 | |
 | FR-AD-04 | UC-22 | F-43 | scion-admin reindex-acl | T-IAM-10 | B4 | |
-| FR-AD-05 | UC-28 | F-43 | scion-admin set-ref | T-ADM-01 | B3 | |
+| FR-AD-05 | UC-28 | F-43 | scion-admin set-ref --as (protections apply; audited) | T-ADM-01 | I |  |
 | FR-AD-06 | UC-30 | F-43 | SQLite online backup + object copy | T-BAK-01 | B4 | |
 
 ## 11.2 Non-functional requirements
@@ -161,7 +161,7 @@ requirement is built and its acceptance tests pass.
 | NFR-07 | I | T-TIER-06: two servers serve one deployment root; caches and daemons hold only caches, so adding or restarting one needs no data migration |
 | NFR-08 | I | T-TIER-03 strict tiering; T-TIER-07 single flight; T-OPS-01 rate limits |
 | NFR-09 | I | T-TIER-06: with one of two servers and one of two caches down, a clone succeeds with no client change |
-| NFR-10 | B3 | planned verification: 10 §10.4 |
+| NFR-10 | I | T-IAM-01…04, T-IAM-11/12: no response, object fetch, snapshot or shared store gives restricted bytes to an unauthorized user (the leak sweep in T-IAM-03 checks every read RPC) |
 | NFR-11 | I | T-TIER-08: the daemon and the client reject a forged object; every object they receive is checked against its id |
 | NFR-12 | I | T-CORE-05: concurrent CAS, exactly one winner, unbroken ref log; T-DD-01: deterministic derived values across two servers |
 | NFR-13 | B5 | planned verification: 10 §10.4 |
@@ -169,7 +169,7 @@ requirement is built and its acceptance tests pass.
 | NFR-15 | B5 | planned verification: 10 §10.4 |
 | NFR-16 | I | T-OPS-05: health, stats, latency percentiles, error counts and hit rates on every tier |
 | NFR-17 | B5 | planned verification: T-SIM-01, T-PERF-01 |
-| NFR-18 | B3 | planned verification: 10 §10.4 |
+| NFR-18 | I | T-ERR-01: errors carry a stable code, an HTTP status and structured data (409 conflicts list path and reason); the CLI prints them |
 | NFR-19 | I | T-STD-01: no third-party imports (the openssl tool is used only to make development certificates) |
 | NFR-20 | I | T-TLS-01: TLS on every TCP hop; mutual TLS between tiers; plaintext and wrong certificates refused |
 
@@ -181,7 +181,7 @@ Updated at the end of every milestone (computed by the T-DOC-02 cross-check).
 |---|---|---|
 | B1 | version control core | **done**: 45 requirements built and tested (21 core tests; fuzzing 8 seeds × 70 steps in the suite, 200 × 120 in a stress run) |
 | B2 | service, tiers, client, multi-repository, TLS | **done**: 48 requirements built and tested (41 FR, 7 NFR; 39 new tests across tiers, client, CLI, multi-repository, TLS, IAM and operations) |
-| B3 | IAM, audit, review and landing | planned |
+| B3 | IAM, audit, review and landing | **done**: 30 requirements built and tested (28 FR, 2 NFR); the 32 × 5 swarm landed all 160 changes on 2 servers with 31 ref moves |
 | B4 | migration, automation, search, operations, backup | planned |
 | B5 | system verification of the non-functional requirements | planned |
 

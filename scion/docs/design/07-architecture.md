@@ -52,11 +52,13 @@ Domain model: [6.1](06-uml.md#61-domain-model).
 | Changeset creation | idempotent append keyed by content hash; no locks; eager derived data computed right after |
 | Derived data races | values are deterministic, written with insert-or-ignore; a per-process single-flight lock avoids duplicate work |
 | Refs | single-row compare-and-swap; every success is appended to the ref log |
-| Landing | per-server, per-target group commit: one leader drains the queue, rebases a chain, does one CAS; retries with jittered exponential backoff up to a deadline; servers never coordinate except through the CAS |
+| Landing | per-server, per-target group commit: one leader drains the queue, rebases a chain, does one CAS; retries with jittered exponential backoff up to a deadline (then 503 `retry`); servers never coordinate except through the CAS; CRs show `landing` while queued |
 | Cache misses | single flight per object id; waiters re-read the store or re-request |
 | Request handling | a thread per connection (HTTP/1.1 keep-alive; each response leaves in one write, with TCP_NODELAY); TLS handshakes run on the connection's thread; per-thread SQLite connections in WAL mode |
 | Client fetch | breadth-first by tree level; blob batches fetched in parallel |
 | Status | a filesystem watcher process journals events; the sync cookie orders queries after earlier events |
+| Policies | each request stats `deployment.json` and the repository's `policy.json`; a changed file is reloaded at once and audited (FR-IAM-06) |
+| Audit | appends take the store's write lock, so the hash chain stays linear across servers |
 
 **Consistency model**
 * **Changesets and objects:** immutable, read-your-writes from any server sharing the store.
@@ -111,7 +113,12 @@ with `id = sha256("changeset\0" || json)`.
 | `search` | stree root id |
 | `blame` | `{path: blame id or "binary"}` |
 
-**Metadata schema:** see the ER diagram in [6.9](06-uml.md#69-metadata-store-er).
+**Metadata schema:** see the ER diagram in [6.9](06-uml.md#69-metadata-store-er). Besides the changeset
+log, refs and derived values, each repository's store holds the object index (`object_acl`: where each
+object appears, `""` for a place everyone may read), possession grants (`object_grants`: an uploader
+may commit by id bytes they uploaded even if the object is otherwise restricted), the audit chain
+(`audit`) and Antique's tables (`crs`, `cr_revisions`, `cr_approvals`, `cr_comments`, `landings`,
+`postmerge`).
 
 ## 7.7 Protocols
 

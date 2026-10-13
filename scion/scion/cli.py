@@ -12,6 +12,7 @@ import os
 import signal
 import sys
 import threading
+import time
 
 from . import fsmonitor
 from .client import ClientError, ServerApi, WorkingCopy
@@ -113,6 +114,39 @@ def _scn_parser() -> argparse.ArgumentParser:
     s.add_argument("name")
     sub.add_parser("whoami")
     sub.add_parser("repos", help="repositories you can read")
+    s = sub.add_parser("review", help="change requests in Antique")
+    rv = s.add_subparsers(dest="action", required=True)
+    x = rv.add_parser("create", help="open a change request for a changeset (default: the working copy's)")
+    x.add_argument("--title", required=True)
+    x.add_argument("--description", default="")
+    x.add_argument("--head")
+    x.add_argument("--target", default="main")
+    x = rv.add_parser("update", help="upload a new revision (approvals reset)")
+    x.add_argument("id", type=int)
+    x.add_argument("--head")
+    x = rv.add_parser("list")
+    x.add_argument("--state", default="open", help="open, landing, conflict, landed, abandoned or all")
+    x.add_argument("--author")
+    for name in ("show", "approve", "abandon", "requirements"):
+        rv.add_parser(name).add_argument("id", type=int)
+    x = rv.add_parser("comment")
+    x.add_argument("id", type=int)
+    x.add_argument("body")
+    x.add_argument("--path")
+    x.add_argument("--line", type=int)
+    x = rv.add_parser("land", help="rebase onto the target and publish it with one compare-and-swap")
+    x.add_argument("id", type=int)
+    x.add_argument("--force", action="store_true", help="administrators: land without the approvals (audited)")
+    x = rv.add_parser("landing", help="when and how a changeset landed (by landed or original id)")
+    x.add_argument("cs")
+    s = sub.add_parser("release", help="release branches")
+    s.add_argument("action", choices=["create"])
+    s.add_argument("name")
+    s.add_argument("--rev", default="main")
+    s = sub.add_parser("audit", help="the repository's audit log (administrators)")
+    s.add_argument("--limit", type=int, default=50)
+    s.add_argument("--action")
+    s.add_argument("--verify", action="store_true", help="check the hash chain")
     s = sub.add_parser("api", help="call any RPC: `scn api METHOD key=value ...`, or `scn api commit ...`")
     s.add_argument("method")
     s.add_argument("args", nargs=argparse.REMAINDER)
@@ -347,6 +381,20 @@ def _scn(ctx: _Ctx, a) -> int | None:  # noqa: C901 - one branch per command
         for r in api.rpc.call("list_repos"):
             print(f"{r['name']}{'' if r['public'] else ' (private)'}")
         return 0
+    if cmd == "review":
+        return _review(ctx, api, a)
+    if cmd == "release":
+        _print_json(api.create_release(name=a.name, rev=a.rev))
+        return 0
+    if cmd == "audit":
+        if a.verify:
+            r = api.audit_verify()
+            print(f"{'ok' if r['ok'] else 'BROKEN at entry ' + str(r['first_bad'])}: {r['entries']} entries")
+            return 0 if r["ok"] else 1
+        for e in reversed(api.audit_log(limit=a.limit, action=a.action)):
+            print(f"{e['seq']:>6} {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(e['at']))} {e['actor'] or '-':<12} "
+                  f"{e['action']:<16} {e['target']} {json.dumps(e['detail'], sort_keys=True)}")
+        return 0
     if cmd == "api":
         if a.method == "commit":
             return _api_commit(api, a.args)
@@ -359,6 +407,67 @@ def _scn(ctx: _Ctx, a) -> int | None:  # noqa: C901 - one branch per command
         _print_json(api.call(a.method, **params))
         return 0
     raise ClientError(f"unknown command {cmd}")
+
+
+def _review(ctx: _Ctx, api: ServerApi, a) -> int:
+    """``scn review ...`` (FR-CL-11 for FR-RV-*)."""
+    act = a.action
+    if act == "create":
+        head = a.head or ctx.wc().base
+        cr = api.call("antique.create", title=a.title, head=head, description=a.description, target=a.target)
+        print(f"created change request {cr['id']} ({cr['state']})")
+        return 0
+    if act == "update":
+        cr = api.call("antique.update", id=a.id, head=a.head or ctx.wc().base)
+        print(f"change request {cr['id']} is at revision {cr['revision']}")
+        return 0
+    if act == "list":
+        for cr in api.call("antique.list", state=None if a.state == "all" else a.state, author=a.author):
+            print(f"{cr['id']:>5} {cr['state']:<10} {cr['author']:<12} {cr['title']}")
+        return 0
+    if act == "show":
+        cr = api.call("antique.get", id=a.id)
+        print(f"#{cr['id']} {cr['title']}\n{cr['author']} · {cr['state']} · target {cr['target']} · revision "
+              f"{cr['revision']} · head {cr['head'][:12]}\n")
+        if cr["description"]:
+            print(cr["description"] + "\n")
+        for g in (cr.get("requirements") or {}).get("groups", []):
+            mark = "ok" if g["satisfied"] else "needs"
+            print(f"  /{g['prefix']:<20} {g['category']:<13} {mark}: {g['need']} have {g['have']}")
+        if cr.get("conflict"):
+            for c in cr["conflict"]["conflicts"]:
+                print(f"  conflict: {c['path']}: {c['reason']}")
+        for c in cr["comments"]:
+            where = f" {c['path']}:{c['line']}" if c["path"] else ""
+            print(f"  [{c['user']}{where}] {c['body']}")
+        return 0
+    if act in ("approve", "abandon"):
+        cr = api.call(f"antique.{act}", id=a.id)
+        print(f"change request {cr['id']}: {cr['state']}")
+        return 0
+    if act == "requirements":
+        r = api.call("antique.requirements", id=a.id)
+        _print_json({k: r[k] for k in ("satisfied", "revision", "approvers")} |
+                    {"groups": [{k: g[k] for k in ("prefix", "category", "need", "have", "satisfied")} for g in r["groups"]]})
+        return 0 if r["satisfied"] else 1
+    if act == "comment":
+        api.call("antique.comment", id=a.id, body=a.body, path=a.path, line=a.line)
+        print("commented")
+        return 0
+    if act == "land":
+        cr = api.call("antique.land", id=a.id, force=a.force)
+        print(f"landed {cr['landed_cs']} on {cr['target']}")
+        return 0
+    if act == "landing":
+        r = api.call("antique.find_landing", cs=a.cs)
+        if r is None:
+            print("not landed")
+            return 1
+        when = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(r["landed_at"]))
+        print(f"{r['cs']} on {r['ref']} at {when}" + (f" through change request {r['cr']}" if r["cr"] else "")
+              + (f" (originally {r['source']})" if r["source"] != r["cs"] else ""))
+        return 0
+    raise ClientError(f"unknown review action {act}")
 
 
 def _api_commit(api: ServerApi, argv) -> int:
@@ -474,7 +583,11 @@ def daemon_main(argv=None) -> int:
 
 
 def admin_main(argv=None) -> int:
+    import getpass
+
     from .deployment import Deployment
+    from .iam import PermissionDenied
+    from .repo import NotFound
     from .snapshot import create_snapshot
 
     p = argparse.ArgumentParser(prog="scion-admin")
@@ -503,6 +616,22 @@ def admin_main(argv=None) -> int:
     s.add_argument("dir")
     s = sub.add_parser("hash-token", help="the form of a token to store in deployment.json")
     s.add_argument("token")
+    s = sub.add_parser("set-ref", help="move a ref by compare-and-swap, as an explicit identity (FR-AD-05)")
+    s.add_argument("--root", required=True)
+    s.add_argument("--repo", required=True)
+    s.add_argument("--ref", required=True)
+    s.add_argument("--to", required=True, help="the new target revision ('-' deletes the ref)")
+    s.add_argument("--old", help="the expected current value (default: the current value)")
+    s.add_argument("--as", dest="as_user", required=True,
+                   help="the principal whose permissions apply; protected refs are enforced for it")
+    s = sub.add_parser("reindex-acl", help="rebuild the object ACL index after a policy change (FR-IAM-09)")
+    s.add_argument("--root", required=True)
+    s.add_argument("--repo", required=True)
+    s = sub.add_parser("audit", help="show or verify a repository's audit log")
+    s.add_argument("--root", required=True)
+    s.add_argument("--repo", required=True)
+    s.add_argument("--limit", type=int, default=50)
+    s.add_argument("--verify", action="store_true")
     a = p.parse_args(argv)
     if a.command == "gen-certs":
         from .tools.certs import make_dev_pki
@@ -527,7 +656,36 @@ def admin_main(argv=None) -> int:
             _print_json(create_snapshot(repo, a.rev, os.path.join(a.out, a.repo)))
         elif a.command == "derive":
             repo = dep.repo(a.repo)
-            print(f"{repo.derived.backfill(a.type, repo.resolve(a.rev))} values computed")
+            cs = repo.resolve(a.rev)
+            n = repo.derived.backfill(a.type, cs)
+            repo.audit.append("derive", f"scion-admin:{getpass.getuser()}", a.type, {"cs": cs, "computed": n})
+            print(f"{n} values computed")
+        elif a.command == "set-ref":
+            repo = dep.repo(a.repo)
+            old = a.old if a.old is not None else repo.get_ref(a.ref)
+            new = None if a.to == "-" else repo.resolve(a.to)
+            repo.audit.append("admin.set_ref", a.as_user, a.ref, {"old": old, "new": new, "os_user": getpass.getuser()})
+            if not repo.update_ref(a.ref, old, new, user=a.as_user):  # protections apply to a.as_user (D-03)
+                print(f"{a.ref} was not {old}: nothing changed", file=sys.stderr)
+                return 1
+            print(f"{a.ref}: {(old or '-')[:12]} -> {(new or '-')[:12]}")
+        elif a.command == "reindex-acl":
+            repo = dep.repo(a.repo)
+            r = repo.reindex_acl()
+            repo.audit.append("acl.reindex", f"scion-admin:{getpass.getuser()}", repo.name, r)
+            _print_json(r)
+        elif a.command == "audit":
+            repo = dep.repo(a.repo)
+            if a.verify:
+                r = repo.audit.verify()
+                _print_json(r)
+                return 0 if r["ok"] else 1
+            for e in reversed(repo.audit.entries(a.limit)):
+                print(f"{e['seq']:>6} {e['actor'] or '-':<14} {e['action']:<16} {e['target']} "
+                      f"{json.dumps(e['detail'], sort_keys=True)}")
+    except (PermissionDenied, NotFound, ValueError) as e:
+        print(f"scion-admin: {e}", file=sys.stderr)
+        return 1
     finally:
         dep.close()
     return 0

@@ -1,7 +1,10 @@
-"""Operations: rate limits (T-OPS-01), health and stats (FR-OP-01/02), upload limits (T-LIM-01) and the
-standard-library-only constraint (NFR-19)."""
+"""Operations: rate limits (T-OPS-01), health and stats (T-OPS-05), upload limits (T-LIM-01), the
+standard-library-only constraint (T-STD-01), admin ref operations (T-ADM-01) and structured errors (NFR-18)."""
 import ast
 import base64
+import contextlib
+import io
+import json
 import os
 import shutil
 import socket
@@ -83,7 +86,7 @@ class TestRateLimits(unittest.TestCase):
 
 
 class TestHealthAndStats(unittest.TestCase):
-    def test_FR_OP_01_02_every_tier_reports_health_and_stats(self):
+    def test_T_OPS_05_every_tier_reports_health_and_stats(self):
         tmp = tempfile.mkdtemp(prefix="scion-stats-")
         c = Cluster(tmp)
         try:
@@ -176,7 +179,7 @@ class TestUploadLimits(unittest.TestCase):
 
 
 class TestStandardLibraryOnly(unittest.TestCase):
-    def test_NFR_19_no_third_party_imports(self):
+    def test_T_STD_01_no_third_party_imports(self):
         stdlib = set(sys.stdlib_module_names)
         for dirpath, _, files in os.walk(PKG):
             for name in files:
@@ -194,6 +197,71 @@ class TestStandardLibraryOnly(unittest.TestCase):
                     for m in mods:
                         top = m.split(".")[0]
                         self.assertTrue(top in stdlib or top == "scion", f"{path}: imports {m}")
+
+
+class TestAdminAndErrors(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="scion-adm-")
+        self.c = Cluster(self.tmp, caches=0, identity={"groups": {"maintainers": ["mona"]}, "admins": ["root"]},
+                         repos={REPO: {"read": ["*"], "write": ["*"], "protected_refs": {"main": ["antique", "maintainers"]}}})
+        api = self.c.client("root")
+        self.v1 = api.call("create_changeset", repo=REPO, parents=[], message="m",
+                           files=[{"path": "a", "content_b64": base64.b64encode(b"a\n").decode()}],
+                           update_ref={"name": "main", "old": None})["id"]
+        self.v2 = api.call("create_changeset", repo=REPO, parents=[self.v1], message="m2",
+                           files=[{"path": "a", "content_b64": base64.b64encode(b"b\n").decode()}])["id"]
+
+    def tearDown(self):
+        self.c.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def admin(self, *args):
+        from scion import cli
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cli.admin_main([str(a) for a in args])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_T_ADM_01_admin_ref_operations_respect_protections(self):
+        base = ["set-ref", "--root", self.c.dep_root, "--repo", REPO, "--ref", "main", "--to", self.v2]
+        code, _, err = self.admin(*base, "--as", "alice")
+        self.assertEqual(code, 1)
+        self.assertIn("may not move main", err)
+        self.assertEqual(self.c.client("x").call("get_ref", repo=REPO, name="main"), self.v1)
+        code, out, _ = self.admin(*base, "--as", "mona")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.c.client("x").call("get_ref", repo=REPO, name="main"), self.v2)
+        code, _, err = self.admin(*base[:-2], "--to", self.v1, "--old", self.v1, "--as", "mona")  # a stale old value
+        self.assertEqual(code, 1)
+        audit = self.c.client("root").call("audit_log", repo=REPO, action="admin.set_ref")
+        self.assertEqual([e["actor"] for e in audit], ["mona", "mona", "alice"])
+        log = self.c.client("x").call("ref_log", repo=REPO, name="main")
+        self.assertEqual(log[0]["who"], "mona")
+        code, out, _ = self.admin("audit", "--root", self.c.dep_root, "--repo", REPO, "--verify")
+        self.assertEqual(code, 0)
+        self.assertTrue(json.loads(out)["ok"])
+
+    def test_T_ERR_01_errors_are_structured_with_stable_codes(self):
+        api = self.c.client("alice")
+        cases = [
+            (lambda: api.call("resolve", repo=REPO, rev="nope"), 404, "not_found"),
+            (lambda: api.call("resolve", repo=REPO), 400, "bad_request"),
+            (lambda: api.call("no_such_method"), 404, "unknown_method"),
+            (lambda: api.call("update_ref", repo=REPO, name="main", old=self.v1, new=self.v2), 403, "permission_denied"),
+            (lambda: api.call("merge", repo=REPO, ours=self.v2, theirs=self._conflicting()), 409, "conflict"),
+            (lambda: self.c.client("alice", tier="cache").call("whoami"), 403, "bad_tier"),
+        ]
+        for fn, status, code in cases:
+            with self.subTest(code=code), self.assertRaises(RemoteError) as e:
+                fn()
+            self.assertEqual((e.exception.status, e.exception.code), (status, code))
+        with self.assertRaises(RemoteError) as e:
+            api.call("merge", repo=REPO, ours=self.v2, theirs=self._conflicting())
+        self.assertEqual(sorted(e.exception.data["conflicts"][0]), ["base", "ours", "path", "reason", "theirs"])
+
+    def _conflicting(self):
+        return self.c.client("root").call("create_changeset", repo=REPO, parents=[self.v1], message="c",
+                                          files=[{"path": "a", "content_b64": base64.b64encode(b"c\n").decode()}])["id"]
 
 
 if __name__ == "__main__":
