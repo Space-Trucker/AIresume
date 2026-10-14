@@ -146,6 +146,27 @@ class TestBackupAndRestore(unittest.TestCase):
             restore(out, os.path.join(self.tmp, "elsewhere"))
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "elsewhere")), "nothing restored from a damaged backup")
 
+    def test_every_repository_s_metadata_is_read_before_any_object_is_copied(self):
+        """Review finding P-03: the metadata of every repository is exported, at one timestamp,
+        before the object copy starts; a long copy can't push a later repository's read of that
+        timestamp past Spanner's version retention (an hour by default)."""
+        from unittest import mock
+
+        from scion import backup as backup_module
+        events, real_copy, real_export = [], backup_module._copy_objects, type(self.c.repo().meta).export
+
+        def copy(src, dst):
+            events.append("copy")
+            return real_copy(src, dst)
+
+        def export(store, path, at=None):
+            events.append("export")
+            return real_export(store, path, at)
+        with mock.patch.object(backup_module, "_copy_objects", copy), \
+                mock.patch.object(type(self.c.repo().meta), "export", export):
+            backup(self.c.dep_root, os.path.join(self.tmp, "ordered"))
+        self.assertEqual(events, ["export", "export", "copy", "copy"])
+
     def test_verify_finds_missing_and_corrupt_objects(self):
         self.assertTrue(verify(self.c.dep_root, deep=True)["ok"])
         repo = self.c.repo()

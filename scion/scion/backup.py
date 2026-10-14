@@ -8,10 +8,11 @@ backed up: losing any tier loses no data.
 
 The order makes a backup consistent while the servers keep running:
 
-1. each repository's metadata is copied first, as of one moment (MetaStore.export): SQLite's online
+1. every repository's metadata is copied first, as of one moment (MetaStore.export): SQLite's online
    backup API, or on Spanner a read of every table at one timestamp, the same timestamp for every
-   repository (FR-ST-04). Either way the copy is a SQLite file, ``meta.db``: one backup format for
-   both backends;
+   repository (FR-ST-04), all read before any blob is copied, so the timestamp stays within
+   Spanner's version retention (an hour by default) however long the copy takes. Either way the
+   copy is a SQLite file, ``meta.db``: one backup format for both backends;
 2. the blob storage is copied afterwards. Objects are immutable and stored before any metadata
    refers to them, so everything the snapshot refers to is already there; objects stored after the
    snapshot are extras that nothing references, which is harmless (UC-30, extension).
@@ -103,12 +104,14 @@ def backup(root: str, out: str, actor: str | None = None) -> dict:
             _copy_file(ident, os.path.join(out, "deployment.json"))
             manifest["deployment_json_sha256"] = _sha256(os.path.join(out, "deployment.json"))
         at = None
-        for name in names:
+        for name in names:  # 1: every repository's metadata, as of one moment
             src, dst = dep.repo_dir(name), os.path.join(out, "repos", name)
             _copy_file(os.path.join(src, "policy.json"), os.path.join(dst, "policy.json"))
+            at = dep.repo(name).meta.export(os.path.join(dst, "meta.db"), at)
+        for name in names:  # 2: then the blobs
+            src, dst = dep.repo_dir(name), os.path.join(out, "repos", name)
             meta = os.path.join(dst, "meta.db")
-            at = dep.repo(name).meta.export(meta, at)  # 1: metadata first
-            objects, size = _copy_objects(os.path.join(src, "objects"), os.path.join(dst, "objects"))  # 2: then blobs
+            objects, size = _copy_objects(os.path.join(src, "objects"), os.path.join(dst, "objects"))
             entry = {"policy_sha256": _sha256(os.path.join(dst, "policy.json")), "meta_sha256": _sha256(meta),
                      "objects": objects, "object_bytes": size}
             if os.path.exists(meta):

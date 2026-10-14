@@ -165,6 +165,14 @@ class Conformance:
         self.assertEqual(m.cr_list(), [b, a])
         self.assertEqual(m.cr_list(state="open", author="bob"), [b])
         self.assertEqual(m.cr_list(limit=1), [b])
+        # conditional transitions: no state change interleaves with another
+        self.assertTrue(m.cr_update(a, expect_states=("open", "conflict"), expect_head=H[3], state="landing"))
+        self.assertFalse(m.cr_update(a, expect_states=("open",), state="abandoned"))  # it is landing
+        self.assertFalse(m.cr_update(a, expect_head=H[1], state="open"))  # not at that head
+        self.assertIsNone(m.cr_add_revision(a, H[4], "open", 108.0, expect_states=("open", "conflict")))
+        self.assertEqual((m.cr_get(a)["state"], m.cr_latest_rev(a)), ("landing", 2))
+        self.assertTrue(m.cr_update(a, expect_states=("landing",), state="open"))
+        self.assertEqual(m.cr_add_revision(a, H[4], "open", 108.0, expect_states=("open",)), 3)
 
     def test_T_ST_01_landings_and_postmerge(self):
         m = self.m
@@ -199,6 +207,41 @@ class Conformance:
         self.assertTrue(m.postmerge_report(third["id"], "passed", 53.0, "ok"))
         self.assertEqual([j["id"] for j in m.postmerge_list("main")], [second["id"], first["id"]])
         self.assertEqual(m.postmerge_list("release")[0]["status"], "passed")
+
+    def test_T_ST_01_a_landing_moves_with_its_ref(self):
+        """cas_ref(landing=...): the ref's move, the index, the jobs and the CR updates commit
+        together, or not at all."""
+        m = self.m
+        cr = m.cr_create("t", "", "alice", "main", H[2], "landing", 1.0)
+        landing = ([(H[2], H[7], cr, "main", 5.0, H[2]), (H[2], H[8], cr, "main", 5.0, H[2])],  # the first stays
+                   [(H[2], cr, "main", "queued", 5.0)], [(cr, {"state": "landed", "landed_cs": H[2]})])
+        m.cas_ref("main", None, H[1])
+        self.assertFalse(m.cas_ref("main", H[9], H[2], landing=landing))  # a lost compare: nothing recorded
+        self.assertEqual((m.landing_find(H[2]), m.postmerge_counts(), m.cr_get(cr)["state"]), (None, {}, "landing"))
+        self.assertTrue(m.cas_ref("main", H[1], H[2], landing=landing))
+        self.assertEqual(m.landing_find(H[2])["source"], H[7])
+        self.assertEqual((m.postmerge_counts(), m.cr_get(cr)["state"]), ({"queued": 1}, "landed"))
+
+    def test_T_ST_01_wide_rows_page_by_size(self):
+        """Reads of many large values (changesets, job logs, audit details) stay under Spanner's
+        limit on the size of one result (4 MiB on the emulator)."""
+        m = self.m
+        big = os.urandom(300_000)
+        for i in range(1, 21):  # 6 MB of changesets
+            m.insert_changeset(f"{i:064x}", big + bytes([i]))
+        page = m.tail(None, 1000, data=True)
+        self.assertEqual([len(r[2]) for r in page], [300_001] * 20)
+        self.assertEqual(page[1][2][-1], 2)
+        self.assertEqual([r[1] for r in m.tail(page[9][0], 5, data=True)], [f"{i:064x}" for i in range(11, 16)])
+        log = AuditLog(m)
+        for i in range(12):
+            log.append("big", "admin", "x", {"blob": "x" * 400_000})
+        self.assertEqual(sum(1 for _ in m.audit_iter()), 12)
+        path = os.path.join(self.tmp, "export-wide", "meta.db")
+        m.export(path)
+        db = sqlite3.connect(path)
+        self.assertEqual(db.execute("SELECT COUNT(*), SUM(LENGTH(data)) FROM changesets").fetchone(), (20, 20 * 300_001))
+        db.close()
 
     def test_T_ST_01_export_and_load(self):
         m = self.m
@@ -366,6 +409,78 @@ class SpannerDeployment(unittest.TestCase):
                     self.assertFalse(os.path.exists(os.path.join(self.tmp, "again")))
         finally:
             c.close()
+
+
+class SpannerClientBehaviour(unittest.TestCase):
+    """Review findings P-04 and P-05, against stand-ins for the Spanner API."""
+
+    def test_errors_in_either_format(self):
+        """spanner.googleapis.com puts the rpc code's name in "status" (AIP-193); the emulator puts
+        the rpc code in "code". Both mean the same: here, a database to create."""
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        from scion.spanner import SpannerClient
+        style, created = {}, []
+
+        class Stub(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def reply(self, status, body):
+                data = json.dumps(body).encode()
+                self.send_response(status)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def do_GET(self):
+                if self.path.endswith("/ddl"):
+                    gone = "Database not found"
+                    return self.reply(404, {"error": {"code": 404, "message": gone, "status": "NOT_FOUND"}}
+                                      if style["v"] == "google" else {"code": 5, "message": gone})
+                self.reply(200, {})
+
+            def do_POST(self):
+                self.rfile.read(int(self.headers.get("Content-Length", 0)))
+                created.append(self.path)
+                self.reply(200, {"name": "operations/1", "done": True})
+
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), Stub)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            for v in ("emulator", "google"):
+                style["v"], created[:] = v, []
+                SpannerClient({"endpoint": f"http://127.0.0.1:{srv.server_port}", "project": "p", "instance": "i",
+                               "database": "d", "create": True}).close()
+                self.assertEqual(created, ["/v1/projects/p/instances/i/databases"], v)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    @ON_SPANNER
+    def test_an_aborted_transaction_is_retried_in_its_session(self):
+        """A retried transaction keeps its session, and with it its lock priority."""
+        from scion.spanner import Aborted, client_for, release_client
+        config = spanner_config()
+        client = client_for(config)
+        try:
+            real, used, aborts = client.request, [], [2]
+
+            def request(method, path, body=None):
+                if ":" in path.rsplit("/", 1)[-1]:
+                    used.append(path.rsplit(":", 1)[0])
+                if path.endswith(":commit") and aborts[0]:  # as Spanner does: end it, then say so
+                    aborts[0] -= 1
+                    real("POST", path.replace(":commit", ":rollback"), {"transactionId": body["transactionId"]})
+                    raise Aborted("aborted by the test", 10)
+                return real(method, path, body)
+            client.request = request
+            n = client.run_in_transaction(lambda tx: tx.query("SELECT 1")[0][0] + tx.execute(
+                "UPDATE counters SET value = value WHERE repo = 'none'"))
+            self.assertEqual(n, 1)
+            self.assertEqual(len(set(used)), 1, used)
+            self.assertEqual(client.stats["aborts"], 2)
+        finally:
+            release_client(client)
 
 
 class Configuration(unittest.TestCase):

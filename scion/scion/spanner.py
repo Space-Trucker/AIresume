@@ -43,9 +43,14 @@ from datetime import datetime, timezone
 from .meta import AUDIT_FIELDS, CR_COLUMNS, GRANT_SECONDS, LANDING_FIELDS, SCHEMA, MetaStore, check_cr_columns
 
 ABORTED, NOT_FOUND, ALREADY_EXISTS, UNAVAILABLE, RESOURCE_EXHAUSTED = 10, 5, 6, 14, 8
+GRPC_CODES = {name: i for i, name in enumerate((  # google.rpc.Code by name
+    "OK", "CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED", "NOT_FOUND", "ALREADY_EXISTS",
+    "PERMISSION_DENIED", "RESOURCE_EXHAUSTED", "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED",
+    "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED"))}
 COMMIT_TS = "spanner.commit_timestamp()"
 ROWS_PER_COMMIT = 2000  # mutations count cells: well under Spanner's 80,000 per commit
 PAGE = 2000
+BYTES_PER_READ = 1 << 20  # a page's wide columns: far under the result limit (10 MiB; 4 MiB on the emulator)
 METADATA_TOKEN_URL = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
 
 DDL = [
@@ -126,6 +131,8 @@ TABLES = {
     "landings": (("cs",), LANDING_FIELDS[1:]),
     "postmerge": (("id",), ("cs", "cr", "ref", "status", "created", "started", "finished", "worker", "log")),
 }
+WIDE = {"changesets": ("data",), "derived": ("value",), "kv": ("value",), "audit": ("detail",),  # unbounded values
+        "crs": ("description", "conflict"), "cr_comments": ("body",), "postmerge": ("log",)}
 RESERVED = {"new", "at", "hash"}  # GoogleSQL keywords used as column names (quoted in SQL)
 COLUMN_TYPES = {m.group(1): {c.strip("`"): t for c, t in re.findall(
     r"(`?\w+`?)\s+(STRING|BYTES|INT64|FLOAT64|TIMESTAMP|BOOL)\b", m.group(2))}
@@ -404,10 +411,13 @@ class SpannerClient:
             try:
                 err = json.loads(data)
                 err = err.get("error", err)
-                code, message = err.get("code"), err.get("message", "")
-            except ValueError:
-                code, message = None, data[:200].decode("utf-8", "replace")
-            status = code if isinstance(code, int) and code < 100 else None
+                code, name, message = err.get("code"), err.get("status"), err.get("message", "")
+            except (ValueError, AttributeError):
+                code, name, message = None, None, data[:200].decode("utf-8", "replace")
+            # spanner.googleapis.com answers in the AIP-193 envelope ("code" is the HTTP status,
+            # "status" the google.rpc code's name); the emulator's gateway puts the rpc code in "code"
+            status = GRPC_CODES.get(name) if isinstance(name, str) else (
+                code if isinstance(code, int) and code < 100 else None)
             if resp.status == 401 and not refresh and self._token.mode:
                 refresh = True
                 continue
@@ -475,42 +485,54 @@ class SpannerClient:
     # -- writes ----------------------------------------------------------------------------------------
     def run_in_transaction(self, fn):
         """Run ``fn(tx)`` in a read-write transaction and commit it; when Spanner aborts it, run it
-        again from the start, with jittered backoff, until the deadline (FR-ST-03)."""
+        again from the start, with jittered backoff, until the deadline (FR-ST-03). The retries keep
+        the session, and with it the lock priority Spanner gives a retried transaction."""
         start, attempt = time.monotonic(), 0
         while True:
-            attempt += 1
             try:
                 with self.session() as s:
-                    tx = _Results(self, s, {"begin": {"readWrite": {}}})
-                    try:
-                        result = fn(tx)
-                        if tx.id is None:
-                            if tx.mutations:  # blind writes: one round trip
-                                self.request("POST", f"{s}:commit", {"singleUseTransaction": {"readWrite": {}},
-                                                                     "mutations": tx.mutations})
-                        elif tx.wrote:
-                            self.request("POST", f"{s}:commit", {"transactionId": tx.id, "mutations": tx.mutations})
-                        else:
-                            self.request("POST", f"{s}:rollback", {"transactionId": tx.id})
-                    except Aborted:
-                        raise
-                    except BaseException:
-                        if tx.id is not None:
-                            try:
-                                self.request("POST", f"{s}:rollback", {"transactionId": tx.id})
-                            except SpannerError:
-                                pass
-                        raise
-                self.stats["transactions"] += 1
-                return result
+                    while True:
+                        attempt += 1
+                        try:
+                            result = self._attempt(s, fn)
+                        except Aborted:
+                            self._backoff(start, attempt)
+                            continue
+                        self.stats["transactions"] += 1
+                        return result
             except SpannerError as e:
-                if not isinstance(e, Aborted) and not _session_gone(e):
+                if not _session_gone(e):
                     raise
-                self.stats["aborts"] += 1
-                if time.monotonic() - start > self.deadline:
-                    raise SpannerError(f"a metadata transaction was aborted {attempt} times in "
-                                       f"{self.deadline:.0f} s") from None
-                time.sleep(random.uniform(0, min(0.2, 0.002 * 2 ** min(attempt, 7))))
+                self._backoff(start, attempt)  # Spanner deleted the session: start again in another
+
+    def _attempt(self, s: str, fn):
+        tx = _Results(self, s, {"begin": {"readWrite": {}}})
+        try:
+            result = fn(tx)
+            if tx.id is None:
+                if tx.mutations:  # blind writes: one round trip
+                    self.request("POST", f"{s}:commit", {"singleUseTransaction": {"readWrite": {}},
+                                                         "mutations": tx.mutations})
+            elif tx.wrote:
+                self.request("POST", f"{s}:commit", {"transactionId": tx.id, "mutations": tx.mutations})
+            else:
+                self.request("POST", f"{s}:rollback", {"transactionId": tx.id})
+            return result
+        except Aborted:
+            raise  # the transaction is gone already; the session is fine
+        except BaseException:
+            if tx.id is not None:
+                try:
+                    self.request("POST", f"{s}:rollback", {"transactionId": tx.id})
+                except SpannerError:
+                    pass
+            raise
+
+    def _backoff(self, start: float, attempt: int) -> None:
+        self.stats["aborts"] += 1
+        if time.monotonic() - start > self.deadline:
+            raise SpannerError(f"a metadata transaction was aborted {attempt} times in {self.deadline:.0f} s")
+        time.sleep(random.uniform(0, min(0.2, 0.002 * 2 ** min(attempt, 7))))
 
     def write(self, mutations_fn) -> None:
         """Blind writes (insert-or-update, delete): ``mutations_fn(tx)`` only buffers mutations."""
@@ -646,6 +668,41 @@ class SpannerMetaStore(MetaStore):
                 return
             after = rows[-1][:len(order)]
 
+    def _paged_wide(self, cols: str, rest: str, order: tuple, wide: tuple, read=None, typed=(), limit=None,
+                    start=None, **params):
+        """``_paged`` for a table with wide columns (``cols``, beginning with the ``order`` columns,
+        ``rest`` from FROM on, ending at ``{after}``): each page's row sizes are read first, then as
+        many whole rows at a time as fit in BYTES_PER_READ (at least one), so a response never nears
+        Spanner's limit on the size of a result. ``limit``: at most that many rows; ``start``: the
+        ``order`` values to continue after."""
+        read = read or (lambda sql, params: self.client.query(sql, params))
+        size = " + ".join(f"IFNULL(BYTE_LENGTH({q(c)}), 0)" for c in wide)
+        by = " ORDER BY " + ", ".join(map(q, order))
+        after, left = start, limit
+
+        def query(select, n):
+            where, keys = _after(order, after, typed) if after is not None else ("", {})
+            return read(f"SELECT {select} {rest.format(after=where)}{by} LIMIT {n}", {"repo": self.repo, **params, **keys})
+        while left is None or left > 0:
+            page = PAGE if left is None else min(PAGE, left)
+            sizes = [r[0] for r in query(size, page)]
+            i = 0
+            while i < len(sizes):
+                n, total = 1, sizes[i]
+                while i + n < len(sizes) and total + sizes[i + n] <= BYTES_PER_READ:
+                    total += sizes[i + n]
+                    n += 1
+                rows = query(cols, n)
+                if not rows:
+                    return
+                yield from rows
+                after = rows[-1][:len(order)]
+                i += len(rows)
+            if left is not None:
+                left -= len(sizes)
+            if len(sizes) < page:
+                return
+
     # -- changeset log -----------------------------------------------------------------------------
     def insert_changeset(self, cs_id, data):
         return self._tx(lambda tx: tx.execute(
@@ -669,13 +726,19 @@ class SpannerMetaStore(MetaStore):
 
     def tail(self, after=None, limit=1000, data=False):
         """The cursor is (commit timestamp, id): the order of the changesets_created index."""
-        where, params = "", {}
-        if after is not None:
-            where = " AND (created > @ts OR (created = @ts AND id > @id))"
-            params = {"ts": Typed(after[0], "TIMESTAMP"), "id": after[1]}
-        rows = self._q(f"SELECT created, id{', data' if data else ''} FROM changesets@{{FORCE_INDEX=changesets_created}} "
-                       f"WHERE repo = @repo{where} ORDER BY created, id LIMIT @n", n=int(limit), **params)
+        if data:  # pages bounded by bytes: changesets can be large
+            rows = list(self._paged_wide("created, id, data", "FROM changesets@{{FORCE_INDEX=changesets_created}} "
+                                         "WHERE repo = @repo{after}", ("created", "id"), ("data",), typed=("created",),
+                                         limit=int(limit), start=after))
+        else:
+            where, params = "", {}
+            if after is not None:
+                where = " AND (created > @ts OR (created = @ts AND id > @id))"
+                params = {"ts": Typed(after[0], "TIMESTAMP"), "id": after[1]}
+            rows = self._q(f"SELECT created, id FROM changesets@{{FORCE_INDEX=changesets_created}} "
+                           f"WHERE repo = @repo{where} ORDER BY created, id LIMIT @n", n=int(limit), **params)
         return [((r[0], r[1]), *r[1:]) for r in rows]
+
 
     # -- refs ---------------------------------------------------------------------------------------
     def get_ref(self, name):
@@ -833,7 +896,8 @@ class SpannerMetaStore(MetaStore):
                        f"ORDER BY seq DESC LIMIT @n", **params)
 
     def audit_iter(self):
-        return self._paged(f"SELECT {', '.join(map(q, AUDIT_FIELDS))} FROM audit WHERE repo = @repo{{after}}", ("seq",))
+        return self._paged_wide(", ".join(map(q, AUDIT_FIELDS)), "FROM audit WHERE repo = @repo{after}", ("seq",),
+                                WIDE["audit"])
 
     # -- change requests ---------------------------------------------------------------------------------
     def _next(self, tx, name: str, n: int = 1) -> int:
@@ -939,6 +1003,8 @@ class SpannerMetaStore(MetaStore):
     def _record_landings(self, tx, rows, jobs, cr_updates) -> None:
         fields = [("cs", "STRING"), ("source", "STRING"), ("cr", "INT64"), ("ref", "STRING"),
                   ("landed_at", "FLOAT64"), ("head", "STRING")]
+        seen: set = set()  # the first record of a changeset stays, within one call too
+        rows = [r for r in rows if not (r[0] in seen or seen.add(r[0]))]
         if rows:
             tx.execute("INSERT OR IGNORE INTO landings (repo, cs, source, cr, ref, landed_at, head) "
                        "SELECT @repo, x.cs, x.source, x.cr, x.ref, x.landed_at, x.head FROM UNNEST(@rows) AS x",
@@ -1035,9 +1101,12 @@ class SpannerMetaStore(MetaStore):
                     select = list(dict.fromkeys(order + keys + cols))
                     out = [c for c in keys + cols if c != "moved"]
                     hint = "@{{FORCE_INDEX=changesets_created}}" if table == "changesets" else ""
-                    for row in self._paged(f"SELECT {', '.join(map(q, select))} FROM {table}{hint} "
-                                           f"WHERE repo = @repo{{after}}", order, snap.query,
-                                           typed=("created", "moved") if table in ("changesets", "ref_log") else ()):
+                    typed = ("created", "moved") if table in ("changesets", "ref_log") else ()
+                    rest = f"FROM {table}{hint} WHERE repo = @repo{{after}}"
+                    rows = self._paged_wide(", ".join(map(q, select)), rest, order, WIDE[table], snap.query, typed) \
+                        if table in WIDE else self._paged(f"SELECT {', '.join(map(q, select))} {rest}", order, snap.query,
+                                                          typed)
+                    for row in rows:
                         d = dict(zip(select, row))
                         if table == "changesets":
                             d["created"] = ts_to_float(d["created"])
