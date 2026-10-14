@@ -210,6 +210,13 @@ class Policy:
     def restricted_prefixes(self) -> list[str]:
         return [r.prefix for r in self.rules if r.read is not None and ANY not in r.read]
 
+    def acl_entry(self, path: str) -> str:
+        """The object index's entry for an object at ``path`` (FR-IAM-04/11): "" where everyone may
+        read it, else the directory that restricts it, "/" for a rule on the repository's root (whose
+        prefix is also "", which must not read as public)."""
+        prefix = self.restricted_prefix(path)
+        return "" if prefix is None else prefix or "/"
+
     # -- refs (FR-REF-03/05, BR-04) -----------------------------------------------------------------------
     def can_update_ref(self, user: str | None, ref: str) -> bool:
         if self.is_admin(user):

@@ -259,6 +259,23 @@ class TestDirectoryPermissions(DirectoryTest):
             cs = self.commit(privileged, self.seed, {"src/z.py": privileged + "\n"}, author="bob")
             self.assertEqual(self.call("alice", "get_changeset", rev=cs)["author"], "bob")
 
+    def test_T_IAM_15_a_rule_on_the_root_restricts_every_place_it_covers(self):
+        """A repository readable by everyone whose root rule lets only a group read ("private but for
+        docs/"): the object index must not record the root ("") as the public marker ("")."""
+        self.c.close()
+        self.c = Cluster(self.tmp + "-root", repos={REPO: {"read": ["*"], "write": ["*"], "paths": [
+            {"prefix": "/", "read": ["sec-team"]}, {"prefix": "docs", "read": ["*"]}]}}, identity=IDENTITY)
+        self.commit("root", None, {"src/app.py": "eng only\n", "docs/readme.md": "for everyone\n"}, move_main=True)
+        daemon = lambda user, data: self.c.client(user, url=self.c.daemon_urls[0]).get_objects(  # noqa: E731
+            REPO, [blob_id(data)])[0][1]
+        self.assertEqual(daemon("sam", b"eng only\n"), F_RESTRICTED)  # authorized, never cached
+        self.assertEqual(daemon("bob", b"eng only\n"), F_DENIED)
+        self.assertEqual(daemon("bob", b"for everyone\n"), 0)
+        self.denied(lambda: self.call("bob", "read_file", rev="main", path="src/app.py"))
+        self.c.client("root").call("reindex_acl", repo=REPO)
+        self.assertEqual(daemon("bob", b"eng only\n"), F_DENIED)
+        shutil.rmtree(self.tmp + "-root", ignore_errors=True)
+
     def test_T_IAM_09_repository_level_read_restriction(self):
         dep = self.c.deployment
         dep.create_repo("private-repo", {"read": ["alice"], "write": ["alice"]})
@@ -349,6 +366,44 @@ class TestPolicyChanges(DirectoryTest):
         self.assertTrue(self.call("root", "audit_verify")["ok"])  # root is still an administrator
         self.write_policy({**POLICY, "paths": [{"prefix": "secrets", "read": ["sec-team", "bob"]}]})
         self.call("bob", "read_file", rev="main", path="secrets/key.txt")  # a valid file applies at once
+
+    def test_T_IAM_16_a_reindex_keeps_objects_committed_while_it_runs_restricted(self):
+        """A commit lands (on any server) after the re-index's scan and before its replace: its
+        restricted objects keep the entries its commit wrote, so tiers still deny them."""
+        repo = self.c.repo()
+        real = repo.meta.acl_replace
+        late = b"committed while the reindex ran\n"
+
+        def replace_after_a_commit(rows):
+            repo.create_changeset([self.seed], [{"path": "secrets/late.txt", "content": late}], "sam", "m", user="sam")
+            real(rows)
+        repo.meta.acl_replace = replace_after_a_commit
+        try:
+            self.call("root", "reindex_acl")
+        finally:
+            repo.meta.acl_replace = real
+        cache = self.c.client("scion-cache", tier="cache")
+        self.assertEqual(cache.get_objects(REPO, [blob_id(late)], on_behalf="bob")[0][1], F_DENIED)
+        self.assertEqual(cache.get_objects(REPO, [blob_id(late)], on_behalf="sam")[0][1], F_RESTRICTED)
+
+    def test_T_AUD_02_a_denial_is_audited_in_the_repository_the_request_used(self):
+        """A query parameter naming another (or no) repository can neither hide a denial nor file it
+        elsewhere: JSON methods take their repository from the params alone."""
+        import http.client
+        from urllib.parse import urlparse
+
+        def denials():
+            return sum(1 for e in self.c.repo().audit.entries(1000) if e["action"] == "denied")
+        u = urlparse(self.c.server_urls[0])
+        for query in ("", "?repo=no-such-repo", "?repo=" + REPO + "x"):
+            before = denials()
+            conn = http.client.HTTPConnection(u.hostname, u.port)
+            conn.request("POST", "/rpc/read_file" + query,
+                         json.dumps({"params": {"repo": REPO, "rev": "main", "path": "secrets/key.txt"}}),
+                         {"X-Scion-User": "bob"})
+            self.assertEqual(conn.getresponse().status, 403)
+            conn.close()
+            self.assertEqual(denials(), before + 1, query)
 
     def test_T_AUD_01_audit_log(self):
         self.denied(lambda: self.call("bob", "read_file", rev="main", path="secrets/key.txt"))

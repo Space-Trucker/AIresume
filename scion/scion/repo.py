@@ -49,6 +49,9 @@ class OpenPolicy:
     def can_read(self, user, path=""):
         return True
 
+    def can_read_repo(self, user):
+        return True
+
     def can_write(self, user, path=""):
         return True
 
@@ -60,6 +63,9 @@ class OpenPolicy:
 
     def restricted_prefixes(self):
         return []
+
+    def acl_entry(self, path):
+        return ""
 
 
 def _api_entry(e):
@@ -125,8 +131,8 @@ class Repository:
         if not self.policy.restricted_prefixes():
             return self.trees.apply(base, changes)  # nothing is restricted: nothing to record
         rows = []
-        restricted_prefix = self.policy.restricted_prefix
-        root = self.trees.apply(base, changes, lambda path, kind, oid: rows.append((oid, restricted_prefix(path) or "")))
+        entry = self.policy.acl_entry
+        root = self.trees.apply(base, changes, lambda path, kind, oid: rows.append((oid, entry(path))))
         self.meta.acl_add(rows)
         return root
 
@@ -152,7 +158,7 @@ class Repository:
         ``F_RESTRICTED`` when shared tiers must not cache them. Restricted objects are authorized
         for the end user on every request (ADR-06). Only blobs and trees are served; derived
         structures stay internal."""
-        if not self.policy.can_read(user, ""):
+        if not self.policy.can_read_repo(user):  # the repository; its directories are checked per object
             return [(oid, F_DENIED, b"") for oid in ids]
         private = not getattr(self.policy, "public", True)
         acl = self._acl(ids)
@@ -189,35 +195,45 @@ class Repository:
 
     def reindex_acl(self) -> dict:
         """Rebuild the object index under the current policy (FR-IAM-09, UC-22 step 3): every
-        object every changeset wrote, at every place it appeared. Run it after a policy change, then
-        restart the caches, which may still hold objects that were public before (R-07)."""
-        prefix_of = self.policy.restricted_prefix
+        object every changeset wrote, at every place it appeared. Run it after a policy change; tiers
+        purge what they hold when the ACL epoch changes (ADR-20).
+
+        Commits go on meanwhile, on any server. A commit writes its objects' entries before its
+        changeset exists, so the scan can miss them: the replace therefore only touches objects the
+        scan saw, and the scan then continues over the changesets created while it ran."""
         rows: set[tuple[str, str]] = {(EMPTY_TREE_ID, "")}
-        changesets = 0
-        after = None
-        while True:
-            batch = self.meta.tail(after, 1000)
-            if not batch:
-                break
+        changesets, after = 0, None
+        while batch := self.meta.tail(after, 1000):
             for after, cs_id in batch:
                 changesets += 1
-                root = self.root_tree(cs_id)
-                rows.add((root, prefix_of("") or ""))
-                dirs = set()
-                for ch in self.get_changeset(cs_id).changes:
-                    if ch.blob:
-                        rows.add((ch.blob, prefix_of(ch.path) or ""))
-                    parts = ch.path.split("/")
-                    dirs.update("/".join(parts[:k]) for k in range(1, len(parts)))
-                for d in dirs:
-                    e = self.trees.lookup(root, d)
-                    if e is not None and e[0] == KIND_DIR:
-                        rows.add((e[1], prefix_of(d) or ""))
+                rows |= self._acl_rows(cs_id)
         self.meta.acl_replace(sorted(rows))
+        while batch := self.meta.tail(after, 1000):  # created during the scan
+            for after, cs_id in batch:
+                changesets += 1
+                new = self._acl_rows(cs_id)
+                self.meta.acl_add(sorted(new - rows))
+                rows |= new
         self.meta.kv_set("acl_reindexed", f"{time.time()}:{os.getpid()}")  # a new ACL epoch (ADR-20)
         restricted = sum(1 for _, p in rows if p)
         return {"changesets": changesets, "entries": len(rows), "restricted_entries": restricted,
                 "epoch": self.acl_epoch()}
+
+    def _acl_rows(self, cs_id: str) -> set[tuple[str, str]]:
+        """The object index's entries for the objects a changeset wrote, under the current policy."""
+        entry = self.policy.acl_entry
+        root = self.root_tree(cs_id)
+        rows, dirs = {(root, entry(""))}, set()
+        for ch in self.get_changeset(cs_id).changes:
+            if ch.blob:
+                rows.add((ch.blob, entry(ch.path)))
+            parts = ch.path.split("/")
+            dirs.update("/".join(parts[:k]) for k in range(1, len(parts)))
+        for d in dirs:
+            e = self.trees.lookup(root, d)
+            if e is not None and e[0] == KIND_DIR:
+                rows.add((e[1], entry(d)))
+        return rows
 
     def put_objects(self, items, user=None) -> int:
         """Store uploaded blobs after verifying each against its id. Trees are always derived on

@@ -124,7 +124,9 @@ class MetaStore:
         raise NotImplementedError
 
     def acl_replace(self, rows: Iterable[tuple[str, str]]) -> None:
-        """Replace the whole index (a re-index, FR-IAM-09)."""
+        """A re-index (FR-IAM-09): the entries of every object in ``rows`` become exactly those in
+        ``rows``. Objects not in ``rows`` keep theirs: one committed while the re-index scanned keeps
+        the entries its commit wrote."""
         raise NotImplementedError
 
     def grant_add(self, oid: str, user: str, now: float) -> None:
@@ -567,8 +569,12 @@ class SqliteMetaStore(MetaStore):
         return out
 
     def acl_replace(self, rows):
+        rows = list(rows)
+        oids = sorted({oid for oid, _ in rows})
         with self.transaction() as c:
-            c.execute("DELETE FROM object_acl")
+            for i in range(0, len(oids), 500):
+                chunk = oids[i:i + 500]
+                c.execute(f"DELETE FROM object_acl WHERE oid IN ({','.join('?' * len(chunk))})", chunk)
             c.executemany("INSERT OR IGNORE INTO object_acl (oid, prefix) VALUES (?, ?)", rows)
 
     def grant_add(self, oid, user, now):

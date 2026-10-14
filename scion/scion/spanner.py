@@ -769,9 +769,11 @@ class SpannerMetaStore(MetaStore):
         """Not one transaction (a large index exceeds a commit's limits): the new rows are written
         first, then the stale ones deleted, so a reader sees the old index, then both, then the new."""
         new = set(rows)
+        oids = {oid for oid, _ in new}
         self._upsert("object_acl", ("oid", "prefix"), sorted(new))
         stale = [(self.repo, oid, p) for oid, p in self._paged(
-            "SELECT oid, prefix FROM object_acl WHERE repo = @repo{after}", ("oid", "prefix")) if (oid, p) not in new]
+            "SELECT oid, prefix FROM object_acl WHERE repo = @repo{after}", ("oid", "prefix"))
+            if oid in oids and (oid, p) not in new]
         for chunk in _chunks(stale):
             self.client.write(lambda tx, chunk=chunk: tx.delete("object_acl", chunk))
 

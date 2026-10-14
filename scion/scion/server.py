@@ -161,8 +161,13 @@ class ScionService(Service):
             raise
 
     def _audit_denial(self, method, body, query, caller, error) -> None:
+        """Audit a denial in the repository the method used: named in the query for methods with a
+        binary body, in the JSON params otherwise (as dispatch reads them), never in a query
+        parameter a JSON method ignores."""
         try:
-            repo_name = (query.get("repo") or [None])[-1] or (json.loads(body or b"{}").get("params") or {}).get("repo")
+            m = self.methods.get(method)
+            repo_name = (query.get("repo") or [None])[-1] if m is not None and m.binary_in else \
+                (json.loads(body or b"{}").get("params") or {}).get("repo")
             repo = self.deployment.repo(repo_name)
         except Exception:  # an unknown or unnamed repository has no audit log to write to
             return
