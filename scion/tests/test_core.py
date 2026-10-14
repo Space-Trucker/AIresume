@@ -2,17 +2,21 @@
 Test IDs follow docs/design/10-test-plan.md §10.4."""
 import json
 import os
+import random
 import shutil
 import statistics
 import tempfile
 import threading
 import time
 import unittest
+import unittest.mock
 
 import helpers  # noqa: F401
 from helpers import repository
+from scion import derived_types
 from scion.changeset import Changeset
 from scion.derived import DerivedType
+from scion.derived_types import line_opcodes
 from scion.merge3 import merge3
 from scion.objects import EMPTY_TREE_ID, ObjectError, blob_id, decode_stored, encode_stored
 from scion.repo import MergeConflict, NotFound
@@ -246,6 +250,41 @@ class TestDerived(RepoCase):
         self.assertEqual(self.repo.blame(c3, "g")["changesets"][c2]["author"], "bob")
         c4 = self.commit([c3], {"bin": b"\0\1\2"})
         self.assertTrue(self.repo.blame(c4, "bin")["binary"])
+
+    def test_blame_diff_follows_the_change_not_the_file(self):
+        """line_opcodes is a shortest edit (checked against the longest common subsequence), also
+        when it falls back to difflib for a rewrite; and a two-line change in a large file of
+        repeated lines (a changelog, a long C file) is matched in milliseconds."""
+        def lcs(a, b):
+            row = [0] * (len(b) + 1)
+            for x in a:
+                prev, row = row, [0]
+                for j, y in enumerate(b):
+                    row.append(prev[j] + 1 if x == y else max(prev[j + 1], row[j]))
+            return row[-1]
+
+        rng = random.Random(7)
+        for t in range(400):
+            old = [rng.choice("abc") for _ in range(rng.randint(0, 14))]
+            new = [rng.choice("abc") for _ in range(rng.randint(0, 14))] if t % 2 else list(old)
+            for _ in range(rng.randint(0, 3)):
+                k = rng.randint(0, len(new))
+                new[k:k + rng.randint(0, 2)] = [rng.choice("abcd") for _ in range(rng.randint(0, 2))]
+            for max_edit in (derived_types.MAX_EDIT, 1):  # Myers, and the difflib fallback
+                with unittest.mock.patch.object(derived_types, "MAX_EDIT", max_edit):
+                    ops = line_opcodes(old, new)
+                out = []
+                for tag, i1, i2, j1, j2 in ops:
+                    out += old[i1:i2] if tag == "equal" else new[j1:j2]
+                self.assertEqual(out, new)
+                if max_edit > 1:
+                    self.assertEqual(sum(i2 - i1 for tag, i1, i2, _, _ in ops if tag == "equal"), lcs(old, new))
+        big = [b"}\n", b"\n", b"    break;\n"] * 7000 + [f"line {i}\n".encode() for i in range(3000)]
+        changed = big[:100] + [b"new\n"] + big[100:20000] + [b"also new\n"] + big[20001:]
+        t0 = time.perf_counter()
+        ops = line_opcodes(big, changed)
+        self.assertLess(time.perf_counter() - t0, 1.0)
+        self.assertEqual(sum(i2 - i1 for tag, i1, i2, _, _ in ops if tag == "equal"), len(big) - 1)
 
     def test_T_DD_07_backfill(self):
         cur = None
