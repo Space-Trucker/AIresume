@@ -17,7 +17,9 @@
 | Simulation / stress | swarm of agents doing clone, commit, review and land concurrently on 2 servers | `SCION_SIM_AGENTS`, `SCION_SIM_ROUNDS` | `tests/test_simulation.py` |
 | Migration | real git repositories with branches, merges, renames, modes, symlinks, file↔directory swaps | `git` CLI in a temp directory | `tests/test_ingest.py` |
 | System / E2E | separate processes: server, cache, daemon (Unix socket), CLI | shell script | `examples/demo.sh` |
-| Performance | commit scaling, ancestry, tiered checkout | `scion-admin bench` (invariants asserted by T-PERF-01) | `scion/tools/bench.py`, `tests/test_admin.py` |
+| Performance | commit scaling, ancestry, tiered checkout; Scion against git on the same repository | `scion-admin bench` (invariants asserted by T-PERF-01), `scion-admin bench --vs-git` | `scion/tools/bench.py`, `tests/test_admin.py` |
+| Metadata backends | the metadata conformance suite, and the integration suites that write metadata, on SQLite and on Google's Spanner emulator | `SCION_TEST_SPANNER=<emulator REST endpoint>` selects Spanner; without it the Spanner tests skip | `tests/test_metastore.py` and the suites below |
+| Migration pilot | ingest CPython with verification; serve its history to CI with no client; measure growth | manual run, results recorded in 11 | `examples/pilot.sh` |
 | Documentation | every Mermaid diagram renders; every requirement and test ID is defined, traced and tested | `scripts/check_docs.py` (`--mmdc` adds the render check) | T-DOC-01, T-DOC-02 |
 
 ## 10.3 Environments
@@ -134,10 +136,18 @@
 | T-E2E-01 | system, NFR-09/17 | every component in its own process: git ingestion with verification, clones through the tiers, sparse checkout, permissions, grep, review and landing, six concurrent landers, post-merge testing and the deploy gate, a superfan, server failover, online backup and verified restore, the audit chain, each process's footprint | examples/demo.sh |
 | T-SYS-01 | NFR-02, NFR-17 | steady-state hit rates: one node with 100 jobs ≥ 99%; one cache behind 100 nodes ≥ 99% over its life, cold start included; every store within its configured MB bound, evicting when tiny | test_system |
 | T-SYS-02 | NFR-13 | losing the daemon with its disk store, the cache and a server loses no data: replacements serve identical checkouts, and a new server process on the same storage serves everything | test_system |
+| T-ST-01 | FR-ST-01 | metadata conformance: changesets, refs and the ref log, derived values, indexes, object ACLs and grants, settings, the content index, the audit chain, change requests, landings, the post-merge queue and the git map behave the same on SQLite and on the Spanner emulator | test_metastore |
+| T-ST-02 | FR-ST-02, UC-32 | a deployment configured for Spanner serves the whole API: clone, commit, review, land, search, audit; switching backends is configuration only | test_metastore |
+| T-ST-03 | FR-ST-03 | under contention on Spanner: concurrent compare-and-swaps have exactly one winner; concurrent post-merge claims take every job once; the landing swarm loses nothing | test_metastore, test_simulation |
+| T-ST-04 | FR-ST-04 | a backup of a Spanner deployment taken under load restores to SQLite and to Spanner, with identical refs, changesets and audit chain | test_metastore |
+| T-OPS-06 | FR-OP-09, UC-31 | against a fake Claude API, a finding leads to tool calls over stats and logs, and the analysis reaches the webhook beside the finding | test_superfan_agent |
+| T-OPS-07 | FR-OP-10 | the agent's limits and failure paths: API errors with retries, a refusal, the turn and token limits, a repeated finding, a failing tool; no credential in any request log, prompt or post | test_superfan_agent |
+| T-PERF-02 | FR-OP-11, NFR-17 | Scion against git serving the same repository: server CPU, peak memory and wall time per checkout, with identical working copies (a small repository in the suite; CPython in the pilot) | test_admin; `scion-admin bench --vs-git` |
+| T-PILOT-01 | FR-MG-01…07, NFR-03, M4 | CPython ingested in order with every file verified against git; history, blame and ancestry served with no client; memory and per-operation cost tracked as history grows | examples/pilot.sh |
 | T-SYS-03 | NFR-03 | no component materializes the repository: path queries read the same 27 objects at 500 and 10,000 files; a sparse checkout of 1 of 40 projects fetches 103 of 4,081 objects | test_system |
 | T-PERF-01 | NFR-02/04/05/06, FR-OP-07 | benchmark invariants: constant tree writes per commit, O(log n) ancestry steps, a second clone with zero cache requests, a sparse checkout in under 10 s | test_admin; `scion-admin bench` |
 | T-DOC-01 | 06 | all diagrams render (`mmdc`) | `scripts/check_docs.py --mmdc PATH` |
-| T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; every test cited in 11 is planned in 10, every planned test exists in tests/, and every named test is planned; `--release` requires every requirement I or P | `scripts/check_docs.py` |
+| T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; every test cited in 11 is planned in 10, every planned test exists in tests/ (a test whose requirements are all still planned for a milestone may wait for it), and every named test is planned; `--release` requires every requirement I or P and every test written | `scripts/check_docs.py` |
 
 ## 10.5 Entry and exit criteria
 
@@ -160,4 +170,6 @@ SCION_SIM_AGENTS=32 SCION_SIM_ROUNDS=5 python3 -m unittest discover -s tests -p 
 ./examples/demo.sh                                                      # end to end
 python3 -m scion scion-admin bench                                      # performance
 python3 scripts/check_docs.py --release [--mmdc PATH]                   # documentation checks
+SCION_TEST_SPANNER=http://127.0.0.1:9020 python3 -m unittest discover -s tests   # the suite on the Spanner emulator
+python3 -m scion scion-admin bench --vs-git PATH                         # Scion against git on one repository
 ```

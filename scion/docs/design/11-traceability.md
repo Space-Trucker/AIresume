@@ -2,8 +2,9 @@
 
 This matrix traces every requirement to use cases (05), features (04), design elements (06/07)
 and tests (10). At M0 the prototype was deleted (decision 2) and every requirement was rebuilt in
-milestones **B1–B5** (12 §12.3). The Status column showed the planned milestone until the requirement was
-built and its acceptance tests passed; it now reads **I** for all of them.
+milestones **B1–B5** (12 §12.3). The Status column shows the planned milestone until the requirement is
+built and its acceptance tests pass, then **I**. Every requirement of B1–B5 reads **I**; the requirements added after
+B5 (12 §12.9) read **B6** until milestone B6 builds them.
 
 ## 11.1 Functional requirements
 
@@ -28,6 +29,10 @@ built and its acceptance tests passed; it now reads **I** for all of them.
 | FR-OBJ-03 | all (5.3) | F-02 | bounded stores; no gc | T-CORE-02 | I |  |
 | FR-OBJ-04 | UC-01 | F-02 | decode_stored(expected_id) in daemon and client | T-CORE-01, T-TIER-08 | I |  |
 | FR-OBJ-05 | all (5.3) | F-02 | derived trees only | T-CORE-08 | I |  |
+| FR-ST-01 | UC-32 | F-46 | MetaStore interface; SqliteMetaStore; SpannerMetaStore (keys by repository, 06 §6.10) | T-ST-01 | B6 |  |
+| FR-ST-02 | UC-32 | F-46 | `metadata` section of deployment.json; open_metastore | T-ST-02 | B6 |  |
+| FR-ST-03 | UC-15, UC-18, UC-32 | F-46 | SpannerClient.run_in_transaction: retry on ABORTED with backoff | T-ST-03 | B6 |  |
+| FR-ST-04 | UC-30, UC-32 | F-46 | backup: Spanner read-only transaction at one timestamp, written as a SQLite meta.db | T-ST-04 | B6 |  |
 | FR-DD-01 | UC-27 | F-06 | derived.DerivedDataManager | T-DD-01 | I |  |
 | FR-DD-02 | UC-09, UC-27 | F-06 | DerivedDataManager._derive_missing | T-DD-01 | I |  |
 | FR-DD-03 | UC-09, UC-27 | F-06 | DerivedType.eager | T-DD-01, T-DD-07 | I |  |
@@ -139,6 +144,9 @@ built and its acceptance tests passed; it now reads **I** for all of them.
 | FR-OP-04 | UC-26 | F-41 | superfan.Rule threshold rules (`for N`, severity) | T-OPS-02 | I |  |
 | FR-OP-05 | UC-26 | F-41 | Superfan webhook through notify.Notifier.send (`text` payload) | T-OPS-03 | I |  |
 | FR-OP-08 | UC-26 | F-41 | rpc.LogRing per component, GET /logs (ADR-18); findings attach the lines of the last two intervals | T-OPS-04 | I |  |
+| FR-OP-09 | UC-31 | F-47 | superfan_agent.Investigator: Messages API over HTTPS, read-only tools (stats, logs, baselines, findings) | T-OPS-06 | B6 |  |
+| FR-OP-10 | UC-31 | F-47 | Investigator limits (turns, tokens, concurrency), dedup by finding key, redaction, fallback post | T-OPS-07 | B6 |  |
+| FR-OP-11 | UC-33 | F-48 | tools.bench --vs-git: git upload-pack and the Scion tiers measured on one host (ADR-26) | T-PERF-02 | B6 |  |
 | FR-OP-06 | UC-25 | F-42 | RateLimiter; 429 with Retry-After; RpcClient backs off | T-OPS-01 | I |  |
 | FR-OP-07 | UC-25 | F-43 | tools.bench; `scion-admin bench` | T-PERF-01 | I |  |
 | FR-AD-01 | UC-23 | F-43 | `scion-admin init`, `create-repo` | T-ADM-02, T-E2E-01 | I |  |
@@ -184,6 +192,7 @@ Updated at the end of every milestone (computed by the T-DOC-02 cross-check).
 | B3 | IAM, audit, review and landing | **done**: 30 requirements built and tested (28 FR, 2 NFR); the 32 × 5 swarm landed all 160 changes on 2 servers with 31 ref moves |
 | B4 | migration, automation, search, operations, backup | **done**: 28 requirements built and tested (31 new tests: 30 in five new suites for ingestion, automation, search, superfans and the admin toolkit, 1 in IAM; the IAM leak sweep now covers grep); the 32 × 5 swarm landed all 160 changes on 2 servers with 31 ref moves; the end-to-end demo (T-E2E-01) passes with every component in its own process |
 | B5 | system verification of the non-functional requirements | **done**: the 7 remaining NFRs verified with measurements (T-SYS-01…03 added; the swarm now asserts the landing rate and time to land); every requirement is **I**; the doc checks are committed as `scripts/check_docs.py` and pass with `--release` |
+| B6 | as Anthropic runs it: Spanner metadata, superfan agents, comparison with git, the CPython pilot (M4), adversarial review | **planned**: 7 requirements (FR-ST-01…04, FR-OP-09…11) |
 
 ## 11.4 Findings carried into the rebuild
 

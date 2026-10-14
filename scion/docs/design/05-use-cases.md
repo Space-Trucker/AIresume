@@ -85,6 +85,7 @@ flowchart LR
   Mig[Migration engineer]
   Ops[Operator]
   Fan[Superfan monitor]
+  FanAgent[Superfan agent]
   subgraph Admin_["Scion: administration and operations"]
     UC22([UC-22 Configure access policy])
     UC23([UC-23 Migrate a git repository])
@@ -94,13 +95,18 @@ flowchart LR
     UC27([UC-27 Add or backfill derived data])
     UC28([UC-28 Manage protected refs and releases])
     UC30([UC-30 Back up and restore])
+    UC31([UC-31 Investigate a finding])
+    UC32([UC-32 Choose the metadata backend])
+    UC33([UC-33 Compare with git])
   end
   Admin --> UC22 & UC27 & UC28
   Sec --> UC22
   Mig --> UC23
-  Ops --> UC24 & UC25 & UC30
+  Ops --> UC24 & UC25 & UC30 & UC32 & UC33
   Fan --> UC26
   Ops --> UC26
+  FanAgent --> UC31
+  UC31 -. extends .-> UC26
 ```
 
 ## 5.2 Fully dressed use cases
@@ -380,6 +386,42 @@ scenario · extensions · postconditions · frequency.
   2. On disaster, the operator restores both and restarts the servers. Tiers rebuild their caches on demand.
 * **Extensions:** blob storage is ahead of the metadata store: extra objects are harmless (nothing references them).
 * **Postconditions:** refs and changesets are identical to the backup point.
+
+### UC-31 Investigate a finding
+* **Primary actor:** Superfan agent (Claude). **Supporting:** Claude API, chat. **Level:** user goal. **Requirements:** FR-OP-09, FR-OP-10.
+* **Trigger:** the superfan watcher raises a finding (UC-26).
+* **Preconditions:** an API key and a chat webhook are configured; the agent can reach the component's `/stats` and `/logs`.
+* **Main success scenario:**
+  1. The agent receives the finding with its metric values, baseline and log lines.
+  2. It checks whether the same condition was investigated recently; if so it stops (step 6 posts nothing new).
+  3. It asks Claude to investigate, giving it read-only tools: the component's current stats, its logs at a level and since a sequence number, the watcher's baselines and the recent findings.
+  4. Claude calls tools as it needs them; the agent runs each call and returns the result.
+  5. Claude writes the analysis: what happened, the evidence, the likely cause and a suggested next step.
+  6. The agent posts the analysis to the chat channel, threaded with the finding.
+* **Extensions:**
+  * 3a. The API is unreachable, refuses or rate-limits past the retry budget: the finding is posted with a note that no analysis is available.
+  * 4a. The turn or token limit is reached: the agent asks for a final answer with the evidence gathered so far, and marks the analysis incomplete.
+  * 4b. A tool fails: the error goes back to Claude as the tool's result, and the investigation continues.
+* **Postconditions:** every finding reaches the channel, with an analysis or a note saying why there is none.
+
+### UC-32 Choose the metadata backend
+* **Primary actor:** Operator. **Supporting:** Cloud Spanner. **Level:** user goal. **Requirements:** FR-ST-01…04.
+* **Main success scenario:**
+  1. The operator names the backend in `deployment.json`: SQLite (the default), or Spanner with its project, instance, database, endpoint and credentials.
+  2. `scion-admin init` creates the schema: SQLite files per repository, or the Spanner database and its tables.
+  3. Servers start and use the backend; caches, daemons and clients are unaffected.
+* **Extensions:**
+  * 2a. Spanner rejects the credentials or the database is missing: the server refuses to start, naming what is wrong.
+  * 3a. Spanner aborts a transaction under contention: the server retries it with backoff (FR-ST-03).
+  * 3b. Moving an existing deployment between backends: back up from one and restore into the other (FR-ST-04, UC-30).
+
+### UC-33 Compare with git
+* **Primary actor:** Operator. **Level:** user goal. **Requirements:** FR-OP-11.
+* **Main success scenario:**
+  1. The operator runs `scion-admin bench --vs-git` on a git repository.
+  2. The benchmark ingests it, then checks out the same revision repeatedly: from git, served by `git upload-pack` as a git server serves clones, and from Scion, through the daemon, cache and server.
+  3. It reports, for each system, the server CPU time and peak memory per checkout and the checkout wall time.
+* **Postconditions:** both systems served identical working copies.
 
 ## 5.3 Requirements realized by every use case
 

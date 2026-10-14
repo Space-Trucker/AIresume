@@ -40,6 +40,18 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-OBJ-04 | Any consumer can verify an object's integrity from its id alone. | M | Derived (AS-05). Not stated in the article. *Kept by decision at M0 (decision 3)*: a hash check is cheap, and it catches corrupted or tampered cache data. | A tampered object is rejected by the daemon and the client. |
 | FR-OBJ-05 | No component holds a fully materialized copy of the repository, not even the server. | M | §Principles: horizontally scalable | Trees are built on demand from changesets; no full working copy exists on the server. |
 
+### FR-ST Metadata store
+
+Added after B5 by the decisions of 2026-10-14 (12 §12.9): the metadata lives in Spanner, as in the
+article; file contents stay in a directory (decision 3).
+
+| ID | Requirement | Pri | Source | Acceptance criterion |
+|---|---|---|---|---|
+| FR-ST-01 | The metadata store can be Cloud Spanner: changesets, refs with their compare-and-swap history, derived data, indexes, object ACLs, the audit log, change requests, landings, the post-merge queue and the git map keep the semantics they have on SQLite. | M | §Data structures (moving a ref "is a compare-and-swap on a single Spanner row"); §Scaling Scion (servers "write the results back to Spanner"; they "read from Spanner or cloud storage") | The metadata conformance tests pass on SQLite and on the Spanner emulator. |
+| FR-ST-02 | The backend is chosen by the deployment's configuration, with no code change: SQLite for one host; Spanner (project, instance, database, endpoint, credentials) for many; the Spanner emulator for development and tests. | M | Derived (CON-02) | The same deployment runs on either backend by editing `deployment.json`. |
+| FR-ST-03 | Every read-write operation on Spanner runs as a transaction that is retried when Spanner aborts it, so concurrent landings, ref moves and queue claims behave as on SQLite: no lost update, every job claimed once. | M | Derived (Spanner aborts conflicting transactions) | The landing swarm and the concurrent post-merge claim test pass on the emulator. |
+| FR-ST-04 | A backup of a Spanner deployment reads every table at one timestamp, and a backup restores to either backend. | S | Derived (FR-AD-06) | A backup taken from the emulator under load restores to SQLite and to Spanner with identical refs, changesets and audit chain. |
+
 ### FR-DD Derived data
 
 | ID | Requirement | Pri | Source | Acceptance criterion |
@@ -222,6 +234,9 @@ means the requirement is engineering analysis needed to make an article statemen
 | FR-OP-05 | Findings are delivered to chat via a webhook. | S | §What we learned (Slack channels) | The webhook receives a Slack-compatible payload. |
 | FR-OP-06 | Rate limiting per principal and request class, with concurrency caps. | M | §What we learned ("sophisticated rate limiting") | Excess requests receive 429 with a Retry-After header; the client backs off. |
 | FR-OP-07 | Benchmarks for the scaling claims that can be reproduced locally. | S | Derived | The benchmark command reports commit scaling, ancestry and checkout numbers. |
+| FR-OP-09 | A superfan agent (Claude) investigates each finding with read-only tools over the component's stats, logs, baselines and recent findings, and posts its analysis to the chat channel: what happened, the evidence, the likely cause and a next step. | M | §What we learned (the team "tasked Claude" in Slack channels; the superfans "have access to our telemetry and logs") | Against a fake Claude API, a finding leads to tool calls and an analysis posted to the webhook. |
+| FR-OP-10 | The agent is bounded and degrades safely: its tools only read; each investigation has a limit on model turns and output tokens; repeated findings are investigated once; credentials never appear in prompts, logs or posts; and when the API fails, refuses or runs out of budget, the finding is still posted, with a note. | M | Derived (cost, safety; a monitor must never go quiet) | Tests show each limit and each failure path. |
+| FR-OP-11 | The benchmark compares Scion with git serving the same repository: server CPU time and peak memory per checkout, and checkout wall time, with git serving through upload-pack as a git server does. | S | §Scaling Scion (an architecture that "requires significantly less CPU than git servers"); §What we learned (footprint "200x smaller"; checkouts "two orders of magnitude faster") | `scion-admin bench --vs-git` reports both systems on the same repository. |
 
 ### FR-AD Administration
 
@@ -276,5 +291,5 @@ means the requirement is engineering analysis needed to make an article statemen
 * **Daemon socket:** a Unix domain socket speaking the same protocol.
 * **CLI:** `scn`, `scion-server`, `scion-cache`, `scion-daemon`, `scion-admin`.
 * **Web:** the read-only Antique pages at `/antique`.
-* **Storage:** the `MetaStore` interface (log, refs, derived values, indexes) and the `ObjectStore` interface.
-* **Integrations:** the `git` CLI (ingestion) and webhooks (alerts).
+* **Storage:** the `MetaStore` interface (log, refs, derived values, indexes, reviews, queues, audit), implemented on SQLite and on Cloud Spanner through its REST API, and the `ObjectStore` interface.
+* **Integrations:** the `git` CLI (ingestion, and the git comparison benchmark), webhooks (alerts), and the Claude Messages API (superfan agents).

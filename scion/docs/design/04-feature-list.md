@@ -77,6 +77,14 @@ at least one feature (checked in [11](11-traceability.md)).
 | F-44 | Multi-repository hosting | Several repositories per deployment, each with its own policy | Admin | FR-IAM-02 | S |
 | F-45 | Indexed content search | Trigram-indexed content search for the full monorepo | Developer, Agent | FR-SR-03 | S |
 
+### Epic E5: as Anthropic runs it (R5, added 2026-10-14)
+
+| ID | Feature | What the user gets | Actors | Requirements | Pri |
+|---|---|---|---|---|---|
+| F-46 | Spanner metadata | The changeset log, refs, derived data, reviews, queues and audit log in Cloud Spanner, chosen by configuration; SQLite kept for one host | Operator, Admin | FR-ST-01…04 | M |
+| F-47 | Superfan agents | Claude investigates each superfan finding with read-only tools and explains it in chat | Operator, Superfan agent | FR-OP-09, FR-OP-10 | M |
+| F-48 | Comparison with git | CPU, memory and checkout time against git serving the same repository | Operator | FR-OP-11 | S |
+
 ## Feature dependencies
 
 ```mermaid
@@ -106,4 +114,7 @@ flowchart LR
   F09 --> F37[F-37 bisect]
   F01 --> F33[F-33 ingestion] --> F34[F-34 metadata service]
   F40[F-40 telemetry] --> F41[F-41 superfans]
+  F41 --> F47[F-47 superfan agents]
+  F02 --> F46[F-46 Spanner metadata]
+  F12 --> F48[F-48 comparison with git]
 ```

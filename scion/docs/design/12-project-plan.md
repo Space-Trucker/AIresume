@@ -6,8 +6,8 @@
 |---|---|---|---|
 | Inception | vision, scope, stakeholders | M0a: 01–02 approved | approved 2026-10-13 |
 | Elaboration | requirements, use cases, UML, architecture, risks, test plan, traceability, article cross-check | **M0: design baseline approved** | approved 2026-10-13, with the decisions in 12.7 |
-| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B5 | done (B5: every requirement **I**) |
-| Transition | migration pilot, cut-over, operations | M4–M5 | not started |
+| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B6 | B1–B5 done (every requirement of the baseline **I**); B6 in progress (12.9) |
+| Transition | migration pilot, cut-over, operations | M4–M5 | M4 in progress with B6 (the CPython pilot, 12.9 decision 7); M5 not started |
 
 > **Note on order.** A prototype was built before elaboration. At M0 the project lead decided to
 > delete it and rebuild from this baseline (decision 2). It stays in git history (commits
@@ -38,7 +38,12 @@ A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 | WP-B4.3 | B4 | code search: path index, grep, content index | FR-SR-01…04 | T-SR-01/02 |
 | WP-B4.4 | B4 | superfans, alerts, logs; admin toolkit; backup and restore; the end-to-end demo | FR-OP-03…05/07/08, FR-AD-01…04/06 | T-OPS-02…04, T-BAK-01, T-PERF-01, T-ADM-02, T-E2E-01 |
 | WP-B5.1 | B5 | system verification: stress, end to end, benchmarks, docs and traceability | NFR-01…04, NFR-13, NFR-15, NFR-17 | T-SIM-01, T-SYS-01…03, T-E2E-01, T-PERF-01, T-DOC-01/02 |
-| WP-X | later | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | needs infrastructure |
+| WP-B6.1 | B6 | Spanner metadata: every metadata statement behind the MetaStore interface; SpannerMetaStore over the REST API, with retried transactions; the backend chosen in deployment.json; backups at one timestamp | FR-ST-01…04 | T-ST-01…04; the suite and T-SIM-01 on the emulator |
+| WP-B6.2 | B6 | superfan agents: Claude investigates each finding with read-only tools and posts its analysis | FR-OP-09/10 | T-OPS-06/07 |
+| WP-B6.3 | B6 | comparison with git: server CPU, peak memory and checkout time against upload-pack | FR-OP-11, NFR-17 | T-PERF-02 |
+| WP-B6.4 | B6 | adversarial review of B3–B6 before merge; fixes with regression tests; one pull request per milestone | 12.5 items 2–3 | the full suite, T-DOC-01/02 |
+| WP-M4.1 | M4 | the CPython pilot: ingest with verification; history served to CI with no client; growth measured as far as the disk allows | FR-MG-01…07, NFR-03 | T-PILOT-01 |
+| WP-X | — | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | superseded by WP-B6.1 (12.9 decision 2) |
 
 ## 12.3 Milestones
 
@@ -50,7 +55,8 @@ A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 | **B3: security, review, landing** | WP-B3.* | B3 rows **I**; 32×5 stress simulation green |
 | **B4: migration, automation, operations** | WP-B4.* | B4 rows **I**; end-to-end demo green |
 | **B5: system verification** | WP-B5.1 | every requirement **I**, or **P** with a recorded reason; docs checks green |
-| **M4: migration pilot** | ingest a real repository; a metadata-only service for CI | verify reports zero mismatches |
+| **B6: as Anthropic runs it** | WP-B6.* | B6 rows **I**; the suite green on SQLite and on the Spanner emulator, and the swarm on the emulator; every review finding fixed or answered; docs checks green with `--release` |
+| **M4: migration pilot** | WP-M4.1: ingest a real repository (CPython); a metadata-only service for CI | verify reports zero mismatches; growth measured (T-PILOT-01) |
 | **M5: cut-over** | daemons on the nodes, caches per region, landing through Antique | git becomes read-only; 01 §1.7 measured |
 
 Each milestone ends with a commit and push, and an update to 11 §11.3.
@@ -69,7 +75,7 @@ Each milestone ends with a commit and push, and an update to 11 §11.3.
 2. Findings from adversarial or automated review are weighed against the requirements and ADRs.
    Hypothetical concerns do not justify extra validation or complexity. The article's example is a
    review that was "overly defensive about trusting another internal service".
-3. New and updated automated tests pass, along with the full suite, the 32×5 stress simulation, and the docs checks (T-DOC-01 rendering, T-DOC-02 cross-references).
+3. New and updated automated tests pass, along with the full suite, the 32×5 stress simulation, and the docs checks (T-DOC-01 rendering, T-DOC-02 cross-references). From B6 the suite and the simulation also pass on the Spanner emulator.
 4. The traceability matrix (11) is updated: status, design element, tests.
 5. User-facing docs are updated (README, API, FEATURES).
 6. Committed with a message that names the work package and requirement IDs.
@@ -103,3 +109,20 @@ Each milestone ends with a commit and push, and an update to 11 §11.3.
 | Project lead / product owner | approves the baseline, prioritizes the gap list | you |
 | Architect / implementer | maintains the package; implements work items | Claude |
 | Reviewer | reviews every change request for the intent of the change against its requirements, rather than reading every line (as the article describes) | you, or a delegate |
+| Adversarial reviewers | independent reviews that try to break each milestone before it merges; their findings are weighed per 12.5 item 2 (decision 12.9.5) | independent Claude agents |
+
+## 12.9 Decisions after B5 (2026-10-14)
+
+With every requirement of the baseline built, the project lead asked what remained between this
+build and the system the article describes, and decided each point. They add milestone **B6**
+(requirements FR-ST-01…04 and FR-OP-09…11; ADR-24…26) and start the pilot (M4).
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Superfans with a model behind them, as the article runs them? | **Build the agent**: Claude, called over plain HTTPS with the standard library (CON-01), tested offline against a fake API. Real use needs an API key and network access (ADR-25) |
+| 2 | Where does the metadata live? | **As Anthropic runs it: Cloud Spanner.** Built and tested against Google's official Spanner emulator now; a real instance later is configuration only. SQLite stays for one host (ADR-24) |
+| 3 | Where do the file contents live? | **Keep the local directory** (one directory shared by the servers, ADR-10) |
+| 4 | What should be measured? | **As the article reports it**: server CPU and memory against git serving the same clones; checkout time against git; growth toward the article's scale as far as the disk allows (100 GB is not reachable on one development host) (ADR-26) |
+| 5 | How is the work reviewed? | **As the article recommends**: an extensive adversarial review by independent agents of B3–B6 before anything merges; findings weighed against the requirements and ADRs, without extra defensive checks (12.5); a person reviews each change request for its intent |
+| 6 | How is the work delivered? | **One pull request per milestone**, stacked: M0 (the design baseline), B1…B5, then B6, opened after B6 and its review |
+| 7 | Which repository for the pilot (M4)? | **CPython**: ingested with verification, its history served to CI with no client, its growth measured (WP-M4.1) |

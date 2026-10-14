@@ -59,6 +59,8 @@ operate as the merge rate rose:
 8. Code search over paths and contents.
 9. git ingestion: streaming, incremental and verified.
 10. Observability: per-component health and stats, superfan monitors, alerts.
+11. The metadata store on Cloud Spanner, as in the article, with SQLite kept for single-host use (added 2026-10-14).
+12. Superfan agents: Claude investigating each finding and reporting to chat (added 2026-10-14).
 
 **Out of scope (Won't, this release)**
 
@@ -66,9 +68,9 @@ operate as the merge rate rose:
 |---|---|
 | Offline or peer-to-peer workflows | contradicts the core assumption (AS-01); git remains the tool for that |
 | A general-purpose git replacement | the article says Scion "is by no means a suitable replacement for git for general use" |
-| A distributed database implementation | the prototype uses a stand-in behind an interface (CON-02) |
+| Implementing a distributed database ourselves | the metadata runs on Cloud Spanner (FR-ST-01); Scion only uses it |
+| Cloud blob storage for file contents | decided 2026-10-14 (12 §12.9): contents stay in a directory, behind the `ObjectStore` interface |
 | A kernel virtual filesystem (FUSE) | virtual checkouts materialize through the client; a VFS adapter is future work |
-| LLM agents living in chat (the article's superfans) | we provide the telemetry watcher and the alert hook; the agent is a deployment concern |
 | Public hosting or productization | the article explains why it is hard to offer Scion broadly |
 | A build system or a CI system | the article names builds and CI as other human-scale bottlenecks, and Scion "requires its own … CI". Here, CI is a client of Scion, and Scion provides post-merge testing hooks (FR-PM-*) |
 
@@ -77,7 +79,7 @@ operate as the merge rate rose:
 | ID | Constraint |
 |---|---|
 | CON-01 | Lives in this repository under `scion/`, in Python 3.10+ with the standard library only |
-| CON-02 | Storage sits behind narrow interfaces: SQLite stands in for Spanner and a directory for blob storage |
+| CON-02 | Storage sits behind narrow interfaces: metadata in Cloud Spanner (the emulator in development) or SQLite on one host; file contents in a directory |
 | CON-03 | Must coexist with git during migration (git stays the source of truth until cut-over) |
 | CON-04 | Linux is the reference platform (inotify filesystem monitoring) |
 | CON-05 | Small team: designs must keep operations cheap (no repository maintenance, stateless tiers) |
