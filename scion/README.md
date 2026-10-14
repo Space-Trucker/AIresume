@@ -194,9 +194,11 @@ compared Scion with git serving it (below).
 
 CPython's history was ingested in order, with checkpoints evenly spaced along its main line. At every
 checkpoint each file was compared with git's, and a `scion-server` process served the history to a
-client with no checkout. The run stopped at 103,812 of CPython's 133,611 commits (78%), when the next
-checkpoint would have passed its 20 GB disk budget. Blame and the grep index of each checkpoint's
-revision were computed during the import (12 §12.9 decisions 8–9) and are timed apart from ingestion.
+client with no checkout. It reached 123,515 of CPython's 133,611 commits (92%): stopped at the seventh
+checkpoint by a 20 GB disk budget, it was compared with git there (below), then resumed with a 24 GB
+budget until the next checkpoint would not fit (checkpoints 8–9 ran under a restarted server). Blame and
+the grep index of each checkpoint's revision were computed during the import (12 §12.9 decisions 8–9)
+and are timed apart from ingestion.
 
 | Checkpoint | Commits | Ingested per second | Blame, during import | Grep index, during import | Objects | Metadata | Peak memory: ingestion / server |
 |---|---|---|---|---|---|---|---|
@@ -207,37 +209,42 @@ revision were computed during the import (12 §12.9 decisions 8–9) and are tim
 | 5 | 54,438 | 50 | 299 s | 309 s, 2,938 files | 6.14 GB | 1.91 GB | 152 / 63 MB |
 | 6 | 89,740 | 50 | 686 s | 328 s, 2,805 files | 12.09 GB | 2.55 GB | 152 / 63 MB |
 | 7 | 103,812 | 41 | 312 s | 348 s, 2,819 files | 15.10 GB | 3.07 GB | 152 / 69 MB |
+| 8 | 113,650 | 36 | 315 s | 415 s, 3,251 files | 17.29 GB | 3.62 GB | 157 / 58 MB |
+| 9 | 123,515 | 34 | 323 s | 458 s, 3,669 files | 19.61 GB | 4.23 GB | 160 / 66 MB |
 
-Every checkpoint matched git file for file (4,111 files at the last). Queries through the server, as
+Every checkpoint matched git file for file (5,369 files at the last). Queries through the server, as
 CI makes them with no checkout, at the first and the last checkpoint (median of repeated calls):
 
-| Query | 9,798 commits | 103,812 commits |
+| Query | 9,798 commits | 123,515 commits |
 |---|---|---|
-| log, 50 entries | 1.3 ms | 1.5 ms |
-| `is_ancestor(first commit, tip)` | 0.6 ms, 6 steps | 0.8 ms, 10 steps |
-| main-line ancestor halfway back | 0.6 ms | 1.1 ms |
-| git sha → changeset | 0.6 ms | 0.6 ms |
-| read `Python/ceval.c` | 2.1 ms | 2.8 ms |
-| history of `Python/ceval.c` | 1.1 ms | 1.0 ms |
-| blame of `Python/ceval.c` | 15 ms | 22 ms |
-| grep for a literal | 67 ms, 240 files read for 245 matches | 264 ms, 15 files read for 17 matches |
+| log, 50 entries | 1.3 ms | 2.3 ms |
+| `is_ancestor(first commit, tip)` | 0.6 ms, 6 steps | 1.2 ms, 9 steps |
+| main-line ancestor halfway back | 0.6 ms | 1.0 ms |
+| git sha → changeset | 0.6 ms | 0.8 ms |
+| read `Python/ceval.c` | 2.1 ms | 5.7 ms |
+| history of `Python/ceval.c` | 1.1 ms | 1.5 ms |
+| blame of `Python/ceval.c` | 15 ms | 18 ms |
+| grep for a literal | 67 ms, 240 files read for 245 matches | 452 ms, 16 files read for 13 matches |
 
 What the pilot found:
 * **Blame on demand was too slow for a migration.** Before the import computed it, the first blame of
-  `Python/ceval.c` took 53 s at the first checkpoint and 247 s at the fifth; now 17–40 ms on the first
-  call and 15–22 ms after (decision 8).
+  `Python/ceval.c` took 53 s at the first checkpoint and 247 s at the fifth; now 17–108 ms on the first
+  call (108 ms on a server just restarted) and 15–42 ms after (decision 8).
   Its line diffs had been quadratic (ADR-27), and ancestry cost a step per merge (ADR-12): both fixed.
 * **Grep's cost grows with the index, not the tree.** The index holds the files of every revision
-  searched (about 18,000 file versions after 7 checkpoints), and a query fetches the postings of all
-  its trigrams: about 130 ms of the 264. Reading and matching the 15 candidate files takes about 90 ms.
-* **Indexing slows as SQLite's index grows**, from 53 to 123 ms per file: postings are keyed by trigram,
+  searched (about 25,000 file versions after 9 checkpoints), and a query fetches the postings of all
+  its trigrams: at the seventh checkpoint, 130 ms of 264. Reading and matching the 15 candidate files
+  took about 90 ms.
+* **Indexing slows as SQLite's index grows**, from 53 to 125 ms per file: postings are keyed by trigram,
   so each file's land all over the B-tree.
-* **Memory stays flat:** ingestion at 131–152 MB and the server at 33–69 MB as the history grew ×10.6.
-* **Storage:** about 150 KB of objects per commit (the file versions, their trees, the history and
-  search trees, and blame runs), plus 30 KB of metadata.
-* **A reconnect cost 100 ms.** The first query after each checkpoint took 106 ms: the server closes
+* **Memory stays flat:** ingestion at 131–160 MB and the server at 33–69 MB as the history grew ×12.6.
+* **Storage:** about 170 KB of objects per commit (the file versions, their trees, the history and
+  search trees, and blame runs), plus 37 KB of metadata. Four fifths of the metadata is the grep index:
+  3.4 GB for the 42.6 million postings of 25,160 file versions, about 80 bytes each in SQLite. At that
+  rate an index of every version in the history (decision 9) would have taken about 95 GB.
+* **A reconnect cost 100 ms.** The first query after checkpoints 2–7 took 106 ms: the server closes
   connections idle for 5 minutes, and the client waited before reconnecting as if the server were down.
-  It now reconnects at once (T-OPS-01).
+  It now reconnects at once (T-OPS-01); checkpoints 8–9 ran with the fix.
 
 ### Against git on CPython (B6; `scion-admin bench --vs-git`, T-PERF-02)
 
