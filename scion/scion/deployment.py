@@ -2,12 +2,15 @@
 
 Layout of a deployment root::
 
-    deployment.json          principals, tokens, services, groups, admins, limits (iam.Identity)
-    repos/<name>/objects/    blob storage stand-in
-    repos/<name>/meta.db     metadata store stand-in
+    deployment.json          principals, tokens, services, groups, admins, limits (iam.Identity),
+                             and where the metadata lives (``metadata``, FR-ST-02)
+    repos/<name>/objects/    the repository's objects (blob storage)
+    repos/<name>/meta.db     its metadata store, when the metadata is in SQLite
     repos/<name>/policy.json the repository's access policy (iam.Policy)
 
-Servers are stateless over this root: any number of them may serve it (NFR-07).
+With ``"metadata": {"backend": "spanner", ...}`` the metadata of every repository lives in one
+Cloud Spanner database instead (ADR-24). The backend is read when the deployment opens; changing it
+needs a restart. Servers are stateless over this root: any number of them may serve it (NFR-07).
 """
 from __future__ import annotations
 
@@ -18,6 +21,7 @@ import threading
 
 from .audit import AuditLog
 from .iam import Identity, Policy
+from .meta import open_metastore
 from .objects import REPO_NAME, validate_repo_name
 from .repo import NotFound, Repository
 
@@ -47,6 +51,7 @@ class Deployment:
         self._policy_stamps: dict[str, tuple] = {}
         self._identity_stamp = _stamp(self.identity_path)
         self.identity = Identity.load(self.identity_path)
+        self.metadata: dict = dict(self.identity.raw.get("metadata") or {"backend": "sqlite"})
         self.log = lambda level, message, **fields: None  # the serving component's log (ADR-18)
 
     @property
@@ -82,7 +87,7 @@ class Deployment:
             d = self.repo_dir(name)
             if not os.path.exists(os.path.join(d, "policy.json")):
                 raise NotFound(f"unknown repository {name}")
-            r = Repository(d, self.policy_for(name), name=name)
+            r = Repository(d, self.policy_for(name), name=name, meta=open_metastore(self.metadata, d, name))
             r.audit = AuditLog(r.meta)
             self._repos[name] = r
             self._load_policy(r)

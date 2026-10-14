@@ -7,9 +7,9 @@ import tracemalloc
 import unittest
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
+from helpers import REPO, Cluster, repository
 from scion.ingest import GitIngester, IngestError
-from scion.repo import Repository
+
 
 GIT_ENV = {"GIT_AUTHOR_NAME": "Dev", "GIT_AUTHOR_EMAIL": "dev@example.com", "GIT_COMMITTER_NAME": "Dev",
            "GIT_COMMITTER_EMAIL": "dev@example.com", "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
@@ -59,7 +59,7 @@ class TestIngest(unittest.TestCase):
         put(self.g, "README.md/index.md", "now a directory\n")
         git(self.g, "add", "-A")
         git(self.g, "commit", "-qm", "file becomes directory")
-        self.repo = Repository(os.path.join(self.tmp, "scion"))
+        self.repo = repository(os.path.join(self.tmp, "scion"))
 
     def tearDown(self):
         self.repo.close()
@@ -167,7 +167,7 @@ class TestIngestMemory(unittest.TestCase):
         for n in (240, 1200):
             g = self.history(n)
             tmp = tempfile.mkdtemp(prefix="scion-mem-")
-            repo = Repository(tmp)
+            repo = repository(tmp)
             try:
                 tracemalloc.start()
                 stats = GitIngester(repo, g, cache_bytes=256 << 10).ingest("main", "main")

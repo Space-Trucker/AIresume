@@ -1,12 +1,14 @@
 """Post-merge testing, the deploy gate, bisect and the revert pipeline (WP-B4.2):
 T-PM-01/02, T-AUT-01/02."""
 import base64
+import json
 import math
 import os
 import shutil
 import sys
 import tempfile
 import threading
+import time
 import unittest
 
 import helpers  # noqa: F401
@@ -126,13 +128,14 @@ class TestPostMerge(AutomationTest):
         self.assertEqual({j["status"] for j in a.postmerge_status("main", 100)}, {"running"})
 
     def test_T_PM_04_a_lost_workers_job_returns_to_the_queue(self):
+        with open(self.c.deployment.policy_path(REPO), "w") as f:  # a short lease, from the policy (ADR-22)
+            json.dump({**POLICY, "review": {"postmerge_lease_seconds": 1.0}}, f)
         c1 = self.land("alice", {"src/a.py": "a\n"})
         api = self.api("postmerge")
         lost = api.call("antique.postmerge_claim")  # this worker then crashes
         self.assertEqual(lost["cs"], c1)
         self.assertIsNone(api.call("antique.postmerge_claim"), "within the lease, the job stays claimed")
-        repo = self.c.repo()
-        repo.meta.execute("UPDATE postmerge SET started = started - 7201 WHERE id = ?", (lost["id"],))
+        time.sleep(1.2)
         again = api.call("antique.postmerge_claim")  # the lease ran out: the job is queued again
         self.assertEqual((again["id"], again["cs"]), (lost["id"], c1))
         self.assertNotEqual(again["claim"], lost["claim"])

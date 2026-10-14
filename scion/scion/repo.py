@@ -21,7 +21,7 @@ from .derived import DerivedDataManager
 from .derived_types import expand_runs, register_default_types, split_lines
 from .iam import PermissionDenied
 from .merge3 import merge3
-from .meta import MetaStore
+from .meta import MetaStore, SqliteMetaStore
 from .objects import (EMPTY_TREE_ID, F_DENIED, F_MISSING, F_RESTRICTED, FILE_KINDS, KIND_DIR, KIND_LINK,
                       PUBLIC_TYPES, ObjectTooLarge, blob_id, decode_htree, decode_limited, is_binary,
                       is_object_id,
@@ -67,11 +67,12 @@ def _api_entry(e):
 
 
 class Repository:
-    def __init__(self, root: str, policy=None, name: str = "main"):
+    def __init__(self, root: str, policy=None, name: str = "main", meta: MetaStore | None = None):
+        """``meta`` is the repository's metadata store; by default a SQLite file in ``root``."""
         self.root, self.name = root, name
         os.makedirs(root, exist_ok=True)
         self.objects = FileObjectStore(os.path.join(root, "objects"))
-        self.meta = MetaStore(os.path.join(root, "meta.db"))
+        self.meta = meta if meta is not None else SqliteMetaStore(os.path.join(root, "meta.db"))
         self.cache = LRUCache(300_000, max_bytes=CACHE_BYTES)
         self.trees = TreeOps(self.objects, self.cache)
         self.policy = policy or OpenPolicy()
@@ -193,7 +194,7 @@ class Repository:
         prefix_of = self.policy.restricted_prefix
         rows: set[tuple[str, str]] = {(EMPTY_TREE_ID, "")}
         changesets = 0
-        after = 0
+        after = None
         while True:
             batch = self.meta.tail(after, 1000)
             if not batch:
@@ -238,7 +239,7 @@ class Repository:
             self.objects.put_stored(oid, stored, verify=False)
             if oid in acl and user is not None and not self.can_read_object(oid, user, acl):
                 # the uploader proved they hold these bytes, so they may commit them by id
-                self.meta.grant_add(oid, user)
+                self.meta.grant_add(oid, user, time.time())
         self.stats["objects.uploaded"] += len(checked)
         return len(checked)
 
@@ -351,7 +352,8 @@ class Repository:
                     pass  # the bytes come with this very request
                 elif not self.objects.has(blob):
                     raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
-                elif user is not None and not self.can_read_object(blob, user) and not self.meta.grant_has(blob, user):
+                elif (user is not None and not self.can_read_object(blob, user)
+                      and not self.meta.grant_has(blob, user, time.time())):
                     # an object you may not read can't be republished somewhere else by its id,
                     # unless you uploaded its bytes yourself
                     raise PermissionDenied(f"{user} may not use object {blob[:12]}")

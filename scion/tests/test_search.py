@@ -7,8 +7,7 @@ import tempfile
 import unittest
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
-from scion.repo import Repository
+from helpers import REPO, Cluster, repository
 from scion.search import grep, required_literals, search_paths
 
 
@@ -61,7 +60,7 @@ class TestSearchThroughTheApi(unittest.TestCase):
 class TestIndexedContentSearch(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="scion-index-")
-        self.repo = Repository(self.tmp)
+        self.repo = repository(self.tmp)
         rng = random.Random(7)
         words = ["alpha", "beta", "gamma", "delta", "omega", "lambda", "kappa", "sigma", "theta", "zeta"]
         files = {}

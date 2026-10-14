@@ -1,6 +1,6 @@
 # Scion: agent-scale source control
 
-> **Status: built and verified (B1–B5).** The design baseline in [`docs/design/`](docs/design/00-process.md)
+> **Status: built and verified (B1–B5); B6 in progress.** The design baseline in [`docs/design/`](docs/design/00-process.md)
 > was approved at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system was rebuilt
 > from the baseline in milestones: B1, the version control core; B2, the server API, the daemon → cache →
 > server tiers with snapshots, the `scn` client (full, sparse and virtual checkouts), multiple repositories
@@ -9,7 +9,9 @@
 > rules, review pages, webhooks and lock-free group-commit landing; B4, git ingestion, post-merge testing
 > with a deploy gate, bisect and revert pipelines, indexed grep, superfans reading telemetry and logs,
 > benchmarks, and backup and restore; and B5, system verification of the non-functional requirements.
-> All 158 requirements are built and tested ([`docs/design/11-traceability.md`](docs/design/11-traceability.md)).
+> B6 (decided 2026-10-14) runs it as Anthropic does: metadata in Cloud Spanner, superfans that are Claude
+> agents, a comparison with git on the same repository, and a migration pilot on CPython's full history.
+> Status per requirement: [`docs/design/11-traceability.md`](docs/design/11-traceability.md).
 
 A working implementation of the system described in Anthropic's engineering post
 [*Redesigning source control at Anthropic*](https://www.anthropic.com/engineering/redesigning-source-control).
@@ -18,8 +20,10 @@ search, directory-level IAM, the daemon → cache → server checkout architectu
 supporting tools the post mentions: git ingestion, automated bisect and revert, post-merge testing,
 and "superfan" monitors.
 
-It is pure Python 3.10+ with **no dependencies**. SQLite stands in for Spanner and a directory
-stands in for cloud blob storage, each behind a narrow interface.
+It is pure Python 3.10+ with **no dependencies**. The metadata (changesets, refs, derived data, reviews,
+queues, audit) lives in **Cloud Spanner**, reached through its REST API, or in SQLite on one host: the
+deployment's configuration chooses, and the Spanner backend is tested against Google's Spanner emulator.
+File contents live in a directory, standing in for cloud blob storage.
 
 Every feature in the article is mapped to code in [`docs/FEATURES.md`](docs/FEATURES.md).
 
@@ -36,8 +40,8 @@ follow its gap list.
  ──── metadata RPCs ──▶│ history · blame · diff · merge-base · search · IAM · Antique          │
                        └───────────────┬────────────────────────────────────┬──────────────────┘
                                        │ get_objects (identical RPC)        │
-                                 ┌─────┴──────┐                       blob storage + metadata DB
-                                 │scion-cache │  regional, in memory    (directory + SQLite here)
+                                 ┌─────┴──────┐                     objects (a directory) + metadata
+                                 │scion-cache │  regional, in memory    (Cloud Spanner, or SQLite)
                                  └─────┬──────┘
                                        │ get_objects
                                  ┌─────┴───────┐   one per node, bounded disk store,
@@ -74,13 +78,25 @@ python3 -m unittest discover -s tests   # the full suite: core, fuzzing, tiers, 
                                         # landing, ingestion, automation, search, superfans, admin
 SCION_SIM_AGENTS=32 SCION_SIM_ROUNDS=5 python3 -m unittest discover -s tests -p test_simulation.py   # stress
 python3 -m scion scion-admin bench      # benchmarks (--quick for small sizes, --json for numbers)
+python3 -m scion scion-admin bench --vs-git ~/src/project   # checkouts against git serving the same repository
+examples/pilot.sh /data/pilot           # the migration pilot: CPython's history, verified and measured
+```
+
+The same suite runs with the metadata on Spanner, through Google's emulator (`gcloud emulators spanner
+start`, or its `gateway_main`; the REST port is 9020 by default). Every cluster and repository the tests
+make gets a database of its own:
+
+```bash
+SCION_TEST_SPANNER=http://127.0.0.1:9020 python3 -m unittest discover -s tests
 ```
 
 Running the pieces by hand:
 
 ```bash
 export PYTHONPATH=$PWD
-python3 -m scion scion-admin init --root /tmp/scion/dep
+python3 -m scion scion-admin init --root /tmp/scion/dep   # metadata in SQLite; for Spanner add, for example,
+#   --metadata '{"backend": "spanner", "project": "p", "instance": "i", "database": "scion", "create": true}'
+#   ("endpoint": "http://127.0.0.1:9020" for the emulator; a "token_command" or the GCE metadata server otherwise)
 python3 -m scion scion-admin create-repo --root /tmp/scion/dep monorepo        # --read/--write to restrict it
 python3 -m scion scion-server --root /tmp/scion/dep --listen 127.0.0.1:7070 &
 python3 -m scion scion-cache  --listen 127.0.0.1:7080 --upstream http://127.0.0.1:7070 &
@@ -114,8 +130,11 @@ python3 -m scion scion-postmerge --server http://127.0.0.1:7070 --repo monorepo 
     --objects unix:/tmp/scion/d.sock --cmd "python3 -m pytest -q" --auto-revert      # post-merge testing
 python3 -m scion scion-superfan --url unix:/tmp/scion/d.sock --profile daemon --webhook https://chat/hook
 python3 -m scion scion-superfan --url http://127.0.0.1:7070 --profile antique --rule "land_queue_depth > 50 for 3"
+ANTHROPIC_API_KEY=... python3 -m scion scion-superfan --url http://127.0.0.1:7080 --profile cache \
+    --webhook https://chat/hook --agent       # Claude investigates each finding and posts its analysis
 python3 -m scion scion-admin backup --root /tmp/scion/dep --out /backups/today     # while servers run
-python3 -m scion scion-admin restore --backup /backups/today --root /tmp/scion/dep2 --deep
+python3 -m scion scion-admin restore --backup /backups/today --root /tmp/scion/dep2 --deep \
+    --metadata '{"backend": "sqlite"}'          # optional: restore into another backend
 ```
 
 After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cache`, `scion-daemon`,
@@ -136,7 +155,7 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | Module | What it is |
 |---|---|
 | `objects.py`, `storage.py` | content-addressed, zlib-compressed objects; no packfiles; bounded LRU stores |
-| `changeset.py`, `meta.py` | changesets, the write-ahead log, refs with compare-and-swap (the Spanner stand-in) |
+| `changeset.py`, `meta.py`, `spanner.py` | changesets; the metadata store's contract and its SQLite and Cloud Spanner (REST) implementations: the write-ahead log, refs by compare-and-swap, reviews, queues, audit |
 | `trees.py` | incremental tree updates and subtree-skipping diffs |
 | `derived.py`, `derived_types.py` | the generic derived-data mechanism and its six types |
 | `repo.py` | server-side history, blame, ancestry, merge, rebase, revert |
@@ -149,8 +168,8 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | `audit.py`, `notify.py`, `ui.py` | the hash-chained audit log, webhooks, and the review pages |
 | `search.py` | path search over bloom-filtered search trees; server-side grep |
 | `ingest.py` | streaming, incremental, verified git → Scion ingestion |
-| `postmerge.py`, `tools/` | post-merge worker, deploy gate, bisect, revert pipeline, benchmarks, development certificates |
-| `superfan.py` | per-component watchers of telemetry and logs: adaptive baselines, threshold rules, webhooks |
+| `postmerge.py`, `tools/` | post-merge worker, deploy gate, bisect, revert pipeline, benchmarks (also against git), the migration pilot, development certificates |
+| `superfan.py`, `superfan_agent.py` | per-component watchers of telemetry and logs (adaptive baselines, threshold rules, webhooks), and the Claude agent that investigates each finding |
 | `backup.py` | consistent online backup, verified restore, and store verification |
 
 ## Measured here (4-core container)
@@ -172,15 +191,15 @@ the end-to-end demo runs each in its own process.
 
 ## Deliberate simplifications
 
-* **Single-machine storage.** SQLite (WAL mode) and a directory replace Spanner and cloud
-  storage. Several `scion-server` processes can share them on one host, and a cache can fail
-  over between servers, but this is not a distributed database.
+* **Objects in a directory.** File contents and trees live in a directory shared by the servers,
+  standing in for cloud blob storage (decided 2026-10-14). The metadata can be in Cloud Spanner; it is
+  developed and tested against Google's emulator, so real Spanner is configuration, not yet a measured
+  deployment.
 * **No kernel virtual filesystem.** Virtual checkouts materialize files on demand through
   `scn cat`, `scn materialize` and `WorkingCopy.read()`. There is no FUSE layer.
-* **Superfans are watchers, not agents.** They read each component's telemetry and logs, learn
-  adaptive baselines, and post findings with the surrounding log lines to stdout or a webhook. The
-  article's superfans are Claude agents living in Slack; wiring an agent to the webhook is left to
-  the deployment.
+* **The superfan agent needs an API key.** With `--agent`, Claude investigates each finding with
+  read-only tools and posts its analysis under it. The agent is tested against a fake Messages API;
+  running it for real needs `ANTHROPIC_API_KEY` and network access to the API.
 * **Heuristic comment detection.** The semantic classifier recognizes documentation-only and
   comment-only changes for common languages, and treats everything else, including anything
   it cannot parse, as logic.

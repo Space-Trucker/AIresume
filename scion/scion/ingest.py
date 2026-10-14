@@ -24,12 +24,6 @@ from .storage import LRUCache
 
 MODE_KIND = {"100644": "f", "100664": "f", "100755": "x", "120000": "l"}
 TREE_MODE, SUBMODULE_MODE = "40000", "160000"
-GIT_MAP_SCHEMA = """
-CREATE TABLE IF NOT EXISTS git_map (git TEXT PRIMARY KEY, cs TEXT NOT NULL) WITHOUT ROWID;
-CREATE INDEX IF NOT EXISTS git_map_cs ON git_map(cs);
-"""
-
-
 class IngestError(Exception):
     pass
 
@@ -100,7 +94,6 @@ class GitIngester:
         """``cache_bytes`` bounds every cache used while ingesting, so memory does not grow with
         the history (FR-MG-04)."""
         self.repo, self.git_dir, self.verbose, self.cache_bytes = repo, git_dir, verbose, cache_bytes
-        repo.meta.ensure(GIT_MAP_SCHEMA)
         self._trees = LRUCache(100_000, max_bytes=cache_bytes // 4)  # parsed git trees
         self._blobs = LRUCache(100_000, max_bytes=cache_bytes // 8)  # git blob sha -> Scion blob id
         self.stats = {"commits": 0, "skipped": 0, "files": 0, "blobs_read": 0, "trees_read": 0,
@@ -108,11 +101,11 @@ class GitIngester:
 
     # -- the map (FR-MG-07) -------------------------------------------------------------------------
     def changeset_for(self, git_sha: str) -> str | None:
-        row = self.repo.meta.execute("SELECT cs FROM git_map WHERE git = ?", (git_sha,)).fetchone()
-        return row[0] if row else None
+        row = self.repo.meta.git_map_lookup(git=git_sha)
+        return row[1] if row else None
 
     def git_for(self, cs: str) -> str | None:
-        row = self.repo.meta.execute("SELECT git FROM git_map WHERE cs = ?", (cs,)).fetchone()
+        row = self.repo.meta.git_map_lookup(cs=cs)
         return row[0] if row else None
 
     # -- git plumbing --------------------------------------------------------------------------------
@@ -235,7 +228,7 @@ class GitIngester:
                                                     info["timestamp"], extra={"git": sha})
                 except ValueError as e:
                     raise IngestError(f"{sha[:12]}: {e}") from None
-                self.repo.meta.execute("INSERT OR REPLACE INTO git_map (git, cs) VALUES (?, ?)", (sha, cs))
+                self.repo.meta.git_map_put(sha, cs)
                 self.stats["commits"] += 1
                 self.stats["files"] += len(files)
                 tip = cs

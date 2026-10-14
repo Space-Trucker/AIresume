@@ -10,11 +10,12 @@ import time
 import unittest
 
 import helpers  # noqa: F401
+from helpers import repository
 from scion.changeset import Changeset
 from scion.derived import DerivedType
 from scion.merge3 import merge3
 from scion.objects import EMPTY_TREE_ID, ObjectError, blob_id, decode_stored, encode_stored
-from scion.repo import MergeConflict, NotFound, Repository
+from scion.repo import MergeConflict, NotFound
 from scion.search import search_paths
 from scion.storage import BoundedFileObjectStore, MemoryObjectStore
 
@@ -22,7 +23,7 @@ from scion.storage import BoundedFileObjectStore, MemoryObjectStore
 class RepoCase(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="scion-core-")
-        self.repo = Repository(os.path.join(self.tmp, "r"))
+        self.repo = repository(os.path.join(self.tmp, "r"))
 
     def tearDown(self):
         self.repo.close()
@@ -159,7 +160,7 @@ class TestChangesets(RepoCase):
 
         repos, heads = {}, {}
         for n in (100, 10_000):
-            r = repos[n] = Repository(os.path.join(self.tmp, f"s{n}"))
+            r = repos[n] = repository(os.path.join(self.tmp, f"s{n}"))
             r.objects = MemoryObjectStore(None)
             r.trees = TreeOps(r.objects, r.cache)
             r.objects.put("tree", b"")
@@ -191,7 +192,7 @@ class TestDerived(RepoCase):
         self.assertIsNotNone(self.repo.meta.derived_get("blame", c1))  # ancestors derived first
         # FR-DD-05: two servers on one store derive concurrently without coordination
         c3 = self.commit([c2], {"f": b"1\n2\n3\n"})
-        other = Repository(self.repo.root)
+        other = repository(self.repo.root)
         out = []
         threads = [threading.Thread(target=lambda r=r: out.append(r.derived.get("blame", c3))) for r in (self.repo, other)]
         [t.start() for t in threads]

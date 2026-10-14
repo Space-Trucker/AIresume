@@ -3,7 +3,9 @@ servers (FR-LD-02/03, FR-REF-04, FR-CS-05/06, NFR-01). No lost updates; the ref 
 chain of compare-and-swaps; no agent starves. At stress size the swarm, which also clones, commits,
 gets reviewed and updates, must land faster than NFR-01's design rate of 3.5 landings a second.
 
-SCION_SIM_AGENTS and SCION_SIM_ROUNDS scale it (the stress run is 32 × 5)."""
+SCION_SIM_AGENTS and SCION_SIM_ROUNDS scale it (the stress run is 32 × 5). With SCION_TEST_SPANNER
+the swarm's metadata is on the Spanner emulator, whose transactions conflict and are retried: T-ST-03
+(FR-ST-03)."""
 import base64
 import os
 import shutil

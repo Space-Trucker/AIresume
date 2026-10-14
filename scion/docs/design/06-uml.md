@@ -356,24 +356,26 @@ classDiagram
     +cas_ref(name, expected, new, who) bool
     +derived_get(type, cs) str
     +derived_put(type, cs, value)
-    +audit_append(entry) dict
+    +audit_append(make) seq_hash
     +cr_create(fields) int
-    +landings_record(rows, jobs)
-    +postmerge_claim(worker, lease) dict
+    +record_landings(rows, jobs, cr_updates)
+    +postmerge_claim(claim, now) dict
+    +export(path, at) timestamp
+    +load(path)
   }
   class SqliteMetaStore {
     +path
   }
   class SpannerMetaStore {
     +repo
-    +run_in_transaction(fn)
   }
   class SpannerClient {
     +endpoint
     +database
-    +execute_sql(sql, params, tx) rows
-    +commit(tx, mutations)
-    +run_in_transaction(fn)
+    +query(sql, params) rows
+    +run_in_transaction(fn) result
+    +snapshot(at) reads
+    +ensure_schema(create)
   }
   class ObjectStore {
     <<interface>>
@@ -858,15 +860,12 @@ sequenceDiagram
   participant SP as Cloud Spanner
   S->>M: cas_ref(main, expected=a, new=b, who)
   loop until committed, or the deadline
-    M->>SP: beginTransaction(readWrite)
-    M->>SP: SELECT target, version FROM refs WHERE repo, name
+    M->>SP: executeSql(begin readWrite): SELECT target, version FROM refs WHERE repo, name
     alt target is not expected
       M->>SP: rollback
       M-->>S: false (the caller rebases and retries)
     else target is expected
-      M->>SP: UPDATE refs SET target=b, version=v+1
-      M->>SP: INSERT ref_log (repo, name, version=v+1, old=a, new=b, who)
-      M->>SP: commit
+      M->>SP: commit with mutations: refs (target=b, version=v+1) and ref_log (repo, name, commit timestamp, old=a, new=b, who)
       alt ABORTED by a conflicting transaction
         SP-->>M: aborted
         M->>M: backoff with jitter, then rerun
@@ -887,15 +886,17 @@ sequenceDiagram
   participant C as Claude API
   participant X as Component (/stats, /logs)
   participant K as Chat webhook
+  W->>K: post the finding
   W->>A: finding (metric, value, baseline, log lines)
   A->>A: seen recently? then stop
-  A->>C: messages (system prompt, finding, read-only tools)
-  loop while Claude asks for tools, within the turn limit
-    C-->>A: tool_use get_logs(level, since)
-    A->>X: GET /logs?level&since
-    X-->>A: entries
-    A->>C: tool_result (entries, as data)
+  A->>C: messages (system prompt, finding as data, read-only tools)
+  loop while Claude asks for tools, within the turn and token limits
+    C-->>A: tool_use get_stats, get_logs(level, contains), get_metrics, get_recent_findings
+    A->>X: GET /stats, GET /logs?level
+    X-->>A: stats, entries
+    A->>C: the assistant turn unchanged, then every tool_result in one message (as data)
   end
+  A->>C: the last turn: tool_choice none
   C-->>A: analysis: what happened, evidence, likely cause, next step
   A->>K: post analysis with the finding
   Note over A,K: API failure, refusal or budget exhausted: the finding is posted with a note
@@ -1175,9 +1176,11 @@ the job; a job `running` for longer than the lease returns to `queued` (T-PM-04)
 ## 6.10 Metadata store on Spanner (keys and indexes)
 
 One database per deployment. Every table's key starts with the repository, so repositories share
-nothing but the database. Keys avoid write hotspots: changeset ids are hashes, the ref log is keyed
-by each ref's own version, and the counters behind change-request, comment and job ids see only a
-few writes a second. Row contents are those of 6.9.
+nothing but the database. Keys avoid write hotspots: changeset ids are hashes, a ref's log is keyed
+by the commit timestamps of its moves (which Spanner orders, because the moves of one ref conflict
+on its row), and the counters behind change-request, comment and job ids see only a few writes a
+second. Row contents are those of 6.9; times are seconds as there, except the commit timestamps.
+Three column names are GoogleSQL keywords and are quoted in SQL: `new`, `at` and `hash`.
 
 ```mermaid
 erDiagram
@@ -1196,7 +1199,7 @@ erDiagram
   REF_LOG {
     string repo PK
     string name PK
-    int version PK
+    timestamp moved PK "commit timestamp, newest first"
     string old
     string new
     string who
@@ -1235,7 +1238,7 @@ erDiagram
     string name PK
     int value
   }
-  REFS ||--o{ REF_LOG : "one row per version"
+  REFS ||--o{ REF_LOG : "one row per move"
   REFS }o--|| CHANGESETS : targets
   CHANGESETS ||--o{ DERIVED : "derived values"
   CRS ||--o{ LANDINGS : landed
@@ -1246,6 +1249,8 @@ erDiagram
 
 Secondary indexes: `changesets(repo, created, id)` for the log scan; `audit(repo, action, seq)`;
 `crs(repo, state, id)`; `landings(repo, source)` and `landings(repo, head)`;
-`postmerge(repo, status, id)` and `postmerge(repo, cs)`; `git_map(repo, cs)`. The other tables of
-6.9 (blob and content indexes, object ACLs and grants, key-value settings, review revisions,
-approvals and comments) keep their columns, with `repo` added in front of their keys.
+`postmerge(repo, status, id)`, `postmerge(repo, cs, id)` and `postmerge(repo, ref, id)`;
+`git_map(repo, cs)`; `content_blobs(repo, status)`. The other tables of 6.9 (blob and content
+indexes, object ACLs and grants, key-value settings, review revisions, approvals and comments) keep
+their columns, with `repo` added in front of their keys; comments are keyed `(repo, cr, id)`. The
+DDL is `spanner.DDL`.

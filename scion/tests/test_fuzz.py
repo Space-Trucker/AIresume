@@ -11,7 +11,8 @@ import tempfile
 import unittest
 
 import helpers  # noqa: F401
-from scion.repo import MergeConflict, Repository
+from helpers import repository
+from scion.repo import MergeConflict
 from scion.search import search_paths
 
 DIRS = ["a", "b", "a/c", "b/c/d", "e"]
@@ -86,7 +87,7 @@ class TestFuzz(unittest.TestCase):
     # ------------------------------------------------------------------------------------------
     def run_seed(self, seed):
         rng = random.Random(seed)
-        repo = Repository(os.path.join(self.tmp, f"r{seed}"))
+        repo = repository(os.path.join(self.tmp, f"r{seed}"))
         self.repo, self.model, self.fp = repo, {}, {}
         init = {f"{d}/{n}": content(rng) for d in ("a", "b/c/d", "e") for n in NAMES[:3]}
         root = repo.create_changeset([], changes({}, init), "u0", "root")

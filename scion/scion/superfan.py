@@ -3,8 +3,9 @@ FR-OP-08; UC-26).
 
 At Anthropic each superfan is a Claude agent in Slack, obsessively focused on one component: a
 scion-daemon superfan, a scion-cache superfan and an Antique landing-queue superfan, each with
-access to telemetry and logs. The agent itself is out of scope here (01 §1.4); this module is the
-watcher such an agent works from. Every poll it
+access to telemetry and logs. This module is the watcher the agent works from; the agent itself,
+which investigates each finding and explains it in chat, is superfan_agent.Investigator (FR-OP-09).
+Every poll the watcher
 
 1. reads the component's ``/stats`` and its new log entries (``GET /logs``, ADR-18);
 2. turns counters into rates over the interval (the hit rate too is the interval's, not the
@@ -18,7 +19,7 @@ watcher such an agent works from. Every poll it
 
 A condition raises one finding when it starts, not one per poll. Every finding carries the log
 entries around it (FR-OP-08) and goes to stdout and, when configured, to a chat webhook as a
-Slack-compatible ``{"text": ...}`` payload (FR-OP-05).
+Slack-compatible ``{"text": ...}`` payload (FR-OP-05), and then to the agent, when there is one.
 """
 from __future__ import annotations
 
@@ -301,8 +302,11 @@ class Superfan:
         self.logs_available: bool | None = None
         self.down_since: float | None = None
         self.unknown_rule_metrics: list[str] | None = None
+        self.agent = None  # a superfan_agent.Investigator: Claude investigates each finding (FR-OP-09)
 
     def close(self) -> None:
+        if self.agent is not None:
+            self.agent.close()  # let running investigations post their analyses
         if self.notifier is not None:
             self.notifier.flush()
         self.client.close_all()
@@ -444,6 +448,8 @@ class Superfan:
             print(json.dumps(f.to_dict(), default=str) if self.as_json else f.text(), file=self.out, flush=True)
             if self.notifier is not None:
                 self.notifier.send([self.webhook], {"text": f.text(), "finding": f.to_dict()})
+            if self.agent is not None:
+                self.agent.submit(f)  # off this thread: the watcher never waits for the agent
         return found
 
     # -- the loop ---------------------------------------------------------------------------------

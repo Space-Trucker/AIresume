@@ -18,7 +18,6 @@ from collections import Counter
 from .antique import Antique
 from .deployment import Deployment
 from .iam import PermissionDenied
-from .ingest import GIT_MAP_SCHEMA
 from .notify import Notifier
 from .objects import normalize_path
 from .repo import NotFound, Repository
@@ -284,11 +283,10 @@ class ScionService(Service):
     def _git_lookup(self, c, p):
         """Map a git commit to its changeset or back (FR-MG-07): ``{git, cs}``, or None."""
         repo = self._repo(c, p)
-        repo.meta.ensure(GIT_MAP_SCHEMA)
         if p.get("git"):
-            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE git = ?", (_str(p, "git"),)).fetchone()
+            row = repo.meta.git_map_lookup(git=_str(p, "git"))
         else:
-            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE cs = ?", (repo.resolve(_str(p, "cs")),)).fetchone()
+            row = repo.meta.git_map_lookup(cs=repo.resolve(_str(p, "cs")))
         return {"git": row[0], "cs": row[1]} if row else None
 
     def _acl_epochs(self, c, p):
@@ -472,6 +470,10 @@ class ScionService(Service):
             except Exception as e:  # noqa: BLE001 - stats must answer even when a store is unwell
                 self.log("warning", f"queue stats unavailable: {e}")
         s["repos"] = {"open": len(self.deployment._repos), **repos}
+        clients = {id(c): c for r in list(self.deployment._repos.values())
+                   if (c := getattr(r.meta, "client", None)) is not None}  # Spanner: shared by the repositories
+        s["metadata"] = {"backend": self.deployment.metadata.get("backend", "sqlite"),
+                         **sum((Counter(c.stats) for c in clients.values()), Counter())}
         s["antique"] = dict(antique)
         s["notify"] = dict(self.notifier.counters)
         return s

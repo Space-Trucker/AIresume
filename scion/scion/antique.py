@@ -37,46 +37,10 @@ from .repo import MergeConflict, NotFound, Repository
 
 POSTMERGE_LEASE = 7200.0  # the default; a repository's policy may set review.postmerge_lease_seconds
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS crs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL, description TEXT NOT NULL, author TEXT NOT NULL, target TEXT NOT NULL,
-    head TEXT NOT NULL, state TEXT NOT NULL, created REAL NOT NULL, updated REAL NOT NULL,
-    landed_cs TEXT, landed_at REAL, conflict TEXT
-);
-CREATE INDEX IF NOT EXISTS crs_state ON crs(state, id);
-CREATE TABLE IF NOT EXISTS cr_revisions (
-    cr INTEGER NOT NULL, rev INTEGER NOT NULL, head TEXT NOT NULL, created REAL NOT NULL,
-    PRIMARY KEY (cr, rev)
-);
-CREATE TABLE IF NOT EXISTS cr_approvals (
-    cr INTEGER NOT NULL, rev INTEGER NOT NULL, user TEXT NOT NULL, created REAL NOT NULL,
-    PRIMARY KEY (cr, rev, user)
-);
-CREATE TABLE IF NOT EXISTS cr_comments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, cr INTEGER NOT NULL, rev INTEGER NOT NULL, user TEXT NOT NULL,
-    path TEXT, line INTEGER, body TEXT NOT NULL, created REAL NOT NULL
-);
-CREATE TABLE IF NOT EXISTS landings (
-    cs TEXT PRIMARY KEY, source TEXT NOT NULL, cr INTEGER, ref TEXT NOT NULL, landed_at REAL NOT NULL,
-    head TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS landings_source ON landings(source);
-CREATE INDEX IF NOT EXISTS landings_head ON landings(head);
-CREATE TABLE IF NOT EXISTS postmerge (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, cs TEXT NOT NULL, cr INTEGER, ref TEXT NOT NULL,
-    status TEXT NOT NULL, created REAL NOT NULL, started REAL, finished REAL, worker TEXT, log TEXT
-);
-CREATE INDEX IF NOT EXISTS postmerge_status ON postmerge(status, id);
-CREATE INDEX IF NOT EXISTS postmerge_cs ON postmerge(cs);
-"""
-
 DEFAULT_RULES = [{"prefix": "", "logic": {"approvals": 1}, "comment_only": {"approvals": 0},
                   "docs": {"approvals": 0}}]
 OPEN, LANDING, LANDED, CONFLICT, ABANDONED = "open", "landing", "landed", "conflict", "abandoned"
 LANDABLE = (OPEN, CONFLICT)
-CR_COLUMNS = ("id", "title", "description", "author", "target", "head", "state", "created", "updated",
-              "landed_cs", "landed_at", "conflict")
 
 
 class Retryable(Exception):
@@ -108,7 +72,6 @@ class Antique:
         self.notify = notify or (lambda event, repo, payload: None)
         self.audit = audit
         self.log = log or (lambda level, message, **fields: None)
-        self.meta.ensure(SCHEMA)
         self.counters = {"land.requests": 0, "land.attempts": 0, "land.retries": 0, "land.landed": 0,
                          "land.conflicts": 0, "land.batches": 0, "land.max_batch": 0, "land.deadline": 0}
         self._queues: dict[str, list[_LandRequest]] = {}
@@ -130,20 +93,17 @@ class Antique:
 
     # -- helpers ---------------------------------------------------------------------------------
     def _row(self, cr_id: int) -> dict:
-        row = self.meta.execute(f"SELECT {', '.join(CR_COLUMNS)} FROM crs WHERE id = ?", (int(cr_id),)).fetchone()
-        if row is None:
+        d = self.meta.cr_get(int(cr_id))
+        if d is None:
             raise NotFound(f"no change request {cr_id}")
-        d = dict(zip(CR_COLUMNS, row))
         d["conflict"] = json.loads(d["conflict"]) if d["conflict"] else None
         return d
 
     def _latest_rev(self, cr_id: int) -> int:
-        return self.meta.execute("SELECT MAX(rev) FROM cr_revisions WHERE cr = ?", (cr_id,)).fetchone()[0]
+        return self.meta.cr_latest_rev(cr_id)
 
     def _set_state(self, cr_id: int, state: str, **cols) -> None:
-        sets = ", ".join(f"{k} = ?" for k in cols)
-        self.meta.execute(f"UPDATE crs SET state = ?, updated = ?{', ' + sets if sets else ''} WHERE id = ?",
-                          (state, time.time(), *cols.values(), cr_id))
+        self.meta.cr_update(cr_id, state=state, updated=time.time(), **cols)
 
     def _rules(self) -> list[dict]:
         rules = getattr(self.policy, "review", {}).get("rules") or DEFAULT_RULES
@@ -173,12 +133,7 @@ class Antique:
         tip = self.repo.get_ref(target)
         if tip is not None and self.repo.is_ancestor(head, tip):
             raise ValueError(f"{head[:12]} is already part of {target}")
-        now = time.time()
-        with self.meta.transaction() as c:
-            cr_id = c.execute("INSERT INTO crs (title, description, author, target, head, state, created, updated) "
-                              "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                              (title, description, user, target, head, OPEN, now, now)).lastrowid
-            c.execute("INSERT INTO cr_revisions (cr, rev, head, created) VALUES (?, 1, ?, ?)", (cr_id, head, now))
+        cr_id = self.meta.cr_create(title, description, user, target, head, OPEN, time.time())
         self._event("cr.created", cr_id, user)
         return self.get(cr_id)
 
@@ -188,12 +143,7 @@ class Antique:
         if cr["state"] not in LANDABLE:
             raise ValueError(f"change request {cr_id} is {cr['state']}")
         head = self.repo.resolve(head)
-        now = time.time()
-        with self.meta.transaction() as c:
-            rev = c.execute("SELECT MAX(rev) FROM cr_revisions WHERE cr = ?", (cr_id,)).fetchone()[0] + 1
-            c.execute("INSERT INTO cr_revisions (cr, rev, head, created) VALUES (?, ?, ?, ?)", (cr_id, rev, head, now))
-            c.execute("UPDATE crs SET head = ?, state = ?, conflict = NULL, updated = ? WHERE id = ?",
-                      (head, OPEN, now, cr_id))
+        rev = self.meta.cr_add_revision(cr_id, head, OPEN, time.time())
         self._event("cr.updated", cr_id, user, revision=rev)
         return self.get(cr_id)
 
@@ -201,8 +151,7 @@ class Antique:
         cr = self._row(cr_id)
         if cr["state"] not in LANDABLE:
             raise ValueError(f"change request {cr_id} is {cr['state']}")
-        self.meta.execute("INSERT OR IGNORE INTO cr_approvals (cr, rev, user, created) VALUES (?, ?, ?, ?)",
-                          (cr_id, self._latest_rev(cr_id), user, time.time()))
+        self.meta.cr_approve(cr_id, self._latest_rev(cr_id), user, time.time())
         self._event("cr.approved", cr_id, user)
         return self.get(cr_id)
 
@@ -212,9 +161,8 @@ class Antique:
             raise ValueError("an empty comment")
         if line is not None and (path is None or int(line) < 1):
             raise ValueError("a line comment needs a path and a line number from 1")
-        self.meta.execute("INSERT INTO cr_comments (cr, rev, user, path, line, body, created) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                          (cr_id, self._latest_rev(cr_id), user, path, None if line is None else int(line), body,
-                           time.time()))
+        self.meta.cr_comment(cr_id, self._latest_rev(cr_id), user, path, None if line is None else int(line), body,
+                             time.time())
         self._event("cr.commented", cr_id, user, path=path, line=line)
         return self.get(cr_id)
 
@@ -231,29 +179,16 @@ class Antique:
     def get(self, cr_id: int, with_requirements: bool = True) -> dict:
         cr = self._row(cr_id)
         cr["revision"] = self._latest_rev(cr_id)
-        cr["revisions"] = [{"rev": r, "head": h, "created": c} for r, h, c in self.meta.execute(
-            "SELECT rev, head, created FROM cr_revisions WHERE cr = ? ORDER BY rev", (cr_id,))]
-        cr["approvals"] = [{"user": u, "rev": r} for r, u in self.meta.execute(
-            "SELECT rev, user FROM cr_approvals WHERE cr = ? ORDER BY created", (cr_id,))]
+        cr["revisions"] = [{"rev": r, "head": h, "created": c} for r, h, c in self.meta.cr_revisions(cr_id)]
+        cr["approvals"] = [{"user": u, "rev": r} for r, u in self.meta.cr_approvals(cr_id)]
         cr["comments"] = [{"id": i, "rev": r, "user": u, "path": p, "line": ln, "body": b, "created": c}
-                          for i, r, u, p, ln, b, c in self.meta.execute(
-                              "SELECT id, rev, user, path, line, body, created FROM cr_comments WHERE cr = ? "
-                              "ORDER BY id", (cr_id,))]
+                          for i, r, u, p, ln, b, c in self.meta.cr_comments(cr_id)]
         if with_requirements and cr["state"] in LANDABLE:
             cr["requirements"] = self.requirements(cr_id)
         return cr
 
     def list(self, state: str | None = None, author: str | None = None, limit: int = 50) -> list[dict]:
-        q, args = "SELECT id FROM crs WHERE 1 = 1", []
-        if state:
-            q += " AND state = ?"
-            args.append(state)
-        if author:
-            q += " AND author = ?"
-            args.append(author)
-        q += " ORDER BY id DESC LIMIT ?"
-        args.append(int(limit))
-        return [self.get(r[0], with_requirements=False) for r in self.meta.execute(q, args).fetchall()]
+        return [self.get(i, with_requirements=False) for i in self.meta.cr_list(state, author, int(limit))]
 
     def base_of(self, cr: dict) -> str | None:
         """Where the CR's changes start: its merge base with the target."""
@@ -264,8 +199,7 @@ class Antique:
         """Evaluate the approval rules for the latest revision (FR-RV-06/07)."""
         cr = self._row(cr_id)
         rev = self._latest_rev(cr_id)
-        approvers = {u for (u,) in self.meta.execute("SELECT user FROM cr_approvals WHERE cr = ? AND rev = ?",
-                                                     (cr_id, rev))}
+        approvers = self.meta.cr_approvers(cr_id, rev)
         approvers.discard(cr["author"])  # BR-01
         groups: dict[str, dict] = {}
         for f in classify_diff(self.repo, self.base_of(cr), cr["head"]):
@@ -422,14 +356,9 @@ class Antique:
                 rows.append((cur, cs.extra.get("rebased_from", cur), req.cr_id, target, now, new))
                 cur = cs.first_parent
             jobs.append((new, req.cr_id, target, "queued", now))
-        with self.meta.transaction() as c:
-            c.executemany("INSERT OR IGNORE INTO landings (cs, source, cr, ref, landed_at, head) "
-                          "VALUES (?, ?, ?, ?, ?, ?)", rows)
-            c.executemany("INSERT INTO postmerge (cs, cr, ref, status, created) VALUES (?, ?, ?, ?, ?)", jobs)
-            for req, _, new in planned:
-                if req.cr_id is not None:
-                    c.execute("UPDATE crs SET state = ?, head = ?, landed_cs = ?, landed_at = ?, conflict = NULL, "
-                              "updated = ? WHERE id = ?", (LANDED, new, new, now, now, req.cr_id))
+        landed = [(req.cr_id, {"state": LANDED, "head": new, "landed_cs": new, "landed_at": now, "conflict": None,
+                               "updated": now}) for req, _, new in planned if req.cr_id is not None]
+        self.meta.record_landings(rows, jobs, landed)
         self._count("land.landed", len(planned))
         for req, _, new in planned:
             if req.cr_id is not None:
@@ -445,19 +374,14 @@ class Antique:
         the pre-rebase id (FR-LD-05, UC-17)."""
         if not self.meta.has_changeset(cs):
             cs = self.repo.resolve(cs)
-        row = self.meta.execute("SELECT cs, source, cr, ref, landed_at, head FROM landings WHERE cs = ? "
-                                "UNION ALL SELECT cs, source, cr, ref, landed_at, head FROM landings WHERE source = ? "
-                                "LIMIT 1", (cs, cs)).fetchone()
-        if row is None:
-            return None
-        return dict(zip(("cs", "source", "cr", "ref", "landed_at", "head"), row))
+        return self.meta.landing_find(cs)
 
     def landing_stack(self, cs: str) -> list[str]:
         """Every changeset of the landing that produced ``cs``, newest first (UC-18 3a)."""
         found = self.find_landing(cs)
         if found is None:
             return []
-        members = {r[0] for r in self.meta.execute("SELECT cs FROM landings WHERE head = ?", (found["head"],))}
+        members = self.meta.landing_members(found["head"])
         out, cur = [], found["head"]
         while cur in members:
             out.append(cur)
@@ -478,51 +402,34 @@ class Antique:
         the returned ``claim`` goes with the report, so a worker whose lease ran out can't overwrite
         the result of the worker that took the job over."""
         now = time.time()
-        cur = self.meta.execute("UPDATE postmerge SET status = 'queued', started = NULL, worker = NULL "
-                                "WHERE status = 'running' AND started < ?", (now - self.postmerge_lease,))
-        if cur.rowcount:
-            self.log("warning", f"{cur.rowcount} post-merge job(s) went back to the queue: no report within "
+        requeued = self.meta.postmerge_requeue(now - self.postmerge_lease)
+        if requeued:
+            self.log("warning", f"{requeued} post-merge job(s) went back to the queue: no report within "
                                 f"{self.postmerge_lease:.0f} s", repo=self.repo.name)
-        while True:
-            row = self.meta.execute("SELECT id, cs, cr, ref FROM postmerge WHERE status = 'queued' ORDER BY id LIMIT 1"
-                                    ).fetchone()
-            if row is None:
-                return None
-            claim = f"{worker} {secrets.token_hex(8)}"
-            cur = self.meta.execute("UPDATE postmerge SET status = 'running', started = ?, worker = ? "
-                                    "WHERE id = ? AND status = 'queued'", (now, claim, row[0]))
-            if cur.rowcount == 1:
-                return {"id": row[0], "cs": row[1], "cr": row[2], "ref": row[3], "claim": claim}
+        claim = f"{worker} {secrets.token_hex(8)}"
+        job = self.meta.postmerge_claim(claim, now)
+        return None if job is None else {**job, "claim": claim}
 
     def postmerge_report(self, job_id: int, passed: bool, log: str = "", claim: str | None = None) -> dict:
-        sql, args = "UPDATE postmerge SET status = ?, finished = ?, log = ? WHERE id = ? AND status = 'running'", \
-            ["passed" if passed else "failed", time.time(), log[-20000:], int(job_id)]
-        if claim is not None:
-            sql, args = sql + " AND worker = ?", args + [claim]
-        if self.meta.execute(sql, args).rowcount != 1:
+        if not self.meta.postmerge_report(int(job_id), "passed" if passed else "failed", time.time(), log[-20000:],
+                                          claim):
             raise ValueError(f"post-merge job {job_id} is not running under this claim (its lease may have run out)")
         return {"id": int(job_id), "status": "passed" if passed else "failed"}
 
     def queue_stats(self) -> dict:
         """Gauges of the landing queue and the post-merge queue, for the landing-queue superfan."""
-        rows = dict(self.meta.execute("SELECT status, COUNT(*) FROM postmerge WHERE status IN ('queued', 'running') "
-                                      "GROUP BY status").fetchall())
+        rows = self.meta.postmerge_counts()
         return {"land.queue_depth": self.queue_depth(), "postmerge.queued": rows.get("queued", 0),
                 "postmerge.running": rows.get("running", 0)}
 
     def postmerge_reverted(self, job_id: int, reverts: list[str]) -> dict:
         """A failed job whose landing has been reverted (06 §6.7, post-merge job)."""
-        cur = self.meta.execute("UPDATE postmerge SET status = 'reverted', log = COALESCE(log, '') || ? "
-                                "WHERE id = ? AND status = 'failed'",
-                                ("\nreverted by " + ", ".join(reverts), int(job_id)))
-        if cur.rowcount != 1:
+        if not self.meta.postmerge_mark_reverted(int(job_id), "\nreverted by " + ", ".join(reverts)):
             raise ValueError(f"post-merge job {job_id} has not failed")
         return {"id": int(job_id), "status": "reverted", "reverts": reverts}
 
     def job_for(self, cs: str) -> dict | None:
-        row = self.meta.execute("SELECT id, cs, cr, ref, status FROM postmerge WHERE cs = ? ORDER BY id DESC LIMIT 1",
-                                (cs,)).fetchone()
-        return dict(zip(("id", "cs", "cr", "ref", "status"), row)) if row else None
+        return self.meta.postmerge_job_for(cs)
 
     def deploy_gate(self, ref: str = "main", limit: int = 10_000) -> dict | None:
         """The newest changeset on ``ref`` whose post-merge tests passed (FR-PM-05, UC-19): it walks
@@ -537,6 +444,4 @@ class Antique:
         return None
 
     def postmerge_status(self, ref: str = "main", limit: int = 50) -> list[dict]:
-        rows = self.meta.execute("SELECT id, cs, cr, status, created, finished FROM postmerge WHERE ref = ? "
-                                 "ORDER BY id DESC LIMIT ?", (ref, int(limit))).fetchall()
-        return [dict(zip(("id", "cs", "cr", "status", "created", "finished"), r)) for r in rows]
+        return self.meta.postmerge_list(ref, int(limit))
