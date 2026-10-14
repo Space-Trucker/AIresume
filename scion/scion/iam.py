@@ -41,7 +41,8 @@ import os
 from dataclasses import dataclass
 
 ANY = "*"
-DEFAULT_SERVICE_PRINCIPALS = ("scion-cache", "scion-daemon", "antique", "postmerge", "superfan")
+DEFAULT_SERVICE_PRINCIPALS = ("scion-cache", "scion-daemon", "antique", "postmerge")
+DEFAULT_LOG_READERS = ("superfan",)  # may read GET /logs, and nothing more (ADR-28)
 TIER_PRINCIPALS = {"cache": "scion-cache", "daemon": "scion-daemon"}
 DEFAULT_LIMITS = {"max_file_bytes": 100 * 1024 * 1024}
 
@@ -73,6 +74,7 @@ class Identity:
         self.raw = data
         self.tokens: dict[str, str] = dict(data.get("tokens", {}))
         self.service_principals: set[str] = set(data.get("service_principals", DEFAULT_SERVICE_PRINCIPALS))
+        self.log_readers: set[str] = set(data.get("log_readers", DEFAULT_LOG_READERS))
         self.groups: dict[str, set[str]] = {k: set(v) for k, v in data.get("groups", {}).items()}
         self.admins: set[str] = set(data.get("admins", []))
         self.rate_limits: dict = data.get("rate_limits", {})
@@ -102,6 +104,12 @@ class Identity:
 
     def is_admin(self, principal: str | None) -> bool:
         return principal is not None and principal in self.admins
+
+    def can_read_logs(self, principal: str | None) -> bool:
+        """``GET /logs``: administrators, services, and the log readers (a superfan's identity, which
+        is not a service: it may not act for other users) (ADR-28)."""
+        return self.is_admin(principal) or self.is_service(principal) or (
+            principal is not None and principal in self.log_readers)
 
     def matches(self, user: str | None, principals) -> bool:
         """Does ``user`` match a list of principals and group names?"""

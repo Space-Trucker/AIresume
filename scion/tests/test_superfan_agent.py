@@ -6,6 +6,7 @@ import json
 import shutil
 import tempfile
 import threading
+import time
 import unittest
 
 import helpers  # noqa: F401
@@ -167,9 +168,10 @@ class _Fan:
         self.notifier = None
 
 
-def finding(metric="hit_rate", kind="novel"):
-    return Finding(kind, "scion-cache", "http://cache:1", "warning", f"{metric} is 0.5, down from its usual 0.99",
-                   metric=metric, value=0.5, baseline=0.99, logs=[{"level": "warning", "message": "upstream slow"}])
+def finding(metric="hit_rate", kind="novel", message=None):
+    return Finding(kind, "scion-cache", "http://cache:1", "warning",
+                   message or f"{metric} is 0.5, down from its usual 0.99", metric=metric, value=0.5, baseline=0.99,
+                   logs=[{"level": "warning", "message": "upstream slow"}])
 
 
 class TestLimitsAndFailures(unittest.TestCase):
@@ -223,19 +225,26 @@ class TestLimitsAndFailures(unittest.TestCase):
                 return reply(text("final " + ANALYSIS))
             return reply(thinking("s"), tool_use(f"t{len(body['messages'])}", "get_metrics"), stop="tool_use")
         inv, api, out = self.agent([step], max_turns=3)
-        self.assertEqual(inv.investigate(finding()), "final " + ANALYSIS)
+        self.assertEqual(inv.investigate(finding()),  # UC-31 4a: marked incomplete
+                         "final " + ANALYSIS + "\n(incomplete: the investigation reached its limit)")
         self.assertEqual(len(api.requests), 3)
         self.assertEqual([r["body"].get("tool_choice") for r in api.requests], [None, None, {"type": "none"}])
         self.assertEqual(inv.counters["tool_calls"], 2)
+        last = api.requests[2]["body"]["messages"][-1]["content"]  # told why, after the tool results
+        self.assertEqual([b["type"] for b in last], ["tool_result", "text"])
+        self.assertIn("last turn", last[1]["text"])
+        self.assertEqual(api.requests[2]["body"]["messages"][:3], api.requests[1]["body"]["messages"][:3])
 
     def test_T_OPS_07_the_token_budget_ends_the_investigation(self):
-        def step(body):
+        def step(body):  # every response uses all the tokens it may
             if body.get("tool_choice") == {"type": "none"}:
-                return reply(text(ANALYSIS), out=500)
-            return reply(tool_use("t", "get_stats"), stop="tool_use", out=40_000)
-        inv, api, out = self.agent([step], max_turns=6, token_budget=60_000)
-        self.assertEqual(inv.investigate(finding()), ANALYSIS)
-        self.assertEqual(len(api.requests), 3)  # 40k, 80k spent: the third call must answer
+                return reply(text(ANALYSIS), out=body["max_tokens"])
+            return reply(tool_use("t", "get_stats"), stop="tool_use", out=body["max_tokens"])
+        inv, api, out = self.agent([step], max_turns=6, max_tokens=16_000, token_budget=60_000)
+        self.assertTrue(inv.investigate(finding()).startswith(ANALYSIS))
+        self.assertEqual(len(api.requests), 3)  # 16k, 32k spent: another tool turn and an answer won't fit
+        self.assertEqual(api.requests[-1]["body"]["tool_choice"], {"type": "none"})
+        self.assertLessEqual(inv.counters["output_tokens"], 60_000)  # never past the budget
 
     def test_T_OPS_07_a_repeated_finding_is_investigated_once(self):
         inv, api, out = self.agent([reply(text(ANALYSIS))])
@@ -246,6 +255,35 @@ class TestLimitsAndFailures(unittest.TestCase):
         first.result(10)
         other.result(10)
         self.assertEqual((inv.counters["deduplicated"], len(api.requests)), (1, 2))
+        # a crash loop: every restart's message differs, but it is one problem
+        third = inv.submit(finding(kind="restarted", metric=None, message="restarted: uptime 41 s → 12 s"))
+        self.assertIsNone(inv.submit(finding(kind="restarted", metric=None, message="restarted: uptime 12 s → 3 s")))
+        third.result(10)
+        self.assertEqual(len(api.requests), 3)
+
+    def test_T_OPS_07_stopping_drops_queued_investigations(self):
+        inv, api, out = self.agent([lambda body: (time.sleep(0.3), reply(text(ANALYSIS)))[1]], concurrency=1)
+        futures = [inv.submit(finding(f"metric{i}")) for i in range(6)]
+        time.sleep(0.1)
+        inv.close()
+        self.assertLessEqual(len(api.requests), 2)  # the one running finished; the queued ones never started
+        self.assertTrue(any(f.cancelled() for f in futures))
+
+    def test_T_OPS_07_logs_and_analyses_reach_chat_as_text(self):
+        """Slack markup from a log line or the model is shown as itself, never a mention (T5); the
+        newest log lines are the ones kept when they don't all fit; with --json every line is JSON."""
+        from scion.superfan_agent import _newest
+        entries = [{"seq": i, "message": "x" * 3000} for i in range(1, 51)]
+        kept = json.loads(_newest(entries))
+        self.assertEqual(kept[-1]["seq"], 50)
+        self.assertGreater(kept[0]["seq"], 1)
+        inv, api, out = self.agent([reply(text("<!channel> run <https://evil|this>"))])
+        inv.submit(finding()).result(10)
+        self.assertIn("&lt;!channel&gt; run &lt;https://evil|this&gt;", out.getvalue())
+        self.assertNotIn("<!channel>", out.getvalue())
+        inv.fan.as_json = True
+        inv.submit(finding("other")).result(10)
+        self.assertEqual(json.loads(out.getvalue().splitlines()[-1])["analysis"], "<!channel> run <https://evil|this>")
 
     def test_T_OPS_07_a_failing_tool_is_reported_to_the_model(self):
         inv, api, out = self.agent([reply(tool_use("t1", "get_stats"), stop="tool_use"), reply(text(ANALYSIS))],
@@ -254,6 +292,15 @@ class TestLimitsAndFailures(unittest.TestCase):
         result = api.requests[1]["body"]["messages"][2]["content"][0]
         self.assertTrue(result["is_error"])
         self.assertIn("connection refused", result["content"])
+
+    def test_T_OPS_07_a_redirect_is_not_followed_with_the_key(self):
+        other = FakeClaude([reply(text(ANALYSIS))])
+        self.apis.append(other)
+        inv, api, out = self.agent([(302, {}, {"Location": other.url})], retries=0)
+        with self.assertRaises(AgentError) as e:
+            inv.investigate(finding())
+        self.assertIn("HTTP 302", str(e.exception))
+        self.assertEqual(other.requests, [])  # the key never went to the other host
 
     def test_T_OPS_07_an_unreachable_api_and_a_full_queue(self):
         api = ClaudeApi(KEY, "http://127.0.0.1:9/v1/messages", retries=0)

@@ -402,12 +402,12 @@ class _Handler(BaseHTTPRequestHandler):
         return self._page("GET", u)
 
     def _logs(self, u):
-        """``GET /logs?since=SEQ&limit=N&level=warning``: for administrators and service principals."""
+        """``GET /logs?since=SEQ&limit=N&level=warning``: for administrators, services and log readers."""
         service: Service = self.server.service
         try:
             caller = self._caller()
-            if not (service.identity.is_admin(caller.user) or service.identity.is_service(caller.user)):
-                raise RpcError(403, "permission_denied", "logs are for administrators and service principals")
+            if not service.identity.can_read_logs(caller.user):
+                raise RpcError(403, "permission_denied", "logs are for administrators, services and log readers")
             q = parse_qs(u.query)
             entries = service.logs.since(int((q.get("since") or ["0"])[0]), int((q.get("limit") or ["500"])[0]),
                                          (q.get("level") or ["info"])[0])

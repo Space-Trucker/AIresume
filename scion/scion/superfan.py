@@ -36,6 +36,8 @@ from dataclasses import asdict, dataclass, field
 from .notify import Notifier
 from .rpc import ClientTls, RemoteError, RpcClient
 
+RESTART_SLACK = 1.0  # seconds, plus 10% of the interval: polling jitter, not a restart
+
 SEVERITIES = ("info", "warning", "critical")
 OPS = {"<": operator.lt, "<=": operator.le, ">": operator.gt, ">=": operator.ge, "==": operator.eq,
        "!=": operator.ne}
@@ -263,11 +265,16 @@ class Finding:
     def text(self) -> str:
         """Slack-style text: one line for the finding, then the log lines around it."""
         mark = {"critical": ":rotating_light:", "warning": ":warning:", "info": ":white_check_mark:"}[self.severity]
-        lines = [f"{mark} *{self.component}* {self.kind}: {self.message} ({self.target})"]
+        lines = [f"{mark} *{self.component}* {self.kind}: {_esc(self.message)} ({_esc(self.target)})"]
         for e in self.logs[-10:]:
             times = f" (x{e['repeats']})" if e.get("repeats", 1) > 1 else ""
-            lines.append(f"> {e.get('level', '?')}: {e.get('message', '')}{times}")
+            lines.append(f"> {_esc(e.get('level', '?'))}: {_esc(e.get('message', ''))}{times}")
         return "\n".join(lines)
+
+
+def _esc(text) -> str:
+    """Shown as itself in Slack: a log line can't mention @channel or carry markup (threat T5)."""
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _fmt(v) -> str:
@@ -328,7 +335,10 @@ class Superfan:
         prev = restarted = None
         if self.prev is not None:
             t0, prev = self.prev
-            if _at(stats, ("uptime_s",)) < _at(prev, ("uptime_s",)):
+            # uptime grows by the time between polls; less means a new process, even one that has
+            # already lived longer than its predecessor had at the last poll (a fast crash loop)
+            grown = _at(prev, ("uptime_s",)) + (now - t0) * 0.9 - RESTART_SLACK
+            if _at(stats, ("uptime_s",)) < max(_at(prev, ("uptime_s",)), grown):
                 restarted = f"restarted: uptime {_at(prev, ('uptime_s',)):.0f} s → {_at(stats, ('uptime_s',)):.0f} s"
                 prev, self.log_seq = {}, 0  # counters and log sequence numbers start again
         self._fetch_logs()

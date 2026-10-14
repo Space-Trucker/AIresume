@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import threading
 import unittest
+import unittest.mock
 
 import helpers  # noqa: F401
 from helpers import REPO, Cluster
@@ -65,6 +66,36 @@ class TestJudgement(unittest.TestCase):
                          [("threshold", "warning", "land_queue_depth >= 10 for 2 polls")])
         self.assertEqual(fan._judge({"land_queue_depth": 30}), [])
         self.assertEqual([f.kind for f in fan._judge({"land_queue_depth": 2})], ["resolved"])
+
+    def test_a_restart_between_polls_is_seen_even_in_a_fast_crash_loop(self):
+        """A new process can already be older than its predecessor was at the last poll; its uptime
+        still grew by less than the time between polls (review finding S-06)."""
+        class Stub:
+            def __init__(self, docs):
+                self.docs = docs
+
+            def get_json(self, path):
+                if path.startswith("/logs"):
+                    return {"entries": [], "last_seq": 0}
+                return self.docs.pop(0)
+
+            def close_all(self):
+                pass
+        st = lambda up, errors: {"uptime_s": up, "counters": {"rpc.get_objects": 10}, "errors": {"503": errors}}  # noqa: E731
+        fan = self.fan(default_rules=False)
+        fan.client = Stub([st(500, 0), st(6, 30), st(18, 25)])
+        clock = iter([0.0, 30.0, 60.0])
+        with unittest.mock.patch("scion.superfan.time.monotonic", lambda: next(clock)):
+            fan.poll_once()
+            self.assertEqual([f.kind for f in fan.poll_once()], ["restarted"])
+            self.assertEqual([f.kind for f in fan.poll_once()], ["restarted"])  # 18 s old, 30 s after the last poll
+        self.assertAlmostEqual(fan.metrics["server_errors_per_s"], 25 / 30)  # counted from the new process's start
+
+    def test_a_finding_shows_log_lines_as_text_in_chat(self):
+        f = self.fan()._finding("threshold", "warning", "land_conflicts_per_s is 1: rule")
+        f.logs = [{"level": "info", "message": "conflicts in docs/<!channel> run this.md"}]
+        self.assertIn("docs/&lt;!channel&gt; run this.md", f.text())
+        self.assertNotIn("<!channel>", f.text())
 
     def test_metrics_are_rates_over_the_interval(self):
         prev = {"uptime_s": 10, "counters": {"rpc.get_objects": 100}, "errors": {"503": 1, "404": 5},
@@ -178,6 +209,15 @@ class TestFindingsAndLogs(SuperfanCluster):
         with self.assertRaises(Exception) as e:
             self.c.client("alice", url=self.c.server_urls[0]).get_json("/logs")
         self.assertEqual(e.exception.status, 403)
+        # the superfan reads logs as a log reader, not a service: it can't act for anyone (S-03)
+        self.assertIn("entries", self.c.client("superfan", url=self.c.server_urls[0]).get_json("/logs"))
+        import http.client
+        from urllib.parse import urlparse
+        u = urlparse(self.c.server_urls[0])
+        conn = http.client.HTTPConnection(u.hostname, u.port)
+        conn.request("POST", "/rpc/whoami", b"{}", {"X-Scion-User": "superfan", "X-Scion-On-Behalf-Of": "root"})
+        self.assertEqual(conn.getresponse().status, 403)
+        conn.close()
         fan = Superfan(self.c.server_urls[0], "server", user="alice", out=self.out)
         try:
             fan.poll_once()
