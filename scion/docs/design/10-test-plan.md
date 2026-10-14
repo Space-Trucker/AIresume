@@ -172,4 +172,5 @@ python3 -m scion scion-admin bench                                      # perfor
 python3 scripts/check_docs.py --release [--mmdc PATH]                   # documentation checks
 SCION_TEST_SPANNER=http://127.0.0.1:9020 python3 -m unittest discover -s tests   # the suite on the Spanner emulator
 python3 -m scion scion-admin bench --vs-git PATH                         # Scion against git on one repository
+PILOT_GIT=cpython.git examples/pilot.sh WORKDIR                          # the CPython pilot (T-PILOT-01)
 ```

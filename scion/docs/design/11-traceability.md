@@ -41,7 +41,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-DD-06 | UC-27 | F-06 | backfill; `scion-admin derive` | T-DD-07 | I |  |
 | FR-DD-07 | UC-01 | F-06 | RootTreeType | T-CORE-07, T-FUZZ-01 | I |  |
 | FR-DD-08 | UC-08 | F-08 | HistoryTreeType; repo.file_history | T-DD-04, T-DD-08, T-FUZZ-01 | I |  |
-| FR-DD-09 | UC-09 | F-08 | BlameType | T-DD-05, T-DD-08, T-FUZZ-01, T-MG-02 | I |  |
+| FR-DD-09 | UC-09 | F-08 | BlameType; linediff (ADR-27) | T-DD-05, T-DD-08, T-FUZZ-01, T-MG-02, T-PILOT-01 | I |  |
 | FR-DD-10 | UC-11 | F-07 | GraphType; is_ancestor; merge_bases | T-DD-06, T-FUZZ-01 | I |  |
 | FR-DD-11 | UC-08 | F-08 | CopyInfoType | T-DD-03 | I |  |
 | FR-DD-12 | UC-12 | F-39 | SearchTreeType | T-CORE-12, T-FUZZ-01 | I |  |
@@ -56,7 +56,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-QRY-09 | UC-11, UC-20 | F-07 | fp_ancestor | T-DD-06, T-FUZZ-01 | I |  |
 | FR-QRY-10 | all | F-09 | ScionService registry; the client calls only registered RPCs | T-CL-11 | I |  |
 | FR-WR-01 | UC-07 | F-11 | create_changeset with content_b64 or uploaded blobs | T-CL-10, T-CL-11 | I |  |
-| FR-WR-02 | UC-06, UC-29 | F-10 | repo.merge; merge3 | T-WR-01 | I |  |
+| FR-WR-02 | UC-06, UC-29 | F-10 | repo.merge; merge3; linediff (ADR-27) | T-WR-01, T-FUZZ-01 | I |  |
 | FR-WR-03 | UC-06 | F-10 | repo.rebase | T-WR-01, T-CL-04 | I |  |
 | FR-WR-04 | UC-21 | F-10 | repo.revert | T-WR-01, T-PM-01 | I |  |
 | FR-WR-05 | UC-07 | F-11 | create_changeset update_ref (compare-and-swap) | T-CL-10 | I |  |

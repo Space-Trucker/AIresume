@@ -1,9 +1,10 @@
 # Feature map: "Redesigning source control at Anthropic" → this implementation
 
 > The prototype this map first pointed to was deleted at M0 (see `design/12-project-plan.md` §12.7) and
-> the system was rebuilt from the design baseline in milestones B1–B5. This map was re-verified against
-> the rebuilt code at B5: every name below exists. The authoritative trace, requirement by requirement,
-> is `design/11-traceability.md`.
+> the system was rebuilt from the design baseline in milestones B1–B5, then extended in B6 to run as
+> Anthropic runs it (§12.9: metadata in Cloud Spanner, superfans that are Claude agents, a comparison with
+> git, the CPython pilot). This map was re-verified against the code at B6: every name below exists. The
+> authoritative trace, requirement by requirement, is `design/11-traceability.md`.
 
 Every claim in the article that describes *what the system does* is listed here with an ID,
 and mapped to the code that implements it. Claims that are about Anthropic's organization,
@@ -26,7 +27,7 @@ cannot be reproduced in a repository (explained).
 | P6 | Client gives an ergonomic way to work with the server | `cli.py` (`scn`) | Done |
 | P7 | Every source-control query the client uses is also exposed via API, so jobs need no local repo | `server.py` RPC surface; `client.ServerApi` uses the same RPCs | Done |
 | P8 | Novel applications on top of the API: automated bisect and revert pipelines | `tools/bisect.py` (API-only predicates), `tools/revert.py` (lands via `antique.land_changeset`) | Done |
-| P9 | Horizontally scalable: data is distributed, every component scales independently | stateless `scion-server` processes over shared blob storage + metadata DB; caches can fan out to several servers | Partial (single-machine SQLite stands in for Spanner) |
+| P9 | Horizontally scalable: data is distributed, every component scales independently | stateless `scion-server` processes over the metadata in Cloud Spanner (`spanner.SpannerMetaStore`, one database per deployment) and a shared object directory; caches fan out to several servers | Done (Spanner through Google's emulator; the objects stay in a directory, decision 12.9.3) |
 | P10 | No fully materialized copy of the repo anywhere, even on the server | server stores changesets + content-addressed objects only; trees are derived on demand | Done |
 | P11 | No packfiles, so no repository maintenance | `storage.FileObjectStore`: one compressed file per object; no gc/repack command exists | Done |
 | P12 | Commits are cheap and incremental: cost scales with the size of the change, not the repo | `trees.apply_augmented` only rewrites trees on changed paths; all derived types are incremental | Done |
@@ -41,12 +42,12 @@ cannot be reproduced in a repository (explained).
 
 | ID | Article feature | Where | Status |
 |----|-----------------|-------|--------|
-| D1 | Unit of work is a "changeset", an entry in a write-ahead log | `meta.MetaStore.changesets` (append-only, sequence numbered) | Done |
+| D1 | Unit of work is a "changeset", an entry in a write-ahead log | `MetaStore.insert_changeset` / `tail` (append-only; in order of a sequence number on SQLite, of commit timestamps on Spanner) | Done |
 | D2 | Changeset stores the list of files changed relative to its **first parent** (also for merges) | `changeset.Changeset.changes` | Done |
 | D3 | Content-addressed pointers to compressed file contents in blob storage | `objects.py`, `storage.py` (zlib-compressed, sha256-addressed) | Done |
 | D4 | Changesets are created server-side and are available everywhere, instantly | `repo.create_changeset` | Done |
 | D5 | High-throughput acceptance: no packfiles, no locking or cross-server coordination, no refs moved | `create_changeset` | Done |
-| D6 | Refs exist; moving one is a compare-and-swap on a single row, separate from creating changesets | `meta.MetaStore.cas_ref` | Done |
+| D6 | Refs exist; moving one is a compare-and-swap on a single row, separate from creating changesets | `MetaStore.cas_ref`: on Spanner, a read-write transaction on the ref's row, retried when aborted | Done |
 | D7 | Everything else is "derived data", computed through **one generic mechanism** | `derived.py` (`DerivedType`, `DerivedDataManager`) | Done |
 | D8 | Each derived type is defined recursively from its values for the changeset's parents | `DerivedType.derive(repo, cs_id, cs, parent_values)` | Done |
 | D9 | Derived structure: file blame | `derived_types.BlameType` | Done |
@@ -65,8 +66,8 @@ cannot be reproduced in a repository (explained).
 |----|-----------------|-------|--------|
 | S1 | A small fleet of servers provides APIs: get changesets, compute diffs, find merge bases, fetch blobs | `server.py` | Done |
 | S2 | All data is content-addressed and immutable, so any server can cache it without coordination | `repo.Repository` LRU caches; `tiers.CachingSource` | Done |
-| S3 | Servers are essentially large caches that compute derived data on the fly and write it back to the metadata store | `DerivedDataManager.get` writes back with `INSERT OR IGNORE` | Done |
-| S4 | "Metadata-only" mode: answering metadata queries for repos before having a client and protocol | `ingest.py` + server API usable without any `scn` client | Done |
+| S3 | Servers are essentially large caches that compute derived data on the fly and write it back to the metadata store | `DerivedDataManager.get` writes values back (`MetaStore.derived_put`; deterministic, so either server's write is the same) | Done |
+| S4 | "Metadata-only" mode: answering metadata queries for repos before having a client and protocol | `ingest.py` + server API usable without any `scn` client; the CPython pilot serves log, history, blame, ancestry and git lookups this way (`tools/pilot.py`, `examples/pilot.sh`) | Done |
 | S5 | `scn` negotiation does **not** say what the client has; it asks only for the objects it wants | `client.WorkingCopy._collect_files` + `ObjectFetcher.fetch_batches` | Done |
 | S6 | Start from the root tree, check the local store for missing trees, request them recursively, then do the same for blobs | `_collect_files` (breadth-first, one round trip per level) | Done |
 | S7 | Every request is for a specific immutable object, so any cache can answer it | `get_objects` RPC | Done |
@@ -100,7 +101,7 @@ cannot be reproduced in a repository (explained).
 | L12 | Novel ways of landing large amounts of reviewed code: no global merge-queue lock | `Antique.land`: server-side rebase + one ref CAS, per-server group commit, jittered retry | Done |
 | L13 | Post-merge and pre-deploy automated testing instead of a merge queue | `postmerge.py` (worker, auto-revert, deploy gate) | Done |
 | L14 | Concurrent changes can conflict and get fixed quickly | `land` returns structured 409 conflicts and marks the CR; `scn rebase` + `review update` | Done |
-| L15 | "Superfans": per-component monitors with access to telemetry and logs that flag subtle, novel issues | `superfan.Superfan` (adaptive baselines per metric; daemon, cache and landing-queue profiles; findings carry log lines from `GET /logs`; Slack-compatible webhook) | Partial (statistical watcher; the LLM agent in Slack is out of scope) |
+| L15 | "Superfans": per-component monitors with access to telemetry and logs that flag subtle, novel issues | `superfan.Superfan` (adaptive baselines per metric; daemon, cache and landing-queue profiles; findings carry log lines from `GET /logs`; Slack-compatible webhook) and `superfan_agent.Investigator`: Claude investigates each finding with read-only tools and posts its analysis (`scion-superfan --agent`) | Done (the agent is tested against a fake Messages API; real use needs an API key) |
 | L16 | Traditional alerts alongside superfans | `superfan.Rule` threshold rules (`for N` polls, severity) | Done |
 
 ## 5. "Contributing to the wider ecosystem" ideas
@@ -118,9 +119,10 @@ These describe Anthropic's situation and are not reproducible as code: merges pe
 100 GB of history and a 25 GB working copy, 25 million checkouts per day, roughly 600 PB per day of
 naive git traffic, several hundred git mirrors, a 200x smaller footprint, checkouts two orders of
 magnitude faster, a 25% CPU capacity win in CI, a seven-person team, five months, the Claude Mythos
-Preview rewrite (20x less memory, 4x faster), and Claude Tag. Spanner is replaced by SQLite (WAL
-mode) and cloud storage by a directory. Both sit behind narrow interfaces (`meta.py`, `storage.py`),
-so they can be swapped.
+Preview rewrite (20x less memory, 4x faster), and Claude Tag. The comparisons with git (CPU, footprint,
+checkout time) are measured on one host by `scion-admin bench --vs-git` (FR-OP-11), not at Anthropic's
+scale. The metadata is in Cloud Spanner (or SQLite on one host) behind `meta.MetaStore`; cloud storage
+is a directory behind `storage.py`.
 
 ## Bugs the tests found
 
