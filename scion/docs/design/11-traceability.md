@@ -29,10 +29,10 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-OBJ-03 | all (5.3) | F-02 | bounded stores; no gc | T-CORE-02 | I |  |
 | FR-OBJ-04 | UC-01 | F-02 | decode_stored(expected_id) in daemon and client | T-CORE-01, T-TIER-08 | I |  |
 | FR-OBJ-05 | all (5.3) | F-02 | derived trees only | T-CORE-08 | I |  |
-| FR-ST-01 | UC-32 | F-46 | MetaStore interface; SqliteMetaStore; SpannerMetaStore (keys by repository, 06 §6.10) | T-ST-01 | B6 |  |
-| FR-ST-02 | UC-32 | F-46 | `metadata` section of deployment.json; open_metastore | T-ST-02 | B6 |  |
-| FR-ST-03 | UC-15, UC-18, UC-32 | F-46 | SpannerClient.run_in_transaction: retry on ABORTED with backoff | T-ST-03 | B6 |  |
-| FR-ST-04 | UC-30, UC-32 | F-46 | backup: Spanner read-only transaction at one timestamp, written as a SQLite meta.db | T-ST-04 | B6 |  |
+| FR-ST-01 | UC-32 | F-46 | MetaStore interface; SqliteMetaStore; SpannerMetaStore (keys by repository, 06 §6.10; reads of wide tables paged by size) | T-ST-01 | I | the whole suite, 197 tests, passes on the Spanner emulator as on SQLite |
+| FR-ST-02 | UC-32 | F-46 | `metadata` section of deployment.json; open_metastore; both of Spanner's error formats | T-ST-02 | I |  |
+| FR-ST-03 | UC-15, UC-18, UC-32 | F-46 | SpannerClient.run_in_transaction: retry on ABORTED with backoff, in the same session | T-ST-03 | I |  |
+| FR-ST-04 | UC-30, UC-32 | F-46 | backup: every repository read in a Spanner read-only transaction at one timestamp, before any object is copied, written as a SQLite meta.db | T-ST-04 | I |  |
 | FR-DD-01 | UC-27 | F-06 | derived.DerivedDataManager | T-DD-01 | I |  |
 | FR-DD-02 | UC-09, UC-27 | F-06 | DerivedDataManager._derive_missing | T-DD-01 | I |  |
 | FR-DD-03 | UC-09, UC-27 | F-06 | DerivedType.eager | T-DD-01, T-DD-07 | I |  |
@@ -144,8 +144,8 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-OP-04 | UC-26 | F-41 | superfan.Rule threshold rules (`for N`, severity) | T-OPS-02 | I |  |
 | FR-OP-05 | UC-26 | F-41 | Superfan webhook through notify.Notifier.send (`text` payload) | T-OPS-03 | I |  |
 | FR-OP-08 | UC-26 | F-41 | rpc.LogRing per component, GET /logs (ADR-18); findings attach the lines of the last two intervals | T-OPS-04 | I |  |
-| FR-OP-09 | UC-31 | F-47 | superfan_agent.Investigator: Messages API over HTTPS, read-only tools (stats, logs, baselines, findings) | T-OPS-06 | B6 |  |
-| FR-OP-10 | UC-31 | F-47 | Investigator limits (turns, tokens, concurrency), dedup by finding key, redaction, fallback post | T-OPS-07 | B6 |  |
+| FR-OP-09 | UC-31 | F-47 | superfan_agent.Investigator: Messages API over HTTPS, read-only tools (stats, logs, baselines, findings) | T-OPS-06 | I | tested against a fake Messages API; real use needs an API key |
+| FR-OP-10 | UC-31 | F-47 | Investigator limits (turns, tokens, concurrency), dedup by finding key, redaction, escaped posts, fallback post | T-OPS-07 | I |  |
 | FR-OP-11 | UC-33 | F-48 | tools.bench --vs-git: git upload-pack and the Scion tiers measured on one host (ADR-26) | T-PERF-02 | B6 |  |
 | FR-OP-06 | UC-25 | F-42 | RateLimiter; 429 with Retry-After; RpcClient backs off | T-OPS-01 | I |  |
 | FR-OP-07 | UC-25 | F-43 | tools.bench; `scion-admin bench` | T-PERF-01 | I |  |
