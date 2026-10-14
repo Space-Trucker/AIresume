@@ -443,6 +443,10 @@ def report_vs_git(r: dict) -> str:
     lines.append(f"  peak memory of the Scion processes: server {peak['server']} MB, cache {peak['cache']} MB, "
                  f"daemon {peak['daemon']} MB")
     lines.append(f"  same files both ways: {r['identical']}; git/Scion ratios: {r['ratios']}")
+    converted = r.get("git_checkout_converted") or {}
+    if converted.get("files"):
+        lines.append(f"  git's own checkout differs from the committed bytes in {converted['files']} file(s), converted "
+                     f"by .gitattributes (e.g. {', '.join(converted['examples'])}); both were checked against the commit")
     return "\n".join(lines)
 
 

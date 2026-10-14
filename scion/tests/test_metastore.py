@@ -414,7 +414,7 @@ class SpannerDeployment(unittest.TestCase):
 class SpannerClientBehaviour(unittest.TestCase):
     """Review findings P-04 and P-05, against stand-ins for the Spanner API."""
 
-    def test_errors_in_either_format(self):
+    def test_T_ST_02_errors_in_either_format(self):
         """spanner.googleapis.com puts the rpc code's name in "status" (AIP-193); the emulator puts
         the rpc code in "code". Both mean the same: here, a database to create."""
         from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -457,7 +457,7 @@ class SpannerClientBehaviour(unittest.TestCase):
             srv.server_close()
 
     @ON_SPANNER
-    def test_an_aborted_transaction_is_retried_in_its_session(self):
+    def test_T_ST_03_an_aborted_transaction_is_retried_in_its_session(self):
         """A retried transaction keeps its session, and with it its lock priority."""
         from scion.spanner import Aborted, client_for, release_client
         config = spanner_config()

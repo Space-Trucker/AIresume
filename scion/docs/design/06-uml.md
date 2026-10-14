@@ -353,7 +353,8 @@ classDiagram
   class MetaStore {
     <<interface>>
     +insert_changeset(id, data) bool
-    +cas_ref(name, expected, new, who) bool
+    +cas_ref(name, expected, new, who, landing) bool
+    +cr_update(id, expect_states, expect_head, cols) bool
     +derived_get(type, cs) str
     +derived_put(type, cs, value)
     +audit_append(make) seq_hash
@@ -994,13 +995,13 @@ flowchart TD
   D -- no --> E[wait for result] --> Z
   D -- yes --> F[drain queue into a batch]
   F --> G[read tip T]
-  G --> H[for each request: fast-forward or rebase onto running head]
-  H --> I{conflict?}
-  I -- yes --> J[mark CR conflict, fail that request] --> K
+  G --> H[for each request: fast-forward if the running head is on its first-parent chain, else replay that chain onto it]
+  H --> I{conflict or error?}
+  I -- yes --> J[conflict: mark CR conflict; either way fail that request alone] --> K
   I -- no --> K{more requests?}
   K -- yes --> H
-  K -- no --> L{CAS target T to head}
-  L -- ok --> M[index landings, mark landed, queue post-merge] --> N{queue empty?}
+  K -- no --> L{"CAS target T to head, with the landing's index rows, post-merge jobs and CR states, in one transaction"}
+  L -- ok --> M[finish requests, notify] --> N{queue empty?}
   N -- no --> F
   N -- yes --> Z
   L -- failed --> O{deadline passed?}

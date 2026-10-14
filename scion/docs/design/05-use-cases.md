@@ -277,11 +277,14 @@ scenario · extensions · postconditions · frequency.
 * **Main success scenario:**
   1. Antique queues a landing request for the target on this server.
   2. The request holding the server's per-target leader slot drains the queue as one batch.
-  3. It reads the target's tip T, then fast-forwards each request or rebases it onto the running head, in order.
-  4. It compare-and-swaps the target from T to the final head.
-  5. It indexes every landed changeset (landed id, original id, CR, ref, time), marks the CRs landed, and queues post-merge jobs.
+  3. It reads the target's tip T, then, in order, fast-forwards each request whose first-parent chain holds the running head, or replays that chain onto the running head (a merge by its first-parent change list), so the target's first-parent chain only grows.
+  4. It compare-and-swaps the target from T to the final head, and in the same transaction
+  5. indexes every landed changeset (landed id, original id, CR, ref, time), marks the CRs landed, and queues post-merge jobs.
 * **Extensions:**
   * 3a. A request conflicts: that CR enters `conflict` with structured details, 409 goes to its author, and the rest of the batch continues.
+  * 3b. A request fails for another reason: it alone fails, its CR returns to its previous state, and the rest of the batch continues.
+  * 1b. The CR got a new revision since the lander saw it, or since its approvals were checked: refused; nothing changes.
+  * 1c. Antique may not move the target: 403 before the CR changes state.
   * 4a. The compare-and-swap fails because another server landed first: the batch is rebased onto the new tip and retried with jittered exponential backoff until a deadline.
   * 4b. The deadline passes: the requests fail as retryable.
   * 1a. Requirements are not met: 403 listing the unmet scopes.

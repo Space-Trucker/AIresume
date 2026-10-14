@@ -146,7 +146,7 @@ class TestBackupAndRestore(unittest.TestCase):
             restore(out, os.path.join(self.tmp, "elsewhere"))
         self.assertFalse(os.path.exists(os.path.join(self.tmp, "elsewhere")), "nothing restored from a damaged backup")
 
-    def test_every_repository_s_metadata_is_read_before_any_object_is_copied(self):
+    def test_T_ST_04_every_repository_s_metadata_is_read_before_any_object_is_copied(self):
         """Review finding P-03: the metadata of every repository is exported, at one timestamp,
         before the object copy starts; a long copy can't push a later repository's read of that
         timestamp past Spanner's version retention (an hour by default)."""

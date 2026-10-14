@@ -282,8 +282,6 @@ class Antique:
         if force:
             if not self.policy.is_admin(user):
                 raise PermissionDenied("only administrators can force-land")
-            if self.audit:
-                self.audit("cr.force_land", user, f"cr/{cr_id}", {"head": cr["head"]})
         else:
             reqs = self.requirements(cr_id)
             if reqs["revision"] != revision:
@@ -295,6 +293,8 @@ class Antique:
         # visible while queued (D-02), and only at the head whose approvals were just checked
         if not self._transition(cr_id, LANDABLE + stale, LANDING, head=cr["head"]):
             raise ValueError(f"change request {cr_id} changed while landing: try again")
+        if force and self.audit:
+            self.audit("cr.force_land", user, f"cr/{cr_id}", {"head": cr["head"]})
         req = _LandRequest(cr_id, cr["head"])
         try:
             self._submit(cr["target"], req, time.time() + timeout)
@@ -342,8 +342,9 @@ class Antique:
             try:
                 self._land_batch(target, batch, deadline)
             except BaseException as e:
-                # The ref didn't move (its compare-and-swap and the landing's records are one
-                # transaction), so every request still waiting fails with the error, none hangs.
+                # Every request still waiting fails with the error; none hangs. The ref's
+                # compare-and-swap and the landing's records are one transaction, so a CR's state
+                # says whether it landed even when a commit's outcome was lost.
                 self.log("error", f"a landing batch on {target} failed: {e!r}", repo=self.repo.name,
                          batch=len(batch))
                 for req in batch:

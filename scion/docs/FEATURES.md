@@ -11,7 +11,7 @@ and mapped to the code that implements it. Claims that are about Anthropic's org
 scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are
 listed at the end for completeness.
 
-Legend: **Done** = implemented and covered by tests (`tests/`, 134 tests, plus the end-to-end demo
+Legend: **Done** = implemented and covered by tests (`tests/`, 197 tests, plus the end-to-end demo
 `examples/demo.sh`). **Partial** = implemented with a documented simplification. **Out of scope** =
 cannot be reproduced in a repository (explained).
 
@@ -141,6 +141,14 @@ too. While rebuilding (each now has a regression test):
    Jobs are now leased (ADR-22) (B4 review of the queue).
 6. Every clone by a user without access to a directory wrote an audited denial, and daemons counted
    denied objects as cache misses (B4 end-to-end demo).
+7. The first blame of CPython's `Python/ceval.c` took 172 s at a tenth of its history: whole-file
+   difflib matching is quadratic on files of repeated lines. Line diffs now use Myers' algorithm
+   (ADR-27) (B6, the CPython pilot).
+8. Five independent adversarial reviewers found 33 defects before B6 merged (11 §11.5). Among them:
+   approval rules that couldn't see restricted files, a merge of main into a change that rewrote
+   main's first-parent history (and auto-revert then emptied main), landing batches left hanging by
+   errors other than conflicts, file names holding `\r` misread when read back, and result pages too
+   large for Spanner. Each fix has a regression test that fails on the reviewed code.
 
 In the deleted prototype:
 
