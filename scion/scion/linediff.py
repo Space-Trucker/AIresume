@@ -1,9 +1,11 @@
 """Line diffs whose cost follows the change, not the file (blame, FR-DD-09; merges, FR-WR-02/03).
 
-Myers' O((N+M)·D) algorithm runs after the common prefix and suffix are matched. Most changes
-touch a small part of a large file, so a diff costs about the size of the change: the CPython pilot
-found whole-file difflib matching taking minutes per hot file. An edit of more than MAX_EDIT lines
-(a rewrite) falls back to difflib.
+Myers' O((N+M)·D) algorithm runs after the common prefix and suffix are matched, and without the
+lines that occur on one side only: they can't be in a common subsequence, so leaving them out keeps
+the result a shortest edit while D counts only the lines that moved. Most changes touch a small part
+of a large file, so a diff costs about the size of the change: the CPython pilot found whole-file
+difflib matching taking minutes per hot file, and Myers alone spending most of a blame backfill on
+large edits. An edit of more than MAX_EDIT lines even then (a reordering) falls back to difflib.
 """
 from __future__ import annotations
 
@@ -24,9 +26,21 @@ def matching_blocks(old: list, new: list) -> list[tuple]:
     while s < n - p and old[-1 - s] == new[-1 - s]:
         s += 1
     a, b = old[p:len(old) - s], new[p:len(new) - s]
-    blocks = _myers(a, b, MAX_EDIT)
-    if blocks is None:
-        blocks = [m for m in difflib.SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks() if m[2]]
+    in_a, in_b = set(a), set(b)
+    ia = [i for i, x in enumerate(a) if x in in_b]  # the lines both sides have, by position
+    ib = [j for j, y in enumerate(b) if y in in_a]
+    a2, b2 = [a[i] for i in ia], [b[j] for j in ib]
+    found = _myers(a2, b2, MAX_EDIT)
+    if found is None:
+        found = [m for m in difflib.SequenceMatcher(None, a2, b2, autojunk=False).get_matching_blocks() if m[2]]
+    blocks: list[list] = []
+    for i2, j2, k in found:  # back to positions in a and b: a run ends where left-out lines were
+        for t in range(k):
+            i, j = ia[i2 + t], ib[j2 + t]
+            if blocks and blocks[-1][0] + blocks[-1][2] == i and blocks[-1][1] + blocks[-1][2] == j:
+                blocks[-1][2] += 1
+            else:
+                blocks.append([i, j, 1])
     return ([(0, 0, p)] if p else []) + [(i + p, j + p, k) for i, j, k in blocks] \
         + ([(len(old) - s, len(new) - s, s)] if s else []) + [(len(old), len(new), 0)]
 
