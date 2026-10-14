@@ -18,7 +18,7 @@
 | Migration | real git repositories with branches, merges, renames, modes, symlinks, file↔directory swaps | `git` CLI in a temp directory | `tests/test_ingest.py` |
 | System / E2E | separate processes: server, cache, daemon (Unix socket), CLI | shell script | `examples/demo.sh` |
 | Performance | commit scaling, ancestry, tiered checkout | `scion-admin bench` (invariants asserted by T-PERF-01) | `scion/tools/bench.py`, `tests/test_admin.py` |
-| Documentation | every Mermaid diagram renders; every requirement ID is traced | `mmdc` render check; ID cross-check script | T-DOC-01, T-DOC-02 |
+| Documentation | every Mermaid diagram renders; every requirement and test ID is defined, traced and tested | `scripts/check_docs.py` (`--mmdc` adds the render check) | T-DOC-01, T-DOC-02 |
 
 ## 10.3 Environments
 
@@ -86,7 +86,7 @@
 | T-LD-02 | FR-LD-04 | structured conflicts and resolution | test_antique |
 | T-RV-06 | FR-RV-08 | HTML view with escaping and diff | test_antique |
 | T-PM-01 | FR-PM-01…05, FR-LD-06/07, FR-AUT-02 | post-merge worker with a reused checkout, auto-revert only on a passing base, deploy gate | test_automation |
-| T-SIM-01 | FR-LD-02/03, FR-REF-04, FR-CS-05/06, NFR-01 | swarm of agents on 2 servers; no lost updates; CAS-chained ref log | test_simulation |
+| T-SIM-01 | FR-LD-02/03, FR-REF-04, FR-CS-05/06, NFR-01 | swarm of agents on 2 servers; no lost updates; CAS-chained ref log; no starvation (every landing within 60 s); at stress size more than 3.5 landings a second | test_simulation |
 | T-MG-01 | FR-MG-01/03/05/07 | ingest, verify, incremental, the git map both ways | test_ingest |
 | T-MG-02 | FR-MG-01, FR-DD-09 | blame parity with `git blame --first-parent` | test_ingest |
 | T-MG-03 | FR-MG-02 | ordering invariant | test_ingest |
@@ -95,7 +95,7 @@
 | T-SR-01 | FR-SR-01/02/04, FR-DD-12 | bloom pruning; grep (regex, fixed, case-insensitive, limits) filtered by permissions | test_search |
 | T-AUT-01 | FR-AUT-01 | bisect without a checkout in ⌈log₂ n⌉ probes | test_automation |
 | T-AUT-02 | FR-AUT-02, FR-LD-06 | revert pipeline under contention | test_automation |
-| T-CORE-10 | FR-CS-09, NFR-05 | one-file commit time is flat (±25%) across 10² and 10⁴ files (asserted) | test_core |
+| T-CORE-10 | FR-CS-09, NFR-05 | a one-file commit writes the same 3 trees and 10 objects at 10² and 10⁴ files, and with objects in memory takes the same time within ±25% (interleaved, asserted) | test_core |
 | T-DD-07 | FR-DD-06 | backfilling a deferred type computes it for a revision and all ancestors | test_core |
 | T-DD-08 | BR-06 | history and blame follow the first parent only; merge-introduced lines belong to the merge | test_core |
 | T-MR-01 | FR-IAM-02, ADR-13 | two repositories with different policies on one deployment; caches key by repository; a private repository's objects are never cached | test_multirepo |
@@ -131,10 +131,13 @@
 | T-MG-05 | FR-MG-06 | metadata queries (resolve, ancestry, blame, git lookups) over ingested history, with no client | test_ingest |
 | T-PM-04 | FR-PM-01, D-01 | a lost worker's job returns to the queue after its lease; its late report is refused | test_automation |
 | T-ADM-02 | FR-AD-01…04/06, FR-MG-05 | the scion-admin commands end to end: init, create-repo, ingest --verify, derive, snapshot, reindex-acl, audit --verify, backup, restore, verify | test_admin |
-| T-E2E-01 | system | multi-process demo including git ingestion | examples/demo.sh |
-| T-PERF-01 | NFR-05/06, NFR-02, FR-OP-07 | benchmark invariants: constant tree writes per commit, O(log n) ancestry steps, a second clone with zero cache requests | test_admin; `scion-admin bench` |
-| T-DOC-01 | 06 | all diagrams render (`mmdc`) | doc check: run for this baseline; the script is committed with WP-03 after M0 |
-| T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; coverage counts in 11.3 | doc check: run for this baseline; the script is committed with WP-03 after M0 |
+| T-E2E-01 | system, NFR-09/17 | every component in its own process: git ingestion with verification, clones through the tiers, sparse checkout, permissions, grep, review and landing, six concurrent landers, post-merge testing and the deploy gate, a superfan, server failover, online backup and verified restore, the audit chain, each process's footprint | examples/demo.sh |
+| T-SYS-01 | NFR-02, NFR-17 | steady-state hit rates: one node with 100 jobs ≥ 99%; one cache behind 100 nodes ≥ 99% over its life, cold start included; every store within its configured MB bound, evicting when tiny | test_system |
+| T-SYS-02 | NFR-13 | losing the daemon with its disk store, the cache and a server loses no data: replacements serve identical checkouts, and a new server process on the same storage serves everything | test_system |
+| T-SYS-03 | NFR-03 | no component materializes the repository: path queries read the same 27 objects at 500 and 10,000 files; a sparse checkout of 1 of 40 projects fetches 103 of 4,081 objects | test_system |
+| T-PERF-01 | NFR-02/04/05/06, FR-OP-07 | benchmark invariants: constant tree writes per commit, O(log n) ancestry steps, a second clone with zero cache requests, a sparse checkout in under 10 s | test_admin; `scion-admin bench` |
+| T-DOC-01 | 06 | all diagrams render (`mmdc`) | `scripts/check_docs.py --mmdc PATH` |
+| T-DOC-02 | 03–05, 10, 11 | every requirement ID is defined once and traced; every test cited in 11 is planned in 10, every planned test exists in tests/, and every named test is planned; `--release` requires every requirement I or P | `scripts/check_docs.py` |
 
 ## 10.5 Entry and exit criteria
 
@@ -152,8 +155,9 @@
 
 ```bash
 python3 -m unittest discover -s tests                                   # full suite
-SCION_FUZZ_SEEDS=40 python3 -m unittest tests/test_fuzz.py              # deeper fuzzing
-SCION_SIM_AGENTS=32 SCION_SIM_ROUNDS=5 python3 -m unittest tests/test_simulation.py   # stress
+SCION_FUZZ_SEEDS=40 python3 -m unittest discover -s tests -p test_fuzz.py   # deeper fuzzing
+SCION_SIM_AGENTS=32 SCION_SIM_ROUNDS=5 python3 -m unittest discover -s tests -p test_simulation.py   # stress
 ./examples/demo.sh                                                      # end to end
 python3 -m scion scion-admin bench                                      # performance
+python3 scripts/check_docs.py --release [--mmdc PATH]                   # documentation checks
 ```

@@ -69,7 +69,10 @@ class _HistoryCodec(TreeCodec):
         return self.repo.read_htree(node_id)
 
     def write(self, entries, path):
-        return self.repo.objects.put("htree", encode_htree(entries))
+        payload = encode_htree(entries)
+        oid = self.repo.objects.put("htree", payload)
+        self.repo.cache.put(("htree", oid), dict(entries), len(payload))  # write-through, as TreeOps.write
+        return oid
 
     def child(self, entry):
         return entry[3]
@@ -168,7 +171,10 @@ class _SearchCodec(TreeCodec):
 
     def write(self, entries, path):
         rows = [[n, e[0], e[1], format(e[2], "x")] for n, e in sorted(entries.items())]
-        return self.repo.objects.put("stree", json.dumps(rows, separators=(",", ":")).encode())
+        payload = json.dumps(rows, separators=(",", ":")).encode()
+        oid = self.repo.objects.put("stree", payload)
+        self.repo.cache.put(("stree", oid), dict(entries), len(payload))  # write-through, as TreeOps.write
+        return oid
 
     def child(self, entry):
         return entry[1]

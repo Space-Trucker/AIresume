@@ -1,8 +1,10 @@
 """Benchmarks for the scaling claims that can be reproduced on one machine (FR-OP-07; T-PERF-01).
 
 * **Commit scaling (NFR-05):** a one-file commit, and the rebase of one onto ten newer commits, in
-  repositories of 10² to 10⁴ files. Their cost follows the size of the change, so the time stays
-  flat and the number of trees written is the same at every size.
+  repositories of 10² to 10⁴ files. Their cost follows the size of the change, so the number of
+  trees written is the same at every size and the time stays flat. Commits are timed twice: with
+  objects on disk, and with objects in memory, which leaves the algorithm without the disk (whose
+  speed, on a shared machine, varies with how full and busy it is).
 * **Ancestry (NFR-06):** ``is_ancestor``, ``fp_ancestor`` and ``merge_base`` on a long linear
   history take O(log n) steps through the skip lists, where a naive walk takes n.
 * **Checkouts through the tiers (NFR-02, NFR-04):** a full clone through a cold daemon and cache;
@@ -37,12 +39,24 @@ def _tree_path(i: int) -> str:
     return f"d{i % 100:03d}/sub{i % 7}/f{i}.txt"
 
 
-def commit_scaling(root: str, sizes=(100, 1_000, 10_000), commits: int = 30) -> dict:
+def _in_memory(r: Repository) -> Repository:
+    from ..storage import MemoryObjectStore
+    from ..trees import TreeOps
+
+    r.objects = MemoryObjectStore(None)
+    r.trees = TreeOps(r.objects, r.cache)
+    r.objects.put("tree", b"")
+    return r
+
+
+def commit_scaling(root: str, sizes=(100, 1_000, 10_000), commits: int = 30, memory: bool = False) -> dict:
     """Median one-file commit and rebase times per repository size. Measurements are interleaved
     across the repositories, so background load affects every size alike."""
     repos, heads = {}, {}
     for n in sizes:
-        r = repos[n] = Repository(os.path.join(root, f"commit-{n}"))
+        r = repos[n] = Repository(os.path.join(root, f"commit-{n}{'-mem' if memory else ''}"))
+        if memory:
+            _in_memory(r)
         heads[n] = r.create_changeset([], [{"path": _tree_path(i), "content": f"{i}\n".encode()} for i in range(n)],
                                       "bench", "import")
     samples = {n: {"commit": [], "rebase": [], "writes": []} for n in sizes}
@@ -179,9 +193,11 @@ def run(quick: bool = False, root: str | None = None) -> dict:
     root = root or tempfile.mkdtemp(prefix="scion-bench-")
     try:
         t0 = time.time()
+        sizes = (100, 1_000) if quick else (100, 1_000, 10_000)
         result = {
-            "commit_scaling": commit_scaling(os.path.join(root, "commit"),
-                                             (100, 1_000) if quick else (100, 1_000, 10_000), 15 if quick else 40),
+            "commit_scaling": commit_scaling(os.path.join(root, "commit"), sizes, 15 if quick else 40),
+            "commit_scaling_in_memory": commit_scaling(os.path.join(root, "commit"), sizes, 15 if quick else 40,
+                                                       memory=True),
             "ancestry": ancestry(os.path.join(root, "ancestry"), 1_000 if quick else 10_000),
             "checkout": checkout(os.path.join(root, "checkout"), 400 if quick else 5_000, 8 if quick else 20),
         }
@@ -200,6 +216,11 @@ def report(result: dict) -> str:
         lines.append(f"  {int(n):>7,} files: commit {v['commit_ms']:8.3f} ms   rebase {v['rebase_ms']:8.3f} ms   "
                      f"trees written {v['trees_written_per_commit']}")
     lines.append(f"  largest/smallest: commit x{c['commit_ratio']}, rebase x{c['rebase_ratio']}")
+    m = result.get("commit_scaling_in_memory")
+    if m:
+        lines.append("  with objects in memory (the algorithm alone): commit "
+                     + " / ".join(f"{v['commit_ms']:.3f}" for v in m["sizes"].values())
+                     + f" ms, largest/smallest x{m['commit_ratio']}")
     lines += [f"Ancestry (NFR-06) on a {a['length']:,}-commit line (log2 = {a['log2_length']}; a naive walk "
               f"takes {a['naive_steps']:,} steps)",
               f"  is_ancestor(root, tip): {a['is_ancestor_steps']} steps, {a['is_ancestor_ms']} ms",

@@ -1,22 +1,24 @@
 # Feature map: "Redesigning source control at Anthropic" → this implementation
 
-> The prototype this map pointed to was deleted at M0 (see `design/12-project-plan.md` §12.7). The rebuild
-> follows the same module layout. This map is re-verified against the rebuilt code at milestone B5. The
-> authoritative trace is `design/11-traceability.md`.
+> The prototype this map first pointed to was deleted at M0 (see `design/12-project-plan.md` §12.7) and
+> the system was rebuilt from the design baseline in milestones B1–B5. This map was re-verified against
+> the rebuilt code at B5: every name below exists. The authoritative trace, requirement by requirement,
+> is `design/11-traceability.md`.
 
 Every claim in the article that describes *what the system does* is listed here with an ID,
 and mapped to the code that implements it. Claims that are about Anthropic's organization,
 scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are
 listed at the end for completeness.
 
-Legend: **Done** = implemented and covered by tests (`tests/`, 79 tests). **Partial** = implemented with a documented
-simplification. **Out of scope** = cannot be reproduced in a repository (explained).
+Legend: **Done** = implemented and covered by tests (`tests/`, 134 tests, plus the end-to-end demo
+`examples/demo.sh`). **Partial** = implemented with a documented simplification. **Out of scope** =
+cannot be reproduced in a repository (explained).
 
 ## 1. Principles
 
 | ID | Article feature | Where | Status |
 |----|-----------------|-------|--------|
-| P1 | Clients are always online; client and protocol designed around an always-reachable server; clients fetch data only when they need it | `client.ObjectFetcher.fetch_stream`, `tiers.py` | Done |
+| P1 | Clients are always online; client and protocol designed around an always-reachable server; clients fetch data only when they need it | `client.ObjectFetcher.fetch_batches`, `tiers.py` | Done |
 | P2 | Client–server asymmetry: server answers history and blame, creates commits, performs merges and rebases | `repo.py` (`file_history`, `blame`, `create_changeset`, `merge`, `rebase`) | Done |
 | P3 | Client keeps a *bounded* local object cache | `storage.BoundedFileObjectStore` (`WorkingCopy.local`); the daemon uses the same store node-wide | Done |
 | P4 | Client lays out working copy files on disk | `client.WorkingCopy._write_file` | Done |
@@ -65,19 +67,19 @@ simplification. **Out of scope** = cannot be reproduced in a repository (explain
 | S2 | All data is content-addressed and immutable, so any server can cache it without coordination | `repo.Repository` LRU caches; `tiers.CachingSource` | Done |
 | S3 | Servers are essentially large caches that compute derived data on the fly and write it back to the metadata store | `DerivedDataManager.get` writes back with `INSERT OR IGNORE` | Done |
 | S4 | "Metadata-only" mode: answering metadata queries for repos before having a client and protocol | `ingest.py` + server API usable without any `scn` client | Done |
-| S5 | `scn` negotiation does **not** say what the client has; it asks only for the objects it wants | `client.WorkingCopy._collect_files` + `ObjectFetcher.fetch_stream` | Done |
+| S5 | `scn` negotiation does **not** say what the client has; it asks only for the objects it wants | `client.WorkingCopy._collect_files` + `ObjectFetcher.fetch_batches` | Done |
 | S6 | Start from the root tree, check the local store for missing trees, request them recursively, then do the same for blobs | `_collect_files` (breadth-first, one round trip per level) | Done |
 | S7 | Every request is for a specific immutable object, so any cache can answer it | `get_objects` RPC | Done |
-| S8 | Efficient and resumable: no single multi-gigabyte packfile response | batched requests; objects persisted as they arrive | Done |
+| S8 | Efficient and resumable: no single multi-gigabyte packfile response | batched requests; objects persisted as they arrive; an interrupted clone resumes in place and reuses what it received | Done |
 | S9 | Sparse and virtual checkouts need no special protocol support | the client simply doesn't request unwanted trees | Done |
 | S10 | `scion-daemon`: talks to clients over a socket and stores objects for the whole node | `tiers.DaemonService`, `scion-daemon` (Unix socket) | Done |
-| S11 | The daemon starts from a periodically refreshed snapshot | `snapshot.py`; `DaemonService.refresh_snapshot` + refresh thread | Done |
+| S11 | The daemon starts from a periodically refreshed snapshot | `snapshot.py`; `DaemonService.refresh_snapshots` + refresh thread; snapshots carry the ACL epoch (ADR-20) | Done |
 | S12 | The daemon talks only to regional `scion-cache` servers | `scion-daemon --upstream`; tier enforcement | Done |
 | S13 | Caches stream objects from memory in the daemon's on-disk format, with no missing-object computation or delta compression | compressed bytes are passed through verbatim | Done |
 | S14 | Cache misses go to the authoritative `scion-server`, which reads from the metadata store and cloud storage | `CachingSource` → `RemoteSource` → `Repository.fetch_objects` | Done |
 | S15 | daemon, cache and server answer **identical RPCs**, so the client doesn't know the topology | shared `get_objects` handler (`rpc.py`) | Done |
 | S16 | Tiering is strictly enforced to isolate failure domains | `X-Scion-Tier` header + `allowed_callers` per tier | Done |
-| S17 | Cache hit rate is observable (the article reports more than 99%) and tiers hold no long-lived state | `/stats` on every tier; caches are in-memory | Done |
+| S17 | Cache hit rate is observable (the article reports more than 99%) and tiers hold no long-lived state | `/stats` on every tier (99.0% at a cache behind 100 nodes, T-SYS-01); tiers hold only caches, so losing one loses nothing (T-SYS-02) | Done |
 | S18 | No repository maintenance for clients or caches | there is no gc/repack anywhere; the bounded cache evicts by LRU | Done |
 
 ## 4. "What we learned" items that describe system features
@@ -93,13 +95,13 @@ simplification. **Out of scope** = cannot be reproduced in a repository (explain
 | L7 | Rich access control on repositories | `iam.Policy` (repo-level read/write, groups, admins) | Done |
 | L8 | Permissions on individual directories, enforced end to end (including the object protocol and caches) | `iam.Policy.paths`, `object_acl`, restricted objects never cached by tiers | Done |
 | L9 | Code review that expresses semantic constraints on approvals (comment-only vs logic changes) | `antique.py` + `classify.py` | Done |
-| L10 | Code review surface (Antique) | `antique.py` (RPC) + read-only HTML at `/antique` | Done |
-| L11 | Code search | `search.py` (path search over the derived index, server-side grep) | Done |
+| L10 | Code review surface (Antique) | `antique.py` (RPC) + interactive review pages at `/antique` (`ui.py`: approve, comment inline, land; CSRF-protected) | Done |
+| L11 | Code search | `search.py` (path search over the derived index; server-side grep narrowed by a trigram content index) | Done |
 | L12 | Novel ways of landing large amounts of reviewed code: no global merge-queue lock | `Antique.land`: server-side rebase + one ref CAS, per-server group commit, jittered retry | Done |
 | L13 | Post-merge and pre-deploy automated testing instead of a merge queue | `postmerge.py` (worker, auto-revert, deploy gate) | Done |
 | L14 | Concurrent changes can conflict and get fixed quickly | `land` returns structured 409 conflicts and marks the CR; `scn rebase` + `review update` | Done |
-| L15 | "Superfans": per-component monitors that watch telemetry and flag subtle, novel issues | `superfan.py` (adaptive baselines per metric, per component) | Partial (statistical watcher; the LLM agent in Slack is out of scope) |
-| L16 | Traditional alerts alongside superfans | `superfan.py` static thresholds | Done |
+| L15 | "Superfans": per-component monitors with access to telemetry and logs that flag subtle, novel issues | `superfan.Superfan` (adaptive baselines per metric; daemon, cache and landing-queue profiles; findings carry log lines from `GET /logs`; Slack-compatible webhook) | Partial (statistical watcher; the LLM agent in Slack is out of scope) |
+| L16 | Traditional alerts alongside superfans | `superfan.Rule` threshold rules (`for N` polls, severity) | Done |
 
 ## 5. "Contributing to the wider ecosystem" ideas
 
@@ -120,9 +122,25 @@ Preview rewrite (20x less memory, 4x faster), and Claude Tag. Spanner is replace
 mode) and cloud storage by a directory. Both sit behind narrow interfaces (`meta.py`, `storage.py`),
 so they can be swapped.
 
-## Bugs the fuzzer and the stress simulation found while building this
+## Bugs the tests found
 
-The article credits fuzzing and hermetic simulations for Scion's quality. They earned their keep here too:
+The article credits fuzzing and hermetic simulations for Scion's quality. They earned their keep here
+too. While rebuilding (each now has a regression test):
+
+1. A daemon kept serving, from its disk store and from snapshots, objects of a repository made private,
+   even after a restart. Fixed with ACL epochs (ADR-20) (independent review of B2).
+2. Every RPC took 44 ms: separate small writes met Nagle's algorithm and delayed ACKs. Responses are
+   now buffered and sent with TCP_NODELAY: 0.3 ms (B2 tests).
+3. An empty LRU cache was falsy, so a component silently built its own unbounded cache (B4 memory test).
+4. One-file commits were 52% slower at 10⁴ files than at 10²: dense bloom filters compressed slowly at
+   zlib level 6, and each commit read back the nodes the previous one had written. Compression is now
+   tuned per type and writes go straight into the cache (ADR-21) (B4 benchmark, B5 verification).
+5. A post-merge worker that crashed left its job `running` forever, so that landing was never tested.
+   Jobs are now leased (ADR-22) (B4 review of the queue).
+6. Every clone by a user without access to a directory wrote an audited denial, and daemons counted
+   denied objects as cache misses (B4 end-to-end demo).
+
+In the deleted prototype:
 
 1. `file_history` crossed a file↔directory change at the same path and reported the directory's history (fuzzer).
 2. A three-way merge read a base *directory* as a blob when both sides had replaced it with files (fuzzer).
