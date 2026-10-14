@@ -64,8 +64,11 @@ class DerivedDataManager:
         self.repo.meta.derived_put(name, cs_id, value)
         self.cache.put((name, cs_id), value, len(value))
 
-    def get(self, name: str, cs_id: str) -> str:
-        v = self.peek(name, cs_id)
+    def get(self, name: str, cs_id: str, absent: bool = False) -> str:
+        """The value, derived first if missing. ``absent``: the caller knows none is stored (the
+        changeset was just created), so the store isn't asked; with a remote metadata store every
+        question is a round trip (ADR-24)."""
+        v = self.cache.get((name, cs_id)) if absent else self.peek(name, cs_id)
         if v is not None:
             return v
         key = (name, cs_id)
@@ -76,8 +79,8 @@ class DerivedDataManager:
             entry[1] += 1
         try:
             with entry[0]:
-                if self.peek(name, cs_id) is None:
-                    self._derive_missing(name, cs_id)
+                if self.cache.get(key) is None:  # not derived meanwhile by another thread of this process
+                    self._derive_missing(name, cs_id, checked=cs_id)
         finally:
             with self._guard:
                 entry[1] -= 1
@@ -87,7 +90,9 @@ class DerivedDataManager:
         assert v is not None
         return v
 
-    def _derive_missing(self, name: str, cs_id: str) -> None:
+    def _derive_missing(self, name: str, cs_id: str, checked: str | None = None) -> None:
+        """``checked`` is known to lack a value. A value another server writes meanwhile is computed
+        again, identically, and written once more (values are deterministic)."""
         dtype = self.types[name]
         order: list[str] = []
         visited: set[str] = set()
@@ -100,14 +105,14 @@ class DerivedDataManager:
             if node in visited:
                 continue
             visited.add(node)
-            if self.peek(name, node) is not None:
+            if node != checked and self.peek(name, node) is not None:
                 continue
             stack.append((node, True))
             for p in reversed(self.repo.get_changeset(node).parents):
                 if p not in visited:
                     stack.append((p, False))
         for node in order:
-            if self.peek(name, node) is not None:
+            if self.cache.get((name, node)) is not None:  # derived meanwhile in this process
                 continue
             for dep in dtype.depends_on:
                 self.get(dep, node)
@@ -121,9 +126,10 @@ class DerivedDataManager:
             self.put(name, node, dtype.derive(self.repo, node, cs, parent_values))
             self.stats[f"{name}.derived"] += 1
 
-    def derive_eager(self, cs_id: str) -> None:
+    def derive_eager(self, cs_id: str, new: bool = False) -> None:
+        """``new``: the changeset was just stored, so none of its values can exist yet."""
         for name in self.eager_types:
-            self.get(name, cs_id)
+            self.get(name, cs_id, absent=new)
 
     def backfill(self, name: str, cs_id: str) -> int:
         """Derive ``name`` for ``cs_id`` and every ancestor still missing it (FR-DD-06)."""

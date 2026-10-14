@@ -8,6 +8,7 @@ comments are shown inline in the diff (D-04).
 from __future__ import annotations
 
 import difflib
+import hashlib
 import hmac
 import html
 import secrets
@@ -17,7 +18,7 @@ from urllib.parse import parse_qs, quote
 
 from .antique import Retryable
 from .iam import PermissionDenied
-from .objects import is_binary
+from .objects import is_binary, split_lines
 from .repo import MergeConflict, NotFound
 
 SESSION_SECONDS = 12 * 3600
@@ -45,6 +46,13 @@ class ReviewUI:
         self._lock = threading.Lock()
 
     # -- sessions ---------------------------------------------------------------------------------
+    def _credential(self, user: str) -> str | None:
+        """A digest of the user's stored token: a session lasts only while it is unchanged, so
+        removing or rotating a token ends the user's sessions at their next request, as it refuses
+        their RPCs (FR-IAM-01)."""
+        stored = self.service.identity.tokens.get(user)
+        return None if stored is None else hashlib.sha256(stored.encode()).hexdigest()
+
     def _session(self, headers) -> dict | None:
         raw = headers.get("Cookie") or ""
         for part in raw.split(";"):
@@ -52,14 +60,15 @@ class ReviewUI:
             if k == COOKIE:
                 with self._lock:
                     s = self._sessions.get(v)
-                    if s and s["expires"] > time.time():
+                    if s and s["expires"] > time.time() and s["credential"] == self._credential(s["user"]):
                         return s
                     self._sessions.pop(v, None)
         return None
 
     def _new_session(self, user: str) -> tuple[str, dict]:
         sid = secrets.token_urlsafe(32)
-        s = {"user": user, "csrf": secrets.token_urlsafe(32), "expires": time.time() + SESSION_SECONDS}
+        s = {"user": user, "csrf": secrets.token_urlsafe(32), "expires": time.time() + SESSION_SECONDS,
+             "credential": self._credential(user)}
         with self._lock:
             now = time.time()
             for k in [k for k, v in self._sessions.items() if v["expires"] <= now]:
@@ -185,10 +194,10 @@ class ReviewUI:
     def _cr_page(self, session, repo_name: str, cr_id: int):
         repo = self._repo(session, repo_name)
         a = self.service.antique(repo_name)
-        cr = a.get(cr_id)
         user, csrf = session["user"], html.escape(session["csrf"])
-        cr["comments"] = [c for c in cr["comments"] if not c["path"] or repo.policy.can_read(user, c["path"])]
+        cr = a.view(a.get(cr_id), user)
         hidden = f"<input type=hidden name=csrf value='{csrf}'>"
+        seen = f"<input type=hidden name=rev value='{cr['revision']}'>"  # the revision this page shows
         action = f"/antique/{quote(repo_name)}/cr/{cr_id}"
         out = [f"<p><a href='/antique?repo={quote(repo_name)}'>&larr; all change requests</a></p>",
                f"<h1>#{cr['id']} {html.escape(cr['title'])}</h1>",
@@ -209,16 +218,18 @@ class ReviewUI:
                            f"<td>{need}</td><td>{have}</td><td>{mark}</td></tr>")
             out.append("</table>")
         if cr.get("conflict"):
+            hidden_paths = cr["conflict"].get("hidden", 0)
             out.append("<h2 class=bad>Conflicts</h2><ul>" + "".join(
                 f"<li><code>{html.escape(c['path'])}</code>: {html.escape(c['reason'])}</li>"
-                for c in cr["conflict"]["conflicts"]) + "</ul>")
+                for c in cr["conflict"]["conflicts"]) + (
+                f"<li>{hidden_paths} in files you can't read</li>" if hidden_paths else "") + "</ul>")
         out.append("<h2>Approvals</h2><ul>" + ("".join(
             f"<li>{html.escape(x['user'])} (revision {x['rev']})</li>" for x in cr["approvals"]) or "<li>None yet.</li>")
             + "</ul>")
         if cr["state"] in ("open", "conflict"):
-            out.append(f"<p><form class=inline method=post action='{action}/approve'>{hidden}"
+            out.append(f"<p><form class=inline method=post action='{action}/approve'>{hidden}{seen}"
                        f"<button>Approve revision {cr['revision']}</button></form> "
-                       f"<form class=inline method=post action='{action}/land'>{hidden}<button>Land</button></form></p>")
+                       f"<form class=inline method=post action='{action}/land'>{hidden}{seen}<button>Land</button></form></p>")
         general = [c for c in cr["comments"] if not c["path"]]
         out.append("<h2>Comments</h2>" + ("".join(self._comment(c) for c in general) or "<p class=muted>None.</p>"))
         out.append(f"<form method=post action='{action}/comment'>{hidden}<p><textarea name=body rows=3 required></textarea></p>"
@@ -236,8 +247,9 @@ class ReviewUI:
                 f"{html.escape(c['body'])}</p>")
 
     def _diff(self, repo, a, cr, user) -> str:
-        if cr["state"] == "landed":
-            base = repo.get_changeset(cr["head"]).first_parent
+        if cr["state"] == "landed":  # everything the landing added: beneath its bottom changeset
+            stack = a.landing_stack(cr["landed_cs"]) or [cr["landed_cs"]]
+            base = repo.get_changeset(stack[-1]).first_parent
         else:
             base = a.base_of(cr)
         notes: dict[str, dict[int, list]] = {}
@@ -257,8 +269,8 @@ class ReviewUI:
             if is_binary(old) or is_binary(new):
                 parts.append("<p class=muted>Binary file.</p>")
                 continue
-            parts.append(self._file_table(old.decode("utf-8", "replace").splitlines(),
-                                          new.decode("utf-8", "replace").splitlines(), notes.get(path, {})))
+            parts.append(self._file_table(split_lines(old.decode("utf-8", "replace"), keepends=False),
+                                          split_lines(new.decode("utf-8", "replace"), keepends=False), notes.get(path, {})))
         return "".join(parts) or "<p class=muted>No changes visible to you.</p>"
 
     def _file_table(self, old: list[str], new: list[str], notes: dict[int, list]) -> str:
@@ -291,16 +303,20 @@ class ReviewUI:
 
     # -- actions --------------------------------------------------------------------------------------
     def _action(self, session, repo_name: str, cr_id: int, what: str, form: dict):
-        self._repo(session, repo_name)
+        repo = self._repo(session, repo_name)
         a = self.service.antique(repo_name)
         user = session["user"]
+        rev = (form.get("rev") or [""])[0].strip()
+        rev = int(rev) if rev else None  # the revision the page showed: acting on a newer one is refused
         if what == "approve":
-            a.approve(user, cr_id)
+            a.approve(user, cr_id, rev)
         elif what == "comment":
             body = (form.get("body") or [""])[0]
             path = (form.get("path") or [""])[0].strip() or None
             line = (form.get("line") or [""])[0].strip()
+            if path is not None and not repo.policy.can_read(user, path):
+                raise PermissionDenied(f"{user} may not read {path}")
             a.comment(user, cr_id, body, path, int(line) if line else None)
         else:
-            a.land(user, cr_id)
+            a.land(user, cr_id, rev=rev)
         return self._redirect(f"/antique/{quote(repo_name)}/cr/{cr_id}")

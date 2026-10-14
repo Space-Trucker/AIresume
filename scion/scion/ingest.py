@@ -12,24 +12,24 @@
 * **Incremental (FR-MG-03).** The git ↔ changeset map is persisted, so a re-run ingests only new
   commits; it maps both ways (FR-MG-07).
 * **Verification (FR-MG-05)** compares every file of a revision with git's, kind and bytes.
+* **Derived data with the import (decided 2026-10-14).** An import also computes blame for each
+  commit it brings in, as it goes, and indexes its final revision for grep, so the first query
+  after it pays for neither; that time is reported apart from ingestion (``derive_seconds``).
 """
 from __future__ import annotations
 
+import codecs
 import subprocess
 import time
 
 from .objects import blob_id
 from .repo import Repository
+from .search import ensure_indexed
 from .storage import LRUCache
+from .trees import TreeOps
 
 MODE_KIND = {"100644": "f", "100664": "f", "100755": "x", "120000": "l"}
 TREE_MODE, SUBMODULE_MODE = "40000", "160000"
-GIT_MAP_SCHEMA = """
-CREATE TABLE IF NOT EXISTS git_map (git TEXT PRIMARY KEY, cs TEXT NOT NULL) WITHOUT ROWID;
-CREATE INDEX IF NOT EXISTS git_map_cs ON git_map(cs);
-"""
-
-
 class IngestError(Exception):
     pass
 
@@ -61,16 +61,25 @@ class CatFile:
 
 
 def parse_commit(raw: bytes) -> dict:
+    """A git commit's fields. The author and message are decoded with the commit's ``encoding``
+    header when it has one, as ``git log`` does; UTF-8 otherwise."""
     head, _, message = raw.partition(b"\n\n")
+    encoding = "utf-8"
+    for line in head.split(b"\n"):
+        if line.startswith(b"encoding "):
+            try:
+                encoding = codecs.lookup(line[9:].decode("ascii").strip()).name
+            except (LookupError, UnicodeDecodeError):
+                pass  # an encoding Python doesn't know: read it as UTF-8
     info = {"tree": None, "parents": [], "author": "unknown", "timestamp": 0,
-            "message": message.decode("utf-8", "replace")}
+            "message": message.decode(encoding, "replace")}
     for line in head.split(b"\n"):
         if line.startswith(b"tree "):
             info["tree"] = line[5:].decode()
         elif line.startswith(b"parent "):
             info["parents"].append(line[7:].decode())
         elif line.startswith(b"author "):
-            text = line[7:].decode("utf-8", "replace")
+            text = line[7:].decode(encoding, "replace")
             ident, _, rest = text.rpartition(">")
             info["author"] = ident + ">"
             parts = rest.split()
@@ -100,19 +109,21 @@ class GitIngester:
         """``cache_bytes`` bounds every cache used while ingesting, so memory does not grow with
         the history (FR-MG-04)."""
         self.repo, self.git_dir, self.verbose, self.cache_bytes = repo, git_dir, verbose, cache_bytes
-        repo.meta.ensure(GIT_MAP_SCHEMA)
         self._trees = LRUCache(100_000, max_bytes=cache_bytes // 4)  # parsed git trees
         self._blobs = LRUCache(100_000, max_bytes=cache_bytes // 8)  # git blob sha -> Scion blob id
-        self.stats = {"commits": 0, "skipped": 0, "files": 0, "blobs_read": 0, "trees_read": 0,
-                      "submodules_skipped": 0}
+        self.stats = self._new_stats()
+
+    @staticmethod
+    def _new_stats() -> dict:
+        return {"commits": 0, "skipped": 0, "files": 0, "blobs_read": 0, "trees_read": 0, "submodules_skipped": 0}
 
     # -- the map (FR-MG-07) -------------------------------------------------------------------------
     def changeset_for(self, git_sha: str) -> str | None:
-        row = self.repo.meta.execute("SELECT cs FROM git_map WHERE git = ?", (git_sha,)).fetchone()
-        return row[0] if row else None
+        row = self.repo.meta.git_map_lookup(git=git_sha)
+        return row[1] if row else None
 
     def git_for(self, cs: str) -> str | None:
-        row = self.repo.meta.execute("SELECT git FROM git_map WHERE cs = ?", (cs,)).fetchone()
+        row = self.repo.meta.git_map_lookup(cs=cs)
         return row[0] if row else None
 
     # -- git plumbing --------------------------------------------------------------------------------
@@ -197,12 +208,17 @@ class GitIngester:
                               f"e.g. {missing[0][:12]}; ingest them first (nothing was written)")
         return boundary
 
-    def ingest(self, rev: str = "HEAD", ref: str | None = "main", limit: int | None = None) -> dict:
+    def ingest(self, rev: str = "HEAD", ref: str | None = "main", limit: int | None = None,
+               derive: bool = True) -> dict:
+        """Ingest ``rev``'s history and, with ``derive``, compute blame for it and index its tip for
+        grep; returns this run's counts (``stats``)."""
         t0 = time.time()
+        self.stats = self._new_stats()
         self.check_boundary(rev)
         # the repository's caches help ingestion only for the previous few commits: bound them
         restore = (self.repo.cache.limit(max_bytes=self.cache_bytes // 2),
                    self.repo.derived.cache.limit(max_bytes=self.cache_bytes // 8))
+        blamed, blame_s, index_s = self.repo.derived.stats["blame.derived"], 0.0, 0.0
         cat = CatFile(self.git_dir)
         proc = subprocess.Popen(["git", "-C", self.git_dir, "rev-list", "--topo-order", "--reverse", rev],
                                 stdout=subprocess.PIPE)
@@ -235,10 +251,14 @@ class GitIngester:
                                                     info["timestamp"], extra={"git": sha})
                 except ValueError as e:
                     raise IngestError(f"{sha[:12]}: {e}") from None
-                self.repo.meta.execute("INSERT OR REPLACE INTO git_map (git, cs) VALUES (?, ?)", (sha, cs))
+                self.repo.meta.git_map_put(sha, cs)
                 self.stats["commits"] += 1
                 self.stats["files"] += len(files)
                 tip = cs
+                if derive:  # as it goes: the parents have theirs, so memory doesn't grow with the history
+                    t1 = time.time()
+                    self.repo.derived.get("blame", cs, absent=True)
+                    blame_s += time.time() - t1
                 if self.verbose and self.stats["commits"] % 1000 == 0:
                     print(f"ingested {self.stats['commits']} commits", flush=True)
                 if limit and self.stats["commits"] >= limit:
@@ -248,23 +268,37 @@ class GitIngester:
             proc.terminate()
             proc.wait()
             cat.close()
+        try:
+            if ref and tip:
+                old = self.repo.get_ref(ref)
+                if old != tip and not self.repo.update_ref(ref, old, tip):
+                    raise IngestError(f"{ref} moved during ingestion; run it again")
+            self.stats["tip"] = tip
+            if derive and tip:
+                t1 = time.time()
+                self.repo.derived.get("blame", tip)  # a tip that an earlier import left without blame
+                t2 = time.time()
+                self.stats["blobs_indexed"] = ensure_indexed(self.repo, tip)
+                blame_s, index_s = blame_s + t2 - t1, time.time() - t2
+                self.stats["blame_derived"] = self.repo.derived.stats["blame.derived"] - blamed
+                self.stats["blame_seconds"], self.stats["index_seconds"] = round(blame_s, 3), round(index_s, 3)
+                self.stats["derive_seconds"] = round(blame_s + index_s, 3)
+            self.stats["seconds"] = round(time.time() - t0 - blame_s - index_s, 3)  # ingestion alone
+        finally:
             self.repo.cache.limit(*restore[0])
             self.repo.derived.cache.limit(*restore[1])
-        if ref and tip:
-            old = self.repo.get_ref(ref)
-            if old != tip and not self.repo.update_ref(ref, old, tip):
-                raise IngestError(f"{ref} moved during ingestion; run it again")
-        self.stats["seconds"] = round(time.time() - t0, 3)
-        self.stats["tip"] = tip
         return dict(self.stats)
 
     def verify(self, rev: str = "HEAD") -> dict:
-        """Compare every file of ``rev`` with git's, kind and bytes (FR-MG-05)."""
+        """Compare every file of ``rev`` with git's, kind and bytes (FR-MG-05). The trees are read
+        back from storage, as another process would see them, not from the cache their writes
+        filled."""
         sha = self._git("rev-parse", "--verify", f"{rev}^{{commit}}").decode().strip()
         cs = self.changeset_for(sha)
         if cs is None:
             raise IngestError(f"{rev} has not been ingested")
-        ours = {p: (k, oid) for p, k, oid in self.repo.trees.walk(self.repo.root_tree(cs))}
+        stored = TreeOps(self.repo.objects, LRUCache(100_000, max_bytes=self.cache_bytes // 4))
+        ours = {p: (k, oid) for p, k, oid in stored.walk(self.repo.root_tree(cs))}
         theirs = {}
         cat = CatFile(self.git_dir)
         try:

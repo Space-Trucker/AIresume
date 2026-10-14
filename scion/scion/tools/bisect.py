@@ -19,16 +19,15 @@ def first_parent_range(api, good: str, bad: str, max_len: int = 1_000_000) -> li
     good, bad = api.resolve(rev=good), api.resolve(rev=bad)
     if not api.is_ancestor(a=good, b=bad):
         raise ValueError("good must be an ancestor of bad")
-    chain, skip = [], 0
-    while skip <= max_len:
-        page = api.log(rev=bad, limit=1000, skip=skip, ids_only=True)
-        if not page:
-            break
+    chain, page = [], api.log(rev=bad, limit=1000, ids_only=True)
+    while page and len(chain) <= max_len:
         for cs in page:
             chain.append(cs)
             if cs == good:
                 return chain
-        skip += len(page)
+        # the next page starts at the last changeset seen: pages are keyed by changeset, not by an
+        # offset (which the server caps)
+        page = api.log(rev=chain[-1], limit=1001, ids_only=True)[1:]
     raise ValueError("good is not on the first-parent chain of bad")
 
 

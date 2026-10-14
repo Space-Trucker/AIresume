@@ -56,7 +56,7 @@ from every RPC on it, and DENIED for its objects.
 | `resolve` | `rev` | changeset id | read |
 | `get_changeset` | `rev` | parents, author, message, timestamp, changes (relative to the first parent), generation, copies | read |
 | `get_changesets` | `ids` | list of the above | read |
-| `log` | `rev`, `limit`, `skip`, `path?`, `first_parent=true`, `ids_only?` | changesets, newest first (`path` → that path's history) | read |
+| `log` | `rev`, `limit`, `skip`, `path?`, `first_parent=true`, `ids_only?` | changesets, newest first (`path` → that path's history); `skip` is at most 10,000 (400 beyond it): page on by starting at the last changeset seen | read |
 | `root_tree` | `rev` | tree id | read |
 | `list_dir` | `rev`, `path`, `probe?` | entries `{name, path, kind, id}`, filtered by the caller's permissions; 403 if nothing beneath is readable, or `null` with `probe` (how checkouts look past a denied tree without an audited denial) | read |
 | `read_file` | `rev`, `path` | `{kind, blob, content_b64}` | read |
@@ -67,7 +67,7 @@ from every RPC on it, and DENIED for its objects.
 | `file_history` | `rev`, `path`, `limit`, `follow_copies=true` | `[{cs, path}]` for a file or directory | heavy |
 | `blame` | `rev`, `path` | `{lines: [{line, cs, origin_line, text}], changesets: {id: {author, timestamp, summary}}}` | heavy |
 | `search_paths` | `rev`, `query`, `limit` | `{paths, trees_visited}` | heavy |
-| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, indexed, truncated}`: with 3 or more literal characters, the trigram content index narrows the files read (`indexed`) | heavy |
+| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, indexed, truncated}`: with 3 or more literal characters, the trigram content index narrows the files read (`indexed`); the index covers the revisions searched, so the first search of a revision indexes the files the index lacks | heavy |
 | `git_lookup` | `git` or `cs` | `{git, cs}` for an ingested commit, either way round; `null` if not ingested | read |
 | `list_refs` / `get_ref` / `ref_log` | `name` | refs and their compare-and-swap history | read |
 
@@ -120,9 +120,9 @@ Each tier accepts requests only from the tier directly below it:
 | `antique.create` | `title`, `head`, `description?`, `target=main` | writers; no branch is needed: the CR points at a changeset; refused if the head is already in the target |
 | `antique.update` | `id`, `head` | the author or an admin; a new revision resets approvals and clears a conflict |
 | `antique.get` / `antique.list` | `id` / `state?`, `author?`, `limit?` | `get` includes the evaluated requirements; files and comments under directories the caller can't read are left out |
-| `antique.approve` / `antique.comment` | `id` / `id`, `body`, `path?`, `line?` | approvals belong to the latest revision; self-approval never counts |
+| `antique.approve` / `antique.comment` | `id`, `rev?` / `id`, `body`, `path?`, `line?` | an approval belongs to revision `rev`, the one the reviewer saw (default: the latest), and a replaced revision is refused (400); self-approval never counts, and an approval counts for a scope only from someone who can read all its files |
 | `antique.requirements` | `id` | per-scope category (docs, comment-only, logic), needed vs present approvals and owner approvals |
-| `antique.land` | `id`, `force?` | the author, a service or an admin; 403 listing the unmet scopes; the CR shows `landing` while queued; server-side rebase and one compare-and-swap with per-server group commit; 409 `conflict` with `data.conflicts`; 503 `retry` if contention outlasts the deadline; landing a landed CR returns it |
+| `antique.land` | `id`, `force?`, `rev?` | the author, a service or an admin; 403 listing the unmet scopes, or when Antique may not move the target; 400 when `rev` was replaced or a revision arrives while landing; the CR shows `landing` while queued; a fast-forward when the tip is on the CR's first-parent chain, else a server-side replay of that chain, and one compare-and-swap (carrying the landing index, the post-merge job and the CR's state) with per-server group commit; 409 `conflict` with `data.conflicts`; 503 `retry` if contention outlasts the deadline; landing a landed CR returns it |
 | `antique.abandon` | `id` | the author or an admin |
 | `antique.land_changeset` | `cs`, `ref` | services and admins: land a changeset without a CR (e.g. reverts) |
 | `antique.find_landing` | `cs` (landed id or pre-rebase id) | `{cs, source, cr, ref, landed_at, head}`, an indexed lookup; `null` if it never landed |

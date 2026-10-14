@@ -402,12 +402,12 @@ class _Handler(BaseHTTPRequestHandler):
         return self._page("GET", u)
 
     def _logs(self, u):
-        """``GET /logs?since=SEQ&limit=N&level=warning``: for administrators and service principals."""
+        """``GET /logs?since=SEQ&limit=N&level=warning``: for administrators, services and log readers."""
         service: Service = self.server.service
         try:
             caller = self._caller()
-            if not (service.identity.is_admin(caller.user) or service.identity.is_service(caller.user)):
-                raise RpcError(403, "permission_denied", "logs are for administrators and service principals")
+            if not service.identity.can_read_logs(caller.user):
+                raise RpcError(403, "permission_denied", "logs are for administrators, services and log readers")
             q = parse_qs(u.query)
             entries = service.logs.since(int((q.get("since") or ["0"])[0]), int((q.get("limit") or ["500"])[0]),
                                          (q.get("level") or ["info"])[0])
@@ -592,7 +592,8 @@ class _UnixHTTPConnection(http.client.HTTPConnection):
 
 class RpcClient:
     """A keep-alive client for one endpoint. Connection failures are retried with backoff (for
-    requests that are safe to resend) and 429 responses are honored by waiting (FR-OP-06)."""
+    requests that are safe to resend) and 429 responses are honored by waiting (FR-OP-06); a kept
+    connection that the server closed while idle is replaced at once."""
 
     def __init__(self, url: str, user: str | None = None, token: str | None = None, tier: str = "client",
                  tls: ClientTls | None = None, timeout: float = 120.0, retries: int = 3, max_throttle: int = 8):
@@ -679,7 +680,7 @@ class RpcClient:
             # A request that must not be resent gets a fresh connection, so a stale keep-alive
             # connection can't fail it after it may have reached the server.
             conn = self._conn(fresh=not idempotent)
-            sent = False
+            reused, sent = conn.sock is not None, False
             try:
                 if conn.sock is None:
                     conn.connect()
@@ -689,6 +690,8 @@ class RpcClient:
                 data = resp.read()
             except (OSError, http.client.HTTPException) as e:
                 self.close()
+                if reused and isinstance(e, ConnectionError):  # closed while idle (after 300 s): at once
+                    continue
                 attempt += 1
                 if (sent and not idempotent) or attempt > self.retries:
                     if not sent and not isinstance(e, ssl.SSLError):

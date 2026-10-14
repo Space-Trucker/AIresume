@@ -1,12 +1,14 @@
 """Post-merge testing, the deploy gate, bisect and the revert pipeline (WP-B4.2):
 T-PM-01/02, T-AUT-01/02."""
 import base64
+import json
 import math
 import os
 import shutil
 import sys
 import tempfile
 import threading
+import time
 import unittest
 
 import helpers  # noqa: F401
@@ -126,13 +128,14 @@ class TestPostMerge(AutomationTest):
         self.assertEqual({j["status"] for j in a.postmerge_status("main", 100)}, {"running"})
 
     def test_T_PM_04_a_lost_workers_job_returns_to_the_queue(self):
+        with open(self.c.deployment.policy_path(REPO), "w") as f:  # a short lease, from the policy (ADR-22)
+            json.dump({**POLICY, "review": {"postmerge_lease_seconds": 1.0}}, f)
         c1 = self.land("alice", {"src/a.py": "a\n"})
         api = self.api("postmerge")
         lost = api.call("antique.postmerge_claim")  # this worker then crashes
         self.assertEqual(lost["cs"], c1)
         self.assertIsNone(api.call("antique.postmerge_claim"), "within the lease, the job stays claimed")
-        repo = self.c.repo()
-        repo.meta.execute("UPDATE postmerge SET started = started - 7201 WHERE id = ?", (lost["id"],))
+        time.sleep(1.2)
         again = api.call("antique.postmerge_claim")  # the lease ran out: the job is queued again
         self.assertEqual((again["id"], again["cs"]), (lost["id"], c1))
         self.assertNotEqual(again["claim"], lost["claim"])
@@ -143,6 +146,46 @@ class TestPostMerge(AutomationTest):
         self.assertEqual(api.call("antique.deploy_gate", ref="main")["cs"], c1)
         logs = self.c.client("root").get_json("/logs?level=warning")["entries"]
         self.assertTrue(any("went back to the queue" in x["message"] for x in logs), logs)
+
+
+    def worker(self, name: str) -> PostMergeWorker:
+        w = PostMergeWorker(self.c.server_urls[0], REPO, os.path.join(self.tmp, name), TEST_CMD,
+                            objects=self.c.daemon_urls[0], auto_revert=True, log=lambda *_: None)
+        self.addCleanup(w.close)
+        return w
+
+    def test_T_PM_05_a_revert_that_cannot_land_leaves_the_worker_running(self):
+        """Review finding A-06: when later work conflicts with the revert, the job stays failed for
+        a person and the worker goes on with the queue."""
+        api = self.api("release-manager")
+        c1 = self.land("alice", {"src/a.py": "a = 1\n"})
+        c2 = self.land("bob", {"src/app.py": "BROKEN\n"})
+        c3 = self.land("bob", {"src/app.py": "BROKEN, a first attempt at a fix\n"})  # the revert of c2 conflicts
+        results = self.worker("w").run(once=True)
+        by_cs = {r["cs"]: r for r in results}
+        self.assertTrue(by_cs[c1]["passed"])
+        self.assertIn("conflict", by_cs[c2]["revert_failed"])
+        self.assertEqual(by_cs[c2]["reverted_with"], [])
+        self.assertIn("not_reverted", by_cs[c3])
+        statuses = {j["cs"]: j["status"] for j in api.call("antique.postmerge_status", ref="main")}
+        self.assertEqual([statuses[x] for x in (c1, c2, c3)], ["passed", "failed", "failed"])
+
+    def test_T_PM_06_a_failure_waits_for_its_base_to_be_tested(self):
+        """Review finding A-09: worker B finds c2 broken while worker A is still testing c1; the
+        revert decision waits for c1's result instead of being skipped."""
+        api = self.api("postmerge")
+        c1 = self.land("alice", {"src/a.py": "a = 1\n"})
+        c2 = self.land("bob", {"src/app.py": "BROKEN\n"})
+        job_a = api.call("antique.postmerge_claim")  # worker A starts on c1
+        self.assertEqual(job_a["cs"], c1)
+        b = self.worker("b")
+        r = b.run_once()
+        self.assertEqual((r["cs"], r["passed"], r["revert_pending"]), (c2, False, "its base is still being tested"))
+        api.call("antique.postmerge_report", id=job_a["id"], passed=True, claim=job_a["claim"])
+        b.run(once=True)  # decides c2 now that c1 passed
+        self.assertEqual(base64.b64decode(api.read_file(rev="main", path="src/app.py")["content_b64"]), b"ok = True\n")
+        statuses = {j["cs"]: j["status"] for j in api.call("antique.postmerge_status", ref="main")}
+        self.assertEqual([statuses[x] for x in (c1, c2)], ["passed", "reverted"])
 
 
 class TestPipelines(AutomationTest):
@@ -163,6 +206,21 @@ class TestPipelines(AutomationTest):
         self.assertEqual(r["summary"], "step 17")
         with self.assertRaises(ValueError):  # good must be an ancestor of bad
             bisect(api, chain[-1], chain[0], lambda cs: True)
+
+    def test_T_AUT_01_bisect_pages_by_changeset_not_by_offset(self):
+        """Review finding A-08: the range is read page by page from the last changeset seen; an
+        offset beyond the server's cap is refused, never silently capped."""
+        repo = self.c.repo()
+        chain = [self.seed]
+        for i in range(1, 2100):
+            chain.append(repo.create_changeset([chain[-1]], [{"path": "src/n", "content": b"%d" % i}], "bot", f"c{i}"))
+        repo.update_ref("main", self.seed, chain[-1])
+        api = self.api("ci")
+        r = bisect(api, chain[0], chain[-1], lambda cs: chain.index(cs) < 1777)
+        self.assertEqual((r["first_bad"], r["range"]), (chain[1777], 2100))
+        with self.assertRaises(RemoteError) as e:
+            api.log(rev="main", limit=10, skip=10_001, ids_only=True)
+        self.assertEqual(e.exception.status, 400)
 
     def test_T_AUT_02_revert_pipeline_under_contention(self):
         target = self.land("alice", {"src/feature.py": "FEATURE = 1\n"}, "to be reverted")

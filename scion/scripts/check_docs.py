@@ -6,9 +6,11 @@ T-DOC-02, always:
 * every Must requirement has a feature (04) and every requirement a row in 11;
 * every test ID cited in 11 is defined in 10's test table;
 * every test in 10's table exists in tests/ (as test_T_XXX_NN, or cited in a test's docstring),
-  except the documentation checks and the end-to-end demo, which live outside the suite;
+  except the documentation checks, the end-to-end demo and the pilot, which live outside the suite,
+  and the tests of requirements still planned for a milestone (designed before they are written);
 * every test named test_T_XXX_NN in tests/ is in the plan.
-With --release, every requirement must also be built (I) or partial with a reason (P).
+With --release, every requirement must also be built (I) or partial with a reason (P), and every
+test must exist.
 
 T-DOC-01, with --mmdc: every ```mermaid block in docs/design renders (mermaid-cli; pass
 --puppeteer-config where a sandboxed browser needs one).
@@ -33,7 +35,7 @@ TESTS = os.path.join(HERE, "tests")
 REQ = re.compile(r"\b(FR-[A-Z]+|NFR)-(\d+)((?:/\d+)*)(?:…(\d+))?")
 TEST = re.compile(r"\bT-([A-Z0-9]+)-(\d+)((?:/\d+)*)(?:…(\d+))?")
 TEST_FN = re.compile(r"def test_T_([A-Z0-9]+)_(\d+)(?:_|\()")
-OUTSIDE_SUITE = ("T-DOC-", "T-E2E-")
+OUTSIDE_SUITE = ("T-DOC-", "T-E2E-", "T-PILOT-")
 
 
 def read(name: str) -> str:
@@ -105,7 +107,18 @@ def check_requirements(release: bool) -> int:
     return problems
 
 
-def check_tests() -> int:
+def planned_tests() -> set[str]:
+    """Tests cited in 11 only by requirements that are not built yet (status neither I nor P)."""
+    built, planned = set(), set()
+    for line in read("11-traceability.md").splitlines():
+        m = re.match(r"\| (FR-[A-Z]+-\d+) \|(.*)", line)
+        if m:
+            cells = [c.strip() for c in m.group(2).split("|")]
+            (built if cells[4] in ("I", "P") else planned).update(expand(TEST, cells[3], "T-"))
+    return planned - built
+
+
+def check_tests(release: bool) -> int:
     problems = 0
     plan = read("10-test-plan.md")
     defined = set()
@@ -127,8 +140,11 @@ def check_tests() -> int:
         named |= {f"T-{a}-{int(n):02d}" for a, n in TEST_FN.findall(text)}
         in_suite |= expand(TEST, text, "T-")
     in_suite |= named
+    planned = set() if release else planned_tests()
     for t in sorted(defined - in_suite):
-        if not t.startswith(OUTSIDE_SUITE):
+        if t in planned:
+            print(f"planned, not written yet: {t}")
+        elif not t.startswith(OUTSIDE_SUITE):
             print(f"NO TEST in tests/ for {t}")
             problems += 1
     for t in sorted(named - defined):
@@ -169,7 +185,7 @@ def main() -> int:
     p.add_argument("--mmdc", help="mermaid-cli executable: also render every diagram (T-DOC-01)")
     p.add_argument("--puppeteer-config")
     a = p.parse_args()
-    problems = check_requirements(a.release) + check_tests()
+    problems = check_requirements(a.release) + check_tests(a.release)
     if a.mmdc:
         problems += check_diagrams(a.mmdc, a.puppeteer_config)
     print(f"problems: {problems}")

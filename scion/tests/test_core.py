@@ -2,19 +2,23 @@
 Test IDs follow docs/design/10-test-plan.md §10.4."""
 import json
 import os
+import random
 import shutil
 import statistics
 import tempfile
 import threading
 import time
 import unittest
+import unittest.mock
 
 import helpers  # noqa: F401
+from helpers import repository
+from scion import linediff
 from scion.changeset import Changeset
 from scion.derived import DerivedType
 from scion.merge3 import merge3
 from scion.objects import EMPTY_TREE_ID, ObjectError, blob_id, decode_stored, encode_stored
-from scion.repo import MergeConflict, NotFound, Repository
+from scion.repo import MergeConflict, NotFound
 from scion.search import search_paths
 from scion.storage import BoundedFileObjectStore, MemoryObjectStore
 
@@ -22,7 +26,7 @@ from scion.storage import BoundedFileObjectStore, MemoryObjectStore
 class RepoCase(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="scion-core-")
-        self.repo = Repository(os.path.join(self.tmp, "r"))
+        self.repo = repository(os.path.join(self.tmp, "r"))
 
     def tearDown(self):
         self.repo.close()
@@ -159,7 +163,7 @@ class TestChangesets(RepoCase):
 
         repos, heads = {}, {}
         for n in (100, 10_000):
-            r = repos[n] = Repository(os.path.join(self.tmp, f"s{n}"))
+            r = repos[n] = repository(os.path.join(self.tmp, f"s{n}"))
             r.objects = MemoryObjectStore(None)
             r.trees = TreeOps(r.objects, r.cache)
             r.objects.put("tree", b"")
@@ -191,7 +195,7 @@ class TestDerived(RepoCase):
         self.assertIsNotNone(self.repo.meta.derived_get("blame", c1))  # ancestors derived first
         # FR-DD-05: two servers on one store derive concurrently without coordination
         c3 = self.commit([c2], {"f": b"1\n2\n3\n"})
-        other = Repository(self.repo.root)
+        other = repository(self.repo.root)
         out = []
         threads = [threading.Thread(target=lambda r=r: out.append(r.derived.get("blame", c3))) for r in (self.repo, other)]
         [t.start() for t in threads]
@@ -245,6 +249,41 @@ class TestDerived(RepoCase):
         self.assertEqual(self.repo.blame(c3, "g")["changesets"][c2]["author"], "bob")
         c4 = self.commit([c3], {"bin": b"\0\1\2"})
         self.assertTrue(self.repo.blame(c4, "bin")["binary"])
+
+    def test_blame_diff_follows_the_change_not_the_file(self):
+        """line_opcodes is a shortest edit (checked against the longest common subsequence), also
+        when it falls back to difflib for a rewrite; and a two-line change in a large file of
+        repeated lines (a changelog, a long C file) is matched in milliseconds."""
+        def lcs(a, b):
+            row = [0] * (len(b) + 1)
+            for x in a:
+                prev, row = row, [0]
+                for j, y in enumerate(b):
+                    row.append(prev[j] + 1 if x == y else max(prev[j + 1], row[j]))
+            return row[-1]
+
+        rng = random.Random(7)
+        for t in range(400):
+            old = [rng.choice("abc") for _ in range(rng.randint(0, 14))]
+            new = [rng.choice("abc") for _ in range(rng.randint(0, 14))] if t % 2 else list(old)
+            for _ in range(rng.randint(0, 3)):
+                k = rng.randint(0, len(new))
+                new[k:k + rng.randint(0, 2)] = [rng.choice("abcd") for _ in range(rng.randint(0, 2))]
+            for max_edit in (linediff.MAX_EDIT, 1):  # Myers, and the difflib fallback
+                with unittest.mock.patch.object(linediff, "MAX_EDIT", max_edit):
+                    ops = linediff.opcodes(old, new)
+                out = []
+                for tag, i1, i2, j1, j2 in ops:
+                    out += old[i1:i2] if tag == "equal" else new[j1:j2]
+                self.assertEqual(out, new)
+                if max_edit > 1:
+                    self.assertEqual(sum(i2 - i1 for tag, i1, i2, _, _ in ops if tag == "equal"), lcs(old, new))
+        big = [b"}\n", b"\n", b"    break;\n"] * 7000 + [f"line {i}\n".encode() for i in range(3000)]
+        changed = big[:100] + [b"new\n"] + big[100:20000] + [b"also new\n"] + big[20001:]
+        t0 = time.perf_counter()
+        ops = linediff.opcodes(big, changed)
+        self.assertLess(time.perf_counter() - t0, 1.0)
+        self.assertEqual(sum(i2 - i1 for tag, i1, i2, _, _ in ops if tag == "equal"), len(big) - 1)
 
     def test_T_DD_07_backfill(self):
         cur = None
@@ -314,6 +353,55 @@ class TestAncestry(RepoCase):
         self.assertTrue(self.repo.is_ancestor(branch[5], after[-1]))
         side = self.chain(main[20], 3, "s")
         self.assertEqual(self.repo.merge_base(side[-1], after[-1]), main[20])
+
+    def test_T_DD_06_ancestry_through_merges(self):
+        """The CPython pilot: a main line crossed by hundreds of merges. Whether a changeset is on
+        the main line takes O(log n) reads whatever the merges; every answer matches a walk of the
+        whole graph, on random histories too."""
+        root = self.commit([], {"f": b"0"})
+        main, side = [root], root
+        for i in range(400):  # every other main-line changeset merges a side branch in
+            if i % 2:
+                side = self.commit([side], {"s": f"s{i}".encode()})
+                main.append(self.repo.merge(main[-1], side, "x", f"merge {i}"))
+            else:
+                main.append(self.commit([main[-1]], {"f": f"f{i}".encode()}))
+        tip = main[-1]
+        self.repo.stats.clear()
+        self.assertTrue(self.repo.is_ancestor(root, tip))
+        self.assertLess(self.repo.stats["ancestry.visits"] + self.repo.stats["ancestry.hops"], 2 * 9 + 2)  # NFR-06
+        self.assertTrue(self.repo.on_first_parent_chain(main[57], tip))
+        self.assertFalse(self.repo.on_first_parent_chain(side, tip))  # merged in, not on the main line
+        self.assertTrue(self.repo.is_ancestor(side, tip))
+        rng = random.Random(11)
+        nodes = [root]
+        for i in range(250):  # a random history: branches off anywhere, merges of any two heads
+            parents = rng.sample(nodes, 2) if len(nodes) > 1 and rng.random() < 0.3 else [rng.choice(nodes)]
+            if len(parents) == 2 and (self.repo.is_ancestor(parents[0], parents[1])
+                                      or self.repo.is_ancestor(parents[1], parents[0])):
+                parents = parents[:1]
+            nodes.append(self.commit(parents, {"r": f"{i}".encode()}))
+
+        def ancestors(x):
+            seen, todo = set(), [x]
+            while todo:
+                y = todo.pop()
+                if y not in seen:
+                    seen.add(y)
+                    todo.extend(self.repo.get_changeset(y).parents)
+            return seen
+
+        def first_parents(x):
+            out = []
+            while x:
+                out.append(x)
+                x = self.repo.get_changeset(x).first_parent
+            return set(out)
+        for x in rng.sample(nodes, 40):
+            anc, fp = ancestors(x), first_parents(x)
+            for y in rng.sample(nodes, 40):
+                self.assertEqual(self.repo.is_ancestor(y, x), y in anc)
+                self.assertEqual(self.repo.on_first_parent_chain(y, x), y in fp)
 
 
 class TestMergeRebaseRevert(RepoCase):

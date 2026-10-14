@@ -18,7 +18,6 @@ from collections import Counter
 from .antique import Antique
 from .deployment import Deployment
 from .iam import PermissionDenied
-from .ingest import GIT_MAP_SCHEMA
 from .notify import Notifier
 from .objects import normalize_path
 from .repo import NotFound, Repository
@@ -43,6 +42,11 @@ def _str(p: dict, key: str, default: str | None = None) -> str:
     if not isinstance(v, str):
         raise ValueError(f"{key} must be a string")
     return v
+
+
+def _rev(p: dict) -> int | None:
+    """The CR revision an action is for (the one its caller saw); None: the latest."""
+    return None if p.get("rev") is None else _int(p, "rev", 1, 1, 1 << 31)
 
 
 def _ids(p: dict) -> list[str]:
@@ -119,13 +123,14 @@ class ScionService(Service):
                                                                            _str(p, "head"))), klass="write")
         r("antique.get", lambda c, p: self._cr(c, p, lambda a: a.get(_int(p, "id", 0, 1, 1 << 62))))
         r("antique.list", self._cr_list)
-        r("antique.approve", lambda c, p: self._cr(c, p, lambda a: a.approve(self._need_user(c),
-                                                                             _int(p, "id", 0, 1, 1 << 62))), klass="write")
+        r("antique.approve", lambda c, p: self._cr(c, p, lambda a: a.approve(self._need_user(c), _int(p, "id", 0, 1, 1 << 62),
+                                                                             _rev(p))), klass="write")
         r("antique.comment", self._cr_comment, klass="write")
         r("antique.requirements", lambda c, p: self._cr(c, p, lambda a: {"requirements": a.requirements(
             _int(p, "id", 0, 1, 1 << 62))})["requirements"], klass="heavy")
         r("antique.land", lambda c, p: self._cr(c, p, lambda a: a.land(self._need_user(c), _int(p, "id", 0, 1, 1 << 62),
-                                                                       force=bool(p.get("force", False)))), klass="write")
+                                                                       force=bool(p.get("force", False)), rev=_rev(p))),
+          klass="write")
         r("antique.abandon", lambda c, p: self._cr(c, p, lambda a: a.abandon(self._need_user(c),
                                                                              _int(p, "id", 0, 1, 1 << 62))), klass="write")
         r("antique.land_changeset", lambda c, p: self._antique(c, p).land_changeset(
@@ -162,8 +167,13 @@ class ScionService(Service):
             raise
 
     def _audit_denial(self, method, body, query, caller, error) -> None:
+        """Audit a denial in the repository the method used: named in the query for methods with a
+        binary body, in the JSON params otherwise (as dispatch reads them), never in a query
+        parameter a JSON method ignores."""
         try:
-            repo_name = (query.get("repo") or [None])[-1] or (json.loads(body or b"{}").get("params") or {}).get("repo")
+            m = self.methods.get(method)
+            repo_name = (query.get("repo") or [None])[-1] if m is not None and m.binary_in else \
+                (json.loads(body or b"{}").get("params") or {}).get("repo")
             repo = self.deployment.repo(repo_name)
         except Exception:  # an unknown or unnamed repository has no audit log to write to
             return
@@ -171,6 +181,7 @@ class ScionService(Service):
                                                          "message": str(error)[:500]})
 
     def handle_http(self, method, path, query, headers, body, secure):
+        self.deployment.maybe_reload()  # as for the RPCs: revoked tokens and new groups apply at once
         return self.ui.handle(method, path, query, headers, body, secure)
 
     def reload(self) -> None:
@@ -224,6 +235,8 @@ class ScionService(Service):
 
     def _log(self, c, p):
         repo = self._repo(c, p)
+        if _int(p, "skip", 0, 0, 1 << 62) > MAX_LIMIT:  # refused, not capped: a capped offset is the wrong page
+            raise ValueError(f"skip is at most {MAX_LIMIT}: page from the last changeset seen instead")
         ids = repo.log(_str(p, "rev", "main"), _int(p, "limit", 50, 1), bool(p.get("first_parent", True)),
                        p.get("path"), _int(p, "skip", 0), user=c.user)
         if p.get("ids_only"):
@@ -284,11 +297,10 @@ class ScionService(Service):
     def _git_lookup(self, c, p):
         """Map a git commit to its changeset or back (FR-MG-07): ``{git, cs}``, or None."""
         repo = self._repo(c, p)
-        repo.meta.ensure(GIT_MAP_SCHEMA)
         if p.get("git"):
-            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE git = ?", (_str(p, "git"),)).fetchone()
+            row = repo.meta.git_map_lookup(git=_str(p, "git"))
         else:
-            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE cs = ?", (repo.resolve(_str(p, "cs")),)).fetchone()
+            row = repo.meta.git_map_lookup(cs=repo.resolve(_str(p, "cs")))
         return {"git": row[0], "cs": row[1]} if row else None
 
     def _acl_epochs(self, c, p):
@@ -337,10 +349,11 @@ class ScionService(Service):
         moved = None
         ref = p.get("update_ref")
         if ref:
-            moved = repo.update_ref(_str(ref, "name"), ref.get("old"), cs_id, user=c.user)
-            if moved and ref.get("record_landing"):  # index a direct landing (FR-LD-05)
-                self.antique(repo.name).record_landing(cs_id, ref["name"], repo.resolve(ref["old"]) if ref.get("old")
-                                                       else None)
+            name, old = _str(ref, "name"), ref.get("old")
+            landing = None
+            if ref.get("record_landing"):  # index a direct landing (FR-LD-05), atomically with the move
+                landing = self.antique(repo.name).landing(cs_id, name, repo.resolve(old) if old else None)
+            moved = repo.update_ref(name, old, cs_id, user=c.user, landing=landing)
         return {"id": cs_id, "ref_updated": moved}
 
     def _merge(self, c, p):
@@ -427,27 +440,18 @@ class ScionService(Service):
             raise PermissionDenied("post-merge jobs are claimed and reported by services and administrators")
         return a
 
-    def _view(self, c, repo: Repository, cr: dict) -> dict:
-        """What a caller may see of a CR: files and comments under directories they can't read are
-        left out (FR-IAM-04)."""
-        can = repo.policy.can_read
-        for g in (cr.get("requirements") or {}).get("groups", []):
-            g["files"] = [f for f in g["files"] if can(c.user, f["path"])]
-        cr["comments"] = [x for x in cr.get("comments", []) if not x["path"] or can(c.user, x["path"])]
-        return cr
-
     def _cr(self, c, p, fn):
         a = self._antique(c, p)
-        return self._view(c, a.repo, fn(a))
+        return a.view(fn(a), c.user)
 
     def _cr_create(self, c, p):
         a = self._antique(c, p, write=True)
-        return self._view(c, a.repo, a.create(self._need_user(c), _str(p, "title"), _str(p, "head"),
-                                              _str(p, "description", ""), _str(p, "target", "main")))
+        return a.view(a.create(self._need_user(c), _str(p, "title"), _str(p, "head"), _str(p, "description", ""),
+                               _str(p, "target", "main")), c.user)
 
     def _cr_list(self, c, p):
         a = self._antique(c, p)
-        return [self._view(c, a.repo, cr) for cr in a.list(p.get("state"), p.get("author"), _int(p, "limit", 50, 1))]
+        return [a.view(cr, c.user) for cr in a.list(p.get("state"), p.get("author"), _int(p, "limit", 50, 1))]
 
     def _cr_comment(self, c, p):
         a = self._antique(c, p)
@@ -455,8 +459,8 @@ class ScionService(Service):
         if path is not None and not a.repo.policy.can_read(c.user, _str(p, "path")):
             raise PermissionDenied(f"{c.user} may not read {path}")
         line = p.get("line")
-        return self._view(c, a.repo, a.comment(self._need_user(c), _int(p, "id", 0, 1, 1 << 62), _str(p, "body"), path,
-                                               None if line is None else _int(p, "line", 1, 1, 1 << 31)))
+        return a.view(a.comment(self._need_user(c), _int(p, "id", 0, 1, 1 << 62), _str(p, "body"), path,
+                                None if line is None else _int(p, "line", 1, 1, 1 << 31)), c.user)
 
     def stats(self) -> dict:
         """Totals over all repositories: /stats is unauthenticated, so it names none of them."""
@@ -472,6 +476,10 @@ class ScionService(Service):
             except Exception as e:  # noqa: BLE001 - stats must answer even when a store is unwell
                 self.log("warning", f"queue stats unavailable: {e}")
         s["repos"] = {"open": len(self.deployment._repos), **repos}
+        clients = {id(c): c for r in list(self.deployment._repos.values())
+                   if (c := getattr(r.meta, "client", None)) is not None}  # Spanner: shared by the repositories
+        s["metadata"] = {"backend": self.deployment.metadata.get("backend", "sqlite"),
+                         **sum((Counter(c.stats) for c in clients.values()), Counter())}
         s["antique"] = dict(antique)
         s["notify"] = dict(self.notifier.counters)
         return s

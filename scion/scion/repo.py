@@ -18,14 +18,13 @@ from collections import Counter
 
 from .changeset import OP_ADD, OP_DELETE, OP_MODIFY, Changeset, FileChange
 from .derived import DerivedDataManager
-from .derived_types import expand_runs, register_default_types, split_lines
+from .derived_types import expand_runs, register_default_types
 from .iam import PermissionDenied
 from .merge3 import merge3
-from .meta import MetaStore
+from .meta import MetaStore, SqliteMetaStore
 from .objects import (EMPTY_TREE_ID, F_DENIED, F_MISSING, F_RESTRICTED, FILE_KINDS, KIND_DIR, KIND_LINK,
                       PUBLIC_TYPES, ObjectTooLarge, blob_id, decode_htree, decode_limited, is_binary,
-                      is_object_id,
-                      normalize_path, split_path, stored_type)
+                      is_object_id, normalize_path, split_lines, split_path, stored_type)
 from .storage import FileObjectStore, LRUCache
 from .trees import PathConflict, TreeOps
 
@@ -49,6 +48,9 @@ class OpenPolicy:
     def can_read(self, user, path=""):
         return True
 
+    def can_read_repo(self, user):
+        return True
+
     def can_write(self, user, path=""):
         return True
 
@@ -61,17 +63,21 @@ class OpenPolicy:
     def restricted_prefixes(self):
         return []
 
+    def acl_entry(self, path):
+        return ""
+
 
 def _api_entry(e):
     return None if e is None else {"kind": e[0], "id": e[1]}
 
 
 class Repository:
-    def __init__(self, root: str, policy=None, name: str = "main"):
+    def __init__(self, root: str, policy=None, name: str = "main", meta: MetaStore | None = None):
+        """``meta`` is the repository's metadata store; by default a SQLite file in ``root``."""
         self.root, self.name = root, name
         os.makedirs(root, exist_ok=True)
         self.objects = FileObjectStore(os.path.join(root, "objects"))
-        self.meta = MetaStore(os.path.join(root, "meta.db"))
+        self.meta = meta if meta is not None else SqliteMetaStore(os.path.join(root, "meta.db"))
         self.cache = LRUCache(300_000, max_bytes=CACHE_BYTES)
         self.trees = TreeOps(self.objects, self.cache)
         self.policy = policy or OpenPolicy()
@@ -124,8 +130,8 @@ class Repository:
         if not self.policy.restricted_prefixes():
             return self.trees.apply(base, changes)  # nothing is restricted: nothing to record
         rows = []
-        restricted_prefix = self.policy.restricted_prefix
-        root = self.trees.apply(base, changes, lambda path, kind, oid: rows.append((oid, restricted_prefix(path) or "")))
+        entry = self.policy.acl_entry
+        root = self.trees.apply(base, changes, lambda path, kind, oid: rows.append((oid, entry(path))))
         self.meta.acl_add(rows)
         return root
 
@@ -151,7 +157,7 @@ class Repository:
         ``F_RESTRICTED`` when shared tiers must not cache them. Restricted objects are authorized
         for the end user on every request (ADR-06). Only blobs and trees are served; derived
         structures stay internal."""
-        if not self.policy.can_read(user, ""):
+        if not self.policy.can_read_repo(user):  # the repository; its directories are checked per object
             return [(oid, F_DENIED, b"") for oid in ids]
         private = not getattr(self.policy, "public", True)
         acl = self._acl(ids)
@@ -188,35 +194,45 @@ class Repository:
 
     def reindex_acl(self) -> dict:
         """Rebuild the object index under the current policy (FR-IAM-09, UC-22 step 3): every
-        object every changeset wrote, at every place it appeared. Run it after a policy change, then
-        restart the caches, which may still hold objects that were public before (R-07)."""
-        prefix_of = self.policy.restricted_prefix
+        object every changeset wrote, at every place it appeared. Run it after a policy change; tiers
+        purge what they hold when the ACL epoch changes (ADR-20).
+
+        Commits go on meanwhile, on any server. A commit writes its objects' entries before its
+        changeset exists, so the scan can miss them: the replace therefore only touches objects the
+        scan saw, and the scan then continues over the changesets created while it ran."""
         rows: set[tuple[str, str]] = {(EMPTY_TREE_ID, "")}
-        changesets = 0
-        after = 0
-        while True:
-            batch = self.meta.tail(after, 1000)
-            if not batch:
-                break
+        changesets, after = 0, None
+        while batch := self.meta.tail(after, 1000):
             for after, cs_id in batch:
                 changesets += 1
-                root = self.root_tree(cs_id)
-                rows.add((root, prefix_of("") or ""))
-                dirs = set()
-                for ch in self.get_changeset(cs_id).changes:
-                    if ch.blob:
-                        rows.add((ch.blob, prefix_of(ch.path) or ""))
-                    parts = ch.path.split("/")
-                    dirs.update("/".join(parts[:k]) for k in range(1, len(parts)))
-                for d in dirs:
-                    e = self.trees.lookup(root, d)
-                    if e is not None and e[0] == KIND_DIR:
-                        rows.add((e[1], prefix_of(d) or ""))
+                rows |= self._acl_rows(cs_id)
         self.meta.acl_replace(sorted(rows))
+        while batch := self.meta.tail(after, 1000):  # created during the scan
+            for after, cs_id in batch:
+                changesets += 1
+                new = self._acl_rows(cs_id)
+                self.meta.acl_add(sorted(new - rows))
+                rows |= new
         self.meta.kv_set("acl_reindexed", f"{time.time()}:{os.getpid()}")  # a new ACL epoch (ADR-20)
         restricted = sum(1 for _, p in rows if p)
         return {"changesets": changesets, "entries": len(rows), "restricted_entries": restricted,
                 "epoch": self.acl_epoch()}
+
+    def _acl_rows(self, cs_id: str) -> set[tuple[str, str]]:
+        """The object index's entries for the objects a changeset wrote, under the current policy."""
+        entry = self.policy.acl_entry
+        root = self.root_tree(cs_id)
+        rows, dirs = {(root, entry(""))}, set()
+        for ch in self.get_changeset(cs_id).changes:
+            if ch.blob:
+                rows.add((ch.blob, entry(ch.path)))
+            parts = ch.path.split("/")
+            dirs.update("/".join(parts[:k]) for k in range(1, len(parts)))
+        for d in dirs:
+            e = self.trees.lookup(root, d)
+            if e is not None and e[0] == KIND_DIR:
+                rows.add((e[1], entry(d)))
+        return rows
 
     def put_objects(self, items, user=None) -> int:
         """Store uploaded blobs after verifying each against its id. Trees are always derived on
@@ -238,7 +254,7 @@ class Repository:
             self.objects.put_stored(oid, stored, verify=False)
             if oid in acl and user is not None and not self.can_read_object(oid, user, acl):
                 # the uploader proved they hold these bytes, so they may commit them by id
-                self.meta.grant_add(oid, user)
+                self.meta.grant_add(oid, user, time.time())
         self.stats["objects.uploaded"] += len(checked)
         return len(checked)
 
@@ -351,7 +367,8 @@ class Repository:
                     pass  # the bytes come with this very request
                 elif not self.objects.has(blob):
                     raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
-                elif user is not None and not self.can_read_object(blob, user) and not self.meta.grant_has(blob, user):
+                elif (user is not None and not self.can_read_object(blob, user)
+                      and not self.meta.grant_has(blob, user, time.time())):
                     # an object you may not read can't be republished somewhere else by its id,
                     # unless you uploaded its bytes yourself
                     raise PermissionDenied(f"{user} may not use object {blob[:12]}")
@@ -377,10 +394,11 @@ class Repository:
         for c in cs.changes:
             c.validate()
         cs_id = cs.id
-        if self.meta.insert_changeset(cs_id, cs.encode()):
+        new = self.meta.insert_changeset(cs_id, cs.encode())
+        if new:
             self.stats["changesets.created"] += 1
         self.derived.put("tree", cs_id, new_root)
-        self.derived.derive_eager(cs_id)
+        self.derived.derive_eager(cs_id, new)
         return cs_id
 
     # ============================================================================ refs (FR-REF)
@@ -388,7 +406,9 @@ class Repository:
         r = self.meta.get_ref(name)
         return r[0] if r else None
 
-    def update_ref(self, name: str, old: str | None, new: str | None, user=None) -> bool:
+    def update_ref(self, name: str, old: str | None, new: str | None, user=None, landing: tuple | None = None) -> bool:
+        """Compare-and-swap ``name`` from ``old`` to ``new``; ``landing`` (MetaStore.cas_ref) is
+        recorded with the move, atomically."""
         if not REF_NAME.match(name or "") or ".." in name:
             raise ValueError(f"invalid ref name {name!r}")
         if user is not None and not self.policy.can_update_ref(user, name):
@@ -397,7 +417,7 @@ class Repository:
             new = self.resolve(new)
         if old is not None and not is_object_id(old):
             old = self.resolve(old)
-        moved = self.meta.cas_ref(name, old, new, who=user or "")
+        moved = self.meta.cas_ref(name, old, new, who=user or "", landing=landing)
         if moved and self.audit is not None:
             self.audit.append("ref.update", user, name, {"old": old, "new": new})
         return moved
@@ -470,8 +490,8 @@ class Repository:
             if is_binary(old) or is_binary(new):
                 chunks.append(f"Binary files {an} and {bn} differ\n")
                 continue
-            for line in difflib.unified_diff(old.decode("utf-8", "replace").splitlines(keepends=True),
-                                             new.decode("utf-8", "replace").splitlines(keepends=True), an, bn, n=context):
+            for line in difflib.unified_diff(split_lines(old.decode("utf-8", "replace")),
+                                             split_lines(new.decode("utf-8", "replace")), an, bn, n=context):
                 chunks.append(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n")
         return "".join(chunks)
 
@@ -564,9 +584,33 @@ class Repository:
             self.stats["ancestry.hops"] += 1
         return cur
 
+    def on_first_parent_chain(self, a: str, b: str) -> bool:
+        """Is ``a`` on ``b``'s first-parent chain (``b`` included)? Generations fall strictly along
+        the chain, so a descent through the skip lists answers in O(log n) graph reads, however
+        many merges the chain crosses (ADR-12)."""
+        ga, cur, k = self.generation(a), b, None
+        if a != b and ga >= self.generation(b):
+            return False  # an ancestor's generation is lower
+        while cur != a:
+            skips = self.graph(cur)["s"]
+            k = len(skips) - 1 if k is None else min(k, len(skips) - 1)
+            # the furthest skip that doesn't pass a's generation; it is never further than the last
+            while k >= 0 and self.generation(skips[k]) < ga:
+                k -= 1
+                self.stats["ancestry.hops"] += 1
+            if k < 0:
+                return False
+            cur = skips[k]
+            self.stats["ancestry.hops"] += 1
+        return True
+
     def is_ancestor(self, a: str, b: str) -> bool:
-        """Is ``a`` an ancestor of (or equal to) ``b``?"""
+        """Is ``a`` an ancestor of (or equal to) ``b``? The common question, whether ``a`` is on
+        ``b``'s main line, takes O(log n) skip-list reads; otherwise a walk from ``b`` crosses
+        single-parent runs by skips and prunes everything below ``a``'s generation."""
         a, b = self.resolve(a), self.resolve(b)
+        if self.on_first_parent_chain(a, b):
+            return True
         ga, seen, stack = self.generation(a), set(), [b]
         while stack:
             x = stack.pop()
@@ -697,31 +741,44 @@ class Repository:
         return self._commit_changes([ours, theirs], changes, author, message or f"Merge {theirs[:12]} into {ours[:12]}", user=user)
 
     def rebase(self, head: str, onto: str, base: str | None = None, user=None) -> dict:
-        """Replay the stack between ``base`` (default: the merge base) and ``head`` onto ``onto``.
-        Changesets already applied upstream are dropped. Returns ``{"head", "rebased": {old: new}}``."""
+        """Replay ``head``'s first-parent chain onto ``onto``: the changesets from ``head`` back to
+        ``base``, by default back to the first one ``onto`` contains. Changesets whose first parent
+        doesn't move stay as they are, so the result always has ``onto`` on its first-parent chain
+        (BR-06): when ``onto`` is already there, ``head`` comes back unchanged. A merge is replayed as
+        its change list, which is relative to its first parent (FR-CS-02), so what it brought in that
+        ``onto`` already has drops out. Changesets already applied upstream are dropped.
+        Returns ``{"head", "rebased": {old: new}}``."""
         head, onto = self.resolve(head), self.resolve(onto)
         if self.is_ancestor(head, onto):
             return {"head": onto, "rebased": {}}
-        mb = self.resolve(base) if base else self.merge_base(head, onto)
-        if mb is None:
-            raise ValueError("no common ancestor")
-        if mb == onto:
-            return {"head": head, "rebased": {}}
+        if base:
+            stop = self.resolve(base)
+            low = self.generation(stop)
+            done = lambda c: c == stop or self.generation(c) <= low  # noqa: E731
+        else:
+            if self.merge_base(head, onto) is None:
+                raise ValueError("no common ancestor")
+            stop = None
+            done = lambda c: self.is_ancestor(c, onto)  # noqa: E731
         stack, cur = [], head
-        while cur != mb:
-            cs = self.get_changeset(cur)
-            if len(cs.parents) != 1:
-                raise ValueError(f"cannot rebase merge changeset {cur[:12]}")
+        while not done(cur):
             stack.append(cur)
-            cur = cs.parents[0]
+            cur = self.get_changeset(cur).first_parent
+            if cur is None:
+                raise ValueError(f"{head[:12]}'s first-parent chain doesn't meet {onto[:12]}")
+        if stop is not None and cur != stop:
+            raise ValueError(f"{stop[:12]} is not on the first-parent chain of {head[:12]}")
         new_parent, mapping = onto, {}
         for c in reversed(stack):
             cs = self.get_changeset(c)
-            changes, conflicts = self._three_way([ch.path for ch in cs.changes], self.root_tree(cs.parents[0]),
+            if cs.first_parent == new_parent:
+                new_parent = c  # nothing beneath it moved
+                continue
+            changes, conflicts = self._three_way([ch.path for ch in cs.changes], self.root_tree(cs.first_parent),
                                                  self.root_tree(new_parent), self.root_tree(c))
             if conflicts:
                 raise MergeConflict(conflicts, at=c)
-            if not changes and cs.changes:
+            if not changes and (cs.changes or len(cs.parents) > 1):
                 mapping[c] = new_parent  # already applied upstream
                 continue
             new_parent = mapping[c] = self._commit_changes([new_parent], changes, cs.author, cs.message, cs.timestamp,

@@ -7,9 +7,8 @@ import tempfile
 import unittest
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
-from scion.repo import Repository
-from scion.search import grep, required_literals, search_paths
+from helpers import REPO, Cluster, repository
+from scion.search import INDEXED, ensure_indexed, grep, required_literals, search_paths
 
 
 def b64(s: str) -> str:
@@ -61,7 +60,7 @@ class TestSearchThroughTheApi(unittest.TestCase):
 class TestIndexedContentSearch(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp(prefix="scion-index-")
-        self.repo = Repository(self.tmp)
+        self.repo = repository(self.tmp)
         rng = random.Random(7)
         words = ["alpha", "beta", "gamma", "delta", "omega", "lambda", "kappa", "sigma", "theta", "zeta"]
         files = {}
@@ -83,7 +82,7 @@ class TestIndexedContentSearch(unittest.TestCase):
         rx = re.compile(pattern)
         out = []
         for p, k, oid in self.repo.trees.walk(self.repo.root_tree(cs)):
-            for i, line in enumerate(self.repo.read_blob(oid).decode().splitlines(), 1):
+            for i, line in enumerate(self.repo.read_blob(oid).decode().split("\n")[:-1], 1):  # git's lines
                 if rx.search(line):
                     out.append({"path": p, "line": i, "text": line})
         return out
@@ -104,6 +103,42 @@ class TestIndexedContentSearch(unittest.TestCase):
         self.assertEqual(no_literal["matches"], self.scan(self.v1, r"\d\d\d$"))
         indexed_scans = grep(self.repo, self.v1, "omega omega", limit=10_000)["files_scanned"]
         self.assertLess(indexed_scans, 600)
+
+    def test_T_SR_02_non_ascii_and_line_breaks_match_git(self):
+        """Review findings I-04 and I-05: case folding has no context (a final sigma, a dotted
+        capital I), and a form feed or a lone carriage return is part of a line, as git counts."""
+        files = {"i18n/el.json": "ΚΟΣΜΟΣ\n", "i18n/tr.json": "İptal\nİSTANBUL\n",
+                 "src/x.c": "a\n\x0cint needle_value = 1;\n", "src/crlf.txt": "one\r\r\ntwo needle\r\r\n"}
+        cs = self.repo.create_changeset([self.v2], [{"path": p, "content": t.encode()} for p, t in files.items()], "a", "v3")
+        r = grep(self.repo, cs, "ΚΟΣ")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("i18n/el.json", 1)])
+        for query in ("iptal", "istanbul"):
+            r = grep(self.repo, cs, query, ignore_case=True)
+            self.assertEqual([m["path"] for m in r["matches"]], ["i18n/tr.json"], query)
+        r = grep(self.repo, cs, "needle")
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("src/crlf.txt", 2), ("src/x.c", 2)])
+        self.assertEqual(r["matches"], self.scan(cs, "needle"))
+
+    def test_T_SR_03_the_index_covers_the_revisions_searched(self):
+        """Decided 2026-10-14: the content index covers the revisions that are searched (and each
+        import's final one), not every version of every file. A revision is indexed from the last one
+        indexed in full, so following a branch costs about its changes; one never searched costs
+        nothing."""
+        side = self.repo.create_changeset([self.v1], [{"path": "side/only.txt", "content": b"side_token_plugh\n"}],
+                                          "a", "side")
+        side_blob = self.repo.lookup(side, "side/only.txt")[1]
+        self.assertTrue(grep(self.repo, self.v1, "rare_token_xyzzy")["indexed"])
+        self.assertEqual(ensure_indexed(self.repo, self.v1), 0)  # indexed by the search
+        self.assertEqual(ensure_indexed(self.repo, self.v2), 1)  # only d5/f5.txt's new version
+        self.assertIsNone(self.repo.meta.kv_get(INDEXED + self.repo.root_tree(side)))
+        self.assertIsNone(self.repo.meta.content_status(side_blob))  # never searched: not indexed
+        r = grep(self.repo, side, "side_token_plugh")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("side/only.txt", 1)])
+        self.assertEqual(r["files_scanned"], 1)
+        self.assertEqual(self.repo.meta.content_status(side_blob), "i")
+        self.assertEqual(ensure_indexed(self.repo, side), 0)
 
     def test_required_literals(self):
         self.assertEqual(required_literals(r"foo\(\d+\)"), ["foo(", ")"])

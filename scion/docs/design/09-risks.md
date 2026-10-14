@@ -5,7 +5,7 @@ Likelihood (L) and impact (I) are rated 1–5. The score is L × I. Owners are r
 | ID | Risk | L | I | Score | Mitigation | Trigger / early warning | Owner |
 |---|---|---|---|---|---|---|---|
 | R-01 | Landing starvation under high contention | 3 | 5 | 15 | group commit per server; jittered backoff; deadline; swarm simulation in CI | land retries/s and time-to-land rising (superfan) | Landing owner |
-| R-02 | Single-host storage (SQLite) becomes the bottleneck | 4 | 4 | 16 | narrow `MetaStore` interface; keep access patterns single-row; plan a Spanner adapter | write latency p99; SQLITE_BUSY errors | Architect |
+| R-02 | Single-host storage (SQLite) becomes the bottleneck | 2 | 4 | 8 | narrow `MetaStore` interface; single-row access patterns; Cloud Spanner backend (ADR-24, B6) | write latency p99; SQLITE_BUSY errors | Architect |
 | R-03 | Deferred blame backfill is slow on deep histories | 3 | 3 | 9 | eager-backfill command; per-path blame option later | first-blame latency | Core owner |
 | R-04 | Merge semantics differ from git, confusing users | 3 | 3 | 9 | diff3 semantics; structured conflicts; documented first-parent rules (BR-06) | conflict reports from users | Core owner |
 | R-05 | Comment-only classifier misses a logic change | 2 | 5 | 10 | conservative classifier (unknown means logic; strings tracked); tests per language; owners for sensitive directories | post-merge failures on "comment-only" CRs | Review owner |
@@ -20,3 +20,7 @@ Likelihood (L) and impact (I) are rated 1–5. The score is L × I. Owners are r
 | R-14 | Requirements drift because code came first | 4 | 3 | 12 | this package as the baseline; traceability matrix; change control (12) | untraced code changes | Project lead |
 | R-15 | Rate limits are per process, not global | 3 | 2 | 6 | per-principal limits sized per server; a shared limiter later | rejections imbalanced across servers | Operator |
 | R-16 | The fsmonitor misses events | 2 | 3 | 6 | sync cookie; overflow means rescan; fallback to a full scan | status disagrees with a full scan in tests | Client owner |
+| R-17 | The Spanner emulator behaves differently from real Spanner (it runs one read-write transaction at a time and has no quotas), so emulator-green code fails on real Spanner | 3 | 4 | 12 | only documented Spanner semantics are used; every read-write path retries aborts; a smoke test against a real instance before production | errors seen only on the real instance | Architect |
+| R-18 | Each metadata call is an HTTPS round trip to Spanner, so request latency grows | 4 | 3 | 12 | cache immutable rows in-process; batch writes in one commit; measure per-RPC latency on both backends | p99 latency per RPC on Spanner against SQLite | Core owner |
+| R-19 | The superfan agent costs too much or misleads (a confident but wrong analysis) | 3 | 3 | 9 | turn and token limits per finding; repeated findings investigated once; the raw finding always posted beside the analysis, which names its evidence | API spend per day; analyses contradicted by operators | Operator |
+| R-20 | The CPython pilot needs more disk or time than a session has: Scion stores every version of every file compressed on its own, without git's deltas | 4 | 2 | 8 | measure growth while ingesting and report what was reached; resume incrementally (FR-MG-03) | free disk; commits per minute | Migration owner |

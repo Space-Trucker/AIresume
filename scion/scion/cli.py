@@ -20,6 +20,21 @@ from .iam import Identity, hash_token
 from .rpc import ClientTls, RemoteError, RpcServer, TlsConfig
 
 
+def _metadata_arg(text: str) -> dict:
+    """``--metadata``: the ``metadata`` section of deployment.json, as JSON or ``@file``."""
+    try:
+        if text.startswith("@"):
+            with open(text[1:]) as f:
+                value = json.load(f)
+        else:
+            value = json.loads(text)
+    except (OSError, ValueError) as e:
+        raise argparse.ArgumentTypeError(f"not JSON: {e}") from None
+    if not isinstance(value, dict) or value.get("backend", "sqlite") not in ("sqlite", "spanner"):
+        raise argparse.ArgumentTypeError('expected {"backend": "sqlite"} or {"backend": "spanner", ...}')
+    return value
+
+
 def _print_json(v) -> None:
     print(json.dumps(v, indent=2, sort_keys=True))
 
@@ -134,8 +149,11 @@ def _scn_parser() -> argparse.ArgumentParser:
     x = rv.add_parser("list")
     x.add_argument("--state", default="open", help="open, landing, conflict, landed, abandoned or all")
     x.add_argument("--author")
-    for name in ("show", "approve", "abandon", "requirements"):
+    for name in ("show", "abandon", "requirements"):
         rv.add_parser(name).add_argument("id", type=int)
+    x = rv.add_parser("approve", help="approve the latest revision, or --rev: the one you reviewed")
+    x.add_argument("id", type=int)
+    x.add_argument("--rev", type=int, help="refuse if the CR has moved past this revision")
     x = rv.add_parser("comment")
     x.add_argument("id", type=int)
     x.add_argument("body")
@@ -498,7 +516,7 @@ def _review(ctx: _Ctx, api: ServerApi, a) -> int:
             print(f"  [{c['user']}{where}] {c['body']}")
         return 0
     if act in ("approve", "abandon"):
-        cr = api.call(f"antique.{act}", id=a.id)
+        cr = api.call(f"antique.{act}", id=a.id, **({"rev": a.rev} if getattr(a, "rev", None) else {}))
         print(f"change request {cr['id']}: {cr['state']}")
         return 0
     if act == "requirements":
@@ -648,11 +666,15 @@ def admin_main(argv=None) -> int:
     from .ingest import IngestError
     from .repo import NotFound
     from .snapshot import create_snapshot
+    from .spanner import SpannerError
 
     p = argparse.ArgumentParser(prog="scion-admin")
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("init", help="create a deployment root")
     s.add_argument("--root", required=True)
+    s.add_argument("--metadata", type=_metadata_arg,
+                   help='where the metadata lives (FR-ST-02), as JSON or @file: {"backend": "spanner", "project": ..., '
+                        '"instance": ..., "database": ..., "endpoint": ...}; SQLite by default')
     s = sub.add_parser("create-repo", help="create a repository")
     s.add_argument("--root", required=True)
     s.add_argument("name")
@@ -678,6 +700,8 @@ def admin_main(argv=None) -> int:
     s.add_argument("--rev", default="HEAD", help="a revision or range, e.g. main or v1..main")
     s.add_argument("--ref", default="main", help="the ref to point at the ingested tip ('' for none)")
     s.add_argument("--verify", action="store_true", help="then compare every file with git")
+    s.add_argument("--no-derive", action="store_true",
+                   help="leave blame and the grep index to be computed on first use")
     s.add_argument("-v", "--verbose", action="store_true")
     s = sub.add_parser("gen-certs", help="development CA and certificates (needs the openssl tool)")
     s.add_argument("dir")
@@ -707,11 +731,18 @@ def admin_main(argv=None) -> int:
     s.add_argument("--root", required=True)
     s.add_argument("--force", action="store_true", help="move a non-empty root aside first")
     s.add_argument("--deep", action="store_true", help="also decode and hash-check every object")
+    s.add_argument("--metadata", type=_metadata_arg,
+                   help="the restored deployment's metadata backend (JSON or @file); by default the backup's")
     s = sub.add_parser("verify", help="check that every ref's tree and every changeset's blobs are stored")
     s.add_argument("--root", required=True)
     s.add_argument("--deep", action="store_true", help="also decode and hash-check every object")
     s = sub.add_parser("bench", help="benchmarks of commit scaling, ancestry and checkouts (FR-OP-07)")
     s.add_argument("--quick", action="store_true", help="small sizes, for a fast check")
+    s.add_argument("--vs-git", metavar="GIT_DIR",
+                   help="instead, compare checkouts with git serving this repository (FR-OP-11)")
+    s.add_argument("--rev", default="HEAD", help="with --vs-git: the revision to check out")
+    s.add_argument("--deployment", help="with --vs-git: a deployment that already holds the ingested history")
+    s.add_argument("--repo", default="bench", help="with --deployment: the repository's name")
     s.add_argument("--json", action="store_true")
     a = p.parse_args(argv)
     if a.command in ("backup", "restore", "verify", "bench"):
@@ -724,10 +755,17 @@ def admin_main(argv=None) -> int:
     if a.command == "hash-token":
         print(hash_token(a.token))
         return 0
+    if a.command == "init" and a.metadata:
+        os.makedirs(a.root, exist_ok=True)
+        path = os.path.join(a.root, "deployment.json")
+        identity = Identity.load(path).raw if os.path.exists(path) else {}
+        with open(path + ".tmp", "w") as f:
+            json.dump({**identity, "metadata": a.metadata}, f, indent=2)
+        os.replace(path + ".tmp", path)
     dep = Deployment(a.root)
     try:
         if a.command == "init":
-            print(f"deployment at {dep.root}")
+            print(f"deployment at {dep.root}, metadata in {dep.metadata.get('backend', 'sqlite')}")
         elif a.command == "create-repo":
             dep.create_repo(a.name, {"read": a.read, "write": a.write, "admins": a.admin})
             print(f"created {a.name}")
@@ -747,7 +785,7 @@ def admin_main(argv=None) -> int:
             from .ingest import GitIngester
             repo = dep.repo(a.repo)
             ing = GitIngester(repo, a.git, verbose=a.verbose)
-            stats = ing.ingest(a.rev, a.ref or None)
+            stats = ing.ingest(a.rev, a.ref or None, derive=not a.no_derive)
             repo.audit.append("ingest", f"scion-admin:{getpass.getuser()}", a.git, {k: stats[k] for k in ("commits", "tip")})
             _print_json(stats)
             if a.verify:
@@ -778,7 +816,7 @@ def admin_main(argv=None) -> int:
             for e in reversed(repo.audit.entries(a.limit)):
                 print(f"{e['seq']:>6} {e['actor'] or '-':<14} {e['action']:<16} {e['target']} "
                       f"{json.dumps(e['detail'], sort_keys=True)}")
-    except (PermissionDenied, NotFound, ValueError, IngestError) as e:
+    except (PermissionDenied, NotFound, ValueError, IngestError, SpannerError) as e:
         print(f"scion-admin: {e}", file=sys.stderr)
         return 1
     finally:
@@ -789,11 +827,16 @@ def admin_main(argv=None) -> int:
 def _admin_store_command(a, actor: str) -> int:
     """backup, restore, verify and bench work on whole deployments, not through one Deployment."""
     from .backup import BackupError, backup, restore, verify
+    from .spanner import SpannerError
 
     try:
         if a.command == "bench":
             from .tools import bench
 
+            if a.vs_git:
+                result = bench.run_vs_git(a.vs_git, a.rev, a.deployment, a.repo)
+                print(json.dumps(result, indent=2) if a.json else bench.report_vs_git(result))
+                return 0 if result["identical"] else 1
             result = bench.run(quick=a.quick)
             print(json.dumps(result, indent=2) if a.json else bench.report(result))
             return 0
@@ -804,10 +847,11 @@ def _admin_store_command(a, actor: str) -> int:
                       f"{r['objects']} objects ({r['object_bytes']:,} bytes)")
             print(f"backup written to {os.path.abspath(a.out)}")
             return 0
-        report = restore(a.backup, a.root, a.force, a.deep, actor) if a.command == "restore" else verify(a.root, a.deep)
+        report = restore(a.backup, a.root, a.force, a.deep, actor, a.metadata) if a.command == "restore" \
+            else verify(a.root, a.deep)
         _print_json(report)
         return 0 if report["ok"] else 1
-    except (BackupError, OSError, ValueError) as e:
+    except (BackupError, OSError, ValueError, SpannerError) as e:
         print(f"scion-admin: {e}", file=sys.stderr)
         return 1
 
@@ -863,11 +907,28 @@ def superfan_main(argv=None) -> int:
     p.add_argument("--token-file")
     _tls_client_args(p)
     p.add_argument("--json", action="store_true", help="print findings as JSON lines")
+    p.add_argument("--agent", action="store_true",
+                   help="have Claude investigate each finding and post its analysis (needs ANTHROPIC_API_KEY)")
+    p.add_argument("--agent-model", default="claude-opus-5-5")
+    p.add_argument("--agent-effort", default="high", choices=["low", "medium", "high", "xhigh", "max"])
+    p.add_argument("--agent-max-turns", type=int, default=6, help="model calls per investigation")
+    p.add_argument("--agent-url", default=None, help="the Messages API endpoint (default Anthropic's)")
     a = p.parse_args(argv)
     rules = list(a.rule) + (load_rules(a.rules) if a.rules else [])
     fan = Superfan(a.url, a.profile, rules, not a.no_default_rules, a.user, _read_token(a.token_file),
                    ClientTls(a.ca, a.cert, a.key) if a.ca else None, a.webhook, a.z, a.warmup,
                    log_level=a.log_level, as_json=a.json)
+    if a.agent:
+        from .superfan_agent import API_URL, AgentConfig, AgentError, Investigator
+
+        try:
+            fan.agent = Investigator(fan, a.webhook, AgentConfig(model=a.agent_model, effort=a.agent_effort,
+                                                                 max_turns=a.agent_max_turns,
+                                                                 api_url=a.agent_url or API_URL))
+        except AgentError as e:
+            print(f"scion-superfan: {e}", file=sys.stderr)
+            fan.close()
+            return 2
     try:
         fan.run(a.interval, a.polls)
     except KeyboardInterrupt:

@@ -32,10 +32,12 @@ Guidelines:
   `history`, `search` and `blame` do. Internal object types are never served to clients.
 * **Choose eager or deferred.** Make a type eager if every changeset needs it soon after creation
   (trees, graph); otherwise defer it (blame). `scion-admin derive --type NAME` backfills a
-  deferred type ahead of demand.
+  deferred type ahead of demand, and `scion-admin ingest` computes blame for each commit it
+  imports (decided 2026-10-14), so the first query after a migration doesn't pay for the history.
 * **Change freely.** Clients only ever see query APIs, so a type's representation can change
   without touching any client.
 
 The built-in types are `tree`, `graph` (generation numbers plus first-parent skip lists),
 `history` (path history), `copies` (copy and rename detection), `search` (bloom-filtered path
-index) and `blame`.
+index) and `blame`. The grep content index is not a derived type: it covers the revisions that
+are searched rather than every changeset (ADR-16).

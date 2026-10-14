@@ -12,14 +12,14 @@ its first parent, so whatever a merge brings in is attributed to the merge itsel
 """
 from __future__ import annotations
 
-import difflib
 import functools
 import hashlib
 import json
 
+from . import linediff
 from .changeset import OP_ADD, OP_DELETE, Changeset
 from .derived import DerivedType
-from .objects import KIND_DIR, KIND_LINK, encode_htree, is_binary
+from .objects import KIND_DIR, encode_htree, is_binary, split_lines
 from .trees import TreeCodec, apply_augmented
 
 
@@ -197,8 +197,6 @@ class SearchTreeType(DerivedType):
 
 
 # -- blame ----------------------------------------------------------------------------------------
-def split_lines(data: bytes) -> list[bytes]:
-    return data.splitlines(keepends=True)
 
 
 def expand_runs(runs) -> list[tuple[str, int]]:
@@ -242,8 +240,7 @@ class BlameType(DerivedType):
             if prev is not None and prev[1] != "binary":
                 old_lines = split_lines(repo.read_blob(prev[0]))
                 old_attr = expand_runs(repo.read_blame(prev[1]))
-                sm = difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False)
-                for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                for tag, i1, i2, j1, j2 in linediff.opcodes(old_lines, new_lines):
                     if tag == "equal":
                         attr[j1:j2] = old_attr[i1:i2]
             payload = json.dumps({"runs": compress_runs(attr)}, separators=(",", ":")).encode()
@@ -255,36 +252,25 @@ class BlameType(DerivedType):
 CONTENT_MAX_BYTES = 1 << 20
 
 
+# re.IGNORECASE's equivalences beyond simple lowercasing (sre_compile), each onto one member
+_FOLD = str.maketrans({"ı": "i", "ſ": "s", "µ": "μ", "\u0345": "ι", "\u1fbe": "ι", "\u1fd3": "\u0390",
+                       "\u1fe3": "\u03b0", "ϐ": "β", "ϵ": "ε", "ϑ": "θ", "ϰ": "κ", "ϖ": "π", "ϱ": "ρ", "ς": "σ",
+                       "ϕ": "φ", "\u1e9b": "\u1e61", "\ufb06": "\ufb05"})
+
+
+def fold_case(text: str) -> str:
+    """Case-folded character by character, with no context: str.lower() turns a final "Σ" into "ς"
+    and "İ" into two characters, so a word's trigrams would depend on what surrounds it. Two
+    characters that re.IGNORECASE takes for one fold alike, so a literal in a matching text is in
+    its folded text, whatever the case."""
+    return text.replace("İ", "i").replace("Σ", "σ").lower().translate(_FOLD)
+
+
 def text_trigrams(text: str) -> set[str]:
-    s = text.lower()
+    s = fold_case(text)
     return {s[i:i + 3] for i in range(len(s) - 2)}
 
 
-class ContentIndexType(DerivedType):
-    """``{"indexed": n}``: the trigrams of every text blob the changeset adds or modifies are recorded
-    once (ADR-16), so content search reads only blobs that can match (FR-SR-03). Binary blobs are not
-    indexed; text blobs over 1 MiB are marked and always read. Deferred: built on the first search at
-    a revision, or by a backfill."""
-
-    name, eager, depends_on = "content", False, ("copies",)  # copies fills the blob → path index
-
-    def derive(self, repo, cs_id, cs, parent_values):
-        n = 0
-        for c in cs.changes:
-            if c.op == OP_DELETE or c.kind == KIND_LINK or repo.meta.content_status(c.blob) is not None:
-                continue
-            data = repo.read_blob(c.blob)
-            if is_binary(data):
-                repo.meta.content_add(c.blob, "b", ())
-            elif len(data) > CONTENT_MAX_BYTES:
-                repo.meta.content_add(c.blob, "l", ())
-            else:
-                repo.meta.content_add(c.blob, "i", text_trigrams(data.decode("utf-8", "replace")))
-            n += 1
-        return json.dumps({"indexed": n})
-
-
 def register_default_types(manager) -> None:
-    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType(),
-              ContentIndexType()):
+    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType()):
         manager.register(t)

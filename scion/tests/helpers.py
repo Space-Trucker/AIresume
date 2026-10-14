@@ -1,23 +1,80 @@
 """Shared test setup, including the hermetic ``Cluster``: servers, caches and daemons in one
-process over real sockets (10 §10.2)."""
+process over real sockets (10 §10.2).
+
+With ``SCION_TEST_SPANNER`` set to the REST endpoint of Google's Spanner emulator (for example
+``http://127.0.0.1:9020``), every cluster and every repository the tests make keep their metadata on
+the emulator, each in a database of its own (10 §10.1, "Metadata backends")."""
 from __future__ import annotations
 
+import atexit
+import itertools
 import json
 import os
 import shutil
 import sys
 import tempfile
+import urllib.request
 import warnings
 
 warnings.simplefilter("ignore", ResourceWarning)  # per-thread SQLite connections close at exit
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scion.deployment import Deployment  # noqa: E402
+from scion.meta import open_metastore  # noqa: E402
+from scion.repo import Repository  # noqa: E402
 from scion.rpc import ClientTls, RpcClient, RpcServer, TlsConfig  # noqa: E402
 from scion.server import ScionService  # noqa: E402
 from scion.tiers import DaemonService, make_cache_service  # noqa: E402
 
 REPO = "monorepo"
+SPANNER = os.environ.get("SCION_TEST_SPANNER", "").rstrip("/")
+_databases: list[str] = []
+_numbers = itertools.count(1)
+_repo_configs: dict[str, dict] = {}
+
+
+def spanner_config() -> dict | None:
+    """A new, empty database on the emulator; None when the tests run on SQLite."""
+    if not SPANNER:
+        return None
+    name = f"t{os.getpid()}-{next(_numbers)}"
+    _databases.append(name)
+    return {"backend": "spanner", "endpoint": SPANNER, "project": "scion-test", "instance": "test",
+            "database": name, "create": True}
+
+
+def metadata_config() -> dict:
+    """The metadata backend the tests run on (the ``metadata`` section of deployment.json)."""
+    return spanner_config() or {"backend": "sqlite"}
+
+
+def repository(path: str, **kw) -> Repository:
+    """A repository outside a deployment, on the backend the tests run on; the same path reopens
+    the same metadata."""
+    if not SPANNER:
+        return Repository(path, **kw)
+    config = _repo_configs.setdefault(os.path.abspath(path), spanner_config())
+    return Repository(path, meta=open_metastore(config, path, kw.get("name", "main")), **kw)
+
+
+def tamper(meta, sql: str) -> None:
+    """Change stored metadata behind the store's back, as an attacker with database access would:
+    ``sql`` is an UPDATE ending in a WHERE clause, which on Spanner also selects the repository."""
+    if SPANNER:
+        meta.client.run_in_transaction(lambda tx: tx.execute(sql + " AND repo = @repo", {"repo": meta.repo}))
+    else:
+        meta.execute(sql)
+
+
+@atexit.register
+def _drop_databases() -> None:
+    for name in _databases:
+        req = urllib.request.Request(f"{SPANNER}/v1/projects/scion-test/instances/test/databases/{name}",
+                                     method="DELETE")
+        try:
+            urllib.request.urlopen(req, timeout=10).close()
+        except OSError:
+            pass
 
 
 def short_tmpdir(prefix: str = "scn-") -> str:
@@ -39,6 +96,8 @@ class Cluster:
         self.root, self.pki, self.tokens = root, pki, tokens or {}
         self.dep_root = os.path.join(root, "deployment")
         os.makedirs(self.dep_root, exist_ok=True)
+        if SPANNER:
+            identity = {**(identity or {}), "metadata": spanner_config()}
         if identity is not None:
             with open(os.path.join(self.dep_root, "deployment.json"), "w") as f:
                 json.dump(identity, f)

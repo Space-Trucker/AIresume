@@ -46,7 +46,7 @@ The article was re-downloaded for this check. The page HTML is byte-identical to
 **Items flagged for your decision** (decided at M0, see 12 §12.7: FR-OBJ-04 kept; BR-06 changed to main line only)
 - **FR-OBJ-04** (hash verification at the daemon and client) is not stated in the article. Given the article's warning about over-defensive validation (A135), it is flagged; it is kept because a hash check is cheap.
 - **BR-06** goes beyond footnote 1: lines and files taken verbatim from another parent keep their original history. The article calls first-parent storage 'a stylistic choice' and says people only care about main-line history.
-- **Partial items:** distributed data (A053, single-host metadata store in the prototype), lower CPU than git servers (A094, not measured), resumability (A098, GAP-01), superfans as Claude agents in Slack (A148–A149, out of scope), and superfan access to logs (A152, new FR-OP-08, GAP-14).
+- **Partial items:** distributed data (A053, single-host metadata store in the prototype), lower CPU than git servers (A094, not measured), resumability (A098, GAP-01), superfans as Claude agents in Slack (A148–A149, out of scope), and superfan access to logs (A152, new FR-OP-08, GAP-14). All are built since: A098 and A152 in B5 (§14.9), the rest in B6 (§14.10).
 
 ## 14.3 Sentence-by-sentence map (A)
 
@@ -608,3 +608,17 @@ At B5 every requirement is built and tested (11). The article items whose verdic
 | A109 | Cache hit rate over 99% on each tier | Covered | Covered, measured | a node with 100 jobs hits 99.5%; a cache behind 100 nodes hits 99.0% over its life (T-SYS-01) |
 
 Still partial, for the reasons recorded at M0: distributed data (A053; one host's SQLite stands in for Spanner, ADR-10), CPU compared with git servers (A094; not measured against git), and superfans as Claude agents in Slack (A148, A149; the watcher and its Slack-compatible webhook are built, the agent is out of scope). The verdicts are now: Covered 112 · Context recorded 14 · Fixed in the M0 pass 25 · Partial 4 · Not applicable 27.
+
+## 14.10 Re-verification after B6
+
+B6 (12 §12.9) built the four items that were still partial, and measured one more:
+
+| ID | Article item | After B5 | After B6 | Evidence |
+|---|---|---|---|---|
+| A053 | The repository's data is distributed | Partial | Covered | FR-ST-01…04: the metadata in Cloud Spanner through its REST API (ADR-24); the suite and the swarm run against Google's emulator (T-ST-01…04) |
+| A094 | Scion requires significantly less CPU than git servers | Partial | Covered, measured | FR-OP-11 on CPython (103,812 commits): git's upload-pack spends 1.6 s of CPU on a full clone and 4.6 s on a shallow one; Scion's server and cache 1.6 s on a node's first checkout and 0.01 s on the next (T-PERF-02) |
+| A148 | Superfans are Claude agents | Partial | Covered | FR-OP-09/10: Claude investigates each finding with read-only tools (stats, logs, baselines, findings) and posts its analysis (ADR-25, T-OPS-06/07); real use needs an API key |
+| A149 | Agents in Slack channels watch the infrastructure | Partial | Covered | FR-OP-10: the analysis goes to the Slack-compatible webhook beside the finding (T-OPS-07) |
+| A110 | The footprint is 200x smaller | Covered (a target) | Covered, measured on one host | the serving tier holds 23.5 MB against git's 270 MB pack, and 90 MB of server memory serves every checkout where git needs 270 MB per clone (T-PERF-02); the 200x is for Anthropic's monorepo and fleet |
+
+The verdicts are now: Covered 116 · Context recorded 14 · Fixed in the M0 pass 25 · Partial 0 · Not applicable 27.

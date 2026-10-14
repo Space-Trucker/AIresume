@@ -9,10 +9,11 @@ Every diagram is Mermaid. All of them are rendered with `mmdc` before commit (se
 | 6.3 | Deployment | deployment |
 | 6.4 | Packages | package |
 | 6.5 | Design classes: server, tiers, client, review | class (design) |
-| 6.6 | Sequences: checkout, commit, blame, landing, restricted fetch, post-merge revert, ingestion, status | sequence |
+| 6.6 | Sequences: checkout, commit, blame, landing, restricted fetch, post-merge revert, ingestion, status, a ref move on Spanner, a superfan agent's investigation | sequence |
 | 6.7 | States: change request, landing request, post-merge job, working-copy file, cached object | state machine |
 | 6.8 | Activities: landing, deriving data, status | activity |
 | 6.9 | Metadata store | entity-relationship |
+| 6.10 | Metadata store on Spanner: keys and indexes | entity-relationship |
 
 ---
 
@@ -236,23 +237,29 @@ flowchart LR
     S2[scion-server 2]
     S3[scion-server N]
   end
-  subgraph Cloud["Managed storage"]
-    SP[(Spanner / metadata)]
-    BS[(Blob storage)]
+  subgraph Cloud["Storage"]
+    SP[(Cloud Spanner: metadata)]
+    BS[(Object store: shared directory)]
     SB[(Snapshots)]
   end
   subgraph Ops["Operations"]
     SF[Superfans]
+    AG[Superfan agents]
     PMW[Post-merge workers]
     CHAT[Chat / alerting]
   end
+  CL[(Claude API)]
   D1 -- HTTP get_objects --> C1 & C2
   C1 & C2 -- HTTP get_objects --> S1 & S2 & S3
   J1 & J2 -- HTTP metadata RPCs --> S1 & S2 & S3
   S1 & S2 & S3 --> SP & BS
   SB -. periodic import .-> D1
-  SF -. polls stats .-> D1 & C1 & S1
+  SF -. polls stats and logs .-> D1 & C1 & S1
   SF --> CHAT
+  SF -- findings --> AG
+  AG -. read-only tools .-> D1 & C1 & S1
+  AG -- Messages API --> CL
+  AG --> CHAT
   PMW --> S1
 ```
 
@@ -344,10 +351,32 @@ classDiagram
     +walk(root) iterator
   }
   class MetaStore {
+    <<interface>>
     +insert_changeset(id, data) bool
-    +cas_ref(name, expected, new, who) bool
+    +cas_ref(name, expected, new, who, landing) bool
+    +cr_update(id, expect_states, expect_head, cols) bool
     +derived_get(type, cs) str
     +derived_put(type, cs, value)
+    +audit_append(make) seq_hash
+    +cr_create(fields) int
+    +record_landings(rows, jobs, cr_updates)
+    +postmerge_claim(claim, now) dict
+    +export(path, at) timestamp
+    +load(path)
+  }
+  class SqliteMetaStore {
+    +path
+  }
+  class SpannerMetaStore {
+    +repo
+  }
+  class SpannerClient {
+    +endpoint
+    +database
+    +query(sql, params) rows
+    +run_in_transaction(fn) result
+    +snapshot(at) reads
+    +ensure_schema(create)
   }
   class ObjectStore {
     <<interface>>
@@ -361,6 +390,9 @@ classDiagram
   Repository --> DerivedDataManager
   Repository --> TreeOps
   Repository --> MetaStore
+  MetaStore <|.. SqliteMetaStore
+  MetaStore <|.. SpannerMetaStore
+  SpannerMetaStore --> SpannerClient
   Repository --> ObjectStore
   DerivedDataManager o-- DerivedType
   DerivedType <|-- RootTreeType
@@ -816,6 +848,61 @@ sequenceDiagram
   C-->>C: modified, added, removed, untracked
 ```
 
+### Moving a ref on Spanner (FR-ST-01, FR-ST-03)
+
+A compare-and-swap on one ref row, as the article describes, inside a read-write transaction. When
+another server's transaction conflicts, Spanner aborts one of them, and the store reruns the whole
+transaction function after a short, jittered backoff.
+
+```mermaid
+sequenceDiagram
+  participant S as scion-server
+  participant M as SpannerMetaStore
+  participant SP as Cloud Spanner
+  S->>M: cas_ref(main, expected=a, new=b, who)
+  loop until committed, or the deadline
+    M->>SP: executeSql(begin readWrite): SELECT target, version FROM refs WHERE repo, name
+    alt target is not expected
+      M->>SP: rollback
+      M-->>S: false (the caller rebases and retries)
+    else target is expected
+      M->>SP: commit with mutations: refs (target=b, version=v+1) and ref_log (repo, name, commit timestamp, old=a, new=b, who)
+      alt ABORTED by a conflicting transaction
+        SP-->>M: aborted
+        M->>M: backoff with jitter, then rerun
+      else committed
+        SP-->>M: commit timestamp
+        M-->>S: true
+      end
+    end
+  end
+```
+
+### A superfan agent investigates a finding (UC-31)
+
+```mermaid
+sequenceDiagram
+  participant W as Superfan watcher
+  participant A as Superfan agent
+  participant C as Claude API
+  participant X as Component (/stats, /logs)
+  participant K as Chat webhook
+  W->>K: post the finding
+  W->>A: finding (metric, value, baseline, log lines)
+  A->>A: seen recently? then stop
+  A->>C: messages (system prompt, finding as data, read-only tools)
+  loop while Claude asks for tools, within the turn and token limits
+    C-->>A: tool_use get_stats, get_logs(level, contains), get_metrics, get_recent_findings
+    A->>X: GET /stats, GET /logs?level
+    X-->>A: stats, entries
+    A->>C: the assistant turn unchanged, then every tool_result in one message (as data)
+  end
+  A->>C: the last turn: tool_choice none
+  C-->>A: analysis: what happened, evidence, likely cause, next step
+  A->>K: post analysis with the finding
+  Note over A,K: API failure, refusal or budget exhausted: the finding is posted with a note
+```
+
 ## 6.7 State machines
 
 ### Change request
@@ -908,13 +995,13 @@ flowchart TD
   D -- no --> E[wait for result] --> Z
   D -- yes --> F[drain queue into a batch]
   F --> G[read tip T]
-  G --> H[for each request: fast-forward or rebase onto running head]
-  H --> I{conflict?}
-  I -- yes --> J[mark CR conflict, fail that request] --> K
+  G --> H[for each request: fast-forward if the running head is on its first-parent chain, else replay that chain onto it]
+  H --> I{conflict or error?}
+  I -- yes --> J[conflict: mark CR conflict; either way fail that request alone] --> K
   I -- no --> K{more requests?}
   K -- yes --> H
-  K -- no --> L{CAS target T to head}
-  L -- ok --> M[index landings, mark landed, queue post-merge] --> N{queue empty?}
+  K -- no --> L{"CAS target T to head, with the landing's index rows, post-merge jobs and CR states, in one transaction"}
+  L -- ok --> M[finish requests, notify] --> N{queue empty?}
   N -- no --> F
   N -- yes --> Z
   L -- failed --> O{deadline passed?}
@@ -1086,3 +1173,85 @@ erDiagram
 `CONTENT_BLOBS.status` records how a blob was indexed: its trigrams (`i`), binary (`b`), or too large
 to index (`l`, always read by grep). `POSTMERGE.worker` holds the claim token of the worker running
 the job; a job `running` for longer than the lease returns to `queued` (T-PM-04).
+
+## 6.10 Metadata store on Spanner (keys and indexes)
+
+One database per deployment. Every table's key starts with the repository, so repositories share
+nothing but the database. Keys avoid write hotspots: changeset ids are hashes, a ref's log is keyed
+by the commit timestamps of its moves (which Spanner orders, because the moves of one ref conflict
+on its row), and the counters behind change-request, comment and job ids see only a few writes a
+second. Row contents are those of 6.9; times are seconds as there, except the commit timestamps.
+Three column names are GoogleSQL keywords and are quoted in SQL: `new`, `at` and `hash`.
+
+```mermaid
+erDiagram
+  CHANGESETS {
+    string repo PK
+    string id PK
+    bytes data
+    timestamp created "commit timestamp"
+  }
+  REFS {
+    string repo PK
+    string name PK
+    string target
+    int version
+  }
+  REF_LOG {
+    string repo PK
+    string name PK
+    timestamp moved PK "commit timestamp, newest first"
+    string old
+    string new
+    string who
+  }
+  DERIVED {
+    string repo PK
+    string type PK
+    string cs PK
+    string value
+  }
+  AUDIT {
+    string repo PK
+    int seq PK
+    string action
+    string hash
+  }
+  CRS {
+    string repo PK
+    int id PK
+    string state
+  }
+  LANDINGS {
+    string repo PK
+    string cs PK
+    string source
+    string head
+  }
+  POSTMERGE {
+    string repo PK
+    int id PK
+    string status
+    string worker
+  }
+  COUNTERS {
+    string repo PK
+    string name PK
+    int value
+  }
+  REFS ||--o{ REF_LOG : "one row per move"
+  REFS }o--|| CHANGESETS : targets
+  CHANGESETS ||--o{ DERIVED : "derived values"
+  CRS ||--o{ LANDINGS : landed
+  POSTMERGE }o--|| CHANGESETS : tests
+  COUNTERS ||--o{ CRS : "allocates ids"
+  COUNTERS ||--o{ POSTMERGE : "allocates ids"
+```
+
+Secondary indexes: `changesets(repo, created, id)` for the log scan; `audit(repo, action, seq)`;
+`crs(repo, state, id)`; `landings(repo, source)` and `landings(repo, head)`;
+`postmerge(repo, status, id)`, `postmerge(repo, cs, id)` and `postmerge(repo, ref, id)`;
+`git_map(repo, cs)`; `content_blobs(repo, status)`. The other tables of 6.9 (blob and content
+indexes, object ACLs and grants, key-value settings, review revisions, approvals and comments) keep
+their columns, with `repo` added in front of their keys; comments are keyed `(repo, cr, id)`. The
+DDL is `spanner.DDL`.

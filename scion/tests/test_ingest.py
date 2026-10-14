@@ -7,9 +7,11 @@ import tracemalloc
 import unittest
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
+from helpers import REPO, Cluster, repository
 from scion.ingest import GitIngester, IngestError
-from scion.repo import Repository
+from scion.objects import KIND_LINK
+from scion.search import INDEXED, grep
+
 
 GIT_ENV = {"GIT_AUTHOR_NAME": "Dev", "GIT_AUTHOR_EMAIL": "dev@example.com", "GIT_COMMITTER_NAME": "Dev",
            "GIT_COMMITTER_EMAIL": "dev@example.com", "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"}
@@ -59,7 +61,7 @@ class TestIngest(unittest.TestCase):
         put(self.g, "README.md/index.md", "now a directory\n")
         git(self.g, "add", "-A")
         git(self.g, "commit", "-qm", "file becomes directory")
-        self.repo = Repository(os.path.join(self.tmp, "scion"))
+        self.repo = repository(os.path.join(self.tmp, "scion"))
 
     def tearDown(self):
         self.repo.close()
@@ -67,6 +69,41 @@ class TestIngest(unittest.TestCase):
 
     def sha(self, rev):
         return git(self.g, "rev-parse", rev).strip()
+
+    def test_T_MG_07_an_import_computes_blame_and_indexes_its_final_revision(self):
+        """Decided 2026-10-14: an import computes blame for what it brings in and indexes its final
+        revision for grep, so the first query after it pays for neither; ``derive=False`` (``scion-admin
+        ingest --no-derive``) leaves both to the first query."""
+        lazy = repository(os.path.join(self.tmp, "lazy"))
+        try:
+            stats = GitIngester(lazy, self.g).ingest("main", "main", derive=False)
+            tip = lazy.get_ref("main")
+            self.assertNotIn("blame_derived", stats)
+            self.assertIsNone(lazy.meta.derived_get("blame", tip))
+            self.assertIsNone(lazy.meta.kv_get(INDEXED + lazy.root_tree(tip)))
+        finally:
+            lazy.close()
+        ing = GitIngester(self.repo, self.g)
+        stats = ing.ingest("main", "main")
+        tip = self.repo.get_ref("main")
+        changesets = [ing.changeset_for(s) for s in git(self.g, "rev-list", "main").split()]
+        self.assertEqual(stats["blame_derived"], len(changesets))
+        for cs in changesets:
+            self.assertIsNotNone(self.repo.meta.derived_get("blame", cs), cs)
+        blobs = {oid for _, kind, oid in self.repo.trees.walk(self.repo.root_tree(tip)) if kind != KIND_LINK}
+        self.assertEqual(stats["blobs_indexed"], len(blobs))
+        self.assertTrue(all(self.repo.meta.content_status(b) for b in blobs))
+        self.assertEqual(self.repo.meta.kv_get(INDEXED + self.repo.root_tree(tip)), "1")
+        for key in ("blame_seconds", "index_seconds", "derive_seconds"):
+            self.assertGreaterEqual(stats[key], 0)
+        derived = dict(self.repo.derived.stats)
+        r = grep(self.repo, tip, "return 10")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([m["path"] for m in r["matches"]], ["src/app.py"])
+        line = self.repo.blame(tip, "src/app.py")["lines"][1]
+        self.assertEqual((line["text"], line["cs"]), ("    return 10\n", ing.changeset_for(self.sha(":/main work"))))
+        self.assertEqual(dict(self.repo.derived.stats), derived)  # the queries derived nothing
+        self.assertEqual(GitIngester(self.repo, self.g).ingest("main", "main")["blame_derived"], 0)
 
     def test_T_MG_01_ingest_verify_incremental_and_map(self):
         ing = GitIngester(self.repo, self.g)
@@ -118,6 +155,37 @@ class TestIngest(unittest.TestCase):
         line = next(x for x in self.repo.blame("main", "src/app.py")["lines"] if x["text"].strip() == "return 20")
         self.assertEqual(ing.git_for(line["cs"]), merge)
 
+    def test_T_MG_06_names_messages_and_lines_as_git_has_them(self):
+        """Review findings I-01, I-02, I-03 and I-05: a name with a carriage return (macOS's
+        "Icon\\r") or a form feed survives storage and a later run; the commit's encoding header
+        decodes its message; each run reports its own counts; blame counts lines as git does."""
+        put(self.g, "assets/Icon\r", "icon\n")
+        put(self.g, "assets/form\x0cfeed.txt", "x\n")
+        with open(os.path.join(self.g, "src/cr.txt"), "wb") as f:
+            f.write(b"one\r\r\ntwo\rthree\n")  # two lines to git
+        git(self.g, "add", "-A")
+        git(self.g, "commit", "-qm", "names")
+        msg = os.path.join(self.tmp, "message")
+        with open(msg, "wb") as f:
+            f.write("Café: résumé\n".encode("latin-1"))
+        put(self.g, "src/x.py", "x = 1\n")
+        git(self.g, "add", "-A")
+        git(self.g, "-c", "i18n.commitEncoding=ISO-8859-1", "commit", "-q", "-F", msg)
+        ing = GitIngester(self.repo, self.g, cache_bytes=0)  # trees come back from storage while ingesting
+        self.assertEqual(ing.ingest("main~1", "main")["commits"], 7)
+        self.assertEqual((ing.ingest("main", "main")["commits"], ing.stats["skipped"]), (1, 7))  # this run's
+        self.assertTrue(ing.verify("main")["ok"])
+        tip = self.repo.get_ref("main")
+        self.assertEqual(self.repo.get_changeset(tip).message, "Café: résumé\n")
+        again = repository(os.path.join(self.tmp, "scion"))  # another process: nothing cached
+        try:
+            names = {p for p, _, _ in again.trees.walk(again.root_tree(tip))}
+            self.assertTrue({"assets/Icon\r", "assets/form\x0cfeed.txt"} <= names, names)
+            self.assertEqual(len(again.blame("main", "src/cr.txt")["lines"]), 2)
+        finally:
+            again.close()
+        self.assertEqual(git(self.g, "blame", "--first-parent", "-s", "main", "--", "src/cr.txt").count("\n"), 2)
+
     def test_T_MG_03_ordering_invariant(self):
         with self.assertRaises(IngestError) as e:
             GitIngester(self.repo, self.g).ingest("main~1..main", None)
@@ -167,7 +235,7 @@ class TestIngestMemory(unittest.TestCase):
         for n in (240, 1200):
             g = self.history(n)
             tmp = tempfile.mkdtemp(prefix="scion-mem-")
-            repo = Repository(tmp)
+            repo = repository(tmp)
             try:
                 tracemalloc.start()
                 stats = GitIngester(repo, g, cache_bytes=256 << 10).ingest("main", "main")

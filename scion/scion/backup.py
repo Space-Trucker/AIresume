@@ -1,22 +1,27 @@
 """Backup and restore of a deployment's authoritative stores (FR-AD-06, NFR-13; UC-30).
 
-What is authoritative: each repository's metadata store (``meta.db``: changesets, refs and the ref
-log, the derived-data index, change requests, landings, post-merge jobs, the audit log) and its blob
-storage (``objects/``), plus the identity document (``deployment.json``) and each repository's
-policy (``policy.json``). Caches and daemons hold nothing that can't be fetched again, so they are
-not backed up: losing any tier loses no data.
+What is authoritative: each repository's metadata (changesets, refs and the ref log, the
+derived-data index, change requests, landings, post-merge jobs, the audit log) and its blob storage
+(``objects/``), plus the identity document (``deployment.json``) and each repository's policy
+(``policy.json``). Caches and daemons hold nothing that can't be fetched again, so they are not
+backed up: losing any tier loses no data.
 
 The order makes a backup consistent while the servers keep running:
 
-1. each metadata store is copied first, with SQLite's online backup API: a snapshot of one moment;
+1. every repository's metadata is copied first, as of one moment (MetaStore.export): SQLite's online
+   backup API, or on Spanner a read of every table at one timestamp, the same timestamp for every
+   repository (FR-ST-04), all read before any blob is copied, so the timestamp stays within
+   Spanner's version retention (an hour by default) however long the copy takes. Either way the
+   copy is a SQLite file, ``meta.db``: one backup format for both backends;
 2. the blob storage is copied afterwards. Objects are immutable and stored before any metadata
    refers to them, so everything the snapshot refers to is already there; objects stored after the
    snapshot are extras that nothing references, which is harmless (UC-30, extension).
 
 A manifest records the refs at the snapshot, counts and checksums. Taking a backup and restoring
 one are audited (ADR-15). A restore checks the backup against its manifest, moves an existing
-deployment aside rather than deleting it, and checks that the restored refs match the manifest and
-that their trees are complete.
+deployment root aside rather than deleting it, loads the metadata into the restored deployment's
+backend (which may differ from the backup's; metadata already in a Spanner database is never
+overwritten), and checks that the restored refs match the manifest and that their trees are complete.
 """
 from __future__ import annotations
 
@@ -29,6 +34,7 @@ import time
 
 from .changeset import Changeset
 from .deployment import Deployment
+from .meta import open_metastore
 from .objects import KIND_DIR, ObjectError, decode_stored
 from .storage import FileObjectStore, key_oid
 
@@ -52,19 +58,6 @@ def _sha256(path: str) -> str | None:
 def _copy_file(src: str, dst: str) -> None:
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
-
-
-def _snapshot_meta(src: str, dst: str) -> None:
-    """A consistent copy of a live SQLite database, as a single self-contained file."""
-    os.makedirs(os.path.dirname(dst), exist_ok=True)
-    source = sqlite3.connect(src, timeout=60)
-    target = sqlite3.connect(dst)
-    try:
-        source.backup(target)
-        target.execute("PRAGMA journal_mode=DELETE")  # no -wal file beside the copy
-    finally:
-        target.close()
-        source.close()
 
 
 def _copy_objects(src: str, dst: str) -> tuple[int, int]:
@@ -105,18 +98,20 @@ def backup(root: str, out: str, actor: str | None = None) -> dict:
         names = dep.names()
         os.makedirs(out, exist_ok=True)
         manifest = {"format": FORMAT, "created": time.time(), "source": root, "repos": {},
-                    "deployment_json_sha256": None}
+                    "deployment_json_sha256": None, "metadata_backend": dep.metadata.get("backend", "sqlite")}
         ident = os.path.join(root, "deployment.json")
         if os.path.exists(ident):
             _copy_file(ident, os.path.join(out, "deployment.json"))
             manifest["deployment_json_sha256"] = _sha256(os.path.join(out, "deployment.json"))
-        for name in names:
+        at = None
+        for name in names:  # 1: every repository's metadata, as of one moment
             src, dst = dep.repo_dir(name), os.path.join(out, "repos", name)
             _copy_file(os.path.join(src, "policy.json"), os.path.join(dst, "policy.json"))
+            at = dep.repo(name).meta.export(os.path.join(dst, "meta.db"), at)
+        for name in names:  # 2: then the blobs
+            src, dst = dep.repo_dir(name), os.path.join(out, "repos", name)
             meta = os.path.join(dst, "meta.db")
-            if os.path.exists(os.path.join(src, "meta.db")):
-                _snapshot_meta(os.path.join(src, "meta.db"), meta)  # 1: metadata first
-            objects, size = _copy_objects(os.path.join(src, "objects"), os.path.join(dst, "objects"))  # 2: then blobs
+            objects, size = _copy_objects(os.path.join(src, "objects"), os.path.join(dst, "objects"))
             entry = {"policy_sha256": _sha256(os.path.join(dst, "policy.json")), "meta_sha256": _sha256(meta),
                      "objects": objects, "object_bytes": size}
             if os.path.exists(meta):
@@ -160,21 +155,50 @@ def check_backup(path: str) -> dict:
     return manifest
 
 
-def restore(path: str, root: str, force: bool = False, deep: bool = False, actor: str | None = None) -> dict:
+def restore(path: str, root: str, force: bool = False, deep: bool = False, actor: str | None = None,
+            metadata: dict | None = None) -> dict:
     """Restore the backup at ``path`` into ``root``. A non-empty ``root`` is moved aside with
-    ``force``, never deleted. Returns the verification report."""
+    ``force``, never deleted. ``metadata`` is the restored deployment's metadata backend (the
+    ``metadata`` section of deployment.json); by default the backup's own. Returns the verification
+    report."""
     path, root = os.path.abspath(path), os.path.abspath(root)
     manifest = check_backup(path)
-    moved = None
-    if os.path.exists(root) and os.listdir(root):
-        if not force:
-            raise BackupError(f"{root} is not empty; --force moves it aside")
-        moved = f"{root}.before-restore-{time.strftime('%Y%m%d-%H%M%S')}"
-        os.replace(root, moved)
+    identity = None
+    if os.path.exists(os.path.join(path, "deployment.json")):
+        with open(os.path.join(path, "deployment.json")) as f:
+            identity = json.load(f)
+    if metadata is not None:
+        identity = {**(identity or {}), "metadata": metadata}
+    config = (identity or {}).get("metadata") or {"backend": "sqlite"}
     staging = root + ".restoring"
-    if os.path.exists(staging):
-        shutil.rmtree(staging)
-    shutil.copytree(path, staging, ignore=shutil.ignore_patterns("manifest.json"))
+    stores = {}
+    try:
+        if config.get("backend") != "sqlite":  # a shared database: check it before anything changes
+            stores = {name: open_metastore(config, os.path.join(staging, "repos", name), name)
+                      for name in manifest["repos"]}
+            held = sorted(name for name, store in stores.items() if not store.is_empty())
+            if held:
+                raise BackupError(f"the metadata database already holds {', '.join(held)}; restore into a new one")
+        moved = None
+        if os.path.exists(root) and os.listdir(root):
+            if not force:
+                raise BackupError(f"{root} is not empty; --force moves it aside")
+            moved = f"{root}.before-restore-{time.strftime('%Y%m%d-%H%M%S')}"
+            os.replace(root, moved)
+        if os.path.exists(staging):
+            shutil.rmtree(staging)
+        shutil.copytree(path, staging, ignore=shutil.ignore_patterns("manifest.json", "meta.db"))
+        if metadata is not None:
+            with open(os.path.join(staging, "deployment.json"), "w") as f:
+                json.dump(identity, f, indent=2)
+        for name in manifest["repos"]:
+            store = stores.get(name) or stores.setdefault(
+                name, open_metastore(config, os.path.join(staging, "repos", name), name))
+            if os.path.exists(os.path.join(path, "repos", name, "meta.db")):
+                store.load(os.path.join(path, "repos", name, "meta.db"))
+    finally:
+        for store in stores.values():
+            store.close()
     os.replace(staging, root)
     report = verify(root, deep=deep, expect=manifest)
     report["moved_aside"] = moved
@@ -207,11 +231,13 @@ def verify(root: str, deep: bool = False, expect: dict | None = None) -> dict:
                             r["missing"].append(f"{ref}:{p}")
                 except (KeyError, ValueError, ObjectError, OSError) as e:  # a tree itself is missing or corrupt
                     r["missing"].append(f"{ref}: incomplete tree ({type(e).__name__}: {e})")
-            for (data,) in repo.meta.execute("SELECT data FROM changesets"):
-                r["changesets"] += 1
-                for c in Changeset.decode(data).changes:
-                    if c.blob and not repo.objects.has(c.blob):
-                        r["missing"].append(c.blob)
+            after = None
+            while batch := repo.meta.tail(after, 1000, data=True):
+                for after, _, data in batch:
+                    r["changesets"] += 1
+                    for c in Changeset.decode(data).changes:
+                        if c.blob and not repo.objects.has(c.blob):
+                            r["missing"].append(c.blob)
             if deep:
                 store = FileObjectStore(os.path.join(dep.repo_dir(name), "objects"))
                 for key in store.iter_ids():

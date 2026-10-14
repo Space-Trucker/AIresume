@@ -33,12 +33,14 @@ Primary actors start use cases. Supporting actors are systems the use cases depe
 | ACT-10 | Migration engineer | primary, human | ingest and sync git history, verify it | `scion-admin ingest` |
 | ACT-11 | Post-merge test runner | primary, system | test landed changes and revert failures | Antique post-merge API |
 | ACT-12 | Bisect / revert pipeline | primary, system | find and undo culprits automatically | RPC API |
-| ACT-13 | Superfan monitor | primary, system | watch one component and raise findings | `/stats`, webhook |
-| ACT-14 | Metadata store (Spanner; SQLite stand-in) | supporting | durable changeset log, refs, derived values | `MetaStore` |
+| ACT-13 | Superfan monitor | primary, system | watch one component and raise findings | `/stats`, `/logs`, webhook |
+| ACT-19 | Superfan agent (Claude) | primary, system | investigate each finding and explain it in chat | read-only tools over `/stats` and `/logs`; the Claude Messages API; webhook |
+| ACT-14 | Metadata store (Cloud Spanner; SQLite on one host) | supporting | durable changeset log, refs, derived values, reviews, queues, audit | `MetaStore` (Spanner REST API) |
 | ACT-15 | Blob storage | supporting | durable compressed objects | `ObjectStore` |
 | ACT-16 | git repository | supporting | migration source | `git` CLI |
 | ACT-17 | Chat / alerting system | supporting | receive findings | webhook |
 | ACT-18 | Identity provider | supporting | authenticate principals | tokens (prototype) |
+| ACT-20 | Claude API | supporting | run the superfan agent's model | HTTPS Messages API |
 
 ## 2.3 Actor generalization
 

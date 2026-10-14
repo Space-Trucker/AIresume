@@ -1,13 +1,21 @@
 """Code search (FR-SR-*): path search over the derived search tree (FR-SR-01, FR-DD-12) and content
 search on the server, with no checkout (FR-SR-02), backed by the trigram content index (FR-SR-03,
 ADR-16). Every result is filtered by the caller's permissions (FR-SR-04).
+
+The content index covers the revisions that are searched, and each import's final revision: before
+a revision is searched, the text blobs of its tree the index lacks are indexed, starting from the
+last revision indexed in full. Indexing every version of every file instead would grow with the
+whole history: about 1.2 billion postings for CPython's.
 """
 from __future__ import annotations
 
 import re
 
-from .derived_types import bloom_may_contain, name_trigrams, text_trigrams
-from .objects import KIND_DIR, KIND_LINK, is_binary, join, normalize_path
+from .derived_types import CONTENT_MAX_BYTES, bloom_may_contain, name_trigrams, text_trigrams
+from .objects import KIND_DIR, KIND_LINK, is_binary, join, normalize_path, split_lines
+
+INDEXED = "content-indexed:"  # settings key per root tree: each of its blobs is in the content index
+LAST_INDEXED = "content-indexed:last"  # the root tree indexed in full most recently
 
 try:  # the regular-expression parser: re._parser from Python 3.11, sre_parse before
     from re import _parser as sre_parse
@@ -111,7 +119,7 @@ def grep(repo, rev: str, pattern: str, path: str = "", limit: int = 200, regex: 
         scanned += 1
         if is_binary(data):
             continue
-        for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
+        for i, line in enumerate(split_lines(data.decode("utf-8", "replace"), keepends=False), 1):  # git's lines
             if rx.search(line):
                 if len(matches) >= limit:
                     truncated = True
@@ -122,8 +130,42 @@ def grep(repo, rev: str, pattern: str, path: str = "", limit: int = 200, regex: 
     return {"matches": matches, "files_scanned": scanned, "indexed": bool(grams), "truncated": truncated}
 
 
+def index_blob(repo, blob: str) -> None:
+    """Record a blob in the content index: its trigrams, or that it is binary, or too large (over
+    1 MiB: always read)."""
+    data = repo.read_blob(blob)
+    if is_binary(data):
+        repo.meta.content_add(blob, "b", ())
+    elif len(data) > CONTENT_MAX_BYTES:
+        repo.meta.content_add(blob, "l", ())
+    else:
+        repo.meta.content_add(blob, "i", text_trigrams(data.decode("utf-8", "replace")))
+
+
+def ensure_indexed(repo, cs: str) -> int:
+    """Index every blob of revision ``cs`` that the content index lacks; how many were added. Only
+    what differs from the last revision indexed in full is examined, so following a branch costs
+    about its changes."""
+    root = repo.root_tree(cs)
+    if repo.meta.kv_get(INDEXED + root):
+        return 0
+    base = repo.meta.kv_get(LAST_INDEXED)
+    if base and repo.meta.kv_get(INDEXED + base):
+        files = ((y[0], y[1]) for _, _, y in repo.trees.diff(base, root) if y is not None)
+    else:
+        files = ((kind, oid) for _, kind, oid in repo.trees.walk(root))
+    added = 0
+    for kind, blob in files:
+        if kind != KIND_LINK and repo.meta.content_status(blob) is None:
+            index_blob(repo, blob)
+            added += 1
+    repo.meta.kv_set(INDEXED + root, "1")
+    repo.meta.kv_set(LAST_INDEXED, root)
+    return added
+
+
 def _indexed_locations(repo, cs: str, root: str, grams: set[str], prefix: str) -> list[tuple]:
-    repo.derived.get("content", cs)  # every blob written up to cs is indexed
+    ensure_indexed(repo, cs)  # every blob of the revision is in the index
     counts = sorted((repo.meta.content_count(g), g) for g in grams)
     usable = [g for n, g in counts if n <= MAX_POSTINGS] or [counts[0][1]]
     candidates: set[str] | None = None

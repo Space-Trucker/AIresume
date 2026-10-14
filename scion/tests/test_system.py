@@ -8,10 +8,9 @@ import tempfile
 import unittest
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
+from helpers import REPO, Cluster, repository
 from scion.client import WorkingCopy
 from scion.deployment import Deployment
-from scion.repo import Repository
 from scion.rpc import RpcServer
 from scion.server import ScionService
 from scion.tiers import DaemonService, make_cache_service
@@ -174,7 +173,7 @@ class TestNothingMaterializesEverything(unittest.TestCase):
     def reads_for_queries(self, n):
         """Storage reads to answer path queries on a repository of ``n`` files, with cold caches."""
         root = os.path.join(self.tmp, f"r{n}")
-        r = Repository(root)
+        r = repository(root)
         head = r.create_changeset([], [{"path": f"d{i % 50:02d}/s{i % 9}/f{i}.txt", "content": f"{i}\n".encode()}
                                        for i in range(n)], "a", "import")
         for k in range(5):  # history for the file the queries are about
@@ -182,7 +181,7 @@ class TestNothingMaterializesEverything(unittest.TestCase):
                                       "a", f"edit {k}")
         r.blame(head, "d07/s3/hot.txt")  # derive once; the measurement is of answering, not deriving
         r.close()
-        r = Repository(root)  # cold: nothing decoded in memory
+        r = repository(root)  # cold: nothing decoded in memory
         try:
             reads = count_reads(r.objects)
             r.read_file(head, "d07/s3/hot.txt")
