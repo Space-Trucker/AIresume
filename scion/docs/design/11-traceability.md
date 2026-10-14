@@ -134,7 +134,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-MG-01 | UC-23 | F-33 | GitIngester.ingest (graph and first parents preserved; messages in the commit's encoding; blame and the final revision's grep index computed with the import) | T-MG-01, T-MG-02, T-MG-06, T-MG-07 | I |  |
 | FR-MG-02 | UC-23 | F-33 | GitIngester.check_boundary (refuses before writing) | T-MG-03 | I |  |
 | FR-MG-03 | UC-23 | F-33 | git_map skip of ingested commits | T-MG-01 | I |  |
-| FR-MG-04 | UC-23 | F-33 | one `cat-file --batch` stream; tree diffs skip identical subtrees; byte-bounded caches | T-MG-04 | I |  |
+| FR-MG-04 | UC-23 | F-33 | one `cat-file --batch` stream; tree diffs skip identical subtrees; byte-bounded caches; blame derived commit by commit | T-MG-04, T-PILOT-01 | I |  |
 | FR-MG-05 | UC-23 | F-33 | GitIngester.verify (trees read back from storage); `scion-admin ingest --verify` | T-MG-01, T-ADM-02, T-MG-06 | I |  |
 | FR-MG-06 | UC-23 | F-34 | server API over ingested history; `git_lookup` RPC | T-MG-05, T-E2E-01 | I |  |
 | FR-MG-07 | UC-23 | F-33 | git_map in both directions; changeset extra["git"] | T-MG-01 | I |  |
@@ -146,7 +146,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-OP-08 | UC-26 | F-41 | rpc.LogRing per component, GET /logs (ADR-18); findings attach the lines of the last two intervals | T-OPS-04 | I |  |
 | FR-OP-09 | UC-31 | F-47 | superfan_agent.Investigator: Messages API over HTTPS, read-only tools (stats, logs, baselines, findings) | T-OPS-06 | I | tested against a fake Messages API; real use needs an API key |
 | FR-OP-10 | UC-31 | F-47 | Investigator limits (turns, tokens, concurrency), dedup by finding key, redaction, escaped posts, fallback post | T-OPS-07 | I |  |
-| FR-OP-11 | UC-33 | F-48 | tools.bench --vs-git: git upload-pack and the Scion tiers measured on one host (ADR-26) | T-PERF-02 | B6 |  |
+| FR-OP-11 | UC-33 | F-48 | tools.bench --vs-git: git upload-pack and the Scion tiers measured on one host (ADR-26); run on CPython at 103,812 commits | T-PERF-02 | I |  |
 | FR-OP-06 | UC-25 | F-42 | RateLimiter; 429 with Retry-After; RpcClient backs off | T-OPS-01 | I |  |
 | FR-OP-07 | UC-25 | F-43 | tools.bench; `scion-admin bench` | T-PERF-01 | I |  |
 | FR-AD-01 | UC-23 | F-43 | `scion-admin init`, `create-repo` | T-ADM-02, T-E2E-01 | I |  |
@@ -162,10 +162,10 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 |---|---|---|
 | NFR-01 | I | T-SIM-01: 32 agents × 5 rounds on 2 servers landed 160 changes at 21.7 landings/s, 6 times the design rate of 3.5/s, with 32 ref moves; the B5 stress run of 64 × 10 sustained 20.9 landings/s over 640 landings (61 ref moves, largest batch 27). No starvation: median time to land 0.33 s at 32 × 5 and 0.89 s at 64 × 10, longest 23 s with 64 landers in one process, inside the asserted 60 s (the landing deadline is 300 s). The rate includes each agent's clone, commit, review and update, so it understates landing capacity |
 | NFR-02 | I | T-SYS-01: a node serving 100 jobs, 200 checkouts in all, hits 99.5%; a cache behind 100 nodes hits 99.0% over its whole life, cold start included. T-TIER-01, T-PERF-01 and T-E2E-01: a second clone on a node sends the cache nothing but requests for restricted objects, which are never cached (ADR-06) |
-| NFR-03 | I | T-SYS-03: read, list, history, blame and diff of one path read the same 27 objects at 500 and at 10,000 files; a sparse checkout of 1 of 40 projects fetches 103 of 4,081 objects. T-CORE-08: commits rewrite only the changed path; T-MG-04: ingestion memory stays flat; T-CL-07: virtual checkouts fetch on read. The 100 GB and 25 GB sizes were not run on one host; no measured cost grows with the repository's total size |
+| NFR-03 | I | T-SYS-03: read, list, history, blame and diff of one path read the same 27 objects at 500 and at 10,000 files; a sparse checkout of 1 of 40 projects fetches 103 of 4,081 objects. T-CORE-08: commits rewrite only the changed path; T-MG-04: ingestion memory stays flat; T-CL-07: virtual checkouts fetch on read. The 100 GB and 25 GB sizes were not run on one host; no measured cost grows with the repository's total size. T-PILOT-01 (CPython, B6): from 9,798 to 103,812 commits (×10.6; 18 GB stored), log, ancestry, git lookups, file reads and file history stayed at 0.6–2.8 ms and blame at 15–22 ms through a server with no client; ingestion memory 131–152 MB, the server's 33–69 MB. Grep grew from 67 to 264 ms with the postings of the revisions indexed (ADR-16) |
 | NFR-04 | I | T-PERF-01 asserts a sparse checkout from a warm daemon in under 10 s; the full benchmark checks out a 250-file project of a 5,000-file repository in 0.14–0.22 s |
 | NFR-05 | I | T-CORE-10: a one-file commit writes the same 3 trees and 10 objects at 10² and 10⁴ files and, with objects in memory, takes the same time within ±25% (asserted); T-PERF-01: the final benchmark measured ×1.12 in memory and ×1.24 on disk from 10² to 10⁴ files (×1.52 before ADR-21; on this shared machine's disk, runs vary from ×1.1 to ×1.6) |
-| NFR-06 | I | T-DD-06: ancestry over 100 changesets in < 20 steps; T-PERF-01: on a 10,000-commit line, is_ancestor takes 9 steps, fp_ancestor 8 hops and merge_base 19 steps, against 10,000 for a naive walk; history is one lookup per result |
+| NFR-06 | I | T-DD-06: ancestry over 100 changesets in < 20 steps; T-PERF-01: on a 10,000-commit line, is_ancestor takes 9 steps, fp_ancestor 8 hops and merge_base 19 steps, against 10,000 for a naive walk; history is one lookup per result. T-PILOT-01: is_ancestor(first commit, tip) over CPython's history in 6–10 steps from 9,798 to 103,812 commits, merges included (62 before the main-line descent of ADR-12) |
 | NFR-07 | I | T-TIER-06: two servers serve one deployment root; caches and daemons hold only caches, so adding or restarting one needs no data migration |
 | NFR-08 | I | T-TIER-03 strict tiering; T-TIER-07 single flight; T-OPS-01 rate limits |
 | NFR-09 | I | T-TIER-06: with one of two servers and one of two caches down, a clone succeeds with no client change |
@@ -176,7 +176,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | NFR-14 | I | no maintenance commands exist; T-DD-02: a new derived type in one class |
 | NFR-15 | I | T-FUZZ-01 checks random histories against a naive model (8 seeds in the suite, 40 in the B5 run); T-SIM-01 runs the agent swarm (32 × 5; 64 × 10 in the B5 run); every integration suite runs servers, caches and daemons over real sockets in the hermetic Cluster; T-E2E-01 runs every component in its own process |
 | NFR-16 | I | T-OPS-05: health, stats, latency percentiles, error counts and hit rates on every tier |
-| NFR-17 | I | T-SYS-01: every store stays within its configured size (a cache at 8 MB, daemons at 4 MB; a 20 KB daemon evicts); T-E2E-01: server, cache and daemon each 26–28 MB resident after the whole demo; servers hold no copies of their own (T-SYS-02) |
+| NFR-17 | I | T-SYS-01: every store stays within its configured size (a cache at 8 MB, daemons at 4 MB; a 20 KB daemon evicts); T-E2E-01: server, cache and daemon each 26–28 MB resident after the whole demo; servers hold no copies of their own (T-SYS-02). T-PERF-02 on CPython (103,812 commits, 4,111 files): git's upload-pack spends 1.6 s of CPU on a full clone and 4.6 s on a shallow one, at 270 MB each; Scion's server and cache spend 1.6 s on a node's first checkout and 0.01 s on the next, at 90 and 95 MB shared by every checkout; the cache holds 23.5 MB against git's 270 MB pack |
 | NFR-18 | I | T-ERR-01: errors carry a stable code, an HTTP status and structured data (409 conflicts list path and reason); the CLI prints them |
 | NFR-19 | I | T-STD-01: no third-party imports (the openssl tool is used only to make development certificates) |
 | NFR-20 | I | T-TLS-01: TLS on every TCP hop; mutual TLS between tiers; plaintext and wrong certificates refused |

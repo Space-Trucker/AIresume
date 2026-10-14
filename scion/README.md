@@ -176,7 +176,8 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 
 Measured on the rebuild at B5 (`scion-admin bench`, the tests named, and `examples/demo.sh`). Servers,
 caches and daemons run in one process for the benchmarks, so absolute times include their contention;
-the end-to-end demo runs each in its own process.
+the end-to-end demo runs each in its own process. B6 then measured a real history, CPython's, and
+compared Scion with git serving it (below).
 
 | Benchmark | Result |
 |---|---|
@@ -188,6 +189,79 @@ the end-to-end demo runs each in its own process.
 | Checkout of 5,000 files through daemon → cache → server | cold 7.5 s; a second clone on the node 4.7 s with 0 cache requests; a sparse checkout of one 250-file project 0.22 s |
 | Path queries at 500 and at 10,000 files | the same 27 object reads for read, list, history, blame and diff of one path (T-SYS-03) |
 | Footprint | server, cache and daemon each 26–28 MB resident after the end-to-end demo |
+
+### The CPython pilot (B6, M4; `examples/pilot.sh`, T-PILOT-01)
+
+CPython's history was ingested in order, with checkpoints evenly spaced along its main line. At every
+checkpoint each file was compared with git's, and a `scion-server` process served the history to a
+client with no checkout. The run stopped at 103,812 of CPython's 133,611 commits (78%), when the next
+checkpoint would have passed its 20 GB disk budget. Blame and the grep index of each checkpoint's
+revision were computed during the import (12 §12.9 decisions 8–9) and are timed apart from ingestion.
+
+| Checkpoint | Commits | Ingested per second | Blame, during import | Grep index, during import | Objects | Metadata | Peak memory: ingestion / server |
+|---|---|---|---|---|---|---|---|
+| 1 | 9,798 | 120 | 61 s | 109 s, 2,037 files | 0.60 GB | 0.28 GB | 131 / 33 MB |
+| 2 | 19,597 | 91 | 62 s | 162 s, 2,237 files | 1.35 GB | 0.59 GB | 131 / 36 MB |
+| 3 | 29,395 | 76 | 101 s | 207 s, 2,333 files | 2.31 GB | 0.94 GB | 133 / 39 MB |
+| 4 | 39,194 | 52 | 193 s | 278 s, 3,071 files | 3.74 GB | 1.41 GB | 152 / 42 MB |
+| 5 | 54,438 | 50 | 299 s | 309 s, 2,938 files | 6.14 GB | 1.91 GB | 152 / 63 MB |
+| 6 | 89,740 | 50 | 686 s | 328 s, 2,805 files | 12.09 GB | 2.55 GB | 152 / 63 MB |
+| 7 | 103,812 | 41 | 312 s | 348 s, 2,819 files | 15.10 GB | 3.07 GB | 152 / 69 MB |
+
+Every checkpoint matched git file for file (4,111 files at the last). Queries through the server, as
+CI makes them with no checkout, at the first and the last checkpoint (median of repeated calls):
+
+| Query | 9,798 commits | 103,812 commits |
+|---|---|---|
+| log, 50 entries | 1.3 ms | 1.5 ms |
+| `is_ancestor(first commit, tip)` | 0.6 ms, 6 steps | 0.8 ms, 10 steps |
+| main-line ancestor halfway back | 0.6 ms | 1.1 ms |
+| git sha → changeset | 0.6 ms | 0.6 ms |
+| read `Python/ceval.c` | 2.1 ms | 2.8 ms |
+| history of `Python/ceval.c` | 1.1 ms | 1.0 ms |
+| blame of `Python/ceval.c` | 15 ms | 22 ms |
+| grep for a literal | 67 ms, 240 files read for 245 matches | 264 ms, 15 files read for 17 matches |
+
+What the pilot found:
+* **Blame on demand was too slow for a migration.** Before the import computed it, the first blame of
+  `Python/ceval.c` took 53 s at the first checkpoint and 247 s at the fifth; now 17–40 ms on the first
+  call and 15–22 ms after (decision 8).
+  Its line diffs had been quadratic (ADR-27), and ancestry cost a step per merge (ADR-12): both fixed.
+* **Grep's cost grows with the index, not the tree.** The index holds the files of every revision
+  searched (about 18,000 file versions after 7 checkpoints), and a query fetches the postings of all
+  its trigrams: about 130 ms of the 264. Reading and matching the 15 candidate files takes about 90 ms.
+* **Indexing slows as SQLite's index grows**, from 53 to 123 ms per file: postings are keyed by trigram,
+  so each file's land all over the B-tree.
+* **Memory stays flat:** ingestion at 131–152 MB and the server at 33–69 MB as the history grew ×10.6.
+* **Storage:** about 150 KB of objects per commit (the file versions, their trees, the history and
+  search trees, and blame runs), plus 30 KB of metadata.
+* **A reconnect cost 100 ms.** The first query after each checkpoint took 106 ms: the server closes
+  connections idle for 5 minutes, and the client waited before reconnecting as if the server were down.
+  It now reconnects at once (T-OPS-01).
+
+### Against git on CPython (B6; `scion-admin bench --vs-git`, T-PERF-02)
+
+The same history, CPython at the pilot's seventh checkpoint (103,812 commits, 4,111 files), served on
+this host both ways (ADR-26): by git's `upload-pack` from a repository repacked with bitmaps, as a git
+server keeps it, and by Scion's server, cache and daemon from the pilot's deployment. Server CPU counts
+upload-pack and the processes it starts, against Scion's server and cache. Both of Scion's working copies
+were identical to the committed bytes; git's own checkout converted 135 files (`.gitattributes`).
+
+| | git | Scion |
+|---|---|---|
+| Checkout, wall time | full clone 36.2 s (second 39.2 s); shallow clone 4.0 s | cold node 5.2 s; warm node 4.2 s, with 0 cache requests |
+| Server CPU per checkout | full clone 1.6 s; shallow clone 4.6 s | cold node 1.6 s (server 1.35, cache 0.28); warm node 0.01 s |
+| Peak memory | 270 MB for each upload-pack, so for each clone at once | server 90 MB, cache 95 MB, daemon 154 MB, shared by every checkout |
+| What the serving tier holds | the whole history, 270 MB packed | the checkout's 4,329 objects, 23.5 MB in the cache |
+
+So, on one repository and one host: a full clone costs git's server as much CPU as Scion's first checkout
+on a node (git sends the pack it keeps, which bitmaps make cheap), and a shallow clone 2.8 times as much
+(git computes a new pack). Later checkouts on a node cost Scion's servers almost nothing (0.01 s),
+while every git clone costs a server again. Scion's checkout is 7 to 8.6 times faster than a full clone
+and a little slower than a shallow one (4.2–5.2 s against 4.0 s): its time goes to writing the files,
+not to the history. The article's ratios (servers "200x smaller",
+checkouts "two orders of magnitude faster") are for Anthropic's monorepo and fleet; here the history is
+a 270 MB pack, and a full clone's cost grows with the history while Scion's grows with the checkout.
 
 ## Deliberate simplifications
 
