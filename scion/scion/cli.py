@@ -700,6 +700,8 @@ def admin_main(argv=None) -> int:
     s.add_argument("--rev", default="HEAD", help="a revision or range, e.g. main or v1..main")
     s.add_argument("--ref", default="main", help="the ref to point at the ingested tip ('' for none)")
     s.add_argument("--verify", action="store_true", help="then compare every file with git")
+    s.add_argument("--no-derive", action="store_true",
+                   help="leave blame and the grep index to be computed on first use")
     s.add_argument("-v", "--verbose", action="store_true")
     s = sub.add_parser("gen-certs", help="development CA and certificates (needs the openssl tool)")
     s.add_argument("dir")
@@ -783,7 +785,7 @@ def admin_main(argv=None) -> int:
             from .ingest import GitIngester
             repo = dep.repo(a.repo)
             ing = GitIngester(repo, a.git, verbose=a.verbose)
-            stats = ing.ingest(a.rev, a.ref or None)
+            stats = ing.ingest(a.rev, a.ref or None, derive=not a.no_derive)
             repo.audit.append("ingest", f"scion-admin:{getpass.getuser()}", a.git, {k: stats[k] for k in ("commits", "tip")})
             _print_json(stats)
             if a.verify:

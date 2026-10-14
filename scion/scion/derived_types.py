@@ -19,7 +19,7 @@ import json
 from . import linediff
 from .changeset import OP_ADD, OP_DELETE, Changeset
 from .derived import DerivedType
-from .objects import KIND_DIR, KIND_LINK, encode_htree, is_binary, split_lines
+from .objects import KIND_DIR, encode_htree, is_binary, split_lines
 from .trees import TreeCodec, apply_augmented
 
 
@@ -271,31 +271,6 @@ def text_trigrams(text: str) -> set[str]:
     return {s[i:i + 3] for i in range(len(s) - 2)}
 
 
-class ContentIndexType(DerivedType):
-    """``{"indexed": n}``: the trigrams of every text blob the changeset adds or modifies are recorded
-    once (ADR-16), so content search reads only blobs that can match (FR-SR-03). Binary blobs are not
-    indexed; text blobs over 1 MiB are marked and always read. Deferred: built on the first search at
-    a revision, or by a backfill."""
-
-    name, eager, depends_on = "content", False, ("copies",)  # copies fills the blob → path index
-
-    def derive(self, repo, cs_id, cs, parent_values):
-        n = 0
-        for c in cs.changes:
-            if c.op == OP_DELETE or c.kind == KIND_LINK or repo.meta.content_status(c.blob) is not None:
-                continue
-            data = repo.read_blob(c.blob)
-            if is_binary(data):
-                repo.meta.content_add(c.blob, "b", ())
-            elif len(data) > CONTENT_MAX_BYTES:
-                repo.meta.content_add(c.blob, "l", ())
-            else:
-                repo.meta.content_add(c.blob, "i", text_trigrams(data.decode("utf-8", "replace")))
-            n += 1
-        return json.dumps({"indexed": n})
-
-
 def register_default_types(manager) -> None:
-    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType(),
-              ContentIndexType()):
+    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType()):
         manager.register(t)

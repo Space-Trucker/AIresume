@@ -3,7 +3,9 @@ verified file by file at checkpoints, and served with no client while it grows.
 
 The checkpoints are evenly spaced commits of the main line. At each one the pilot records:
 
-* ingestion: the commits ingested since the last checkpoint, and their rate (FR-MG-01/04);
+* ingestion: the commits ingested since the last checkpoint, and their rate (FR-MG-01/04); then,
+  timed apart, blame for them and the grep index of the checkpoint's revision, which an import
+  computes so that no query pays for them;
 * verification: every file of the checkpoint compared with git, kind and bytes (FR-MG-05);
 * storage: the objects (count and bytes on disk) and the metadata store;
 * serving with no client, from a scion-server process (M4's metadata-only service for CI): the
@@ -34,6 +36,7 @@ from .bench import _free_port, _proc
 
 REPO = "pilot"
 PROBES = ("Python/ceval.c", "Objects/object.c", "Lib/os.py", "Modules/posixmodule.c", "README")
+GREP = "Stichting Mathematisch Centrum"  # CWI's copyright: in a few files of every era
 
 
 def _git(git_dir: str, *args) -> str:
@@ -66,9 +69,10 @@ def _timed(fn, runs: int = 3) -> dict:
 
 def run(git_dir: str, root: str, rev: str = "main", checkpoints: int = 10, disk_budget_gb: float = 12.0,
         mainline: int | None = None, out=None) -> dict:
-    """Ingest ``rev``'s history into a deployment at ``root`` (resuming what is already there),
-    measuring at each checkpoint; ``mainline`` keeps only that many main-line commits. Returns the
-    summary and writes one JSON line per checkpoint."""
+    """Ingest ``rev``'s history into a deployment at ``root``, measuring at each checkpoint;
+    ``mainline`` keeps only that many main-line commits. Returns the summary and writes one JSON line
+    per checkpoint. Each checkpoint's record is kept in ``root``, so a run that stops (a restarted
+    machine) resumes at the next checkpoint; its records say ``resumed``."""
     out = out or sys.stdout
     root = os.path.abspath(root)
     line = _git(git_dir, "rev-list", "--first-parent", "--reverse", rev).split()[:mainline or None]
@@ -95,13 +99,22 @@ def run(git_dir: str, root: str, rev: str = "main", checkpoints: int = 10, disk_
             if time.time() > deadline or server.poll() is not None:
                 raise RuntimeError("scion-server did not start; see server.log") from None
             time.sleep(0.1)
+    record = os.path.join(root, "checkpoints.jsonl")
     results, stopped = [], None
+    if os.path.exists(record):
+        with open(record) as f:
+            results = [json.loads(x) for x in f if x.strip()]
+    done, resumed = {r["checkpoint"] for r in results}, bool(results)
+    if any(not r["verified"] for r in results):
+        marks = []  # a checkpoint failed verification: nothing further is measured
+        stopped = "verification failed"
     first_cs = None
     try:
         for i, sha in enumerate(marks, 1):
-            t0 = time.perf_counter()
+            if i in done:
+                continue
             stats = ing.ingest(sha, "main")
-            seconds = time.perf_counter() - t0
+            seconds = stats["seconds"]  # ingestion alone: deriving is reported apart
             first_cs = first_cs or ing.changeset_for(line[0])
             verified = ing.verify(sha)
             tip = ing.changeset_for(sha)
@@ -115,7 +128,10 @@ def run(git_dir: str, root: str, rev: str = "main", checkpoints: int = 10, disk_
             q = {"log_50": _timed(lambda: len(call("log", rev=tip, limit=50))),
                  "is_ancestor_first_tip": _timed(lambda: call("is_ancestor", a=first_cs, b=tip)),
                  "fp_ancestor_half": _timed(lambda: call("fp_ancestor", rev=tip, n=n // 2)),
-                 "git_lookup": _timed(lambda: call("git_lookup", git=sha)["cs"] == tip)}
+                 "git_lookup": _timed(lambda: call("git_lookup", git=sha)["cs"] == tip),
+                 "grep_indexed": _timed(lambda: len(call("grep", rev=tip, pattern=GREP, regex=False,
+                                                         limit=1000)["matches"]))}
+            grep = call("grep", rev=tip, pattern=GREP, regex=False, limit=1000)
             for path in PROBES:
                 if repo.lookup(tip, path) is None:
                     continue
@@ -129,13 +145,22 @@ def run(git_dir: str, root: str, rev: str = "main", checkpoints: int = 10, disk_
             r = {"checkpoint": i, "mainline_commits": n, "commits": repo.meta.count_changesets(),
                  "ingested": stats["commits"], "ingest_s": round(seconds, 1),
                  "commits_per_s": round(stats["commits"] / seconds, 1) if seconds else None,
+                 "blame_s": stats.get("blame_seconds"), "blame_derived": stats.get("blame_derived"),
+                 "index_s": stats.get("index_seconds"), "blobs_indexed": stats.get("blobs_indexed"),
+                 "grep": {"matches": len(grep["matches"]), "files_read": grep["files_scanned"], "indexed": grep["indexed"]},
                  "verified": verified["ok"], "files": verified["files"], "mismatches": verified["mismatches"],
                  "objects": objects, "objects_mb": round(object_bytes / 2 ** 20, 1), "meta_mb": round(meta_bytes / 2 ** 20, 1),
                  "is_ancestor_steps": repo.stats["ancestry.visits"] + repo.stats["ancestry.hops"] - steps,
                  "ingest_peak_rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1),
                  "server_peak_rss_mb": round(peak, 1), "server_cpu_s": round(cpu, 1),
                  "queries": {k: {"first_ms": v["first_ms"], "ms": v["ms"]} for k, v in q.items()}}
+            if resumed:
+                r["resumed"], resumed = True, False  # the server (and its peak memory) started again
             results.append(r)
+            with open(record, "a") as f:
+                f.write(json.dumps(r) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
             print(json.dumps(r), file=out, flush=True)
             if not verified["ok"]:
                 stopped = "verification failed"

@@ -129,9 +129,9 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-AUT-02 | UC-21 | F-38 | tools.revert (revert, then land_changeset); `scn revert` | T-AUT-02 | I |  |
 | FR-SR-01 | UC-12 | F-39 | search.search_paths over the bloom-filtered search tree | T-SR-01 | I |  |
 | FR-SR-02 | UC-12 | F-39 | search.grep on the server; `grep` RPC; `scn grep` | T-SR-01 | I |  |
-| FR-SR-03 | UC-12 | F-45 | ContentIndexType (deferred trigram postings, case folded per character) + blob_index (ADR-16) | T-SR-02 | I |  |
+| FR-SR-03 | UC-12 | F-45 | search.ensure_indexed (trigram postings, case folded per character, for the revisions searched and each import's final one) + blob_index (ADR-16) | T-SR-02, T-SR-03, T-MG-07 | I |  |
 | FR-SR-04 | UC-12 | F-39 | per-path filtering of every search result | T-SR-01, T-IAM-03 | I |  |
-| FR-MG-01 | UC-23 | F-33 | GitIngester.ingest (graph and first parents preserved; messages in the commit's encoding) | T-MG-01, T-MG-02, T-MG-06 | I |  |
+| FR-MG-01 | UC-23 | F-33 | GitIngester.ingest (graph and first parents preserved; messages in the commit's encoding; blame and the final revision's grep index computed with the import) | T-MG-01, T-MG-02, T-MG-06, T-MG-07 | I |  |
 | FR-MG-02 | UC-23 | F-33 | GitIngester.check_boundary (refuses before writing) | T-MG-03 | I |  |
 | FR-MG-03 | UC-23 | F-33 | git_map skip of ingested commits | T-MG-01 | I |  |
 | FR-MG-04 | UC-23 | F-33 | one `cat-file --batch` stream; tree diffs skip identical subtrees; byte-bounded caches | T-MG-04 | I |  |

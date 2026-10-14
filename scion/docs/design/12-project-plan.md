@@ -42,7 +42,7 @@ A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 | WP-B6.2 | B6 | superfan agents: Claude investigates each finding with read-only tools and posts its analysis | FR-OP-09/10 | T-OPS-06/07 |
 | WP-B6.3 | B6 | comparison with git: server CPU, peak memory and checkout time against upload-pack | FR-OP-11, NFR-17 | T-PERF-02 |
 | WP-B6.4 | B6 | adversarial review of B3–B6 before merge; fixes with regression tests; one pull request per milestone | 12.5 items 2–3 | the full suite, T-DOC-01/02 |
-| WP-M4.1 | M4 | the CPython pilot: ingest with verification; history served to CI with no client; growth measured as far as the disk allows | FR-MG-01…07, NFR-03 | T-PILOT-01 |
+| WP-M4.1 | M4 | the CPython pilot: ingest with verification; history served to CI with no client; growth measured as far as the disk allows; derived data with the import, and a grep index of the revisions searched (12.9 decisions 8–9) | FR-MG-01…07, FR-SR-03, NFR-03 | T-PILOT-01, T-MG-07, T-SR-03 |
 | WP-X | — | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | superseded by WP-B6.1 (12.9 decision 2) |
 
 ## 12.3 Milestones
@@ -115,7 +115,8 @@ Each milestone ends with a commit and push, and an update to 11 §11.3.
 
 With every requirement of the baseline built, the project lead asked what remained between this
 build and the system the article describes, and decided each point. They add milestone **B6**
-(requirements FR-ST-01…04 and FR-OP-09…11; ADR-24…26) and start the pilot (M4).
+(requirements FR-ST-01…04 and FR-OP-09…11; ADR-24…26) and start the pilot (M4). Decisions 8 and 9 came
+later the same day, when the pilot showed what blame and the grep index cost at CPython's size.
 
 | # | Question | Decision |
 |---|---|---|
@@ -126,3 +127,5 @@ build and the system the article describes, and decided each point. They add mil
 | 5 | How is the work reviewed? | **As the article recommends**: an extensive adversarial review by independent agents of B3–B6 before anything merges; findings weighed against the requirements and ADRs, without extra defensive checks (12.5); a person reviews each change request for its intent |
 | 6 | How is the work delivered? | **One pull request per milestone**, stacked: M0 (the design baseline), B1…B5, then B6, opened after B6 and its review |
 | 7 | Which repository for the pilot (M4)? | **CPython**: ingested with verification, its history served to CI with no client, its growth measured (WP-M4.1) |
+| 8 | Should a bulk import (`scion-admin ingest`) compute blame and the grep index? | **During the import**, timed apart from ingestion and within its memory bounds, so the first query after a migration pays for neither (the pilot's first blame of `Python/ceval.c` had taken minutes); `--no-derive` leaves them to the first query (T-MG-07) |
+| 9 | Which revisions does the grep index cover? | The project lead cancelled the question, so Claude chose the recommended option: **the revisions that are searched**, and each import's final revision. A revision's missing files are indexed before it is first searched, starting from the last revision indexed in full. Indexing every version of every file would take about 1.2 billion postings (71–107 GB) for CPython's history. The choice is reversible: nothing stops indexing more revisions later (ADR-16, T-SR-03) |

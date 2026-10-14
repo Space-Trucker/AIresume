@@ -12,6 +12,9 @@
 * **Incremental (FR-MG-03).** The git ↔ changeset map is persisted, so a re-run ingests only new
   commits; it maps both ways (FR-MG-07).
 * **Verification (FR-MG-05)** compares every file of a revision with git's, kind and bytes.
+* **Derived data with the import (decided 2026-10-14).** An import also computes blame for each
+  commit it brings in, as it goes, and indexes its final revision for grep, so the first query
+  after it pays for neither; that time is reported apart from ingestion (``derive_seconds``).
 """
 from __future__ import annotations
 
@@ -21,6 +24,7 @@ import time
 
 from .objects import blob_id
 from .repo import Repository
+from .search import ensure_indexed
 from .storage import LRUCache
 from .trees import TreeOps
 
@@ -204,14 +208,17 @@ class GitIngester:
                               f"e.g. {missing[0][:12]}; ingest them first (nothing was written)")
         return boundary
 
-    def ingest(self, rev: str = "HEAD", ref: str | None = "main", limit: int | None = None) -> dict:
-        """Ingest ``rev``'s history; returns this run's counts (``stats``)."""
+    def ingest(self, rev: str = "HEAD", ref: str | None = "main", limit: int | None = None,
+               derive: bool = True) -> dict:
+        """Ingest ``rev``'s history and, with ``derive``, compute blame for it and index its tip for
+        grep; returns this run's counts (``stats``)."""
         t0 = time.time()
         self.stats = self._new_stats()
         self.check_boundary(rev)
         # the repository's caches help ingestion only for the previous few commits: bound them
         restore = (self.repo.cache.limit(max_bytes=self.cache_bytes // 2),
                    self.repo.derived.cache.limit(max_bytes=self.cache_bytes // 8))
+        blamed, blame_s, index_s = self.repo.derived.stats["blame.derived"], 0.0, 0.0
         cat = CatFile(self.git_dir)
         proc = subprocess.Popen(["git", "-C", self.git_dir, "rev-list", "--topo-order", "--reverse", rev],
                                 stdout=subprocess.PIPE)
@@ -248,6 +255,10 @@ class GitIngester:
                 self.stats["commits"] += 1
                 self.stats["files"] += len(files)
                 tip = cs
+                if derive:  # as it goes: the parents have theirs, so memory doesn't grow with the history
+                    t1 = time.time()
+                    self.repo.derived.get("blame", cs, absent=True)
+                    blame_s += time.time() - t1
                 if self.verbose and self.stats["commits"] % 1000 == 0:
                     print(f"ingested {self.stats['commits']} commits", flush=True)
                 if limit and self.stats["commits"] >= limit:
@@ -257,14 +268,25 @@ class GitIngester:
             proc.terminate()
             proc.wait()
             cat.close()
+        try:
+            if ref and tip:
+                old = self.repo.get_ref(ref)
+                if old != tip and not self.repo.update_ref(ref, old, tip):
+                    raise IngestError(f"{ref} moved during ingestion; run it again")
+            self.stats["tip"] = tip
+            if derive and tip:
+                t1 = time.time()
+                self.repo.derived.get("blame", tip)  # a tip that an earlier import left without blame
+                t2 = time.time()
+                self.stats["blobs_indexed"] = ensure_indexed(self.repo, tip)
+                blame_s, index_s = blame_s + t2 - t1, time.time() - t2
+                self.stats["blame_derived"] = self.repo.derived.stats["blame.derived"] - blamed
+                self.stats["blame_seconds"], self.stats["index_seconds"] = round(blame_s, 3), round(index_s, 3)
+                self.stats["derive_seconds"] = round(blame_s + index_s, 3)
+            self.stats["seconds"] = round(time.time() - t0 - blame_s - index_s, 3)  # ingestion alone
+        finally:
             self.repo.cache.limit(*restore[0])
             self.repo.derived.cache.limit(*restore[1])
-        if ref and tip:
-            old = self.repo.get_ref(ref)
-            if old != tip and not self.repo.update_ref(ref, old, tip):
-                raise IngestError(f"{ref} moved during ingestion; run it again")
-        self.stats["seconds"] = round(time.time() - t0, 3)
-        self.stats["tip"] = tip
         return dict(self.stats)
 
     def verify(self, rev: str = "HEAD") -> dict:

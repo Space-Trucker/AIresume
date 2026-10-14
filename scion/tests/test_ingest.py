@@ -9,6 +9,8 @@ import unittest
 import helpers  # noqa: F401
 from helpers import REPO, Cluster, repository
 from scion.ingest import GitIngester, IngestError
+from scion.objects import KIND_LINK
+from scion.search import INDEXED, grep
 
 
 GIT_ENV = {"GIT_AUTHOR_NAME": "Dev", "GIT_AUTHOR_EMAIL": "dev@example.com", "GIT_COMMITTER_NAME": "Dev",
@@ -67,6 +69,41 @@ class TestIngest(unittest.TestCase):
 
     def sha(self, rev):
         return git(self.g, "rev-parse", rev).strip()
+
+    def test_T_MG_07_an_import_computes_blame_and_indexes_its_final_revision(self):
+        """Decided 2026-10-14: an import computes blame for what it brings in and indexes its final
+        revision for grep, so the first query after it pays for neither; ``derive=False`` (``scion-admin
+        ingest --no-derive``) leaves both to the first query."""
+        lazy = repository(os.path.join(self.tmp, "lazy"))
+        try:
+            stats = GitIngester(lazy, self.g).ingest("main", "main", derive=False)
+            tip = lazy.get_ref("main")
+            self.assertNotIn("blame_derived", stats)
+            self.assertIsNone(lazy.meta.derived_get("blame", tip))
+            self.assertIsNone(lazy.meta.kv_get(INDEXED + lazy.root_tree(tip)))
+        finally:
+            lazy.close()
+        ing = GitIngester(self.repo, self.g)
+        stats = ing.ingest("main", "main")
+        tip = self.repo.get_ref("main")
+        changesets = [ing.changeset_for(s) for s in git(self.g, "rev-list", "main").split()]
+        self.assertEqual(stats["blame_derived"], len(changesets))
+        for cs in changesets:
+            self.assertIsNotNone(self.repo.meta.derived_get("blame", cs), cs)
+        blobs = {oid for _, kind, oid in self.repo.trees.walk(self.repo.root_tree(tip)) if kind != KIND_LINK}
+        self.assertEqual(stats["blobs_indexed"], len(blobs))
+        self.assertTrue(all(self.repo.meta.content_status(b) for b in blobs))
+        self.assertEqual(self.repo.meta.kv_get(INDEXED + self.repo.root_tree(tip)), "1")
+        for key in ("blame_seconds", "index_seconds", "derive_seconds"):
+            self.assertGreaterEqual(stats[key], 0)
+        derived = dict(self.repo.derived.stats)
+        r = grep(self.repo, tip, "return 10")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([m["path"] for m in r["matches"]], ["src/app.py"])
+        line = self.repo.blame(tip, "src/app.py")["lines"][1]
+        self.assertEqual((line["text"], line["cs"]), ("    return 10\n", ing.changeset_for(self.sha(":/main work"))))
+        self.assertEqual(dict(self.repo.derived.stats), derived)  # the queries derived nothing
+        self.assertEqual(GitIngester(self.repo, self.g).ingest("main", "main")["blame_derived"], 0)
 
     def test_T_MG_01_ingest_verify_incremental_and_map(self):
         ing = GitIngester(self.repo, self.g)

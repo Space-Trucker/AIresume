@@ -67,7 +67,7 @@ from every RPC on it, and DENIED for its objects.
 | `file_history` | `rev`, `path`, `limit`, `follow_copies=true` | `[{cs, path}]` for a file or directory | heavy |
 | `blame` | `rev`, `path` | `{lines: [{line, cs, origin_line, text}], changesets: {id: {author, timestamp, summary}}}` | heavy |
 | `search_paths` | `rev`, `query`, `limit` | `{paths, trees_visited}` | heavy |
-| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, indexed, truncated}`: with 3 or more literal characters, the trigram content index narrows the files read (`indexed`) | heavy |
+| `grep` | `rev`, `pattern`, `path?`, `regex=true`, `ignore_case?`, `limit` | `{matches: [{path, line, text}], files_scanned, indexed, truncated}`: with 3 or more literal characters, the trigram content index narrows the files read (`indexed`); the index covers the revisions searched, so the first search of a revision indexes the files the index lacks | heavy |
 | `git_lookup` | `git` or `cs` | `{git, cs}` for an ingested commit, either way round; `null` if not ingested | read |
 | `list_refs` / `get_ref` / `ref_log` | `name` | refs and their compare-and-swap history | read |
 

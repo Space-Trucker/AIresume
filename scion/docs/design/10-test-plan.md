@@ -143,7 +143,7 @@
 | T-OPS-06 | FR-OP-09, UC-31 | against a fake Claude API, a finding leads to tool calls over stats and logs, and the analysis reaches the webhook beside the finding | test_superfan_agent |
 | T-OPS-07 | FR-OP-10 | the agent's limits and failure paths: API errors with retries, a refusal, the turn and token limits, a repeated finding, a failing tool; no credential in any request log, prompt or post | test_superfan_agent |
 | T-PERF-02 | FR-OP-11, NFR-17 | Scion against git serving the same repository: server CPU, peak memory and wall time per checkout, with working copies identical to the committed bytes (git's own checkout may be converted by .gitattributes) (a small repository in the suite; CPython in the pilot) | test_admin; `scion-admin bench --vs-git` |
-| T-PILOT-01 | FR-MG-01…07, NFR-03, M4 | CPython ingested in order with every file verified against git; history, blame and ancestry served with no client; memory and per-operation cost tracked as history grows | examples/pilot.sh |
+| T-PILOT-01 | FR-MG-01…07, FR-SR-03, NFR-03, M4 | CPython ingested in order with every file verified against git; blame and the grep index computed with each import (12.9 decisions 8–9), so grep reads only candidate files; history, blame and ancestry served with no client; memory and per-operation cost tracked as history grows | examples/pilot.sh |
 | T-IAM-15 | FR-IAM-03/04, ADR-20 | a read rule on the repository's root restricts every object it covers: the object index records it, and caches, daemons and snapshots never hold those objects | test_iam |
 | T-IAM-16 | FR-IAM-09 | an object committed while a re-index runs keeps the entries its commit wrote | test_iam |
 | T-AUD-02 | FR-IAM-10 | a denial is audited in the repository the request used, whether the method names it in the query or in the body | test_iam |
@@ -159,6 +159,8 @@
 | T-PM-05 | FR-PM-04 | a revert that can't land (later work conflicts) leaves the job failed and the worker running | test_automation |
 | T-PM-06 | FR-PM-04 | a failure on top of a base still being tested waits for the base's result, then is reverted | test_automation |
 | T-MG-06 | FR-MG-01/04/05, FR-DD-09 | names holding a carriage return or a form feed survive storage and read back in another process; a commit's encoding header decodes its message; each run reports its own counts; blame counts lines as git does | test_ingest |
+| T-MG-07 | FR-MG-01/04, FR-DD-06, FR-SR-03 | an import computes blame for every changeset it brings in and indexes its final revision, within its memory bounds, so the first queries derive nothing; `derive=False` leaves both to the first query | test_ingest |
+| T-SR-03 | FR-SR-03, ADR-16 | the content index covers the revisions searched: a revision is indexed from the last one indexed in full (one changed file adds one blob), and a revision never searched adds nothing | test_search |
 | T-SYS-03 | NFR-03 | no component materializes the repository: path queries read the same 27 objects at 500 and 10,000 files; a sparse checkout of 1 of 40 projects fetches 103 of 4,081 objects | test_system |
 | T-PERF-01 | NFR-02/04/05/06, FR-OP-07 | benchmark invariants: constant tree writes per commit, O(log n) ancestry steps, a second clone with zero cache requests, a sparse checkout in under 10 s | test_admin; `scion-admin bench` |
 | T-DOC-01 | 06 | all diagrams render (`mmdc`) | `scripts/check_docs.py --mmdc PATH` |

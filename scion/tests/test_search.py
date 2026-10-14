@@ -8,7 +8,7 @@ import unittest
 
 import helpers  # noqa: F401
 from helpers import REPO, Cluster, repository
-from scion.search import grep, required_literals, search_paths
+from scion.search import INDEXED, ensure_indexed, grep, required_literals, search_paths
 
 
 def b64(s: str) -> str:
@@ -119,6 +119,26 @@ class TestIndexedContentSearch(unittest.TestCase):
         r = grep(self.repo, cs, "needle")
         self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("src/crlf.txt", 2), ("src/x.c", 2)])
         self.assertEqual(r["matches"], self.scan(cs, "needle"))
+
+    def test_T_SR_03_the_index_covers_the_revisions_searched(self):
+        """Decided 2026-10-14: the content index covers the revisions that are searched (and each
+        import's final one), not every version of every file. A revision is indexed from the last one
+        indexed in full, so following a branch costs about its changes; one never searched costs
+        nothing."""
+        side = self.repo.create_changeset([self.v1], [{"path": "side/only.txt", "content": b"side_token_plugh\n"}],
+                                          "a", "side")
+        side_blob = self.repo.lookup(side, "side/only.txt")[1]
+        self.assertTrue(grep(self.repo, self.v1, "rare_token_xyzzy")["indexed"])
+        self.assertEqual(ensure_indexed(self.repo, self.v1), 0)  # indexed by the search
+        self.assertEqual(ensure_indexed(self.repo, self.v2), 1)  # only d5/f5.txt's new version
+        self.assertIsNone(self.repo.meta.kv_get(INDEXED + self.repo.root_tree(side)))
+        self.assertIsNone(self.repo.meta.content_status(side_blob))  # never searched: not indexed
+        r = grep(self.repo, side, "side_token_plugh")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("side/only.txt", 1)])
+        self.assertEqual(r["files_scanned"], 1)
+        self.assertEqual(self.repo.meta.content_status(side_blob), "i")
+        self.assertEqual(ensure_indexed(self.repo, side), 0)
 
     def test_required_literals(self):
         self.assertEqual(required_literals(r"foo\(\d+\)"), ["foo(", ")"])

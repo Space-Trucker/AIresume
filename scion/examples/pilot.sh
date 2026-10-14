@@ -24,7 +24,7 @@ fi
 echo "pilot in $W: $(git -C "$G" rev-list --count main) commits, $(git -C "$G" rev-list --first-parent --count main) on the main line"
 $PY -m scion.tools.pilot --git "$G" --root "$W/deployment" --checkpoints "${PILOT_CHECKPOINTS:-10}" \
   --disk-budget-gb "${PILOT_DISK_GB:-12}" ${PILOT_MAINLINE:+--mainline "$PILOT_MAINLINE"} \
-  --summary "$W/summary.json" | tee "$W/checkpoints.jsonl"
+  --summary "$W/summary.json" | tee -a "$W/checkpoints.jsonl"  # run again to resume after a stop
 
 $PY - "$W/summary.json" <<'EOF'
 import json, math, sys
@@ -39,10 +39,11 @@ first, last = cps[0], cps[-1]
 growth = last["commits"] / first["commits"]
 print(f"T-PILOT-01: {len(cps)} checkpoints, {first['commits']:,} to {last['commits']:,} commits (x{growth:.1f}), "
       f"all verified ({last['files']:,} files at the last)")
-print("  checkpoint    commits   objects   objects MB   meta MB   commits/s   ingest RSS MB   server RSS MB")
+print("  checkpoint    commits   objects   objects MB   meta MB   commits/s   blame s   index s   ingest RSS MB   server RSS MB")
 for c in cps:
     print(f"  {c['checkpoint']:>10} {c['commits']:>10,} {c['objects']:>9,} {c['objects_mb']:>12,.1f} {c['meta_mb']:>9,.1f} "
-          f"{c['commits_per_s'] or 0:>11,.1f} {c['ingest_peak_rss_mb']:>15,.1f} {c['server_peak_rss_mb']:>15,.1f}")
+          f"{c['commits_per_s'] or 0:>11,.1f} {c.get('blame_s') or 0:>9,.1f} {c.get('index_s') or 0:>9,.1f} "
+          f"{c['ingest_peak_rss_mb']:>15,.1f} {c['server_peak_rss_mb']:>15,.1f}")
 print("  query (median ms; first call in brackets)      first checkpoint        last checkpoint")
 for q in last["queries"]:
     a, b = first["queries"].get(q), last["queries"][q]
@@ -52,6 +53,9 @@ for q in last["queries"]:
 for q in ("git_lookup", "is_ancestor_first_tip", "fp_ancestor_half", "log_50"):
     a, b = first["queries"][q]["ms"], last["queries"][q]["ms"]
     assert b <= 5 * a + 20, f"{q}: {a} ms at {first['commits']:,} commits, {b} ms at {last['commits']:,}"
+# 12.9 decisions 8-9: the import computed blame and the grep index, so queries read only candidates
+assert all(c.get("grep", {}).get("indexed") for c in cps), [c.get("grep") for c in cps]
+assert last["grep"]["files_read"] <= max(50, last["grep"]["matches"] * 5), last["grep"]
 # FR-MG-04: ingestion memory stays bounded as the history grows
 assert last["ingest_peak_rss_mb"] <= 4 * first["ingest_peak_rss_mb"] + 200, (first, last)
 print("T-PILOT-01 passed" + (f" (stopped: {s['stopped']})" if s["stopped"] else ""))

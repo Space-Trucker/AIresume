@@ -21,7 +21,7 @@
 | Cloud Spanner | Google's distributed, strongly consistent SQL database; the article's metadata store, and Scion's from B6 (ADR-24) |
 | Compare-and-swap (CAS) | atomic "set X to new if X still equals expected"; the only way refs move |
 | Content addressing | naming data by the hash of its contents, so it can never change under the same name |
-| Content index | the deferred derived index of trigram → blob postings that lets grep read only the blobs that can match (ADR-16) |
+| Content index | the index of trigram → blob postings that lets grep read only the blobs that can match; it covers the revisions searched and each import's final revision (ADR-16) |
 | Daemon (`scion-daemon`) | the per-node object cache, reached by local jobs over a Unix socket |
 | Deferred (derived type) | computed the first time someone asks, then stored |
 | Deploy gate | picks the newest changeset that passed post-merge testing |
