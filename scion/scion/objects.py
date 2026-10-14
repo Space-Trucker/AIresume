@@ -113,7 +113,7 @@ def encode_tree(entries: dict[str, tuple[str, str]]) -> bytes:
 
 def decode_tree(payload: bytes) -> dict[str, tuple[str, str]]:
     out = {}
-    for line in payload.decode().splitlines():
+    for line in payload.decode().split("\n")[:-1]:  # only "\n" ends an entry: "Icon\r" is a name
         kind, oid, name = line.split(" ", 2)
         out[name] = (kind, oid)
     return out
@@ -146,6 +146,19 @@ def split_path(path: str) -> list[str]:
 
 def join(prefix: str, name: str) -> str:
     return f"{prefix}/{name}" if prefix else name
+
+
+def split_lines(data, keepends: bool = True) -> list:
+    """Lines as git counts them, of bytes or text: each ends at a "\\n" (kept with ``keepends``), and
+    the last may have none. A lone "\\r", a form feed or a Unicode line separator is part of a line,
+    though Python's splitlines() would break there."""
+    nl = b"\n" if isinstance(data, (bytes, bytearray)) else "\n"
+    lines = data.split(nl)
+    last = lines.pop()
+    out = [x + nl for x in lines] if keepends else lines
+    if last:
+        out.append(last)
+    return out
 
 
 def is_binary(data: bytes) -> bool:

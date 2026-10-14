@@ -18,14 +18,13 @@ from collections import Counter
 
 from .changeset import OP_ADD, OP_DELETE, OP_MODIFY, Changeset, FileChange
 from .derived import DerivedDataManager
-from .derived_types import expand_runs, register_default_types, split_lines
+from .derived_types import expand_runs, register_default_types
 from .iam import PermissionDenied
 from .merge3 import merge3
 from .meta import MetaStore, SqliteMetaStore
 from .objects import (EMPTY_TREE_ID, F_DENIED, F_MISSING, F_RESTRICTED, FILE_KINDS, KIND_DIR, KIND_LINK,
                       PUBLIC_TYPES, ObjectTooLarge, blob_id, decode_htree, decode_limited, is_binary,
-                      is_object_id,
-                      normalize_path, split_path, stored_type)
+                      is_object_id, normalize_path, split_lines, split_path, stored_type)
 from .storage import FileObjectStore, LRUCache
 from .trees import PathConflict, TreeOps
 
@@ -491,8 +490,8 @@ class Repository:
             if is_binary(old) or is_binary(new):
                 chunks.append(f"Binary files {an} and {bn} differ\n")
                 continue
-            for line in difflib.unified_diff(old.decode("utf-8", "replace").splitlines(keepends=True),
-                                             new.decode("utf-8", "replace").splitlines(keepends=True), an, bn, n=context):
+            for line in difflib.unified_diff(split_lines(old.decode("utf-8", "replace")),
+                                             split_lines(new.decode("utf-8", "replace")), an, bn, n=context):
                 chunks.append(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n")
         return "".join(chunks)
 

@@ -82,7 +82,7 @@ class TestIndexedContentSearch(unittest.TestCase):
         rx = re.compile(pattern)
         out = []
         for p, k, oid in self.repo.trees.walk(self.repo.root_tree(cs)):
-            for i, line in enumerate(self.repo.read_blob(oid).decode().splitlines(), 1):
+            for i, line in enumerate(self.repo.read_blob(oid).decode().split("\n")[:-1], 1):  # git's lines
                 if rx.search(line):
                     out.append({"path": p, "line": i, "text": line})
         return out
@@ -103,6 +103,22 @@ class TestIndexedContentSearch(unittest.TestCase):
         self.assertEqual(no_literal["matches"], self.scan(self.v1, r"\d\d\d$"))
         indexed_scans = grep(self.repo, self.v1, "omega omega", limit=10_000)["files_scanned"]
         self.assertLess(indexed_scans, 600)
+
+    def test_T_SR_02_non_ascii_and_line_breaks_match_git(self):
+        """Review findings I-04 and I-05: case folding has no context (a final sigma, a dotted
+        capital I), and a form feed or a lone carriage return is part of a line, as git counts."""
+        files = {"i18n/el.json": "ΚΟΣΜΟΣ\n", "i18n/tr.json": "İptal\nİSTANBUL\n",
+                 "src/x.c": "a\n\x0cint needle_value = 1;\n", "src/crlf.txt": "one\r\r\ntwo needle\r\r\n"}
+        cs = self.repo.create_changeset([self.v2], [{"path": p, "content": t.encode()} for p, t in files.items()], "a", "v3")
+        r = grep(self.repo, cs, "ΚΟΣ")
+        self.assertTrue(r["indexed"])
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("i18n/el.json", 1)])
+        for query in ("iptal", "istanbul"):
+            r = grep(self.repo, cs, query, ignore_case=True)
+            self.assertEqual([m["path"] for m in r["matches"]], ["i18n/tr.json"], query)
+        r = grep(self.repo, cs, "needle")
+        self.assertEqual([(m["path"], m["line"]) for m in r["matches"]], [("src/crlf.txt", 2), ("src/x.c", 2)])
+        self.assertEqual(r["matches"], self.scan(cs, "needle"))
 
     def test_required_literals(self):
         self.assertEqual(required_literals(r"foo\(\d+\)"), ["foo(", ")"])

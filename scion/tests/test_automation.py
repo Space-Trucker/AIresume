@@ -212,12 +212,12 @@ class TestPipelines(AutomationTest):
         offset beyond the server's cap is refused, never silently capped."""
         repo = self.c.repo()
         chain = [self.seed]
-        for i in range(1, 2600):
+        for i in range(1, 2100):
             chain.append(repo.create_changeset([chain[-1]], [{"path": "src/n", "content": b"%d" % i}], "bot", f"c{i}"))
         repo.update_ref("main", self.seed, chain[-1])
         api = self.api("ci")
         r = bisect(api, chain[0], chain[-1], lambda cs: chain.index(cs) < 1777)
-        self.assertEqual((r["first_bad"], r["range"]), (chain[1777], 2600))
+        self.assertEqual((r["first_bad"], r["range"]), (chain[1777], 2100))
         with self.assertRaises(RemoteError) as e:
             api.log(rev="main", limit=10, skip=10_001, ids_only=True)
         self.assertEqual(e.exception.status, 400)

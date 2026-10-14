@@ -118,6 +118,37 @@ class TestIngest(unittest.TestCase):
         line = next(x for x in self.repo.blame("main", "src/app.py")["lines"] if x["text"].strip() == "return 20")
         self.assertEqual(ing.git_for(line["cs"]), merge)
 
+    def test_T_MG_06_names_messages_and_lines_as_git_has_them(self):
+        """Review findings I-01, I-02, I-03 and I-05: a name with a carriage return (macOS's
+        "Icon\\r") or a form feed survives storage and a later run; the commit's encoding header
+        decodes its message; each run reports its own counts; blame counts lines as git does."""
+        put(self.g, "assets/Icon\r", "icon\n")
+        put(self.g, "assets/form\x0cfeed.txt", "x\n")
+        with open(os.path.join(self.g, "src/cr.txt"), "wb") as f:
+            f.write(b"one\r\r\ntwo\rthree\n")  # two lines to git
+        git(self.g, "add", "-A")
+        git(self.g, "commit", "-qm", "names")
+        msg = os.path.join(self.tmp, "message")
+        with open(msg, "wb") as f:
+            f.write("Café: résumé\n".encode("latin-1"))
+        put(self.g, "src/x.py", "x = 1\n")
+        git(self.g, "add", "-A")
+        git(self.g, "-c", "i18n.commitEncoding=ISO-8859-1", "commit", "-q", "-F", msg)
+        ing = GitIngester(self.repo, self.g, cache_bytes=0)  # trees come back from storage while ingesting
+        self.assertEqual(ing.ingest("main~1", "main")["commits"], 7)
+        self.assertEqual((ing.ingest("main", "main")["commits"], ing.stats["skipped"]), (1, 7))  # this run's
+        self.assertTrue(ing.verify("main")["ok"])
+        tip = self.repo.get_ref("main")
+        self.assertEqual(self.repo.get_changeset(tip).message, "Café: résumé\n")
+        again = repository(os.path.join(self.tmp, "scion"))  # another process: nothing cached
+        try:
+            names = {p for p, _, _ in again.trees.walk(again.root_tree(tip))}
+            self.assertTrue({"assets/Icon\r", "assets/form\x0cfeed.txt"} <= names, names)
+            self.assertEqual(len(again.blame("main", "src/cr.txt")["lines"]), 2)
+        finally:
+            again.close()
+        self.assertEqual(git(self.g, "blame", "--first-parent", "-s", "main", "--", "src/cr.txt").count("\n"), 2)
+
     def test_T_MG_03_ordering_invariant(self):
         with self.assertRaises(IngestError) as e:
             GitIngester(self.repo, self.g).ingest("main~1..main", None)

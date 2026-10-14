@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 
 from .derived_types import bloom_may_contain, name_trigrams, text_trigrams
-from .objects import KIND_DIR, KIND_LINK, is_binary, join, normalize_path
+from .objects import KIND_DIR, KIND_LINK, is_binary, join, normalize_path, split_lines
 
 try:  # the regular-expression parser: re._parser from Python 3.11, sre_parse before
     from re import _parser as sre_parse
@@ -111,7 +111,7 @@ def grep(repo, rev: str, pattern: str, path: str = "", limit: int = 200, regex: 
         scanned += 1
         if is_binary(data):
             continue
-        for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
+        for i, line in enumerate(split_lines(data.decode("utf-8", "replace"), keepends=False), 1):  # git's lines
             if rx.search(line):
                 if len(matches) >= limit:
                     truncated = True

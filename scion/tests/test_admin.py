@@ -284,11 +284,16 @@ class TestBenchmarks(unittest.TestCase):
             with open(os.path.join(g, "run.sh"), "w") as fh:
                 fh.write("#!/bin/sh\necho run\n")
             os.chmod(os.path.join(g, "run.sh"), 0o755)
+            with open(os.path.join(g, ".gitattributes"), "w") as fh:  # git checks run.bat out with CRLF
+                fh.write("*.bat text eol=crlf\n")
+            with open(os.path.join(g, "run.bat"), "w") as fh:
+                fh.write("@echo off\ngoto run\n")
             subprocess.run(["git", "-C", g, "add", "-A"], check=True, env=env)
             subprocess.run(["git", "-C", g, "commit", "-qm", "a link and a script"], check=True, env=env)
             r = bench.vs_git(g, os.path.join(tmp, "bench"))
-            self.assertTrue(r["identical"])  # the symlink and the executable bit too
-            self.assertEqual((r["commits"], r["files"], r["ingested"]["commits"]), (13, 42, 13))
+            self.assertTrue(r["identical"])  # the committed bytes, the symlink and the executable bit too
+            self.assertEqual(r["git_checkout_converted"], {"files": 1, "examples": ["run.bat"]})  # I-06
+            self.assertEqual((r["commits"], r["files"], r["ingested"]["commits"]), (13, 44, 13))
             for v in (*(r["git"][k] for k in ("full_clone", "shallow_clone", "second_full_clone")),
                       r["scion"]["cold_clone"], r["scion"]["warm_clone"]):
                 self.assertGreater(v["seconds"], 0)

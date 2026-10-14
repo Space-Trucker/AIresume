@@ -22,6 +22,7 @@ would do.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -234,7 +235,8 @@ def _du(path: str) -> int:
 
 
 def _files(root: str, skip: str) -> dict:
-    """path → (kind, bytes or link target, executable) for a working copy, without its metadata."""
+    """path → (kind, SHA-256 of the bytes or the link target, executable) for a working copy,
+    without its metadata."""
     out = {}
     for d, dirs, names in os.walk(root):
         dirs[:] = [x for x in dirs if x != skip]
@@ -245,7 +247,36 @@ def _files(root: str, skip: str) -> dict:
                 out[os.path.relpath(p, root)] = ("link", os.readlink(p), False)
             else:
                 with open(p, "rb") as f:
-                    out[os.path.relpath(p, root)] = ("file", f.read(), bool(st.st_mode & 0o111))
+                    out[os.path.relpath(p, root)] = ("file", hashlib.sha256(f.read()).hexdigest(),
+                                                     bool(st.st_mode & 0o111))
+    return out
+
+
+def _committed(git_dir: str, rev: str) -> dict:
+    """``_files`` of the tree committed at ``rev``, read from git's objects: a git checkout may
+    differ from it, since .gitattributes can convert line endings and expand keywords."""
+    out = {}
+    listing = subprocess.run(["git", "-C", git_dir, "ls-tree", "-r", "-z", rev], check=True, capture_output=True).stdout
+    cat = subprocess.Popen(["git", "-C", git_dir, "cat-file", "--batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    try:
+        for entry in listing.split(b"\0"):
+            if not entry:
+                continue
+            meta, path = entry.split(b"\t", 1)
+            mode, otype, sha = meta.decode().split()
+            if otype != "blob":
+                continue  # a submodule: not monorepo content
+            cat.stdin.write(sha.encode() + b"\n")
+            cat.stdin.flush()
+            size = int(cat.stdout.readline().split()[2])
+            data = cat.stdout.read(size)
+            cat.stdout.read(1)
+            out[path.decode()] = ("link", data.decode(), False) if mode == "120000" else \
+                ("file", hashlib.sha256(data).hexdigest(), mode == "100755")
+    finally:
+        cat.stdin.close()
+        cat.wait()
+        cat.stdout.close()
     return out
 
 
@@ -363,8 +394,10 @@ def vs_git(git_dir: str, root: str, rev: str = "HEAD", deployment: str | None = 
         result["scion"]["peak_mb"] = {n: round(_proc(p.pid)[1], 1) for n, p in procs.items()}
         result["scion"]["cache_mb"] = round((stats["cache"]["cache"].get("bytes_cached") or 0) / 2 ** 20, 3)
         result["scion"]["daemon_disk_mb"] = round(_du(os.path.join(root, "node")) / 2 ** 20, 3)
-        git_tree = _files(os.path.join(root, "git-full"), ".git")
-        result["identical"] = all(_files(wc.root, ".scn") == git_tree for wc in wcs)
+        committed = _committed(served, tip)  # what both should hold: the bytes committed
+        result["identical"] = all(_files(wc.root, ".scn") == committed for wc in wcs)
+        converted = sorted(p for p, v in _files(os.path.join(root, "git-full"), ".git").items() if committed.get(p) != v)
+        result["git_checkout_converted"] = {"files": len(converted), "examples": converted[:5]}  # by .gitattributes
         g, sc = result["git"], result["scion"]
         result["ratios"] = {
             "server_cpu_full_clone": _ratio(g["full_clone"]["server_cpu_s"], sc["cold_clone"]["server_cpu_s"]),

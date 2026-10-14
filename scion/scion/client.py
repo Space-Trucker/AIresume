@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from . import fsmonitor
 from .objects import (F_DENIED, F_MISSING, F_RESTRICTED, KIND_DIR, KIND_EXEC, KIND_FILE, KIND_LINK, ObjectError,
                       blob_id, decode_stored, decode_tree, encode_stored, is_binary, join, normalize_path,
-                      split_path)
+                      split_lines, split_path)
 from .rpc import MAX_IDS_PER_REQUEST, ClientTls, FailoverClient, RemoteError, RpcClient
 from .storage import BoundedFileObjectStore, LRUCache, ns_key
 
@@ -738,8 +738,8 @@ class WorkingCopy:
             if is_binary(old or b"") or is_binary(new or b""):
                 out.append(f"Binary file {p} differs\n")
                 continue
-            lines = difflib.unified_diff((old or b"").decode("utf-8", "replace").splitlines(keepends=True),
-                                         (new or b"").decode("utf-8", "replace").splitlines(keepends=True),
+            lines = difflib.unified_diff(split_lines((old or b"").decode("utf-8", "replace")),
+                                         split_lines((new or b"").decode("utf-8", "replace")),
                                          f"a/{p}" if old is not None else "/dev/null",
                                          f"b/{p}" if new is not None else "/dev/null")
             out.extend(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n" for line in lines)

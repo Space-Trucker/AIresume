@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, quote
 
 from .antique import Retryable
 from .iam import PermissionDenied
-from .objects import is_binary
+from .objects import is_binary, split_lines
 from .repo import MergeConflict, NotFound
 
 SESSION_SECONDS = 12 * 3600
@@ -269,8 +269,8 @@ class ReviewUI:
             if is_binary(old) or is_binary(new):
                 parts.append("<p class=muted>Binary file.</p>")
                 continue
-            parts.append(self._file_table(old.decode("utf-8", "replace").splitlines(),
-                                          new.decode("utf-8", "replace").splitlines(), notes.get(path, {})))
+            parts.append(self._file_table(split_lines(old.decode("utf-8", "replace"), keepends=False),
+                                          split_lines(new.decode("utf-8", "replace"), keepends=False), notes.get(path, {})))
         return "".join(parts) or "<p class=muted>No changes visible to you.</p>"
 
     def _file_table(self, old: list[str], new: list[str], notes: dict[int, list]) -> str:
