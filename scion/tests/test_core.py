@@ -354,6 +354,55 @@ class TestAncestry(RepoCase):
         side = self.chain(main[20], 3, "s")
         self.assertEqual(self.repo.merge_base(side[-1], after[-1]), main[20])
 
+    def test_T_DD_06_ancestry_through_merges(self):
+        """The CPython pilot: a main line crossed by hundreds of merges. Whether a changeset is on
+        the main line takes O(log n) reads whatever the merges; every answer matches a walk of the
+        whole graph, on random histories too."""
+        root = self.commit([], {"f": b"0"})
+        main, side = [root], root
+        for i in range(400):  # every other main-line changeset merges a side branch in
+            if i % 2:
+                side = self.commit([side], {"s": f"s{i}".encode()})
+                main.append(self.repo.merge(main[-1], side, "x", f"merge {i}"))
+            else:
+                main.append(self.commit([main[-1]], {"f": f"f{i}".encode()}))
+        tip = main[-1]
+        self.repo.stats.clear()
+        self.assertTrue(self.repo.is_ancestor(root, tip))
+        self.assertLess(self.repo.stats["ancestry.visits"] + self.repo.stats["ancestry.hops"], 2 * 9 + 2)  # NFR-06
+        self.assertTrue(self.repo.on_first_parent_chain(main[57], tip))
+        self.assertFalse(self.repo.on_first_parent_chain(side, tip))  # merged in, not on the main line
+        self.assertTrue(self.repo.is_ancestor(side, tip))
+        rng = random.Random(11)
+        nodes = [root]
+        for i in range(250):  # a random history: branches off anywhere, merges of any two heads
+            parents = rng.sample(nodes, 2) if len(nodes) > 1 and rng.random() < 0.3 else [rng.choice(nodes)]
+            if len(parents) == 2 and (self.repo.is_ancestor(parents[0], parents[1])
+                                      or self.repo.is_ancestor(parents[1], parents[0])):
+                parents = parents[:1]
+            nodes.append(self.commit(parents, {"r": f"{i}".encode()}))
+
+        def ancestors(x):
+            seen, todo = set(), [x]
+            while todo:
+                y = todo.pop()
+                if y not in seen:
+                    seen.add(y)
+                    todo.extend(self.repo.get_changeset(y).parents)
+            return seen
+
+        def first_parents(x):
+            out = []
+            while x:
+                out.append(x)
+                x = self.repo.get_changeset(x).first_parent
+            return set(out)
+        for x in rng.sample(nodes, 40):
+            anc, fp = ancestors(x), first_parents(x)
+            for y in rng.sample(nodes, 40):
+                self.assertEqual(self.repo.is_ancestor(y, x), y in anc)
+                self.assertEqual(self.repo.on_first_parent_chain(y, x), y in fp)
+
 
 class TestMergeRebaseRevert(RepoCase):
     def test_T_WR_01(self):

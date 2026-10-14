@@ -584,9 +584,33 @@ class Repository:
             self.stats["ancestry.hops"] += 1
         return cur
 
+    def on_first_parent_chain(self, a: str, b: str) -> bool:
+        """Is ``a`` on ``b``'s first-parent chain (``b`` included)? Generations fall strictly along
+        the chain, so a descent through the skip lists answers in O(log n) graph reads, however
+        many merges the chain crosses (ADR-12)."""
+        ga, cur, k = self.generation(a), b, None
+        if a != b and ga >= self.generation(b):
+            return False  # an ancestor's generation is lower
+        while cur != a:
+            skips = self.graph(cur)["s"]
+            k = len(skips) - 1 if k is None else min(k, len(skips) - 1)
+            # the furthest skip that doesn't pass a's generation; it is never further than the last
+            while k >= 0 and self.generation(skips[k]) < ga:
+                k -= 1
+                self.stats["ancestry.hops"] += 1
+            if k < 0:
+                return False
+            cur = skips[k]
+            self.stats["ancestry.hops"] += 1
+        return True
+
     def is_ancestor(self, a: str, b: str) -> bool:
-        """Is ``a`` an ancestor of (or equal to) ``b``?"""
+        """Is ``a`` an ancestor of (or equal to) ``b``? The common question, whether ``a`` is on
+        ``b``'s main line, takes O(log n) skip-list reads; otherwise a walk from ``b`` crosses
+        single-parent runs by skips and prunes everything below ``a``'s generation."""
         a, b = self.resolve(a), self.resolve(b)
+        if self.on_first_parent_chain(a, b):
+            return True
         ga, seen, stack = self.generation(a), set(), [b]
         while stack:
             x = stack.pop()
