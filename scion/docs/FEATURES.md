@@ -142,8 +142,9 @@ too. While rebuilding (each now has a regression test):
 6. Every clone by a user without access to a directory wrote an audited denial, and daemons counted
    denied objects as cache misses (B4 end-to-end demo).
 7. The first blame of CPython's `Python/ceval.c` took 172 s at a tenth of its history: whole-file
-   difflib matching is quadratic on files of repeated lines. Line diffs now use Myers' algorithm
-   (ADR-27) (B6, the CPython pilot).
+   difflib matching is quadratic on files of repeated lines. Line diffs now use Myers' algorithm, run
+   only on the lines both versions have, which made the diffs of CPython's first 1,500 commits 9×
+   faster again (ADR-27) (B6, the CPython pilot).
 8. Five independent adversarial reviewers found 33 defects before B6 merged (11 §11.5). Among them:
    approval rules that couldn't see restricted files, a merge of main into a change that rewrote
    main's first-parent history (and auto-revert then emptied main), landing batches left hanging by
