@@ -18,8 +18,8 @@ webhook: what happened, the evidence, the likely cause, and a next step.
   has already been posted; the agent posts a short note instead of an analysis. The watcher never
   waits for the agent.
 
-Defaults (ADR-25): ``claude-opus-5-5`` with adaptive thinking at effort ``high``, and server-side
-refusal fallbacks on (``fallbacks: "default"``).
+Defaults (ADR-25): the latest Claude Opus model (``AgentConfig.model``, or ``--agent-model``) with
+adaptive thinking at effort ``high``, and server-side refusal fallbacks on (``fallbacks: "default"``).
 """
 from __future__ import annotations
 
