@@ -117,6 +117,47 @@ class Metrics:
                     "errors": errors, "latency": lat}
 
 
+# ======================================================================================= logs
+class LogRing:
+    """Recent structured log entries of one component, for operators and superfans (FR-OP-08,
+    ADR-18). Recent-only by design: the ring keeps the last ``capacity`` entries. A message repeated
+    back to back updates the last entry (its ``repeats``, time and sequence number) instead of
+    adding one, so a burst of one warning can't push everything else out of the ring."""
+
+    LEVELS = {"debug": 10, "info": 20, "warning": 30, "error": 40}
+    MERGE_WINDOW = 60.0  # seconds within which a repeated message is merged into the last entry
+
+    def __init__(self, capacity: int = 2000):
+        self._d: deque = deque(maxlen=capacity)
+        self._seq = 0
+        self._lock = threading.Lock()
+
+    def add(self, level: str, message: str, **fields) -> None:
+        now = time.time()
+        with self._lock:
+            self._seq += 1
+            last = self._d[-1] if self._d else None
+            if (last is not None and last["level"] == level and last["message"] == message
+                    and now - last["at"] < self.MERGE_WINDOW):
+                last.update(seq=self._seq, at=now, fields=fields, repeats=last["repeats"] + 1)
+                return
+            self._d.append({"seq": self._seq, "at": now, "level": level, "message": message,
+                            "fields": fields, "repeats": 1})
+
+    def since(self, seq: int = 0, limit: int = 500, level: str = "info") -> list[dict]:
+        """Entries after ``seq`` at ``level`` or above: the newest ``limit`` of them, oldest first."""
+        if level not in self.LEVELS:
+            raise ValueError(f"level must be one of {', '.join(self.LEVELS)}")
+        floor = self.LEVELS[level]
+        with self._lock:
+            out = [dict(e) for e in self._d if e["seq"] > seq and self.LEVELS.get(e["level"], 20) >= floor]
+        return out[-max(1, min(int(limit), 2000)):]
+
+    @property
+    def last_seq(self) -> int:
+        return self._seq
+
+
 # ================================================================================ server side
 @dataclass
 class Caller:
@@ -186,8 +227,14 @@ class Service:
         self.limiter = limiter or self.make_limiter()
         self.methods: dict[str, Method] = {}
         self.metrics = Metrics()
+        self.logs = LogRing()
         self.verbose = verbose
         self.mtls = False  # set by RpcServer when client certificates are verified
+
+    def log(self, level: str, message: str, **fields) -> None:
+        self.logs.add(level, message, **fields)
+        if self.verbose:
+            print(f"{self.tier} {level}: {message} {fields if fields else ''}", file=sys.stderr, flush=True)
 
     @property
     def identity(self) -> Identity:
@@ -350,7 +397,26 @@ class _Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(service.health()).encode())
         if u.path == "/stats":
             return self._send(200, json.dumps(service.stats()).encode())
+        if u.path == "/logs":
+            return self._logs(u)
         return self._page("GET", u)
+
+    def _logs(self, u):
+        """``GET /logs?since=SEQ&limit=N&level=warning``: for administrators and service principals."""
+        service: Service = self.server.service
+        try:
+            caller = self._caller()
+            if not (service.identity.is_admin(caller.user) or service.identity.is_service(caller.user)):
+                raise RpcError(403, "permission_denied", "logs are for administrators and service principals")
+            q = parse_qs(u.query)
+            entries = service.logs.since(int((q.get("since") or ["0"])[0]), int((q.get("limit") or ["500"])[0]),
+                                         (q.get("level") or ["info"])[0])
+            return self._send(200, json.dumps({"tier": service.tier, "entries": entries,
+                                               "last_seq": service.logs.last_seq}, default=str).encode())
+        except RpcError as e:
+            return self._send(e.status, _error_body(e.code, str(e), e.data))
+        except ValueError as e:
+            return self._send(400, _error_body("bad_request", str(e)))
 
     def do_POST(self):
         service: Service = self.server.service
@@ -375,13 +441,17 @@ class _Handler(BaseHTTPRequestHandler):
             out, ctype = service.dispatch(method, body, parse_qs(u.query), self._caller())
             return self._send(200, out, ctype)
         except RpcError as e:
+            if e.status >= 500:
+                service.log("error" if e.code == "integrity" else "warning", str(e), method=method, code=e.code)
             return self._send(e.status, _error_body(e.code, str(e), e.data))
         except RateLimited as e:
             service.metrics.incr("rate_limited")
+            service.log("info", "rate limited", method=method, reason=str(e))
             return self._send(429, _error_body("rate_limited", str(e), {"retry_after": e.retry_after}),
                               headers={"Retry-After": str(max(1, math.ceil(e.retry_after)))})
         except PermissionDenied as e:
             service.metrics.incr("denied")
+            service.log("info", "permission denied", method=method, reason=str(e)[:300])
             return self._send(403, _error_body("permission_denied", str(e)))
         except NotFound as e:
             return self._send(404, _error_body("not_found", str(e)))
@@ -396,8 +466,11 @@ class _Handler(BaseHTTPRequestHandler):
         except Exception as e:
             status = getattr(e, "http_status", None)  # errors that carry their own status and code
             if status:
+                service.log("warning", str(e), method=method, code=getattr(e, "code", "error"))
                 return self._send(status, _error_body(getattr(e, "code", "error"), str(e)))
             traceback.print_exc(file=sys.stderr)
+            service.log("error", f"{type(e).__name__}: {e}", method=method,
+                        traceback=traceback.format_exc(limit=8)[-2000:])
             return self._send(500, _error_body("internal", f"{type(e).__name__}: {e}"))
 
 

@@ -39,7 +39,11 @@ def blob_id(data: bytes) -> str:
 
 
 def encode_stored(otype: str, payload: bytes) -> bytes:
-    return zlib.compress(otype.encode() + b"\0" + payload, 6)
+    """zlib, at level 6 for file contents and level 1 for everything else: trees and derived
+    nodes are mostly hashes and bloom filters, which compress little and slowly at higher levels,
+    and they are rewritten on every commit (NFR-05). The id covers the uncompressed bytes, so the
+    level never changes an object's identity."""
+    return zlib.compress(otype.encode() + b"\0" + payload, 6 if otype == "blob" else 1)
 
 
 def decode_stored(stored: bytes, expected_id: str | None = None) -> tuple[str, bytes]:

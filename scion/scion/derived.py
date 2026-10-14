@@ -35,9 +35,9 @@ class DerivedDataManager:
     def __init__(self, repo: "Repository"):
         self.repo = repo
         self.types: dict[str, DerivedType] = {}
-        self.cache = LRUCache(500_000)
+        self.cache = LRUCache(500_000, max_bytes=16 << 20)
         self.stats: Counter = Counter()
-        self._locks: dict[tuple[str, str], threading.Lock] = {}
+        self._locks: dict[tuple[str, str], list] = {}  # key -> [lock, users]: removed when unused
         self._guard = threading.Lock()
 
     def register(self, dtype: DerivedType) -> None:
@@ -57,29 +57,35 @@ class DerivedDataManager:
         if v is None:
             v = self.repo.meta.derived_get(name, cs_id)
             if v is not None:
-                self.cache.put((name, cs_id), v)
+                self.cache.put((name, cs_id), v, len(v))
         return v
 
     def put(self, name: str, cs_id: str, value: str) -> None:
         self.repo.meta.derived_put(name, cs_id, value)
-        self.cache.put((name, cs_id), value)
+        self.cache.put((name, cs_id), value, len(value))
 
     def get(self, name: str, cs_id: str) -> str:
         v = self.peek(name, cs_id)
         if v is not None:
             return v
-        with self._lock_for(name, cs_id):  # single flight within this process
-            if self.peek(name, cs_id) is None:
-                self._derive_missing(name, cs_id)
+        key = (name, cs_id)
+        with self._guard:  # single flight within this process; the lock is dropped when unused
+            entry = self._locks.get(key)
+            if entry is None:
+                entry = self._locks[key] = [threading.Lock(), 0]
+            entry[1] += 1
+        try:
+            with entry[0]:
+                if self.peek(name, cs_id) is None:
+                    self._derive_missing(name, cs_id)
+        finally:
+            with self._guard:
+                entry[1] -= 1
+                if entry[1] == 0:
+                    self._locks.pop(key, None)
         v = self.peek(name, cs_id)
         assert v is not None
         return v
-
-    def _lock_for(self, name, cs_id) -> threading.Lock:
-        with self._guard:
-            if len(self._locks) > 10_000:
-                self._locks.clear()
-            return self._locks.setdefault((name, cs_id), threading.Lock())
 
     def _derive_missing(self, name: str, cs_id: str) -> None:
         dtype = self.types[name]

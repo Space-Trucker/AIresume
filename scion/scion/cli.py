@@ -105,6 +105,13 @@ def _scn_parser() -> argparse.ArgumentParser:
     s.add_argument("query")
     s.add_argument("-r", "--rev")
     s.add_argument("-n", "--limit", type=int, default=100)
+    s = sub.add_parser("grep", help="search file contents on the server (no checkout needed)")
+    s.add_argument("pattern")
+    s.add_argument("path", nargs="?", default="")
+    s.add_argument("-r", "--rev")
+    s.add_argument("-i", "--ignore-case", action="store_true")
+    s.add_argument("-F", "--fixed-strings", action="store_true")
+    s.add_argument("-n", "--limit", type=int, default=200)
     for name in ("merge-base", "is-ancestor"):
         s = sub.add_parser(name)
         s.add_argument("a")
@@ -143,6 +150,19 @@ def _scn_parser() -> argparse.ArgumentParser:
     s.add_argument("action", choices=["create"])
     s.add_argument("name")
     s.add_argument("--rev", default="main")
+    s = sub.add_parser("revert", help="revert a changeset on the server, optionally landing it (FR-AUT-02)")
+    s.add_argument("cs")
+    s.add_argument("--onto", default="main")
+    s.add_argument("--land", action="store_true", help="land it through Antique (services and administrators)")
+    s = sub.add_parser("bisect", help="find the first bad changeset over the API (FR-AUT-01)")
+    s.add_argument("--good", required=True)
+    s.add_argument("--bad", required=True)
+    g = s.add_mutually_exclusive_group(required=True)
+    g.add_argument("--bad-if", metavar="PATH:REGEX", help="bad when the file matches (no checkout needed)")
+    g.add_argument("--good-if", metavar="PATH:REGEX", help="good when the file matches (no checkout needed)")
+    g.add_argument("--cmd", help="good when this command succeeds in the working copy (moved by update)")
+    s = sub.add_parser("gate", help="the newest changeset on a ref that passed post-merge tests (FR-PM-05)")
+    s.add_argument("--ref", default="main")
     s = sub.add_parser("audit", help="the repository's audit log (administrators)")
     s.add_argument("--limit", type=int, default=50)
     s.add_argument("--action")
@@ -359,6 +379,14 @@ def _scn(ctx: _Ctx, a) -> int | None:  # noqa: C901 - one branch per command
         r = api.search_paths(rev=a.rev or ctx.default_rev(), query=a.query, limit=a.limit)
         print("\n".join(r["paths"]))
         return 0
+    if cmd == "grep":
+        r = api.grep(rev=a.rev or ctx.default_rev(), pattern=a.pattern, path=a.path, regex=not a.fixed_strings,
+                     ignore_case=a.ignore_case, limit=a.limit)
+        for m in r["matches"]:
+            print(f"{m['path']}:{m['line']}:{m['text']}")
+        if r["truncated"]:
+            print(f"(stopped after {a.limit} matches)", file=sys.stderr)
+        return 0 if r["matches"] else 1
     if cmd == "merge-base":
         print(api.merge_base(a=a.a, b=a.b)["base"] or "(none)")
         return 0
@@ -385,6 +413,34 @@ def _scn(ctx: _Ctx, a) -> int | None:  # noqa: C901 - one branch per command
         return _review(ctx, api, a)
     if cmd == "release":
         _print_json(api.create_release(name=a.name, rev=a.rev))
+        return 0
+    if cmd == "revert":
+        from .tools.revert import revert_and_land
+        if a.land:
+            print(f"landed {revert_and_land(api, a.cs, a.onto)} on {a.onto}")
+        else:
+            print(f"created {api.revert(cs=a.cs, onto=a.onto)} (not landed)")
+        return 0
+    if cmd == "bisect":
+        from .tools.bisect import bisect, command_predicate, file_matches
+        if a.cmd:
+            pred = command_predicate(ctx.wc(), a.cmd)
+        else:
+            spec = a.bad_if or a.good_if
+            path, sep, rx = spec.partition(":")
+            if not sep:
+                raise ClientError(f"expected PATH:REGEX, got {spec!r}")
+            pred = file_matches(api, path, rx, good_if_present=bool(a.good_if))
+        r = bisect(api, a.good, a.bad, pred, log=print)
+        print(f"first bad: {r['first_bad']} by {r['author']}: {r['summary']} ({r['probes']} probes over "
+              f"{r['range']} changesets)")
+        return 0
+    if cmd == "gate":
+        r = api.call("antique.deploy_gate", ref=a.ref)
+        if r is None:
+            print("nothing has passed post-merge testing yet")
+            return 1
+        print(f"{r['cs']} ({r['behind_tip']} behind the tip of {a.ref})")
         return 0
     if cmd == "audit":
         if a.verify:
@@ -589,6 +645,7 @@ def admin_main(argv=None) -> int:
 
     from .deployment import Deployment
     from .iam import PermissionDenied
+    from .ingest import IngestError
     from .repo import NotFound
     from .snapshot import create_snapshot
 
@@ -614,6 +671,14 @@ def admin_main(argv=None) -> int:
     s.add_argument("--repo", required=True)
     s.add_argument("type")
     s.add_argument("rev", nargs="?", default="main")
+    s = sub.add_parser("ingest", help="ingest git history (incremental; FR-MG-*)")
+    s.add_argument("--root", required=True)
+    s.add_argument("--repo", required=True)
+    s.add_argument("--git", required=True, help="path to the git repository")
+    s.add_argument("--rev", default="HEAD", help="a revision or range, e.g. main or v1..main")
+    s.add_argument("--ref", default="main", help="the ref to point at the ingested tip ('' for none)")
+    s.add_argument("--verify", action="store_true", help="then compare every file with git")
+    s.add_argument("-v", "--verbose", action="store_true")
     s = sub.add_parser("gen-certs", help="development CA and certificates (needs the openssl tool)")
     s.add_argument("dir")
     s = sub.add_parser("hash-token", help="the form of a token to store in deployment.json")
@@ -634,7 +699,23 @@ def admin_main(argv=None) -> int:
     s.add_argument("--repo", required=True)
     s.add_argument("--limit", type=int, default=50)
     s.add_argument("--verify", action="store_true")
+    s = sub.add_parser("backup", help="back up the authoritative stores while servers run (FR-AD-06)")
+    s.add_argument("--root", required=True)
+    s.add_argument("--out", required=True, help="a new, empty directory")
+    s = sub.add_parser("restore", help="restore a backup into a deployment root (UC-30)")
+    s.add_argument("--backup", required=True)
+    s.add_argument("--root", required=True)
+    s.add_argument("--force", action="store_true", help="move a non-empty root aside first")
+    s.add_argument("--deep", action="store_true", help="also decode and hash-check every object")
+    s = sub.add_parser("verify", help="check that every ref's tree and every changeset's blobs are stored")
+    s.add_argument("--root", required=True)
+    s.add_argument("--deep", action="store_true", help="also decode and hash-check every object")
+    s = sub.add_parser("bench", help="benchmarks of commit scaling, ancestry and checkouts (FR-OP-07)")
+    s.add_argument("--quick", action="store_true", help="small sizes, for a fast check")
+    s.add_argument("--json", action="store_true")
     a = p.parse_args(argv)
+    if a.command in ("backup", "restore", "verify", "bench"):
+        return _admin_store_command(a, f"scion-admin:{getpass.getuser()}")
     if a.command == "gen-certs":
         from .tools.certs import make_dev_pki
 
@@ -662,6 +743,18 @@ def admin_main(argv=None) -> int:
             n = repo.derived.backfill(a.type, cs)
             repo.audit.append("derive", f"scion-admin:{getpass.getuser()}", a.type, {"cs": cs, "computed": n})
             print(f"{n} values computed")
+        elif a.command == "ingest":
+            from .ingest import GitIngester
+            repo = dep.repo(a.repo)
+            ing = GitIngester(repo, a.git, verbose=a.verbose)
+            stats = ing.ingest(a.rev, a.ref or None)
+            repo.audit.append("ingest", f"scion-admin:{getpass.getuser()}", a.git, {k: stats[k] for k in ("commits", "tip")})
+            _print_json(stats)
+            if a.verify:
+                v = ing.verify(a.rev.split("..")[-1])
+                _print_json(v)
+                if not v["ok"]:
+                    return 1
         elif a.command == "set-ref":
             repo = dep.repo(a.repo)
             old = a.old if a.old is not None else repo.get_ref(a.ref)
@@ -685,7 +778,7 @@ def admin_main(argv=None) -> int:
             for e in reversed(repo.audit.entries(a.limit)):
                 print(f"{e['seq']:>6} {e['actor'] or '-':<14} {e['action']:<16} {e['target']} "
                       f"{json.dumps(e['detail'], sort_keys=True)}")
-    except (PermissionDenied, NotFound, ValueError) as e:
+    except (PermissionDenied, NotFound, ValueError, IngestError) as e:
         print(f"scion-admin: {e}", file=sys.stderr)
         return 1
     finally:
@@ -693,8 +786,99 @@ def admin_main(argv=None) -> int:
     return 0
 
 
+def _admin_store_command(a, actor: str) -> int:
+    """backup, restore, verify and bench work on whole deployments, not through one Deployment."""
+    from .backup import BackupError, backup, restore, verify
+
+    try:
+        if a.command == "bench":
+            from .tools import bench
+
+            result = bench.run(quick=a.quick)
+            print(json.dumps(result, indent=2) if a.json else bench.report(result))
+            return 0
+        if a.command == "backup":
+            m = backup(a.root, a.out, actor)
+            for name, r in sorted(m["repos"].items()):
+                print(f"{name}: {r.get('changesets', 0)} changesets, {len(r.get('refs', {}))} refs, "
+                      f"{r['objects']} objects ({r['object_bytes']:,} bytes)")
+            print(f"backup written to {os.path.abspath(a.out)}")
+            return 0
+        report = restore(a.backup, a.root, a.force, a.deep, actor) if a.command == "restore" else verify(a.root, a.deep)
+        _print_json(report)
+        return 0 if report["ok"] else 1
+    except (BackupError, OSError, ValueError) as e:
+        print(f"scion-admin: {e}", file=sys.stderr)
+        return 1
+
+
+def postmerge_main(argv=None) -> int:
+    """scion-postmerge: a post-merge test worker (UC-18)."""
+    from .postmerge import PostMergeWorker
+
+    p = argparse.ArgumentParser(prog="scion-postmerge")
+    p.add_argument("--server", required=True)
+    p.add_argument("--repo", required=True)
+    p.add_argument("--workdir", required=True, help="the reusable checkout")
+    p.add_argument("--cmd", required=True, help="the test command; exit status 0 means pass")
+    p.add_argument("--objects", help="object endpoint (the node daemon)")
+    p.add_argument("--sparse", nargs="+", metavar="DIR")
+    p.add_argument("--user", default="postmerge")
+    p.add_argument("--token-file")
+    _tls_client_args(p)
+    p.add_argument("--auto-revert", action="store_true", help="revert a landing that broke a passing base")
+    p.add_argument("--once", action="store_true", help="stop when the queue is empty")
+    p.add_argument("--timeout", type=float, default=3600)
+    a = p.parse_args(argv)
+    w = PostMergeWorker(a.server, a.repo, a.workdir, a.cmd, a.user, a.objects, a.token_file, a.ca, a.sparse,
+                        a.auto_revert, a.timeout, tls_cert=a.cert, tls_key=a.key)
+    try:
+        w.run(once=a.once)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        w.close()
+    return 0
+
+
+def superfan_main(argv=None) -> int:
+    """scion-superfan: watch one component's telemetry and logs (UC-26)."""
+    from .superfan import PROFILES, Superfan, load_rules
+
+    p = argparse.ArgumentParser(prog="scion-superfan")
+    p.add_argument("--url", required=True, help="the component: http(s)://host:port or unix:/path/to.sock")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES),
+                   help="daemon, cache, antique (the landing queue, on a server) or server")
+    p.add_argument("--rule", action="append", default=[], metavar="RULE",
+                   help="a threshold rule, such as 'hit_rate < 0.99 for 3 critical' (repeatable)")
+    p.add_argument("--rules", help="a JSON file with a list of rules")
+    p.add_argument("--no-default-rules", action="store_true", help="only the rules given here")
+    p.add_argument("--webhook", help="post findings to this Slack-compatible webhook")
+    p.add_argument("--interval", type=float, default=30.0, help="seconds between polls")
+    p.add_argument("--polls", type=int, help="stop after this many polls")
+    p.add_argument("--z", type=float, default=4.0, help="deviations from the baseline that count as novel")
+    p.add_argument("--warmup", type=int, default=5, help="polls that only teach the baselines")
+    p.add_argument("--log-level", default="info", choices=["debug", "info", "warning", "error"])
+    p.add_argument("--user", default="superfan")
+    p.add_argument("--token-file")
+    _tls_client_args(p)
+    p.add_argument("--json", action="store_true", help="print findings as JSON lines")
+    a = p.parse_args(argv)
+    rules = list(a.rule) + (load_rules(a.rules) if a.rules else [])
+    fan = Superfan(a.url, a.profile, rules, not a.no_default_rules, a.user, _read_token(a.token_file),
+                   ClientTls(a.ca, a.cert, a.key) if a.ca else None, a.webhook, a.z, a.warmup,
+                   log_level=a.log_level, as_json=a.json)
+    try:
+        fan.run(a.interval, a.polls)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        fan.close()
+    return 0
+
+
 PROGRAMS = {"scn": scn_main, "scion-server": server_main, "scion-cache": cache_main, "scion-daemon": daemon_main,
-            "scion-admin": admin_main}
+            "scion-admin": admin_main, "scion-postmerge": postmerge_main, "scion-superfan": superfan_main}
 
 
 def main(argv=None) -> int:

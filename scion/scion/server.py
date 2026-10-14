@@ -18,10 +18,12 @@ from collections import Counter
 from .antique import Antique
 from .deployment import Deployment
 from .iam import PermissionDenied
+from .ingest import GIT_MAP_SCHEMA
 from .notify import Notifier
+from .objects import normalize_path
 from .repo import NotFound, Repository
 from .rpc import MAX_IDS_PER_REQUEST, Service, ids_cost, pack_objects, unpack_objects
-from .search import search_paths
+from .search import grep, search_paths
 from .ui import ReviewUI
 
 RELEASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
@@ -58,6 +60,7 @@ class ScionService(Service):
     def __init__(self, deployment: Deployment, allow_direct_objects: bool = False, verbose: bool = False):
         self.deployment = deployment
         super().__init__(verbose=verbose)
+        deployment.log = self.log
         self.object_callers = ("cache", "client") if allow_direct_objects else ("cache",)
         r = self.register
         # -- identity and discovery -------------------------------------------------------------
@@ -71,7 +74,7 @@ class ScionService(Service):
         r("get_changesets", self._get_changesets)
         r("log", self._log)
         r("root_tree", lambda c, p: self._with_cs(c, p, lambda repo, cs: repo.root_tree(cs)))
-        r("list_dir", lambda c, p: self._with_cs(c, p, lambda repo, cs: repo.list_dir(cs, _str(p, "path", ""), c.user)))
+        r("list_dir", self._list_dir)
         r("read_file", self._read_file)
         r("diff", self._diff)
         r("merge_base", self._merge_base)
@@ -81,6 +84,9 @@ class ScionService(Service):
         r("blame", lambda c, p: self._repo(c, p).blame(_str(p, "rev"), _str(p, "path"), c.user), klass="heavy")
         r("search_paths", lambda c, p: search_paths(self._repo(c, p), _str(p, "rev"), _str(p, "query"),
                                                     _int(p, "limit", 100, 1), c.user), klass="heavy")
+        r("grep", lambda c, p: grep(self._repo(c, p), _str(p, "rev"), _str(p, "pattern"), _str(p, "path", ""),
+                                    _int(p, "limit", 200, 1), bool(p.get("regex", True)), bool(p.get("ignore_case")),
+                                    c.user), klass="heavy")
         r("list_refs", lambda c, p: [{"name": n, "target": t, "version": v}
                                      for n, t, v in self._repo(c, p).meta.list_refs()])
         r("get_ref", lambda c, p: self._repo(c, p).get_ref(_str(p, "name")))
@@ -92,6 +98,7 @@ class ScionService(Service):
         r("has_objects", lambda c, p: self._repo(c, p).missing_objects(_ids(p), c.user), klass="objects",
           cost=ids_cost)
         r("acl_epochs", self._acl_epochs, tiers=self.object_callers)
+        r("git_lookup", self._git_lookup)
         r("put_objects", self._put_objects, klass="write", binary_in=True)
         # -- writes (FR-WR-*) ----------------------------------------------------------------------
         r("create_changeset", self._create_changeset, klass="write")
@@ -124,12 +131,18 @@ class ScionService(Service):
         r("antique.land_changeset", lambda c, p: self._antique(c, p).land_changeset(
             self._need_user(c), _str(p, "cs"), _str(p, "ref", "main")), klass="write")
         r("antique.find_landing", lambda c, p: self._antique(c, p).find_landing(_str(p, "cs")))
+        r("antique.landing_stack", lambda c, p: self._antique(c, p).landing_stack(_str(p, "cs")))
         r("antique.postmerge_claim", lambda c, p: self._postmerge(c, p).postmerge_claim(self._need_user(c)),
           klass="write")
         r("antique.postmerge_report", lambda c, p: self._postmerge(c, p).postmerge_report(
-            _int(p, "id", 0, 1, 1 << 62), bool(p.get("passed")), _str(p, "log", "")), klass="write")
+            _int(p, "id", 0, 1, 1 << 62), bool(p.get("passed")), _str(p, "log", ""),
+            p.get("claim") if isinstance(p.get("claim"), str) else None), klass="write")
         r("antique.postmerge_status", lambda c, p: self._antique(c, p).postmerge_status(
             _str(p, "ref", "main"), _int(p, "limit", 50, 1)))
+        r("antique.postmerge_reverted", lambda c, p: self._postmerge(c, p).postmerge_reverted(
+            _int(p, "id", 0, 1, 1 << 62), [x for x in p.get("reverts", []) if isinstance(x, str)]), klass="write")
+        r("antique.deploy_gate", lambda c, p: self._antique(c, p).deploy_gate(_str(p, "ref", "main")))
+        r("antique.job_for", lambda c, p: self._antique(c, p).job_for(_str(p, "cs")))
         self._antiques: dict[str, Antique] = {}
         self._antiques_lock = threading.Lock()
         self.notifier = Notifier(self._webhooks)
@@ -257,6 +270,27 @@ class ScionService(Service):
         repo = self.deployment.repo(p.get("repo"))  # unreadable repositories come back DENIED per object
         return pack_objects(repo.fetch_objects(_ids(p), c.user))
 
+    def _list_dir(self, c, p):
+        """A directory's readable entries. With ``probe``, a directory the caller can't list returns
+        None instead of 403: checkouts probe every directory whose tree they were denied, in case
+        something beneath is readable (UC-01 3b), and those routine probes are not denials worth an
+        audit entry. The answer reveals no more than the 403 would."""
+        repo = self._repo(c, p)
+        cs, path = repo.resolve(_str(p, "rev")), normalize_path(_str(p, "path", ""))
+        if p.get("probe") and not repo.can_list(c.user, path):
+            return None
+        return repo.list_dir(cs, path, c.user)
+
+    def _git_lookup(self, c, p):
+        """Map a git commit to its changeset or back (FR-MG-07): ``{git, cs}``, or None."""
+        repo = self._repo(c, p)
+        repo.meta.ensure(GIT_MAP_SCHEMA)
+        if p.get("git"):
+            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE git = ?", (_str(p, "git"),)).fetchone()
+        else:
+            row = repo.meta.execute("SELECT git, cs FROM git_map WHERE cs = ?", (repo.resolve(_str(p, "cs")),)).fetchone()
+        return {"git": row[0], "cs": row[1]} if row else None
+
     def _acl_epochs(self, c, p):
         """Each repository's ACL epoch, for the tiers (ADR-20); unknown repositories map to None."""
         repos = p.get("repos")
@@ -379,7 +413,8 @@ class ScionService(Service):
         with self._antiques_lock:
             a = self._antiques.get(repo.name)
             if a is None:
-                a = self._antiques[repo.name] = Antique(repo, notify=self.notifier, audit=repo.audit.append)
+                a = self._antiques[repo.name] = Antique(repo, notify=self.notifier, audit=repo.audit.append,
+                                                          log=self.log)
             return a
 
     def _antique(self, c, p, write: bool = False) -> Antique:
@@ -432,6 +467,10 @@ class ScionService(Service):
         for a in list(self._antiques.values()):
             antique.update({k: v for k, v in a.counters.items() if k != "land.max_batch"})
             antique["land.max_batch"] = max(antique["land.max_batch"], a.counters["land.max_batch"])
+            try:
+                antique.update(a.queue_stats())
+            except Exception as e:  # noqa: BLE001 - stats must answer even when a store is unwell
+                self.log("warning", f"queue stats unavailable: {e}")
         s["repos"] = {"open": len(self.deployment._repos), **repos}
         s["antique"] = dict(antique)
         s["notify"] = dict(self.notifier.counters)

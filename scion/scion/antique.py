@@ -27,12 +27,15 @@ from __future__ import annotations
 
 import json
 import random
+import secrets
 import threading
 import time
 
 from .classify import RANK, classify_diff
 from .iam import PermissionDenied
 from .repo import MergeConflict, NotFound, Repository
+
+POSTMERGE_LEASE = 7200.0  # the default; a repository's policy may set review.postmerge_lease_seconds
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS crs (
@@ -55,14 +58,17 @@ CREATE TABLE IF NOT EXISTS cr_comments (
     path TEXT, line INTEGER, body TEXT NOT NULL, created REAL NOT NULL
 );
 CREATE TABLE IF NOT EXISTS landings (
-    cs TEXT PRIMARY KEY, source TEXT NOT NULL, cr INTEGER, ref TEXT NOT NULL, landed_at REAL NOT NULL
+    cs TEXT PRIMARY KEY, source TEXT NOT NULL, cr INTEGER, ref TEXT NOT NULL, landed_at REAL NOT NULL,
+    head TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS landings_source ON landings(source);
+CREATE INDEX IF NOT EXISTS landings_head ON landings(head);
 CREATE TABLE IF NOT EXISTS postmerge (
     id INTEGER PRIMARY KEY AUTOINCREMENT, cs TEXT NOT NULL, cr INTEGER, ref TEXT NOT NULL,
     status TEXT NOT NULL, created REAL NOT NULL, started REAL, finished REAL, worker TEXT, log TEXT
 );
 CREATE INDEX IF NOT EXISTS postmerge_status ON postmerge(status, id);
+CREATE INDEX IF NOT EXISTS postmerge_cs ON postmerge(cs);
 """
 
 DEFAULT_RULES = [{"prefix": "", "logic": {"approvals": 1}, "comment_only": {"approvals": 0},
@@ -95,16 +101,28 @@ class _LandRequest:
 
 
 class Antique:
-    def __init__(self, repo: Repository, principal: str = "antique", notify=None, audit=None):
+    SLOW_ATTEMPTS = 8  # a batch needing this many compare-and-swap attempts is logged as contention
+
+    def __init__(self, repo: Repository, principal: str = "antique", notify=None, audit=None, log=None):
         self.repo, self.meta, self.principal = repo, repo.meta, principal
         self.notify = notify or (lambda event, repo, payload: None)
         self.audit = audit
+        self.log = log or (lambda level, message, **fields: None)
         self.meta.ensure(SCHEMA)
         self.counters = {"land.requests": 0, "land.attempts": 0, "land.retries": 0, "land.landed": 0,
                          "land.conflicts": 0, "land.batches": 0, "land.max_batch": 0, "land.deadline": 0}
         self._queues: dict[str, list[_LandRequest]] = {}
         self._leaders: dict[str, threading.Lock] = {}
         self._lock = threading.Lock()
+
+    def _count(self, key: str, n: int = 1) -> None:
+        with self._lock:
+            self.counters[key] += n
+
+    def queue_depth(self) -> int:
+        """Landing requests waiting on this server, over all targets (for the landing-queue superfan)."""
+        with self._lock:
+            return sum(len(q) for q in self._queues.values())
 
     @property
     def policy(self):
@@ -314,7 +332,7 @@ class Antique:
         return {"landed_cs": req.landed, "ref": target}
 
     def _submit(self, target: str, req: _LandRequest, deadline: float) -> None:
-        self.counters["land.requests"] += 1
+        self._count("land.requests")
         with self._lock:
             self._queues.setdefault(target, []).append(req)
             leader = self._leaders.setdefault(target, threading.Lock())
@@ -344,7 +362,7 @@ class Antique:
         attempt = 0
         while pending:
             attempt += 1
-            self.counters["land.attempts"] += 1
+            self._count("land.attempts")
             tip = self.repo.get_ref(target)
             head, planned = tip, []
             for req in pending:
@@ -356,7 +374,9 @@ class Antique:
                         # replays them as they are, so it runs without a user
                         new = self.repo.rebase(req.head, head)["head"]
                 except MergeConflict as e:
-                    self.counters["land.conflicts"] += 1
+                    self._count("land.conflicts")
+                    self.log("info", f"a landing on {target} conflicts: {e}", repo=self.repo.name,
+                             cr=req.cr_id, onto=head)
                     if req.cr_id is not None:
                         self._set_state(req.cr_id, CONFLICT, conflict=json.dumps(
                             {"conflicts": e.conflicts, "at": e.at, "onto": head}))
@@ -370,16 +390,22 @@ class Antique:
                 return
             if self.repo.update_ref(target, tip, head, user=self.principal):
                 self._record(target, planned)
-                self.counters["land.batches"] += 1
-                self.counters["land.max_batch"] = max(self.counters["land.max_batch"], len(planned))
+                with self._lock:
+                    self.counters["land.batches"] += 1
+                    self.counters["land.max_batch"] = max(self.counters["land.max_batch"], len(planned))
+                if attempt >= self.SLOW_ATTEMPTS:
+                    self.log("warning", f"landing on {target} needed {attempt} attempts: other servers keep "
+                                        f"moving it first", repo=self.repo.name, batch=len(planned))
                 for req, _, new in planned:
                     req.finish(new)
                 return
             # Another server landed first: rebase the whole batch onto the new tip and retry, with
             # jittered backoff so contending servers stop colliding (FR-LD-03).
-            self.counters["land.retries"] += 1
+            self._count("land.retries")
             if time.time() > deadline:
-                self.counters["land.deadline"] += 1
+                self._count("land.deadline")
+                self.log("warning", f"landing on {target} gave up at the deadline after {attempt} attempts; "
+                                    f"{len(pending)} request(s) were told to retry", repo=self.repo.name)
                 for req in pending:
                     req.fail(Retryable(f"could not land on {target} before the deadline; try again"))
                 return
@@ -393,17 +419,18 @@ class Antique:
             cur = new
             while cur and cur != old_head:
                 cs = self.repo.get_changeset(cur)
-                rows.append((cur, cs.extra.get("rebased_from", cur), req.cr_id, target, now))
+                rows.append((cur, cs.extra.get("rebased_from", cur), req.cr_id, target, now, new))
                 cur = cs.first_parent
             jobs.append((new, req.cr_id, target, "queued", now))
         with self.meta.transaction() as c:
-            c.executemany("INSERT OR IGNORE INTO landings (cs, source, cr, ref, landed_at) VALUES (?, ?, ?, ?, ?)", rows)
+            c.executemany("INSERT OR IGNORE INTO landings (cs, source, cr, ref, landed_at, head) "
+                          "VALUES (?, ?, ?, ?, ?, ?)", rows)
             c.executemany("INSERT INTO postmerge (cs, cr, ref, status, created) VALUES (?, ?, ?, ?, ?)", jobs)
             for req, _, new in planned:
                 if req.cr_id is not None:
                     c.execute("UPDATE crs SET state = ?, head = ?, landed_cs = ?, landed_at = ?, conflict = NULL, "
                               "updated = ? WHERE id = ?", (LANDED, new, new, now, now, req.cr_id))
-        self.counters["land.landed"] += len(planned)
+        self._count("land.landed", len(planned))
         for req, _, new in planned:
             if req.cr_id is not None:
                 self._event("cr.landed", req.cr_id, self.principal, landed_cs=new)
@@ -418,33 +445,96 @@ class Antique:
         the pre-rebase id (FR-LD-05, UC-17)."""
         if not self.meta.has_changeset(cs):
             cs = self.repo.resolve(cs)
-        row = self.meta.execute("SELECT cs, source, cr, ref, landed_at FROM landings WHERE cs = ? "
-                                "UNION ALL SELECT cs, source, cr, ref, landed_at FROM landings WHERE source = ? "
+        row = self.meta.execute("SELECT cs, source, cr, ref, landed_at, head FROM landings WHERE cs = ? "
+                                "UNION ALL SELECT cs, source, cr, ref, landed_at, head FROM landings WHERE source = ? "
                                 "LIMIT 1", (cs, cs)).fetchone()
         if row is None:
             return None
-        return dict(zip(("cs", "source", "cr", "ref", "landed_at"), row))
+        return dict(zip(("cs", "source", "cr", "ref", "landed_at", "head"), row))
+
+    def landing_stack(self, cs: str) -> list[str]:
+        """Every changeset of the landing that produced ``cs``, newest first (UC-18 3a)."""
+        found = self.find_landing(cs)
+        if found is None:
+            return []
+        members = {r[0] for r in self.meta.execute("SELECT cs FROM landings WHERE head = ?", (found["head"],))}
+        out, cur = [], found["head"]
+        while cur in members:
+            out.append(cur)
+            cur = self.repo.get_changeset(cur).first_parent
+        return out
 
     # -- the post-merge queue (FR-LD-07; the worker is UC-18) ---------------------------------------------
+    @property
+    def postmerge_lease(self) -> float:
+        """Seconds a claimed job may run without a report before it is queued again."""
+        return float(self.policy.review.get("postmerge_lease_seconds", POSTMERGE_LEASE)) \
+            if hasattr(self.policy, "review") else POSTMERGE_LEASE
+
     def postmerge_claim(self, worker: str) -> dict | None:
         """Claim the oldest queued job. A lost race moves on to the next job until the queue is
-        empty, so concurrent workers never give up early (D-01)."""
+        empty, so concurrent workers never give up early (D-01). A job whose worker hasn't reported
+        within the lease goes back to the queue, so a crashed worker can't leave a landing untested;
+        the returned ``claim`` goes with the report, so a worker whose lease ran out can't overwrite
+        the result of the worker that took the job over."""
+        now = time.time()
+        cur = self.meta.execute("UPDATE postmerge SET status = 'queued', started = NULL, worker = NULL "
+                                "WHERE status = 'running' AND started < ?", (now - self.postmerge_lease,))
+        if cur.rowcount:
+            self.log("warning", f"{cur.rowcount} post-merge job(s) went back to the queue: no report within "
+                                f"{self.postmerge_lease:.0f} s", repo=self.repo.name)
         while True:
             row = self.meta.execute("SELECT id, cs, cr, ref FROM postmerge WHERE status = 'queued' ORDER BY id LIMIT 1"
                                     ).fetchone()
             if row is None:
                 return None
+            claim = f"{worker} {secrets.token_hex(8)}"
             cur = self.meta.execute("UPDATE postmerge SET status = 'running', started = ?, worker = ? "
-                                    "WHERE id = ? AND status = 'queued'", (time.time(), worker, row[0]))
+                                    "WHERE id = ? AND status = 'queued'", (now, claim, row[0]))
             if cur.rowcount == 1:
-                return {"id": row[0], "cs": row[1], "cr": row[2], "ref": row[3]}
+                return {"id": row[0], "cs": row[1], "cr": row[2], "ref": row[3], "claim": claim}
 
-    def postmerge_report(self, job_id: int, passed: bool, log: str = "") -> dict:
-        cur = self.meta.execute("UPDATE postmerge SET status = ?, finished = ?, log = ? WHERE id = ? AND status = 'running'",
-                                ("passed" if passed else "failed", time.time(), log[-20000:], int(job_id)))
-        if cur.rowcount != 1:
-            raise ValueError(f"post-merge job {job_id} is not running")
+    def postmerge_report(self, job_id: int, passed: bool, log: str = "", claim: str | None = None) -> dict:
+        sql, args = "UPDATE postmerge SET status = ?, finished = ?, log = ? WHERE id = ? AND status = 'running'", \
+            ["passed" if passed else "failed", time.time(), log[-20000:], int(job_id)]
+        if claim is not None:
+            sql, args = sql + " AND worker = ?", args + [claim]
+        if self.meta.execute(sql, args).rowcount != 1:
+            raise ValueError(f"post-merge job {job_id} is not running under this claim (its lease may have run out)")
         return {"id": int(job_id), "status": "passed" if passed else "failed"}
+
+    def queue_stats(self) -> dict:
+        """Gauges of the landing queue and the post-merge queue, for the landing-queue superfan."""
+        rows = dict(self.meta.execute("SELECT status, COUNT(*) FROM postmerge WHERE status IN ('queued', 'running') "
+                                      "GROUP BY status").fetchall())
+        return {"land.queue_depth": self.queue_depth(), "postmerge.queued": rows.get("queued", 0),
+                "postmerge.running": rows.get("running", 0)}
+
+    def postmerge_reverted(self, job_id: int, reverts: list[str]) -> dict:
+        """A failed job whose landing has been reverted (06 §6.7, post-merge job)."""
+        cur = self.meta.execute("UPDATE postmerge SET status = 'reverted', log = COALESCE(log, '') || ? "
+                                "WHERE id = ? AND status = 'failed'",
+                                ("\nreverted by " + ", ".join(reverts), int(job_id)))
+        if cur.rowcount != 1:
+            raise ValueError(f"post-merge job {job_id} has not failed")
+        return {"id": int(job_id), "status": "reverted", "reverts": reverts}
+
+    def job_for(self, cs: str) -> dict | None:
+        row = self.meta.execute("SELECT id, cs, cr, ref, status FROM postmerge WHERE cs = ? ORDER BY id DESC LIMIT 1",
+                                (cs,)).fetchone()
+        return dict(zip(("id", "cs", "cr", "ref", "status"), row)) if row else None
+
+    def deploy_gate(self, ref: str = "main", limit: int = 10_000) -> dict | None:
+        """The newest changeset on ``ref`` whose post-merge tests passed (FR-PM-05, UC-19): it walks
+        the main line from the tip and never returns a failed, reverted or untested changeset."""
+        cur, steps = self.repo.get_ref(ref), 0
+        while cur and steps < limit:
+            job = self.job_for(cur)
+            if job is not None and job["status"] == "passed":
+                return {"cs": cur, "job": job["id"], "cr": job["cr"], "behind_tip": steps}
+            cur = self.repo.get_changeset(cur).first_parent
+            steps += 1
+        return None
 
     def postmerge_status(self, ref: str = "main", limit: int = 50) -> list[dict]:
         rows = self.meta.execute("SELECT id, cs, cr, status, created, finished FROM postmerge WHERE ref = ? "

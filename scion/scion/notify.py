@@ -30,7 +30,11 @@ class Notifier:
         cr = payload.get("cr", {})
         text = f"[{repo}] {event}: CR {cr.get('id')} \"{cr.get('title', '')}\" by {cr.get('author')} ({cr.get('state')})" \
             if cr else f"[{repo}] {event}"
-        body = json.dumps({"event": event, "repo": repo, "text": text, **payload}).encode()
+        self.send(urls, {"event": event, "repo": repo, "text": text, **payload})
+
+    def send(self, urls, payload: dict) -> None:
+        """Queue one JSON payload for each URL."""
+        body = json.dumps(payload, default=str).encode()
         for url in urls:
             try:
                 self._q.put_nowait((url, body))

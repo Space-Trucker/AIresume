@@ -13,12 +13,13 @@ its first parent, so whatever a merge brings in is attributed to the merge itsel
 from __future__ import annotations
 
 import difflib
+import functools
 import hashlib
 import json
 
 from .changeset import OP_ADD, OP_DELETE, Changeset
 from .derived import DerivedType
-from .objects import KIND_DIR, encode_htree, is_binary
+from .objects import KIND_DIR, KIND_LINK, encode_htree, is_binary
 from .trees import TreeCodec, apply_augmented
 
 
@@ -140,6 +141,13 @@ def bloom_of(grams) -> int:
     return v
 
 
+@functools.lru_cache(maxsize=16384)
+def name_bloom(name: str) -> int:
+    """The bloom bits of one file or directory name; names recur in every commit that rewrites
+    their directory, so they are hashed once."""
+    return bloom_of(name_trigrams(name))
+
+
 def bloom_may_contain(bloom: int, grams) -> bool:
     for g in grams:
         a, b = _bits(g)
@@ -171,7 +179,7 @@ class _SearchCodec(TreeCodec):
     def dir_entry(self, path, child_id, child_entries, old_entry):
         bloom = 0
         for name, e in child_entries.items():
-            bloom |= bloom_of(name_trigrams(name)) | (e[2] if e[0] == KIND_DIR else 0)
+            bloom |= name_bloom(name) | (e[2] if e[0] == KIND_DIR else 0)
         return (KIND_DIR, child_id, bloom)
 
 
@@ -237,6 +245,40 @@ class BlameType(DerivedType):
         return json.dumps(result, sort_keys=True, separators=(",", ":"))
 
 
+# -- content search -----------------------------------------------------------------------------------
+CONTENT_MAX_BYTES = 1 << 20
+
+
+def text_trigrams(text: str) -> set[str]:
+    s = text.lower()
+    return {s[i:i + 3] for i in range(len(s) - 2)}
+
+
+class ContentIndexType(DerivedType):
+    """``{"indexed": n}``: the trigrams of every text blob the changeset adds or modifies are recorded
+    once (ADR-16), so content search reads only blobs that can match (FR-SR-03). Binary blobs are not
+    indexed; text blobs over 1 MiB are marked and always read. Deferred: built on the first search at
+    a revision, or by a backfill."""
+
+    name, eager, depends_on = "content", False, ("copies",)  # copies fills the blob → path index
+
+    def derive(self, repo, cs_id, cs, parent_values):
+        n = 0
+        for c in cs.changes:
+            if c.op == OP_DELETE or c.kind == KIND_LINK or repo.meta.content_status(c.blob) is not None:
+                continue
+            data = repo.read_blob(c.blob)
+            if is_binary(data):
+                repo.meta.content_add(c.blob, "b", ())
+            elif len(data) > CONTENT_MAX_BYTES:
+                repo.meta.content_add(c.blob, "l", ())
+            else:
+                repo.meta.content_add(c.blob, "i", text_trigrams(data.decode("utf-8", "replace")))
+            n += 1
+        return json.dumps({"indexed": n})
+
+
 def register_default_types(manager) -> None:
-    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType()):
+    for t in (RootTreeType(), GraphType(), HistoryTreeType(), CopyInfoType(), SearchTreeType(), BlameType(),
+              ContentIndexType()):
         manager.register(t)

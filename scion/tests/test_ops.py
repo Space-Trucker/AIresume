@@ -10,7 +10,6 @@ import shutil
 import socket
 import sys
 import tempfile
-import threading
 import time
 import unittest
 import zlib

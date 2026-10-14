@@ -31,6 +31,11 @@ from .snapshot import latest_snapshot, load_snapshot
 from .storage import BoundedFileObjectStore, MemoryObjectStore, ObjectStore, ns_key
 
 UPSTREAM_TIER = {"daemon": "cache", "cache": "server"}
+RECHECK_WRONG_TIER = 60.0  # seconds before an upstream of the wrong tier is checked again
+
+
+def _no_log(level, message, **fields):
+    pass
 
 
 class ObjectSource:
@@ -51,21 +56,32 @@ class RemoteSource(ObjectSource):
         self.clients = [RpcClient(u, user=principal, token=token, tier=tier, tls=tls, timeout=timeout, retries=1)
                         for u in urls]
         self._checked: set[int] = set()
+        self._wrong: dict[int, float] = {}
         self._rr = itertools.count()
         self.failovers = 0
         self.requests = 0
+        self.log = _no_log
 
     def close(self) -> None:
         for c in self.clients:
             c.close_all()
 
-    def _check_tier(self, i: int, client: RpcClient) -> None:
+    def _usable(self, i: int, client: RpcClient) -> bool:
+        """Is this endpoint of the expected tier (FR-TIER-04)? Checked once; an endpoint of the
+        wrong tier is skipped, logged, and checked again a minute later in case it is redeployed."""
         if i in self._checked:
-            return
+            return True
+        wrong_at = self._wrong.get(i)
+        if wrong_at is not None and time.monotonic() - wrong_at < RECHECK_WRONG_TIER:
+            return False
         tier = client.call("tier_info").get("tier")
         if tier != self.expect:
-            raise RpcError(502, "bad_upstream", f"upstream {client.url} is a {tier}, not a {self.expect}")
+            self._wrong[i] = time.monotonic()
+            self.log("error", f"upstream {client.url} is a {tier}, not a {self.expect}: not used", upstream=client.url)
+            return False
+        self._wrong.pop(i, None)
         self._checked.add(i)
+        return True
 
     def fetch(self, repo, ids, user):
         out = []
@@ -82,11 +98,14 @@ class RemoteSource(ObjectSource):
     def _each(self, fn):
         start = next(self._rr)
         last: Exception | None = None
+        wrong = 0
         for k in range(len(self.clients)):
             i = (start + k) % len(self.clients)
             client = self.clients[i]
             try:
-                self._check_tier(i, client)
+                if not self._usable(i, client):
+                    wrong += 1
+                    continue
                 self.requests += 1
                 return fn(client)
             except RemoteError as e:
@@ -96,6 +115,9 @@ class RemoteSource(ObjectSource):
             except OSError as e:
                 last = e
             self.failovers += 1
+            self.log("warning", f"upstream {client.url} failed, trying the next: {last}", upstream=client.url)
+        if wrong == len(self.clients):
+            raise RpcError(502, "bad_upstream", f"no upstream endpoint is a {self.expect}")
         raise RpcError(503, "upstream_unavailable", f"no {self.expect} answered: {last}")
 
 
@@ -121,6 +143,7 @@ class EpochGuard:
         self._lock = threading.Lock()
         self.purges = 0
         self.check_failures = 0
+        self.log = _no_log
 
     def ensure(self, repo: str) -> str | None:
         last = self._checked.get(repo)
@@ -132,13 +155,16 @@ class EpochGuard:
                 return self.epochs.get(repo)
             try:
                 current = self.fetch_epochs([repo]).get(repo)
-            except (RpcError, OSError):
+            except (RpcError, OSError) as e:
                 self.check_failures += 1
+                self.log("warning", f"could not check the ACL epoch of {repo}; serving what is held: {e}", repo=repo)
                 self._checked[repo] = time.monotonic() - self.interval + min(1.0, self.interval)
                 return self.epochs.get(repo)
             if repo not in self.epochs or current != self.epochs[repo]:
-                self.purge(repo)
+                purged = self.purge(repo)
                 self.purges += 1
+                if repo in self.epochs:  # not the first check: a policy or index change upstream
+                    self.log("warning", f"the ACL epoch of {repo} changed: purged {purged or 0} object(s)", repo=repo)
                 self.epochs[repo] = current
                 self._save()
             self._checked[repo] = time.monotonic()
@@ -171,20 +197,22 @@ class CachingSource(ObjectSource):
         self._inflight: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
         self.counters: Counter = Counter()
+        self.log = _no_log
 
     def _count(self, key: str, n: int = 1) -> None:
         with self._lock:
             self.counters[key] += n
 
-    def purge(self, repo: str) -> None:
-        """Forget everything held for one repository (ADR-20)."""
+    def purge(self, repo: str) -> int:
+        """Forget everything held for one repository (ADR-20); returns the objects removed."""
         prefix = repo + "/"
         with self._lock:
             for k in [k for k in self.restricted if k.startswith(prefix)]:
                 del self.restricted[k]
         purge = getattr(self.store, "purge_namespace", None)
-        if purge:
-            self._count("purged", purge(repo))
+        n = purge(repo) if purge else 0
+        self._count("purged", n)
+        return n
 
     def fetch(self, repo, ids, user):
         if self.guard is not None:
@@ -235,9 +263,17 @@ class CachingSource(ObjectSource):
             self._absorb(repo, self.upstream.fetch(repo, retry, user), result)
         return [(oid, *result[oid]) for oid in ids]
 
+    def _remember_restricted(self, key: str) -> None:
+        with self._lock:  # never stored; every request is re-authorized upstream
+            self.restricted[key] = None
+            if len(self.restricted) > self.MAX_RESTRICTED:
+                self.restricted.popitem(last=False)
+
     def _absorb(self, repo, items, result) -> None:
         for oid, flags, stored in items:
             if flags & (F_MISSING | F_DENIED):
+                if flags & F_DENIED:  # an object denied to anyone isn't public: forward it from now on
+                    self._remember_restricted(ns_key(repo, oid))
                 result[oid] = (flags, b"")
                 continue
             if self.verify:
@@ -245,13 +281,11 @@ class CachingSource(ObjectSource):
                     decode_stored(stored, expected_id=oid)  # FR-OBJ-04: every object is checked
                 except ObjectError as e:
                     self._count("rejected_objects")
+                    self.log("error", f"upstream sent a bad object {oid[:12]} of {repo}: {e}", repo=repo, oid=oid)
                     raise RpcError(502, "integrity", f"upstream sent a bad object {oid[:12]}: {e}") from None
             key = ns_key(repo, oid)
             if flags & F_RESTRICTED:
-                with self._lock:  # never stored; every request is re-authorized upstream
-                    self.restricted[key] = None
-                    if len(self.restricted) > self.MAX_RESTRICTED:
-                        self.restricted.popitem(last=False)
+                self._remember_restricted(key)
             else:
                 self.store.put_stored(key, stored, verify=False)
             result[oid] = (flags, stored)
@@ -279,6 +313,9 @@ class ObjectTierService(Service):
                  verbose: bool = False):
         super().__init__(identity, verbose=verbose)
         self.tier, self.source, self.allowed_callers = tier, source, tuple(allowed_callers)
+        for part in (source, source.upstream, source.guard):  # everything logs to this tier (ADR-18)
+            if part is not None and hasattr(part, "log"):
+                part.log = self.log
         self.register("get_objects", self._get_objects, klass="objects", binary_out=True,
                       tiers=self.allowed_callers, cost=ids_cost)
         self.register("tier_info", lambda c, p: {"tier": self.tier, "object_callers": list(self.allowed_callers)})
@@ -355,6 +392,8 @@ class DaemonService(ObjectTierService):
             epoch = self.source.guard.ensure(repo)
             if epoch is None or info.get("epoch") != epoch:
                 self.metrics.incr("snapshot.stale")  # taken under another ACL epoch: may hold uncacheable objects
+                self.log("warning", f"snapshot {info['file']} of {repo} predates its ACL epoch: not imported",
+                         repo=repo)
                 continue
             n = load_snapshot(os.path.join(d, info["file"]), self.source.store, repo, expect_epoch=epoch)
             self.snapshots_loaded[repo] = info["file"]
@@ -369,8 +408,7 @@ class DaemonService(ObjectTierService):
                 self.refresh_snapshots()
             except (OSError, ValueError, ObjectError) as e:  # keep serving on a bad snapshot
                 self.metrics.incr("snapshot.errors")
-                if self.verbose:
-                    print(f"scion-daemon: snapshot refresh failed: {e}")
+                self.log("error", f"snapshot refresh failed: {e}")
 
     def stop(self):
         self._stop.set()

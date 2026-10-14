@@ -33,10 +33,10 @@ A WP is done when its tests pass and its rows in 11 read **I** (12.5).
 | WP-B3.2 | B3 | Antique: change requests, classification, semantic rules | FR-RV-01…08 | T-RV-01…06 |
 | WP-B3.3 | B3 | landing: group commit, `landing` state, conflicts, landing index | FR-LD-01…07 | T-LD-01…03, T-SIM-01 |
 | WP-B3.4 | B3 | interactive review UI and notifications | FR-RV-09/10 | T-RV-07/08 |
-| WP-B4.1 | B4 | git ingestion | FR-MG-01…07 | T-MG-01…04 |
-| WP-B4.2 | B4 | post-merge testing, deploy gate, bisect, revert pipeline | FR-PM-01…05, FR-AUT-01/02 | T-PM-01/02, T-AUT-01/02 |
+| WP-B4.1 | B4 | git ingestion | FR-MG-01…07 | T-MG-01…05 |
+| WP-B4.2 | B4 | post-merge testing, deploy gate, bisect, revert pipeline | FR-PM-01…05, FR-AUT-01/02 | T-PM-01/02/04, T-AUT-01/02 |
 | WP-B4.3 | B4 | code search: path index, grep, content index | FR-SR-01…04 | T-SR-01/02 |
-| WP-B4.4 | B4 | superfans, alerts, logs; admin toolkit; backup and restore | FR-OP-03…05/07/08, FR-AD-01…04/06 | T-OPS-02…04, T-BAK-01, T-PERF-01 |
+| WP-B4.4 | B4 | superfans, alerts, logs; admin toolkit; backup and restore; the end-to-end demo | FR-OP-03…05/07/08, FR-AD-01…04/06 | T-OPS-02…04, T-BAK-01, T-PERF-01, T-ADM-02, T-E2E-01 |
 | WP-B5.1 | B5 | system verification: stress, end to end, benchmarks, docs and traceability | NFR-01…04, NFR-13, NFR-15, NFR-17 | T-SIM-01, T-E2E-01, T-PERF-01, T-DOC-01/02 |
 | WP-X | later | metadata-store adapter for a distributed database (Spanner) | R-02, NFR-07 | needs infrastructure |
 

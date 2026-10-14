@@ -16,6 +16,8 @@ scion-server = "scion.cli:server_main"
 scion-cache = "scion.cli:cache_main"
 scion-daemon = "scion.cli:daemon_main"
 scion-admin = "scion.cli:admin_main"
+scion-postmerge = "scion.cli:postmerge_main"
+scion-superfan = "scion.cli:superfan_main"
 
 [tool.setuptools]
 packages = ["scion", "scion.tools"]

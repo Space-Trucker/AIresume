@@ -30,6 +30,7 @@ from .storage import FileObjectStore, LRUCache
 from .trees import PathConflict, TreeOps
 
 REF_NAME = re.compile(r"^[A-Za-z0-9._/-]+$")
+CACHE_BYTES = 64 << 20  # decoded trees, history and search trees, changesets (by encoded size)
 
 
 class NotFound(Exception):
@@ -71,7 +72,7 @@ class Repository:
         os.makedirs(root, exist_ok=True)
         self.objects = FileObjectStore(os.path.join(root, "objects"))
         self.meta = MetaStore(os.path.join(root, "meta.db"))
-        self.cache = LRUCache(300_000)
+        self.cache = LRUCache(300_000, max_bytes=CACHE_BYTES)
         self.trees = TreeOps(self.objects, self.cache)
         self.policy = policy or OpenPolicy()
         self.audit = None  # an audit.AuditLog, set by the deployment (FR-IAM-10)
@@ -90,23 +91,22 @@ class Repository:
     def read_blob(self, oid: str) -> bytes:
         return self.objects.get_payload(oid, "blob")
 
-    def _cached(self, kind, oid, load):
-        v = self.cache.get((kind, oid))
+    def _cached(self, otype: str, oid: str, decode):
+        v = self.cache.get((otype, oid))
         if v is None:
-            v = load()
-            self.cache.put((kind, oid), v)
+            payload = self.objects.get_payload(oid, otype)
+            v = decode(payload)
+            self.cache.put((otype, oid), v, len(payload))
         return v
 
     def read_htree(self, oid: str) -> dict:
-        return self._cached("htree", oid, lambda: decode_htree(self.objects.get_payload(oid, "htree")))
+        return self._cached("htree", oid, decode_htree)
 
     def read_stree(self, oid: str) -> dict:
-        def load():
-            return {r[0]: (r[1], r[2], int(r[3], 16)) for r in json.loads(self.objects.get_payload(oid, "stree"))}
-        return self._cached("stree", oid, load)
+        return self._cached("stree", oid, lambda p: {r[0]: (r[1], r[2], int(r[3], 16)) for r in json.loads(p)})
 
     def read_blame(self, oid: str) -> list:
-        return self._cached("blame", oid, lambda: json.loads(self.objects.get_payload(oid, "blame"))["runs"])
+        return self._cached("blame", oid, lambda p: json.loads(p)["runs"])
 
     def htree_lookup(self, root: str, path: str):
         node = (KIND_DIR, "", None, root)
@@ -250,7 +250,7 @@ class Repository:
             if data is None:
                 raise NotFound(f"unknown changeset {cs_id}")
             cs = Changeset.decode(data)
-            self.cache.put(("cs", cs_id), cs)
+            self.cache.put(("cs", cs_id), cs, len(data))
         return cs
 
     def resolve(self, rev: str) -> str:
@@ -297,8 +297,9 @@ class Repository:
     def graph(self, cs_id: str) -> dict:
         g = self.cache.get(("graph", cs_id))
         if g is None:
-            g = json.loads(self.derived.get("graph", cs_id))
-            self.cache.put(("graph", cs_id), g)
+            raw = self.derived.get("graph", cs_id)
+            g = json.loads(raw)
+            self.cache.put(("graph", cs_id), g, len(raw))
         return g
 
     def generation(self, cs_id: str) -> int:
@@ -416,7 +417,7 @@ class Repository:
 
     def list_dir(self, cs_id: str, path: str = "", user=None) -> list[dict]:
         path = normalize_path(path)
-        if not self._can_list(user, path):
+        if not self.can_list(user, path):
             raise PermissionDenied(f"{user} may not read {path}")
         e = self.lookup(cs_id, path)
         if e is None or e[0] != KIND_DIR:
@@ -424,11 +425,11 @@ class Repository:
         out = []
         for name, (kind, oid) in sorted(self.trees.read(e[1]).items()):
             child = f"{path}/{name}" if path else name
-            if self.policy.can_read(user, child) or (kind == KIND_DIR and self._can_list(user, child)):
+            if self.policy.can_read(user, child) or (kind == KIND_DIR and self.can_list(user, child)):
                 out.append({"name": name, "path": child, "kind": kind, "id": oid})
         return out
 
-    def _can_list(self, user, path: str) -> bool:
+    def can_list(self, user, path: str) -> bool:
         """A directory can be listed if it is readable, or if some readable directory lies beneath it
         (a public folder inside a private one stays reachable). The second test is the policy's."""
         if self.policy.can_read(user, path):
