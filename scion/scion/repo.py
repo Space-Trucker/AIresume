@@ -379,10 +379,11 @@ class Repository:
         for c in cs.changes:
             c.validate()
         cs_id = cs.id
-        if self.meta.insert_changeset(cs_id, cs.encode()):
+        new = self.meta.insert_changeset(cs_id, cs.encode())
+        if new:
             self.stats["changesets.created"] += 1
         self.derived.put("tree", cs_id, new_root)
-        self.derived.derive_eager(cs_id)
+        self.derived.derive_eager(cs_id, new)
         return cs_id
 
     # ============================================================================ refs (FR-REF)
