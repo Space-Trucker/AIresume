@@ -156,6 +156,7 @@
 | T-LD-07 | FR-LD-03 | a request that fails with something other than a conflict fails alone: the rest of its batch lands, no thread is left waiting, and the CR can land again | test_antique |
 | T-LD-08 | FR-LD-01/05/07 | the ref's compare-and-swap, the landing index, the post-merge job and the CR's new state commit as one transaction, or not at all | test_antique |
 | T-LD-09 | FR-LD-01, FR-REF-03 | a target Antique may not move is refused before the CR changes state; a CR left `landing` by a stopped server can be landed or abandoned again | test_antique |
+| T-LD-10 | FR-LD-01/03 | landing is idempotent: a land resent while the CR is landing (a client that timed out) waits for that landing and answers with it, so the change lands once and the resend succeeds (found by the 16 × 3 swarm on the Spanner emulator) | test_antique |
 | T-PM-05 | FR-PM-04 | a revert that can't land (later work conflicts) leaves the job failed and the worker running | test_automation |
 | T-PM-06 | FR-PM-04 | a failure on top of a base still being tested waits for the base's result, then is reverted | test_automation |
 | T-MG-06 | FR-MG-01/04/05, FR-DD-09 | names holding a carriage return or a form feed survive storage and read back in another process; a commit's encoding header decodes its message; each run reports its own counts; blame counts lines as git does | test_ingest |

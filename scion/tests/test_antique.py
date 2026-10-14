@@ -466,6 +466,26 @@ class TestLanding(AntiqueTest):
         self.assertEqual(self.call("x", "antique.get", id=crs[1]["id"])["state"], "open")
         self.assertEqual(self.call(crs[1]["author"], "antique.land", id=crs[1]["id"])["state"], "landed")
 
+    def test_T_LD_10_a_land_resent_while_landing_gets_that_landing_s_outcome(self):
+        """The 16 × 3 swarm on the Spanner emulator: a landing outlasted the client's timeout, the
+        client sent the request again, and the second failed with "is landing" although the first
+        landed. A land for a CR that is landing waits for that landing and answers with it, as it
+        answers for a CR already landed."""
+        cr = self.cr("alice", {"src/other.py": "x = 2\n"})
+        self.call("carol", "antique.approve", id=cr["id"])
+        repo, real_ref = self.c.repo(), self.c.repo().update_ref
+
+        def slow_update_ref(*args, **kw):  # the landing outlasts the client's timeout
+            time.sleep(1.0)
+            return real_ref(*args, **kw)
+
+        impatient = self.c.client("alice", timeout=0.6, retries=5)
+        with mock.patch.object(repo, "update_ref", slow_update_ref):
+            landed = impatient.call("antique.land", repo=REPO, id=cr["id"])
+        self.assertEqual(landed["state"], "landed")
+        self.assertEqual(self.call("alice", "resolve", rev="main"), landed["landed_cs"])
+        self.assertEqual(len(self.call("alice", "ref_log", name="main", limit=10)), 2)  # the import, then one landing
+
     def test_T_LD_08_the_ref_moves_with_its_landing_records_or_not_at_all(self):
         """The ref's compare-and-swap, the landing index, the post-merge job and the CR's state are
         one transaction: when it fails, nothing changed and the CR can land again."""

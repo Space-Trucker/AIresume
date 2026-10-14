@@ -115,7 +115,7 @@ B5 (12 §12.9) read **B6** until milestone B6 builds them.
 | FR-RV-10 | UC-13 | F-32 | notify.Notifier webhooks on CR events | T-RV-08 | I |  |
 | FR-LD-01 | UC-15 | F-30 | Antique.land: server-side replay of the first-parent chain, one CAS carrying the landing's records | T-LD-01, T-LD-03, T-LD-06, T-LD-08, T-LD-09 | I |  |
 | FR-LD-02 | UC-15 | F-30 | no lock: per-server group commit, CAS only | T-SIM-01 | I |  |
-| FR-LD-03 | UC-15 | F-30 | group commit; jittered backoff; deadline (503 retry); a failing request fails alone | T-SIM-01, T-LD-04, T-LD-07 | I |  |
+| FR-LD-03 | UC-15 | F-30 | group commit; jittered backoff; deadline (503 retry); a failing request fails alone; a resent land answers with the landing in flight | T-SIM-01, T-LD-04, T-LD-07, T-LD-10 | I |  |
 | FR-LD-04 | UC-16 | F-30 | MergeConflict -> 409 and CR state conflict | T-LD-02 | I |  |
 | FR-LD-05 | UC-17 | F-31 | landings index (landed and source ids), written with the ref's move | T-LD-01, T-SIM-01, T-LD-06, T-LD-08 | I |  |
 | FR-LD-06 | UC-21 | F-38 | antique.land_changeset (services and admins) | T-LD-05 | I |  |

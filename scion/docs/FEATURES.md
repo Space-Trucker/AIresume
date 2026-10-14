@@ -11,7 +11,7 @@ and mapped to the code that implements it. Claims that are about Anthropic's org
 scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are
 listed at the end for completeness.
 
-Legend: **Done** = implemented and covered by tests (`tests/`, 201 tests, plus the end-to-end demo
+Legend: **Done** = implemented and covered by tests (`tests/`, 202 tests, plus the end-to-end demo
 `examples/demo.sh`). **Partial** = implemented with a documented simplification. **Out of scope** =
 cannot be reproduced in a repository (explained).
 
@@ -159,6 +159,9 @@ too. While rebuilding (each now has a regression test):
 11. The first query after a pause took 106 ms: the server closes connections idle for 5 minutes, and
     the client waited 100 ms before reconnecting, as if the server were down. It now reconnects at
     once (T-OPS-01) (B6, the CPython pilot).
+12. A landing that outlasted the client's timeout was sent again, and the second request failed with
+    "is landing" while the first landed. A land for a CR that is landing now waits for that landing
+    and answers with it (T-LD-10) (B6, the 16 × 3 swarm on the Spanner emulator).
 
 In the deleted prototype:
 

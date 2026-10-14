@@ -266,8 +266,16 @@ class Antique:
 
     # -- landing (UC-15) -------------------------------------------------------------------------------
     def land(self, user: str, cr_id: int, force: bool = False, timeout: float = 300.0, rev: int | None = None) -> dict:
-        """Land the CR at its latest revision, which ``rev`` (the one the lander saw) must be."""
+        """Land the CR at its latest revision, which ``rev`` (the one the lander saw) must be. Landing
+        is idempotent: a request for a CR that landed, or that is landing (a client resending after
+        its timeout), answers with that landing."""
         cr = self._row(cr_id)
+        if cr["state"] == LANDING and (user == cr["author"] or self.policy.is_admin(user)
+                                       or self.policy.is_service(user)):
+            deadline = time.time() + timeout
+            while cr["state"] == LANDING and not self._stale(cr) and time.time() < deadline:
+                time.sleep(0.05)
+                cr = self._row(cr_id)
         if cr["state"] == LANDED:
             return self.get(cr_id)  # idempotent
         stale = self._stale(cr)

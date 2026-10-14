@@ -690,7 +690,7 @@ class RpcClient:
                 data = resp.read()
             except (OSError, http.client.HTTPException) as e:
                 self.close()
-                if reused:  # the server closed it while idle (after 300 s): reconnect at once
+                if reused and isinstance(e, ConnectionError):  # closed while idle (after 300 s): at once
                     continue
                 attempt += 1
                 if (sent and not idempotent) or attempt > self.retries:
