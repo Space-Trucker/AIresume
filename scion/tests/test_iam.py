@@ -9,7 +9,7 @@ import unittest
 import zlib
 
 import helpers  # noqa: F401
-from helpers import REPO, Cluster
+from helpers import REPO, Cluster, tamper
 from scion.iam import Identity, hash_token
 from scion.objects import F_DENIED, F_RESTRICTED, blob_id
 from scion.rpc import RemoteError
@@ -367,7 +367,7 @@ class TestPolicyChanges(DirectoryTest):
         self.assertGreater(denial["at"], 0)
         self.assertEqual(self.call("root", "audit_verify")["ok"], True)
         # tampering with any entry breaks the chain
-        self.c.repo().meta.execute("UPDATE audit SET actor = 'mallory' WHERE seq = 2")
+        tamper(self.c.repo().meta, "UPDATE audit SET actor = 'mallory' WHERE seq = 2")
         check = self.call("root", "audit_verify")
         self.assertEqual((check["ok"], check["first_bad"]), (False, 2))
 

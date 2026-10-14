@@ -57,6 +57,15 @@ def repository(path: str, **kw) -> Repository:
     return Repository(path, meta=open_metastore(config, path, kw.get("name", "main")), **kw)
 
 
+def tamper(meta, sql: str) -> None:
+    """Change stored metadata behind the store's back, as an attacker with database access would:
+    ``sql`` is an UPDATE ending in a WHERE clause, which on Spanner also selects the repository."""
+    if SPANNER:
+        meta.client.run_in_transaction(lambda tx: tx.execute(sql + " AND repo = @repo", {"repo": meta.repo}))
+    else:
+        meta.execute(sql)
+
+
 @atexit.register
 def _drop_databases() -> None:
     for name in _databases:
