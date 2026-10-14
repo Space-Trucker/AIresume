@@ -18,10 +18,13 @@ from collections import Counter
 from .changeset import OP_ADD, OP_DELETE, OP_MODIFY, Changeset, FileChange
 from .derived import DerivedDataManager
 from .derived_types import expand_runs, register_default_types, split_lines
+from .iam import PermissionDenied
 from .merge3 import merge3
 from .meta import MetaStore
-from .objects import (EMPTY_TREE_ID, FILE_KINDS, KIND_DIR, KIND_LINK, decode_htree, is_binary, is_object_id,
-                      normalize_path, split_path)
+from .objects import (EMPTY_TREE_ID, F_DENIED, F_MISSING, F_RESTRICTED, FILE_KINDS, KIND_DIR, KIND_LINK,
+                      PUBLIC_TYPES, ObjectTooLarge, blob_id, decode_htree, decode_limited, is_binary,
+                      is_object_id,
+                      normalize_path, split_path, stored_type)
 from .storage import FileObjectStore, LRUCache
 from .trees import PathConflict, TreeOps
 
@@ -29,10 +32,6 @@ REF_NAME = re.compile(r"^[A-Za-z0-9._/-]+$")
 
 
 class NotFound(Exception):
-    pass
-
-
-class PermissionDenied(Exception):
     pass
 
 
@@ -120,6 +119,56 @@ class Repository:
     def apply_to_tree(self, base: str | None, changes: dict) -> str:
         return self.trees.apply(base, changes)
 
+    # ======================================================== object protocol (FR-FP, ADR-06/13)
+    def restricted_objects(self, ids: list[str]) -> set[str]:
+        """Objects that shared tiers must not cache. In a private repository that is all of them
+        (ADR-13); directory restrictions add more (FR-IAM-05)."""
+        return set(ids) if not getattr(self.policy, "public", True) else set()
+
+    def fetch_objects(self, ids: list[str], user=None) -> list[tuple[str, int, bytes]]:
+        """``get_objects`` on the authoritative tier: stored bytes as they are, flagged
+        ``F_RESTRICTED`` when shared tiers must not cache them. Only blobs and trees are served;
+        derived structures stay internal."""
+        if not self.policy.can_read(user, ""):
+            return [(oid, F_DENIED, b"") for oid in ids]
+        restricted = self.restricted_objects(ids)
+        out = []
+        for oid in ids:
+            stored = self.objects.get_stored(oid) if is_object_id(oid) else None
+            if stored is None or stored_type(stored) not in PUBLIC_TYPES:
+                out.append((oid, F_MISSING, b""))
+            else:
+                out.append((oid, F_RESTRICTED if oid in restricted else 0, stored))
+        self.stats["objects.served"] += len(out)
+        return out
+
+    def missing_objects(self, ids: list[str], user=None) -> list[str]:
+        """``has_objects``: the ids this repository does not have, so uploads skip known
+        content (FR-WR-06). Only writers may ask."""
+        if not self.policy.can_write(user, ""):
+            raise PermissionDenied(f"{user} may not write to {self.name}")
+        return [oid for oid in ids if not (is_object_id(oid) and self.objects.has(oid))]
+
+    def put_objects(self, items, user=None) -> int:
+        """Store uploaded blobs after verifying each against its id. Trees are always derived on
+        the server (threat T4). Nothing is stored unless every object is valid and within the
+        per-file limit (FR-WR-07)."""
+        if not self.policy.can_write(user, ""):
+            raise PermissionDenied(f"{user} may not write to {self.name}")
+        limit = getattr(self.policy, "max_file_bytes", None)
+        checked = []
+        for oid, _flags, stored in items:
+            if not is_object_id(oid):
+                raise ValueError(f"bad object id {oid!r}")
+            otype, _ = decode_limited(stored, oid, limit)
+            if otype != "blob":
+                raise ValueError("only blobs may be uploaded; trees are derived on the server")
+            checked.append((oid, stored))
+        for oid, stored in checked:
+            self.objects.put_stored(oid, stored, verify=False)
+        self.stats["objects.uploaded"] += len(checked)
+        return len(checked)
+
     # ============================================================================== changesets
     def get_changeset(self, cs_id: str) -> Changeset:
         cs = self.cache.get(("cs", cs_id))
@@ -200,7 +249,7 @@ class Repository:
         if len(set(parents)) != len(parents):
             raise ValueError("duplicate parents")
         base = self.root_tree(parents[0]) if parents else None
-        changes, tree_changes, seen = [], {}, set()
+        changes, tree_changes, seen, pending = [], {}, set(), []
         for f in files:
             path = normalize_path(f.get("path", ""))
             if not path:
@@ -226,7 +275,12 @@ class Repository:
                 if not self.objects.has(blob):
                     raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
             else:
-                blob = self.put_blob(f.get("content", b""))
+                data = f.get("content", b"")
+                limit = getattr(self.policy, "max_file_bytes", None)
+                if limit is not None and len(data) > limit:
+                    raise ObjectTooLarge(f"{path} is larger than the {limit}-byte limit")
+                pending.append((path, data))
+                blob = blob_id(data)
             if old_file == (kind, blob):
                 continue  # no-op
             changes.append(FileChange(path, OP_MODIFY if old_file else OP_ADD, kind, blob))
@@ -235,6 +289,8 @@ class Repository:
             new_root = self.apply_to_tree(base, tree_changes)
         except PathConflict as e:
             raise ValueError(str(e)) from None
+        for _, data in pending:  # inline contents are stored once every entry has been validated
+            self.put_blob(data)
         cs = Changeset(tuple(parents), author, message, int(time.time() if timestamp is None else timestamp),
                        tuple(sorted(changes, key=lambda c: c.path)), dict(extra or {}))
         for c in cs.changes:

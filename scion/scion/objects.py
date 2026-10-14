@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import zlib
 
 KIND_FILE, KIND_EXEC, KIND_LINK, KIND_DIR = "f", "x", "l", "d"
@@ -17,8 +18,16 @@ FILE_KINDS = (KIND_FILE, KIND_EXEC, KIND_LINK)
 PUBLIC_TYPES = ("blob", "tree")  # derived internals are never served to clients (FR-DD-04)
 
 
+# Object protocol flags (07 §7.7): restricted objects are never cached by shared tiers.
+F_RESTRICTED, F_MISSING, F_DENIED = 0x1, 0x2, 0x4
+
+
 class ObjectError(Exception):
     """An object failed integrity verification or is malformed."""
+
+
+class ObjectTooLarge(ObjectError):
+    """An uploaded object exceeds the configured per-file limit (FR-WR-07)."""
 
 
 def object_id(otype: str, payload: bytes) -> str:
@@ -47,6 +56,22 @@ def decode_stored(stored: bytes, expected_id: str | None = None) -> tuple[str, b
     return raw[:nul].decode(), raw[nul + 1:]
 
 
+def decode_limited(stored: bytes, expected_id: str, max_payload: int | None) -> tuple[str, bytes]:
+    """``decode_stored`` for untrusted uploads: decompression stops once the payload passes
+    ``max_payload``, so a small compressed upload cannot expand without bound (threat D3)."""
+    if max_payload is None:
+        return decode_stored(stored, expected_id)
+    d = zlib.decompressobj()
+    try:
+        raw = d.decompress(stored, max_payload + 64)
+    except zlib.error as e:
+        raise ObjectError(f"corrupt object: {e}") from None
+    nul = raw.find(b"\0")
+    if d.unconsumed_tail or (nul >= 0 and len(raw) - nul - 1 > max_payload):
+        raise ObjectTooLarge(f"object {expected_id[:12]} is larger than the {max_payload}-byte limit")
+    return decode_stored(stored, expected_id)
+
+
 def stored_type(stored: bytes) -> str:
     head = zlib.decompressobj().decompress(stored, 16)
     return head.split(b"\0", 1)[0].decode(errors="replace")
@@ -60,6 +85,17 @@ def is_object_id(s: str) -> bool:
 def validate_name(name: str) -> None:
     if not name or name in (".", "..") or any(c in name for c in "/\n\0"):
         raise ObjectError(f"invalid path component {name!r}")
+
+
+# Repository names are path components and cache-key prefixes (ADR-13). Three or more characters
+# keep them apart from the two-character fan-out directories of object stores.
+REPO_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{2,62}$")
+
+
+def validate_repo_name(name) -> str:
+    if not isinstance(name, str) or not REPO_NAME.match(name) or ".." in name:
+        raise ValueError(f"invalid repository name {name!r}: use 3-63 of a-z 0-9 . _ -")
+    return name
 
 
 def encode_tree(entries: dict[str, tuple[str, str]]) -> bytes:

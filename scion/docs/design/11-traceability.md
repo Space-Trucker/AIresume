@@ -49,52 +49,52 @@ requirement is built and its acceptance tests pass.
 | FR-QRY-07 | UC-09 | F-08 | blame | T-DD-05, T-DD-08, T-FUZZ-01 | I |  |
 | FR-QRY-08 | UC-02 | F-09 | read_file; list_dir | T-CORE-11 | I |  |
 | FR-QRY-09 | UC-11, UC-20 | F-07 | fp_ancestor | T-DD-06, T-FUZZ-01 | I |  |
-| FR-QRY-10 | all | F-09 | client uses only public RPCs | T-CL-11 | B2 | |
-| FR-WR-01 | UC-07 | F-11 | create_changeset (content_b64) | T-CL-10 | B2 | |
+| FR-QRY-10 | all | F-09 | ScionService registry; the client calls only registered RPCs | T-CL-11 | I |  |
+| FR-WR-01 | UC-07 | F-11 | create_changeset with content_b64 or uploaded blobs | T-CL-10, T-CL-11 | I |  |
 | FR-WR-02 | UC-06, UC-29 | F-10 | repo.merge; merge3 | T-WR-01 | I |  |
 | FR-WR-03 | UC-06 | F-10 | repo.rebase | T-WR-01, T-CL-04 | I |  |
 | FR-WR-04 | UC-21 | F-10 | repo.revert | T-WR-01, T-PM-01 | I |  |
-| FR-WR-05 | UC-07 | F-11 | create_changeset update_ref | T-CL-10 | B2 | |
-| FR-WR-06 | UC-04 | F-11 | has_objects | T-CL-01 | B2 | |
-| FR-WR-07 | UC-04, UC-07 | F-11 | policy limits.max_file_bytes; 413 | T-LIM-01 | B2 | |
-| FR-FP-01 | UC-01 | F-12 | get_objects (ids only) | T-TIER-01 | B2 | |
-| FR-FP-02 | UC-01 | F-12 | WorkingCopy._collect_files | T-CL-06 | B2 | |
-| FR-FP-03 | UC-01 | F-12 | clone progress marker; resume in place | T-CL-13 | B2 | |
-| FR-FP-04 | UC-01, UC-02 | F-12 | same RPC for every mode | T-CL-06/07 | B2 | |
-| FR-FP-05 | UC-01 | F-12 | shared get_objects handler | T-TIER-02 | B2 | |
-| FR-FP-06 | UC-01 | F-12 | stored bytes passed through | T-TIER-02 | B2 | |
-| FR-FP-07 | UC-01 | F-12 | FETCH_BATCH; FETCH_PARALLEL | T-TIER-01 | B2 | |
-| FR-TIER-01 | UC-01 | F-13 | DaemonService (Unix socket) | T-TIER-01 | B2 | |
-| FR-TIER-02 | UC-01 | F-13 | BoundedFileObjectStore | T-CORE-02 | B2 | |
-| FR-TIER-03 | UC-24 | F-14 | snapshot; refresh_snapshot | T-TIER-05 | B2 | |
-| FR-TIER-04 | UC-25 | F-13 | tier principals; allowed callers | T-TIER-03 | B2 | |
-| FR-TIER-05 | UC-01 | F-15 | MemoryObjectStore cache | T-TIER-01 | B2 | |
-| FR-TIER-06 | UC-01 | F-15 | RemoteSource → server | T-TIER-01 | B2 | |
-| FR-TIER-07 | UC-25 | F-16 | Service.dispatch(tiers) | T-TIER-03 | B2 | |
-| FR-TIER-08 | UC-25 | F-15 | in-memory caches | T-TIER-06 | B2 | |
-| FR-TIER-09 | UC-25 | F-15 | RemoteSource failover | T-TIER-06 | B2 | |
-| FR-TIER-10 | UC-01 | F-15 | CachingSource single flight | T-TIER-07 | B2 | |
-| FR-TIER-11 | UC-24 | F-14 | create_snapshot; LATEST | T-TIER-05 | B2 | |
-| FR-CL-01 | UC-01 | F-17 | WorkingCopy.clone | T-CL-06/07, T-TIER-01 | B2 | |
-| FR-CL-02 | UC-01 | F-18 | BoundedFileObjectStore | T-CL-08 | B2 | |
-| FR-CL-03 | UC-01 | F-19 | _write_file | T-CL-02 | B2 | |
-| FR-CL-04 | UC-03 | F-20 | fsmonitor | T-CL-09 | B2 | |
-| FR-CL-05 | UC-03 | F-19 | status/add/rm/restore/diff_local | T-CL-01/05 | B2 | |
-| FR-CL-06 | UC-04 | F-19 | commit | T-CL-01 | B2 | |
-| FR-CL-07 | UC-05 | F-19 | update | T-CL-03 | B2 | |
-| FR-CL-08 | UC-06 | F-19 | rebase | T-CL-04 | B2 | |
-| FR-CL-09 | UC-01 | F-17 | sparse_add/remove | T-CL-06, T-CL-12 | B2 | |
-| FR-CL-10 | UC-02 | F-17 | materialize; read | T-CL-07 | B2 | |
-| FR-CL-11 | all | F-21 | cli.scn_main | T-CL-11 | B2 | |
-| FR-CL-12 | UC-01 | F-13 | config "objects" | T-TIER-01 | B2 | |
+| FR-WR-05 | UC-07 | F-11 | create_changeset update_ref (compare-and-swap) | T-CL-10 | I |  |
+| FR-WR-06 | UC-04 | F-11 | has_objects; WorkingCopy.upload | T-CL-01 | I |  |
+| FR-WR-07 | UC-04, UC-07 | F-11 | Policy.max_file_bytes; decode_limited; 413 | T-LIM-01 | I |  |
+| FR-FP-01 | UC-01 | F-12 | get_objects {repo, ids}: no "have" field | T-TIER-02 | I |  |
+| FR-FP-02 | UC-01 | F-12 | ObjectFetcher.trees by level; WorkingCopy._collect_files | T-CL-06 | I |  |
+| FR-FP-03 | UC-01 | F-12 | per-object frames; pending target in state.db; clone resumes in place | T-CL-13 | I |  |
+| FR-FP-04 | UC-01, UC-02 | F-12 | sparse and virtual modes use only get_objects | T-CL-06, T-CL-07 | I |  |
+| FR-FP-05 | UC-01 | F-12 | one get_objects contract on ObjectTierService and ScionService | T-TIER-02 | I |  |
+| FR-FP-06 | UC-01 | F-12 | CachingSource stores and serves stored bytes unchanged | T-TIER-02 | I |  |
+| FR-FP-07 | UC-01 | F-12 | MAX_IDS_PER_REQUEST; ObjectFetcher.fetch_batches in parallel | T-TIER-01, T-CL-13 | I |  |
+| FR-TIER-01 | UC-01 | F-13 | DaemonService on a Unix socket; BoundedFileObjectStore | T-TIER-01 | I |  |
+| FR-TIER-02 | UC-01 | F-13 | BoundedFileObjectStore (LRU) | T-CORE-02, T-CL-08 | I |  |
+| FR-TIER-03 | UC-24 | F-14 | DaemonService.refresh_snapshots; load_snapshot | T-TIER-05 | I |  |
+| FR-TIER-04 | UC-25 | F-13 | RemoteSource checks each upstream's tier_info; servers refuse daemons | T-TIER-03 | I |  |
+| FR-TIER-05 | UC-01 | F-15 | make_cache_service: MemoryObjectStore | T-TIER-01 | I |  |
+| FR-TIER-06 | UC-01 | F-15 | RemoteSource to the servers: one request per batch | T-TIER-01 | I |  |
+| FR-TIER-07 | UC-25 | F-16 | Method.tiers; TIER_PRINCIPALS; mutual TLS | T-TIER-03, T-TLS-01 | I |  |
+| FR-TIER-08 | UC-25 | F-15 | tiers hold only caches over a shared deployment root | T-TIER-06 | I |  |
+| FR-TIER-09 | UC-25 | F-15 | RemoteSource and FailoverClient | T-TIER-06 | I |  |
+| FR-TIER-10 | UC-01 | F-15 | CachingSource single flight | T-TIER-07 | I |  |
+| FR-TIER-11 | UC-24 | F-14 | create_snapshot; atomic LATEST; scion-admin snapshot | T-TIER-05 | I |  |
+| FR-CL-01 | UC-01 | F-17 | WorkingCopy.clone: full, sparse, virtual | T-CL-06, T-CL-07, T-TIER-01 | I |  |
+| FR-CL-02 | UC-01 | F-18 | BoundedFileObjectStore in .scn/objects | T-CL-08 | I |  |
+| FR-CL-03 | UC-01 | F-19 | read_disk; WorkingCopy._write_file | T-CL-02 | I |  |
+| FR-CL-04 | UC-03 | F-20 | fsmonitor: inotify journal, sync cookie, fallback scan | T-CL-09 | I |  |
+| FR-CL-05 | UC-03 | F-19 | status, add, remove, restore, diff_local | T-CL-01, T-CL-05 | I |  |
+| FR-CL-06 | UC-04 | F-19 | commit: create_changeset, nothing to push | T-CL-01 | I |  |
+| FR-CL-07 | UC-05 | F-19 | update: server diff, local changes protected | T-CL-03 | I |  |
+| FR-CL-08 | UC-06 | F-19 | rebase on the server, then update | T-CL-04 | I |  |
+| FR-CL-09 | UC-01 | F-17 | sparse_add, sparse_remove; add widens the profile | T-CL-06, T-CL-12 | I |  |
+| FR-CL-10 | UC-02 | F-17 | materialize; read | T-CL-07 | I |  |
+| FR-CL-11 | all | F-21 | cli.scn_main | T-CL-11 | I |  |
+| FR-CL-12 | UC-01 | F-13 | one object endpoint in the config (the node daemon) | T-TIER-01, T-CL-11 | I |  |
 | FR-IAM-01 | UC-22 | F-22 | Policy.repo_read/repo_write | T-IAM-09 | B3 | |
-| FR-IAM-02 | UC-22 | F-44 | Deployment registry; repo-scoped RPCs and caches (ADR-13) | T-MR-01 | B2 | |
+| FR-IAM-02 | UC-22 | F-44 | Deployment; repo-scoped RPCs; caches keyed by (repo, id) (ADR-13) | T-MR-01 | I |  |
 | FR-IAM-03 | UC-22 | F-22 | PathRule | T-IAM-01, T-IAM-05 | B3 | |
 | FR-IAM-04 | UC-01, UC-08…12 | F-23 | per-path checks; fetch_objects; snapshots | T-IAM-01/03/04 | B3 | |
 | FR-IAM-05 | UC-01 | F-23 | F_RESTRICTED; CachingSource.restricted | T-IAM-04 | B3 | |
 | FR-IAM-06 | UC-22 | F-22 | groups, admins, service principals | T-IAM-01 | B3 | |
-| FR-IAM-07 | UC-22 | F-24 | Policy.authenticate | T-IAM-08 | B2 | |
-| FR-IAM-08 | UC-01 | F-24 | X-Scion-On-Behalf-Of | T-IAM-04 | B2 | |
+| FR-IAM-07 | UC-22 | F-24 | Identity.check_token; Service.authenticate (401); client certificates for tiers | T-IAM-08, T-TLS-01 | I |  |
+| FR-IAM-08 | UC-01 | F-24 | X-Scion-On-Behalf-Of; Caller.user | T-MR-01, T-IAM-04 | I |  |
 | FR-IAM-09 | UC-22 | F-26 | reindex_acl | T-IAM-10 | B3 | |
 | FR-IAM-10 | UC-22 | F-26 | audit table, hash chain (ADR-15) | T-AUD-01 | B3 | |
 | FR-IAM-11 | UC-22 | F-23 | _record_acl | T-IAM-02 | B3 | |
@@ -133,13 +133,13 @@ requirement is built and its acceptance tests pass.
 | FR-MG-05 | UC-23 | F-33 | GitIngester.verify | T-MG-01 | B4 | |
 | FR-MG-06 | UC-23 | F-34 | server API over ingested history | T-E2E-01 | B4 | |
 | FR-MG-07 | UC-23 | F-33 | git_map; changeset extra["git"] | T-MG-01 | B4 | |
-| FR-OP-01 | UC-26 | F-40 | /healthz, /stats on every tier | T-OPS-02 | B2 | |
-| FR-OP-02 | UC-26 | F-40 | Metrics; CachingSource.stats | T-TIER-01 | B2 | |
+| FR-OP-01 | UC-26 | F-40 | /healthz and /stats on every tier | T-OPS-05 | I |  |
+| FR-OP-02 | UC-26 | F-40 | Metrics (p50/p90/p99, errors by status); CachingSource.stats (hit rate) | T-OPS-05, T-TIER-01 | I |  |
 | FR-OP-03 | UC-26 | F-41 | Superfan baselines | T-OPS-02 | B4 | |
 | FR-OP-04 | UC-26 | F-41 | Superfan rules | T-OPS-02 | B4 | |
 | FR-OP-05 | UC-26 | F-41 | Superfan.notify webhook | T-OPS-03 | B4 | |
 | FR-OP-08 | UC-26 | F-41 | per-component log ring buffer, GET /logs (ADR-18) | T-OPS-04 | B4 | |
-| FR-OP-06 | UC-25 | F-42 | ratelimit; 429 handling | T-OPS-01 | B2 | |
+| FR-OP-06 | UC-25 | F-42 | RateLimiter; 429 with Retry-After; RpcClient backs off | T-OPS-01 | I |  |
 | FR-OP-07 | UC-25 | F-43 | tools.bench | T-PERF-01 | B4 | |
 | FR-AD-01 | UC-23 | F-43 | scion-admin init | T-E2E-01 | B4 | |
 | FR-AD-02 | UC-24 | F-43 | scion-admin snapshot | T-E2E-01 | B4 | |
@@ -158,20 +158,20 @@ requirement is built and its acceptance tests pass.
 | NFR-04 | B5 | planned verification: T-SIM-01, T-PERF-01 |
 | NFR-05 | I | T-CORE-10: one-file commit time flat within ±25% from 10² to 10⁴ files, and a constant 3 tree writes |
 | NFR-06 | I | T-DD-06: ancestry over 100 changesets in < 20 steps; history is one lookup per result |
-| NFR-07 | B2 | planned verification: 10 §10.4 |
-| NFR-08 | B2 | planned verification: 10 §10.4 |
-| NFR-09 | B2 | planned verification: 10 §10.4 |
+| NFR-07 | I | T-TIER-06: two servers serve one deployment root; caches and daemons hold only caches, so adding or restarting one needs no data migration |
+| NFR-08 | I | T-TIER-03 strict tiering; T-TIER-07 single flight; T-OPS-01 rate limits |
+| NFR-09 | I | T-TIER-06: with one of two servers and one of two caches down, a clone succeeds with no client change |
 | NFR-10 | B3 | planned verification: 10 §10.4 |
-| NFR-11 | B2 | planned verification: 10 §10.4 |
+| NFR-11 | I | T-TIER-08: the daemon and the client reject a forged object; every object they receive is checked against its id |
 | NFR-12 | I | T-CORE-05: concurrent CAS, exactly one winner, unbroken ref log; T-DD-01: deterministic derived values across two servers |
 | NFR-13 | B5 | planned verification: 10 §10.4 |
 | NFR-14 | I | no maintenance commands exist; T-DD-02: a new derived type in one class |
 | NFR-15 | B5 | planned verification: 10 §10.4 |
-| NFR-16 | B2 | planned verification: 10 §10.4 |
+| NFR-16 | I | T-OPS-05: health, stats, latency percentiles, error counts and hit rates on every tier |
 | NFR-17 | B5 | planned verification: T-SIM-01, T-PERF-01 |
 | NFR-18 | B3 | planned verification: 10 §10.4 |
-| NFR-19 | B2 | planned verification: 10 §10.4 |
-| NFR-20 | B2 | planned verification: 10 §10.4 |
+| NFR-19 | I | T-STD-01: no third-party imports (the openssl tool is used only to make development certificates) |
+| NFR-20 | I | T-TLS-01: TLS on every TCP hop; mutual TLS between tiers; plaintext and wrong certificates refused |
 
 ## 11.3 Coverage summary
 
@@ -180,7 +180,7 @@ Updated at the end of every milestone (computed by the T-DOC-02 cross-check).
 | Milestone | Scope | Status |
 |---|---|---|
 | B1 | version control core | **done**: 45 requirements built and tested (21 core tests; fuzzing 8 seeds × 70 steps in the suite, 200 × 120 in a stress run) |
-| B2 | service, tiers, client, multi-repository, TLS | planned |
+| B2 | service, tiers, client, multi-repository, TLS | **done**: 48 requirements built and tested (41 FR, 7 NFR; 39 new tests across tiers, client, CLI, multi-repository, TLS, IAM and operations) |
 | B3 | IAM, audit, review and landing | planned |
 | B4 | migration, automation, search, operations, backup | planned |
 | B5 | system verification of the non-functional requirements | planned |

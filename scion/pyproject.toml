@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scion-vcs"
+version = "0.2.0"
+description = "Agent-scale source control: server-side changesets, derived data, tiered object caching, and lock-free landing"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+scn = "scion.cli:scn_main"
+scion-server = "scion.cli:server_main"
+scion-cache = "scion.cli:cache_main"
+scion-daemon = "scion.cli:daemon_main"
+scion-admin = "scion.cli:admin_main"
+
+[tool.setuptools]
+packages = ["scion", "scion.tools"]
