@@ -108,8 +108,9 @@ class Conformance:
         m = self.m
         m.acl_add([(H[1], ""), (H[2], "secret"), (H[2], "other"), (H[3], "secret")])
         self.assertEqual(m.acl_get([H[1], H[2], H[2], H[9]]), {H[1]: {""}, H[2]: {"secret", "other"}})
-        m.acl_replace([(H[2], ""), (H[4], "secret")])
-        self.assertEqual(m.acl_get([H[1], H[2], H[3], H[4]]), {H[2]: {""}, H[4]: {"secret"}})
+        m.acl_replace([(H[2], ""), (H[4], "secret")])  # objects it doesn't name keep their entries (FR-IAM-09)
+        self.assertEqual(m.acl_get([H[1], H[2], H[3], H[4]]),
+                         {H[1]: {""}, H[2]: {""}, H[3]: {"secret"}, H[4]: {"secret"}})
         many = [(f"{i:064x}", "p") for i in range(1000, 3500)]  # more ids than one query takes
         m.acl_add(many)
         self.assertEqual(len(m.acl_get([oid for oid, _ in many])), 2500)

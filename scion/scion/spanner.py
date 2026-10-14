@@ -685,7 +685,7 @@ class SpannerMetaStore(MetaStore):
     def list_refs(self):
         return self._q("SELECT name, target, version FROM refs WHERE repo = @repo ORDER BY name")
 
-    def cas_ref(self, name, expected, new, who=""):
+    def cas_ref(self, name, expected, new, who="", landing=None):
         if expected is None and new is None:
             return self.get_ref(name) is None
         now = time.time()
@@ -702,6 +702,8 @@ class SpannerMetaStore(MetaStore):
                           [(self.repo, name, new, rows[0][1] + 1 if rows else 1, now)])
             tx.insert("ref_log", ("repo", "name", "moved", "old", "new", "who", "at"),
                       [(self.repo, name, COMMIT_TS, expected, new, who, now)])
+            if landing is not None:
+                self._record_landings(tx, *landing)
             return True
         return self._tx(move)
 
@@ -856,24 +858,33 @@ class SpannerMetaStore(MetaStore):
         rows = self._q(f"SELECT {', '.join(CR_COLUMNS)} FROM crs WHERE repo = @repo AND id = @id", id=int(cr_id))
         return dict(zip(CR_COLUMNS, rows[0])) if rows else None
 
-    def _cr_update(self, tx, cr_id, cols: dict) -> None:
+    def _cr_update(self, tx, cr_id, cols: dict, states=None, head=None) -> bool:
         check_cr_columns(cols)
         types = COLUMN_TYPES["crs"]
         params = {f"v{i}": Typed(None, types[c]) if v is None else float(v) if types[c] == "FLOAT64" else v
                   for i, (c, v) in enumerate(cols.items())}
         sets = ", ".join(f"{c} = @v{i}" for i, c in enumerate(cols))
-        tx.execute(f"UPDATE crs SET {sets} WHERE repo = @repo AND id = @id",
-                   {"repo": self.repo, "id": int(cr_id), **params})
+        guard = ""
+        if states is not None:
+            guard += " AND state IN UNNEST(@states)"
+            params["states"] = list(states)
+        if head is not None:
+            guard += " AND head = @head"
+            params["head"] = head
+        return tx.execute(f"UPDATE crs SET {sets} WHERE repo = @repo AND id = @id{guard}",
+                          {"repo": self.repo, "id": int(cr_id), **params}) == 1
 
-    def cr_update(self, cr_id, **cols):
-        self._tx(lambda tx: self._cr_update(tx, cr_id, cols))
+    def cr_update(self, cr_id, expect_states=None, expect_head=None, **cols):
+        return self._tx(lambda tx: self._cr_update(tx, cr_id, cols, expect_states, expect_head))
 
-    def cr_add_revision(self, cr_id, head, state, now):
+    def cr_add_revision(self, cr_id, head, state, now, expect_states=None):
         def add(tx):
+            if not self._cr_update(tx, cr_id, {"head": head, "state": state, "conflict": None, "updated": now},
+                                   expect_states):
+                return None
             rev = tx.query("SELECT MAX(rev) FROM cr_revisions WHERE repo = @repo AND cr = @cr",
                            {"repo": self.repo, "cr": int(cr_id)})[0][0] + 1
             tx.insert("cr_revisions", ("repo", "cr", "rev", "head", "created"), [(self.repo, cr_id, rev, head, now)])
-            self._cr_update(tx, cr_id, {"head": head, "state": state, "conflict": None, "updated": now})
             return rev
         return self._tx(add)
 
@@ -923,22 +934,22 @@ class SpannerMetaStore(MetaStore):
 
     # -- landings and the post-merge queue ------------------------------------------------------------
     def record_landings(self, rows, jobs, cr_updates):
+        self._tx(lambda tx: self._record_landings(tx, rows, jobs, cr_updates))
+
+    def _record_landings(self, tx, rows, jobs, cr_updates) -> None:
         fields = [("cs", "STRING"), ("source", "STRING"), ("cr", "INT64"), ("ref", "STRING"),
                   ("landed_at", "FLOAT64"), ("head", "STRING")]
-
-        def record(tx):
-            if rows:
-                tx.execute("INSERT OR IGNORE INTO landings (repo, cs, source, cr, ref, landed_at, head) "
-                           "SELECT @repo, x.cs, x.source, x.cr, x.ref, x.landed_at, x.head FROM UNNEST(@rows) AS x",
-                           {"repo": self.repo, "rows": Typed([(cs, src, cr, ref, float(at), head)
-                                                              for cs, src, cr, ref, at, head in rows], "", fields)})
-            if jobs:
-                first = self._next(tx, "postmerge", len(jobs))
-                tx.insert("postmerge", ("repo", "id", "cs", "cr", "ref", "status", "created"),
-                          [(self.repo, first + i, *job) for i, job in enumerate(jobs)])
-            for cr_id, cols in cr_updates:
-                self._cr_update(tx, cr_id, cols)
-        self._tx(record)
+        if rows:
+            tx.execute("INSERT OR IGNORE INTO landings (repo, cs, source, cr, ref, landed_at, head) "
+                       "SELECT @repo, x.cs, x.source, x.cr, x.ref, x.landed_at, x.head FROM UNNEST(@rows) AS x",
+                       {"repo": self.repo, "rows": Typed([(cs, src, cr, ref, float(at), head)
+                                                          for cs, src, cr, ref, at, head in rows], "", fields)})
+        if jobs:
+            first = self._next(tx, "postmerge", len(jobs))
+            tx.insert("postmerge", ("repo", "id", "cs", "cr", "ref", "status", "created"),
+                      [(self.repo, first + i, *job) for i, job in enumerate(jobs)])
+        for cr_id, cols in cr_updates:
+            self._cr_update(tx, cr_id, cols)
 
     def landing_find(self, cs):
         cols = ", ".join(LANDING_FIELDS)

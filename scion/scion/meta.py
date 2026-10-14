@@ -68,9 +68,12 @@ class MetaStore:
         """``(name, target, version)`` by name."""
         raise NotImplementedError
 
-    def cas_ref(self, name: str, expected: str | None, new: str | None, who: str = "") -> bool:
+    def cas_ref(self, name: str, expected: str | None, new: str | None, who: str = "",
+                landing: tuple | None = None) -> bool:
         """Compare-and-swap one ref and log the move, atomically. ``expected=None``: the ref must not
-        exist. ``new=None``: delete it."""
+        exist. ``new=None``: delete it. ``landing``, ``(rows, jobs, cr_updates)`` as for
+        ``record_landings``, is written in the same transaction when the ref moves, so a landing is
+        never on the ref without its index, its post-merge job and its CRs' new state."""
         raise NotImplementedError
 
     def ref_log(self, name: str, limit: int = 100) -> list[tuple]:
@@ -177,13 +180,17 @@ class MetaStore:
         """The CR row, keyed by CR_COLUMNS."""
         raise NotImplementedError
 
-    def cr_update(self, cr_id: int, **cols) -> None:
-        """Set columns of CR_COLUMNS."""
+    def cr_update(self, cr_id: int, expect_states: tuple | None = None, expect_head: str | None = None,
+                  **cols) -> bool:
+        """Set columns of CR_COLUMNS, only if the CR is in one of ``expect_states`` and at
+        ``expect_head`` (when given): a state transition no concurrent one can interleave with.
+        Whether the CR was updated."""
         raise NotImplementedError
 
-    def cr_add_revision(self, cr_id: int, head: str, state: str, now: float) -> int:
+    def cr_add_revision(self, cr_id: int, head: str, state: str, now: float,
+                        expect_states: tuple | None = None) -> int | None:
         """A new revision: the CR moves to ``head`` and ``state`` and loses its conflict. Returns its
-        number."""
+        number, or None when the CR isn't in one of ``expect_states``."""
         raise NotImplementedError
 
     def cr_latest_rev(self, cr_id: int) -> int | None:
@@ -394,6 +401,18 @@ def _cr_sets(cols: dict) -> tuple[str, list]:
     return ", ".join(f"{k} = ?" for k in cols), list(cols.values())
 
 
+def _cr_guard(states, head) -> tuple[str, list]:
+    """The extra WHERE terms of a conditional CR update."""
+    where, args = "", []
+    if states is not None:
+        where += f" AND state IN ({', '.join('?' * len(states))})"
+        args += list(states)
+    if head is not None:
+        where += " AND head = ?"
+        args.append(head)
+    return where, args
+
+
 class SqliteMetaStore(MetaStore):
     """One repository's metadata in a SQLite file. Every operation is a single-row or single-key
     access, the pattern that maps onto Spanner; multi-row units run in one transaction."""
@@ -494,7 +513,7 @@ class SqliteMetaStore(MetaStore):
     def list_refs(self):
         return self.execute("SELECT name, target, version FROM refs ORDER BY name").fetchall()
 
-    def cas_ref(self, name, expected, new, who=""):
+    def cas_ref(self, name, expected, new, who="", landing=None):
         if expected is None and new is None:
             return self.get_ref(name) is None
         now = time.time()
@@ -511,6 +530,8 @@ class SqliteMetaStore(MetaStore):
             if ok:
                 c.execute("INSERT INTO ref_log (name, old, new, who, at) VALUES (?, ?, ?, ?, ?)",
                           (name, expected, new, who, now))
+                if landing is not None:
+                    self._record_landings(c, *landing)
         return ok
 
     def ref_log(self, name, limit=100):
@@ -639,16 +660,19 @@ class SqliteMetaStore(MetaStore):
         row = self.execute(f"SELECT {', '.join(CR_COLUMNS)} FROM crs WHERE id = ?", (int(cr_id),)).fetchone()
         return dict(zip(CR_COLUMNS, row)) if row else None
 
-    def cr_update(self, cr_id, **cols):
+    def cr_update(self, cr_id, expect_states=None, expect_head=None, **cols):
         sets, args = _cr_sets(cols)
-        self.execute(f"UPDATE crs SET {sets} WHERE id = ?", (*args, int(cr_id)))
+        where, wargs = _cr_guard(expect_states, expect_head)
+        return self.execute(f"UPDATE crs SET {sets} WHERE id = ?{where}", (*args, int(cr_id), *wargs)).rowcount == 1
 
-    def cr_add_revision(self, cr_id, head, state, now):
+    def cr_add_revision(self, cr_id, head, state, now, expect_states=None):
+        where, wargs = _cr_guard(expect_states, None)
         with self.transaction() as c:
+            if c.execute(f"UPDATE crs SET head = ?, state = ?, conflict = NULL, updated = ? WHERE id = ?{where}",
+                         (head, state, now, cr_id, *wargs)).rowcount != 1:
+                return None
             rev = c.execute("SELECT MAX(rev) FROM cr_revisions WHERE cr = ?", (cr_id,)).fetchone()[0] + 1
             c.execute("INSERT INTO cr_revisions (cr, rev, head, created) VALUES (?, ?, ?, ?)", (cr_id, rev, head, now))
-            c.execute("UPDATE crs SET head = ?, state = ?, conflict = NULL, updated = ? WHERE id = ?",
-                      (head, state, now, cr_id))
         return rev
 
     def cr_latest_rev(self, cr_id):
@@ -691,12 +715,15 @@ class SqliteMetaStore(MetaStore):
     # -- landings and the post-merge queue ------------------------------------------------------------
     def record_landings(self, rows, jobs, cr_updates):
         with self.transaction() as c:
-            c.executemany(f"INSERT OR IGNORE INTO landings ({', '.join(LANDING_FIELDS)}) VALUES (?, ?, ?, ?, ?, ?)",
-                          rows)
-            c.executemany("INSERT INTO postmerge (cs, cr, ref, status, created) VALUES (?, ?, ?, ?, ?)", jobs)
-            for cr_id, cols in cr_updates:
-                sets, args = _cr_sets(cols)
-                c.execute(f"UPDATE crs SET {sets} WHERE id = ?", (*args, int(cr_id)))
+            self._record_landings(c, rows, jobs, cr_updates)
+
+    @staticmethod
+    def _record_landings(c, rows, jobs, cr_updates):
+        c.executemany(f"INSERT OR IGNORE INTO landings ({', '.join(LANDING_FIELDS)}) VALUES (?, ?, ?, ?, ?, ?)", rows)
+        c.executemany("INSERT INTO postmerge (cs, cr, ref, status, created) VALUES (?, ?, ?, ?, ?)", jobs)
+        for cr_id, cols in cr_updates:
+            sets, args = _cr_sets(cols)
+            c.execute(f"UPDATE crs SET {sets} WHERE id = ?", (*args, int(cr_id)))
 
     def landing_find(self, cs):
         cols = ", ".join(LANDING_FIELDS)

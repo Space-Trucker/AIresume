@@ -407,7 +407,9 @@ class Repository:
         r = self.meta.get_ref(name)
         return r[0] if r else None
 
-    def update_ref(self, name: str, old: str | None, new: str | None, user=None) -> bool:
+    def update_ref(self, name: str, old: str | None, new: str | None, user=None, landing: tuple | None = None) -> bool:
+        """Compare-and-swap ``name`` from ``old`` to ``new``; ``landing`` (MetaStore.cas_ref) is
+        recorded with the move, atomically."""
         if not REF_NAME.match(name or "") or ".." in name:
             raise ValueError(f"invalid ref name {name!r}")
         if user is not None and not self.policy.can_update_ref(user, name):
@@ -416,7 +418,7 @@ class Repository:
             new = self.resolve(new)
         if old is not None and not is_object_id(old):
             old = self.resolve(old)
-        moved = self.meta.cas_ref(name, old, new, who=user or "")
+        moved = self.meta.cas_ref(name, old, new, who=user or "", landing=landing)
         if moved and self.audit is not None:
             self.audit.append("ref.update", user, name, {"old": old, "new": new})
         return moved
@@ -716,31 +718,44 @@ class Repository:
         return self._commit_changes([ours, theirs], changes, author, message or f"Merge {theirs[:12]} into {ours[:12]}", user=user)
 
     def rebase(self, head: str, onto: str, base: str | None = None, user=None) -> dict:
-        """Replay the stack between ``base`` (default: the merge base) and ``head`` onto ``onto``.
-        Changesets already applied upstream are dropped. Returns ``{"head", "rebased": {old: new}}``."""
+        """Replay ``head``'s first-parent chain onto ``onto``: the changesets from ``head`` back to
+        ``base``, by default back to the first one ``onto`` contains. Changesets whose first parent
+        doesn't move stay as they are, so the result always has ``onto`` on its first-parent chain
+        (BR-06): when ``onto`` is already there, ``head`` comes back unchanged. A merge is replayed as
+        its change list, which is relative to its first parent (FR-CS-02), so what it brought in that
+        ``onto`` already has drops out. Changesets already applied upstream are dropped.
+        Returns ``{"head", "rebased": {old: new}}``."""
         head, onto = self.resolve(head), self.resolve(onto)
         if self.is_ancestor(head, onto):
             return {"head": onto, "rebased": {}}
-        mb = self.resolve(base) if base else self.merge_base(head, onto)
-        if mb is None:
-            raise ValueError("no common ancestor")
-        if mb == onto:
-            return {"head": head, "rebased": {}}
+        if base:
+            stop = self.resolve(base)
+            low = self.generation(stop)
+            done = lambda c: c == stop or self.generation(c) <= low  # noqa: E731
+        else:
+            if self.merge_base(head, onto) is None:
+                raise ValueError("no common ancestor")
+            stop = None
+            done = lambda c: self.is_ancestor(c, onto)  # noqa: E731
         stack, cur = [], head
-        while cur != mb:
-            cs = self.get_changeset(cur)
-            if len(cs.parents) != 1:
-                raise ValueError(f"cannot rebase merge changeset {cur[:12]}")
+        while not done(cur):
             stack.append(cur)
-            cur = cs.parents[0]
+            cur = self.get_changeset(cur).first_parent
+            if cur is None:
+                raise ValueError(f"{head[:12]}'s first-parent chain doesn't meet {onto[:12]}")
+        if stop is not None and cur != stop:
+            raise ValueError(f"{stop[:12]} is not on the first-parent chain of {head[:12]}")
         new_parent, mapping = onto, {}
         for c in reversed(stack):
             cs = self.get_changeset(c)
-            changes, conflicts = self._three_way([ch.path for ch in cs.changes], self.root_tree(cs.parents[0]),
+            if cs.first_parent == new_parent:
+                new_parent = c  # nothing beneath it moved
+                continue
+            changes, conflicts = self._three_way([ch.path for ch in cs.changes], self.root_tree(cs.first_parent),
                                                  self.root_tree(new_parent), self.root_tree(c))
             if conflicts:
                 raise MergeConflict(conflicts, at=c)
-            if not changes and cs.changes:
+            if not changes and (cs.changes or len(cs.parents) > 1):
                 mapping[c] = new_parent  # already applied upstream
                 continue
             new_parent = mapping[c] = self._commit_changes([new_parent], changes, cs.author, cs.message, cs.timestamp,

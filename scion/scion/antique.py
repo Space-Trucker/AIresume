@@ -9,8 +9,12 @@
   the target's tip and moves the ref with one compare-and-swap. Concurrent landings on one server are
   group-committed: the request holding the per-target leader slot lands the whole queue as one
   rebased chain with one CAS; a lost CAS is retried with jittered backoff until a deadline (FR-LD-03).
+  The target's first-parent chain only ever grows: a CR fast-forwards only when the tip is on its
+  own first-parent chain, and anything else is replayed onto the tip (BR-06).
 * Every landed changeset is indexed to its CR, ref, time and pre-rebase id (FR-LD-05), and every
-  landing queues a post-merge job (FR-LD-07).
+  landing queues a post-merge job (FR-LD-07), in the same transaction as the ref's move.
+* State changes are conditional, so they can't interleave: a CR lands only at the head whose
+  approvals were checked, and a revision can't arrive while it lands.
 
 Review policy, in the repository's ``policy.json``::
 
@@ -36,6 +40,7 @@ from .iam import PermissionDenied
 from .repo import MergeConflict, NotFound, Repository
 
 POSTMERGE_LEASE = 7200.0  # the default; a repository's policy may set review.postmerge_lease_seconds
+LANDING_STALE = 900.0  # a CR left in "landing" this long by a server that stopped can be landed again
 
 DEFAULT_RULES = [{"prefix": "", "logic": {"approvals": 1}, "comment_only": {"approvals": 0},
                   "docs": {"approvals": 0}}]
@@ -102,8 +107,10 @@ class Antique:
     def _latest_rev(self, cr_id: int) -> int:
         return self.meta.cr_latest_rev(cr_id)
 
-    def _set_state(self, cr_id: int, state: str, **cols) -> None:
-        self.meta.cr_update(cr_id, state=state, updated=time.time(), **cols)
+    def _transition(self, cr_id: int, states: tuple, state: str, head: str | None = None, **cols) -> bool:
+        """Move a CR that is in one of ``states`` (and at ``head``) to ``state``."""
+        return self.meta.cr_update(cr_id, expect_states=states, expect_head=head, state=state, updated=time.time(),
+                                   **cols)
 
     def _rules(self) -> list[dict]:
         rules = getattr(self.policy, "review", {}).get("rules") or DEFAULT_RULES
@@ -143,15 +150,27 @@ class Antique:
         if cr["state"] not in LANDABLE:
             raise ValueError(f"change request {cr_id} is {cr['state']}")
         head = self.repo.resolve(head)
-        rev = self.meta.cr_add_revision(cr_id, head, OPEN, time.time())
+        rev = self.meta.cr_add_revision(cr_id, head, OPEN, time.time(), expect_states=LANDABLE)
+        if rev is None:
+            raise ValueError(f"change request {cr_id} is {self._row(cr_id)['state']}")
         self._event("cr.updated", cr_id, user, revision=rev)
         return self.get(cr_id)
 
-    def approve(self, user: str, cr_id: int) -> dict:
+    def _check_revision(self, cr_id: int, rev) -> int:
+        """The revision an action is for: the latest, which ``rev`` (the one the actor saw) must be."""
+        latest = self._latest_rev(cr_id)
+        if rev is not None and int(rev) != latest:
+            raise ValueError(f"revision {rev} of change request {cr_id} has been replaced by revision {latest}: "
+                             f"review that one")
+        return latest
+
+    def approve(self, user: str, cr_id: int, rev: int | None = None) -> dict:
+        """Approve revision ``rev`` (default: the latest). An approval belongs to the revision it was
+        given for, so one that races a new revision never counts for it (BR-02)."""
         cr = self._row(cr_id)
         if cr["state"] not in LANDABLE:
             raise ValueError(f"change request {cr_id} is {cr['state']}")
-        self.meta.cr_approve(cr_id, self._latest_rev(cr_id), user, time.time())
+        self.meta.cr_approve(cr_id, self._check_revision(cr_id, rev), user, time.time())
         self._event("cr.approved", cr_id, user)
         return self.get(cr_id)
 
@@ -169,11 +188,15 @@ class Antique:
     def abandon(self, user: str, cr_id: int) -> dict:
         cr = self._row(cr_id)
         self._need_author_or_admin(user, cr, "abandon a change request")
-        if cr["state"] not in LANDABLE:
-            raise ValueError(f"change request {cr_id} is {cr['state']}")
-        self._set_state(cr_id, ABANDONED)
+        if not self._transition(cr_id, LANDABLE + self._stale(cr), ABANDONED):
+            raise ValueError(f"change request {cr_id} is {self._row(cr_id)['state']}")
         self._event("cr.abandoned", cr_id, user)
         return self.get(cr_id)
+
+    @staticmethod
+    def _stale(cr: dict) -> tuple:
+        """``(LANDING,)`` when the CR was left landing by a server that stopped; else ``()``."""
+        return (LANDING,) if cr["state"] == LANDING and time.time() - cr["updated"] > LANDING_STALE else ()
 
     # -- reads ---------------------------------------------------------------------------------------
     def get(self, cr_id: int, with_requirements: bool = True) -> dict:
@@ -185,6 +208,19 @@ class Antique:
                           for i, r, u, p, ln, b, c in self.meta.cr_comments(cr_id)]
         if with_requirements and cr["state"] in LANDABLE:
             cr["requirements"] = self.requirements(cr_id)
+        return cr
+
+    def view(self, cr: dict, user) -> dict:
+        """What ``user`` may see of a CR: files, comments and conflicts under paths they can't read
+        are left out (FR-IAM-04)."""
+        can = self.policy.can_read
+        for g in (cr.get("requirements") or {}).get("groups", []):
+            g["files"] = [f for f in g["files"] if can(user, f["path"])]
+        cr["comments"] = [x for x in cr.get("comments", []) if not x["path"] or can(user, x["path"])]
+        if cr.get("conflict"):
+            shown = [x for x in cr["conflict"]["conflicts"] if can(user, x["path"])]
+            hidden = len(cr["conflict"]["conflicts"]) - len(shown)
+            cr["conflict"] = {**cr["conflict"], "conflicts": shown, **({"hidden": hidden} if hidden else {})}
         return cr
 
     def list(self, state: str | None = None, author: str | None = None, limit: int = 50) -> list[dict]:
@@ -210,7 +246,7 @@ class Antique:
             if RANK[f["category"]] > RANK[g["category"]]:
                 g["category"] = f["category"]
         out, satisfied = [], True
-        identity = self.policy.identity
+        identity, can = self.policy.identity, self.policy.can_read
         for prefix, g in sorted(groups.items()):
             need = {"approvals": 0, "owner_approvals": 0}
             for f in g["files"]:
@@ -218,8 +254,10 @@ class Antique:
                 for k in need:
                     need[k] = max(need[k], int(req.get(k, 0)))
             owners = g["rule"].get("owners", [])
-            have = {"approvals": len(approvers),
-                    "owner_approvals": sum(1 for u in approvers if owners and identity.matches(u, owners))}
+            # an approval counts for a scope only from someone who can read all of its files
+            readers = {u for u in approvers if all(can(u, f["path"]) for f in g["files"])}
+            have = {"approvals": len(readers),
+                    "owner_approvals": sum(1 for u in readers if owners and identity.matches(u, owners))}
             ok = all(have[k] >= need[k] for k in need)
             satisfied &= ok
             out.append({"prefix": prefix, "category": g["category"], "owners": owners, "need": need, "have": have,
@@ -227,14 +265,20 @@ class Antique:
         return {"satisfied": satisfied, "revision": rev, "approvers": sorted(approvers), "groups": out}
 
     # -- landing (UC-15) -------------------------------------------------------------------------------
-    def land(self, user: str, cr_id: int, force: bool = False, timeout: float = 300.0) -> dict:
+    def land(self, user: str, cr_id: int, force: bool = False, timeout: float = 300.0, rev: int | None = None) -> dict:
+        """Land the CR at its latest revision, which ``rev`` (the one the lander saw) must be."""
         cr = self._row(cr_id)
         if cr["state"] == LANDED:
             return self.get(cr_id)  # idempotent
-        if cr["state"] not in LANDABLE:
+        stale = self._stale(cr)
+        if cr["state"] not in LANDABLE and not stale:
             raise ValueError(f"change request {cr_id} is {cr['state']}")
         if user != cr["author"] and not (self.policy.is_admin(user) or self.policy.is_service(user)):
             raise PermissionDenied("only the author, a service or an administrator can land a change request")
+        if not self.policy.can_update_ref(self.principal, cr["target"]):
+            raise PermissionDenied(f"the repository's policy doesn't let {self.principal} move {cr['target']}, "
+                                   f"so change requests can't land there")
+        revision = self._check_revision(cr_id, rev)
         if force:
             if not self.policy.is_admin(user):
                 raise PermissionDenied("only administrators can force-land")
@@ -242,16 +286,22 @@ class Antique:
                 self.audit("cr.force_land", user, f"cr/{cr_id}", {"head": cr["head"]})
         else:
             reqs = self.requirements(cr_id)
+            if reqs["revision"] != revision:
+                raise ValueError(f"change request {cr_id} got a new revision while landing: try again")
             if not reqs["satisfied"]:
                 unmet = [{k: g[k] for k in ("prefix", "category", "need", "have")}
                          for g in reqs["groups"] if not g["satisfied"]]
                 raise PermissionDenied("approval requirements are not satisfied: " + json.dumps(unmet))
-        self._set_state(cr_id, LANDING)  # visible while queued (D-02)
+        # visible while queued (D-02), and only at the head whose approvals were just checked
+        if not self._transition(cr_id, LANDABLE + stale, LANDING, head=cr["head"]):
+            raise ValueError(f"change request {cr_id} changed while landing: try again")
         req = _LandRequest(cr_id, cr["head"])
         try:
             self._submit(cr["target"], req, time.time() + timeout)
-        except Retryable:
-            self._set_state(cr_id, OPEN)
+        except BaseException:
+            # It didn't land: the CR goes back to how it was, unless the landing found a conflict
+            # (or did land, and only the answer was lost).
+            self._transition(cr_id, (LANDING,), OPEN if stale else cr["state"])
             raise
         return self.get(cr_id)
 
@@ -279,8 +329,7 @@ class Antique:
                     self._drain(target, deadline)
                 finally:
                     leader.release()
-            else:
-                req.done.wait(0.02)
+            req.done.wait(0.02)
         if req.error is not None:
             raise req.error
 
@@ -290,7 +339,18 @@ class Antique:
                 batch, self._queues[target] = self._queues.get(target, []), []
             if not batch:
                 return
-            self._land_batch(target, batch, deadline)
+            try:
+                self._land_batch(target, batch, deadline)
+            except BaseException as e:
+                # The ref didn't move (its compare-and-swap and the landing's records are one
+                # transaction), so every request still waiting fails with the error, none hangs.
+                self.log("error", f"a landing batch on {target} failed: {e!r}", repo=self.repo.name,
+                         batch=len(batch))
+                for req in batch:
+                    if not req.done.is_set():
+                        req.fail(e)
+                if not isinstance(e, Exception):
+                    raise
 
     def _land_batch(self, target: str, pending: list[_LandRequest], deadline: float) -> None:
         attempt = 0
@@ -301,20 +361,22 @@ class Antique:
             head, planned = tip, []
             for req in pending:
                 try:
-                    if head is None or self.repo.is_ancestor(head, req.head):
-                        new = req.head  # fast-forward
-                    else:
-                        # the changesets were permission-checked when they were created; the rebase
-                        # replays them as they are, so it runs without a user
-                        new = self.repo.rebase(req.head, head)["head"]
+                    # A fast-forward when the running head is on the request's first-parent chain,
+                    # else a replay onto it (Repository.rebase), so the target's main line only
+                    # grows. The changesets were permission-checked when they were created and the
+                    # rebase replays them as they are, so it runs without a user.
+                    new = req.head if head is None else self.repo.rebase(req.head, head)["head"]
                 except MergeConflict as e:
                     self._count("land.conflicts")
                     self.log("info", f"a landing on {target} conflicts: {e}", repo=self.repo.name,
                              cr=req.cr_id, onto=head)
-                    if req.cr_id is not None:
-                        self._set_state(req.cr_id, CONFLICT, conflict=json.dumps(
-                            {"conflicts": e.conflicts, "at": e.at, "onto": head}))
+                    if req.cr_id is not None and self._transition(req.cr_id, (LANDING,), CONFLICT, conflict=json.dumps(
+                            {"conflicts": e.conflicts, "at": e.at, "onto": head})):
                         self._event("cr.conflict", req.cr_id, self.principal)
+                    req.fail(e)
+                    continue
+                except Exception as e:  # noqa: BLE001 - this request can't land; the rest of the batch can
+                    self.log("warning", f"a landing on {target} failed: {e!r}", repo=self.repo.name, cr=req.cr_id)
                     req.fail(e)
                     continue
                 planned.append((req, head, new))
@@ -322,8 +384,8 @@ class Antique:
             pending = [p[0] for p in planned]
             if not pending:
                 return
-            if self.repo.update_ref(target, tip, head, user=self.principal):
-                self._record(target, planned)
+            if self.repo.update_ref(target, tip, head, user=self.principal, landing=self._landing(target, planned)):
+                self._count("land.landed", len(planned))
                 with self._lock:
                     self.counters["land.batches"] += 1
                     self.counters["land.max_batch"] = max(self.counters["land.max_batch"], len(planned))
@@ -332,6 +394,12 @@ class Antique:
                                         f"moving it first", repo=self.repo.name, batch=len(planned))
                 for req, _, new in planned:
                     req.finish(new)
+                for req, _, new in planned:
+                    if req.cr_id is not None:
+                        try:
+                            self._event("cr.landed", req.cr_id, self.principal, landed_cs=new)
+                        except Exception as e:  # noqa: BLE001 - the landing stands; only the notice is lost
+                            self.log("warning", f"no cr.landed notice for CR {req.cr_id}: {e!r}", repo=self.repo.name)
                 return
             # Another server landed first: rebase the whole batch onto the new tip and retry, with
             # jittered backoff so contending servers stop colliding (FR-LD-03).
@@ -345,29 +413,41 @@ class Antique:
                 return
             time.sleep(random.uniform(0, min(0.25, 0.004 * 2 ** min(attempt, 6))))
 
-    def _record(self, target: str, planned) -> None:
-        """Index every landed changeset (FR-LD-05), mark CRs landed, queue post-merge jobs (FR-LD-07)."""
+    def _landing(self, target: str, planned) -> tuple:
+        """What a batch writes with its compare-and-swap (MetaStore.cas_ref): every landed changeset
+        indexed to its request (FR-LD-05), a post-merge job per request (FR-LD-07), and the CRs
+        marked landed."""
         now = time.time()
         rows, jobs = [], []
         for req, old_head, new in planned:
-            cur = new
-            while cur and cur != old_head:
-                cs = self.repo.get_changeset(cur)
-                rows.append((cur, cs.extra.get("rebased_from", cur), req.cr_id, target, now, new))
-                cur = cs.first_parent
+            rows += [(cs, source, req.cr_id, target, now, new) for cs, source in self._added(old_head, new)]
             jobs.append((new, req.cr_id, target, "queued", now))
         landed = [(req.cr_id, {"state": LANDED, "head": new, "landed_cs": new, "landed_at": now, "conflict": None,
                                "updated": now}) for req, _, new in planned if req.cr_id is not None]
-        self.meta.record_landings(rows, jobs, landed)
-        self._count("land.landed", len(planned))
-        for req, _, new in planned:
-            if req.cr_id is not None:
-                self._event("cr.landed", req.cr_id, self.principal, landed_cs=new)
+        return rows, jobs, landed
+
+    def _added(self, old_head: str | None, new: str) -> list[tuple]:
+        """``(changeset, pre-rebase id)`` for each changeset that moving a ref from ``old_head`` to
+        ``new`` adds to its first-parent chain, newest first. The walk ends at ``old_head``, or below
+        its generation; onto a new ref it is ``new`` alone, since what lies beneath got there some
+        other way."""
+        if old_head is None:
+            return [(new, self.repo.get_changeset(new).extra.get("rebased_from", new))]
+        out, cur, low = [], new, self.repo.generation(old_head)
+        while cur and cur != old_head and self.repo.generation(cur) > low:
+            cs = self.repo.get_changeset(cur)
+            out.append((cur, cs.extra.get("rebased_from", cur)))
+            cur = cs.first_parent
+        return out
+
+    def landing(self, cs: str, ref: str, old_tip: str | None) -> tuple:
+        """The records of a change that reaches ``ref`` outside Antique (an authorized direct
+        compare-and-swap), for ``Repository.update_ref`` to write with the move."""
+        return self._landing(ref, [(_LandRequest(None, cs), old_tip, cs)])
 
     def record_landing(self, cs: str, ref: str, old_tip: str | None) -> None:
-        """Index changesets that reached ``ref`` outside Antique (for example an authorized direct
-        compare-and-swap) and queue their post-merge job."""
-        self._record(ref, [(_LandRequest(None, cs), old_tip, cs)])
+        """Index a change that already reached ``ref`` and queue its post-merge job."""
+        self.meta.record_landings(*self.landing(cs, ref, old_tip))
 
     def find_landing(self, cs: str) -> dict | None:
         """When did this change land, and through which CR? An indexed lookup by the landed id or

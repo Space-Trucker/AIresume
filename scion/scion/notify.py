@@ -44,18 +44,21 @@ class Notifier:
     def _run(self) -> None:
         while True:
             url, body = self._q.get()
-            for attempt in range(self.attempts):
-                try:
-                    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-                    with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                        resp.read()
-                    self.counters["delivered"] += 1
-                    break
-                except (OSError, ValueError):
-                    time.sleep(0.2 * 2 ** attempt)
-            else:
-                self.counters["failed"] += 1
-            self._q.task_done()
+            try:
+                for attempt in range(self.attempts):
+                    try:
+                        req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+                        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                            resp.read()
+                        self.counters["delivered"] += 1
+                        break
+                    except Exception:  # noqa: BLE001 - whatever the endpoint does (a cut-off reply is an
+                        # http.client.HTTPException, not an OSError), retry, then count it as failed
+                        time.sleep(0.2 * 2 ** attempt)
+                else:
+                    self.counters["failed"] += 1
+            finally:
+                self._q.task_done()
 
     def flush(self, timeout: float = 10.0) -> bool:
         """Wait until every queued event has been tried (for tests and shutdown)."""

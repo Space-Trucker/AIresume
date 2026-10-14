@@ -149,8 +149,11 @@ def _scn_parser() -> argparse.ArgumentParser:
     x = rv.add_parser("list")
     x.add_argument("--state", default="open", help="open, landing, conflict, landed, abandoned or all")
     x.add_argument("--author")
-    for name in ("show", "approve", "abandon", "requirements"):
+    for name in ("show", "abandon", "requirements"):
         rv.add_parser(name).add_argument("id", type=int)
+    x = rv.add_parser("approve", help="approve the latest revision, or --rev: the one you reviewed")
+    x.add_argument("id", type=int)
+    x.add_argument("--rev", type=int, help="refuse if the CR has moved past this revision")
     x = rv.add_parser("comment")
     x.add_argument("id", type=int)
     x.add_argument("body")
@@ -513,7 +516,7 @@ def _review(ctx: _Ctx, api: ServerApi, a) -> int:
             print(f"  [{c['user']}{where}] {c['body']}")
         return 0
     if act in ("approve", "abandon"):
-        cr = api.call(f"antique.{act}", id=a.id)
+        cr = api.call(f"antique.{act}", id=a.id, **({"rev": a.rev} if getattr(a, "rev", None) else {}))
         print(f"change request {cr['id']}: {cr['state']}")
         return 0
     if act == "requirements":
