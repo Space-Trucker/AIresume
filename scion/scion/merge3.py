@@ -1,13 +1,12 @@
 """Line-based three-way merge with diff3 semantics (FR-WR-02/03/04)."""
 from __future__ import annotations
 
-from difflib import SequenceMatcher
+from .linediff import matching_blocks
 
 
 def _sync_regions(base, a, b):
     """Regions where base, a and b all agree: (zstart, zend, astart, aend, bstart, bend)."""
-    am = SequenceMatcher(None, base, a, autojunk=False).get_matching_blocks()
-    bm = SequenceMatcher(None, base, b, autojunk=False).get_matching_blocks()
+    am, bm = matching_blocks(base, a), matching_blocks(base, b)
     ia = ib = 0
     out = []
     while ia < len(am) and ib < len(bm):

@@ -13,10 +13,9 @@ import unittest.mock
 
 import helpers  # noqa: F401
 from helpers import repository
-from scion import derived_types
+from scion import linediff
 from scion.changeset import Changeset
 from scion.derived import DerivedType
-from scion.derived_types import line_opcodes
 from scion.merge3 import merge3
 from scion.objects import EMPTY_TREE_ID, ObjectError, blob_id, decode_stored, encode_stored
 from scion.repo import MergeConflict, NotFound
@@ -270,9 +269,9 @@ class TestDerived(RepoCase):
             for _ in range(rng.randint(0, 3)):
                 k = rng.randint(0, len(new))
                 new[k:k + rng.randint(0, 2)] = [rng.choice("abcd") for _ in range(rng.randint(0, 2))]
-            for max_edit in (derived_types.MAX_EDIT, 1):  # Myers, and the difflib fallback
-                with unittest.mock.patch.object(derived_types, "MAX_EDIT", max_edit):
-                    ops = line_opcodes(old, new)
+            for max_edit in (linediff.MAX_EDIT, 1):  # Myers, and the difflib fallback
+                with unittest.mock.patch.object(linediff, "MAX_EDIT", max_edit):
+                    ops = linediff.opcodes(old, new)
                 out = []
                 for tag, i1, i2, j1, j2 in ops:
                     out += old[i1:i2] if tag == "equal" else new[j1:j2]
@@ -282,7 +281,7 @@ class TestDerived(RepoCase):
         big = [b"}\n", b"\n", b"    break;\n"] * 7000 + [f"line {i}\n".encode() for i in range(3000)]
         changed = big[:100] + [b"new\n"] + big[100:20000] + [b"also new\n"] + big[20001:]
         t0 = time.perf_counter()
-        ops = line_opcodes(big, changed)
+        ops = linediff.opcodes(big, changed)
         self.assertLess(time.perf_counter() - t0, 1.0)
         self.assertEqual(sum(i2 - i1 for tag, i1, i2, _, _ in ops if tag == "equal"), len(big) - 1)
 
