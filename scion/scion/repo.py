@@ -1,0 +1,607 @@
+"""The authoritative, server-side repository (Repository, 06 §6.5).
+
+The server, not the client, creates commits and answers history, blame, ancestry and diff queries;
+it also performs merges, rebases and reverts (FR-CS-01, FR-QRY-*, FR-WR-02…04). Nothing here
+materializes the whole repository (FR-OBJ-05): every operation touches only the paths and
+changesets it needs.
+"""
+from __future__ import annotations
+
+import difflib
+import heapq
+import json
+import os
+import re
+import time
+from collections import Counter
+
+from .changeset import OP_ADD, OP_DELETE, OP_MODIFY, Changeset, FileChange
+from .derived import DerivedDataManager
+from .derived_types import expand_runs, register_default_types, split_lines
+from .merge3 import merge3
+from .meta import MetaStore
+from .objects import (EMPTY_TREE_ID, FILE_KINDS, KIND_DIR, KIND_LINK, decode_htree, is_binary, is_object_id,
+                      normalize_path, split_path)
+from .storage import FileObjectStore, LRUCache
+from .trees import PathConflict, TreeOps
+
+REF_NAME = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+class NotFound(Exception):
+    pass
+
+
+class PermissionDenied(Exception):
+    pass
+
+
+class MergeConflict(Exception):
+    def __init__(self, conflicts: list[dict], at: str | None = None):
+        self.conflicts, self.at = conflicts, at
+        super().__init__(f"conflicts in {len(conflicts)} path(s): " + ", ".join(c["path"] for c in conflicts[:5]))
+
+
+class OpenPolicy:
+    """Allow-everything policy used until IAM is configured (iam.Policy implements the same interface)."""
+
+    def can_read(self, user, path=""):
+        return True
+
+    def can_write(self, user, path=""):
+        return True
+
+    def can_update_ref(self, user, ref):
+        return True
+
+    def restricted_prefix(self, path):
+        return None
+
+    def restricted_prefixes(self):
+        return []
+
+
+def _api_entry(e):
+    return None if e is None else {"kind": e[0], "id": e[1]}
+
+
+class Repository:
+    def __init__(self, root: str, policy=None, name: str = "main"):
+        self.root, self.name = root, name
+        os.makedirs(root, exist_ok=True)
+        self.objects = FileObjectStore(os.path.join(root, "objects"))
+        self.meta = MetaStore(os.path.join(root, "meta.db"))
+        self.cache = LRUCache(300_000)
+        self.trees = TreeOps(self.objects, self.cache)
+        self.policy = policy or OpenPolicy()
+        self.derived = DerivedDataManager(self)
+        register_default_types(self.derived)
+        self.stats: Counter = Counter()
+        self.objects.put("tree", b"")  # the empty tree always exists
+
+    def close(self) -> None:
+        self.meta.close()
+
+    # ================================================================================== objects
+    def put_blob(self, data: bytes) -> str:
+        return self.objects.put("blob", data)
+
+    def read_blob(self, oid: str) -> bytes:
+        return self.objects.get_payload(oid, "blob")
+
+    def _cached(self, kind, oid, load):
+        v = self.cache.get((kind, oid))
+        if v is None:
+            v = load()
+            self.cache.put((kind, oid), v)
+        return v
+
+    def read_htree(self, oid: str) -> dict:
+        return self._cached("htree", oid, lambda: decode_htree(self.objects.get_payload(oid, "htree")))
+
+    def read_stree(self, oid: str) -> dict:
+        def load():
+            return {r[0]: (r[1], r[2], int(r[3], 16)) for r in json.loads(self.objects.get_payload(oid, "stree"))}
+        return self._cached("stree", oid, load)
+
+    def read_blame(self, oid: str) -> list:
+        return self._cached("blame", oid, lambda: json.loads(self.objects.get_payload(oid, "blame"))["runs"])
+
+    def htree_lookup(self, root: str, path: str):
+        node = (KIND_DIR, "", None, root)
+        for part in split_path(path):
+            if node[0] != KIND_DIR:
+                return None
+            node = self.read_htree(node[3]).get(part)
+            if node is None:
+                return None
+        return node
+
+    def apply_to_tree(self, base: str | None, changes: dict) -> str:
+        return self.trees.apply(base, changes)
+
+    # ============================================================================== changesets
+    def get_changeset(self, cs_id: str) -> Changeset:
+        cs = self.cache.get(("cs", cs_id))
+        if cs is None:
+            data = self.meta.get_changeset_data(cs_id)
+            if data is None:
+                raise NotFound(f"unknown changeset {cs_id}")
+            cs = Changeset.decode(data)
+            self.cache.put(("cs", cs_id), cs)
+        return cs
+
+    def resolve(self, rev: str) -> str:
+        """A ref name, a full id or a unique prefix (≥ 4 hex), then any ``~N`` / ``^N`` (FR-CS-07)."""
+        if not rev or not isinstance(rev, str):
+            raise NotFound("empty revision")
+        m = re.match(r"^(.*?)((?:[~^]\d*)*)$", rev)
+        base, suffix = m.group(1), m.group(2)
+        ref = self.meta.get_ref(base)
+        if ref is not None:
+            cs = ref[0]
+        elif is_object_id(base) and self.meta.has_changeset(base):
+            cs = base
+        elif len(base) >= 4 and re.fullmatch(r"[0-9a-fA-F]+", base):
+            hits = self.meta.resolve_prefix(base)
+            if not hits:
+                raise NotFound(f"unknown revision {rev}")
+            if len(hits) > 1:
+                raise NotFound(f"ambiguous revision prefix {base}")
+            cs = hits[0]
+        else:
+            raise NotFound(f"unknown revision {rev}")
+        for op, num in re.findall(r"([~^])(\d*)", suffix):
+            n = int(num) if num else 1
+            if op == "~":
+                nxt = self.fp_ancestor(cs, n)
+            else:
+                ps = self.get_changeset(cs).parents
+                nxt = ps[n - 1] if 0 < n <= len(ps) else None
+            if nxt is None:
+                raise NotFound(f"revision {rev} does not exist")
+            cs = nxt
+        return cs
+
+    def root_tree(self, cs_id: str | None) -> str:
+        return EMPTY_TREE_ID if cs_id is None else self.derived.get("tree", cs_id)
+
+    def history_root(self, cs_id: str) -> str:
+        return self.derived.get("history", cs_id)
+
+    def search_root(self, cs_id: str) -> str:
+        return self.derived.get("search", cs_id)
+
+    def graph(self, cs_id: str) -> dict:
+        g = self.cache.get(("graph", cs_id))
+        if g is None:
+            g = json.loads(self.derived.get("graph", cs_id))
+            self.cache.put(("graph", cs_id), g)
+        return g
+
+    def generation(self, cs_id: str) -> int:
+        return self.graph(cs_id)["g"]
+
+    def changeset_api(self, cs_id: str, user=None) -> dict:
+        d = self.get_changeset(cs_id).to_api(cs_id)
+        d["changes"] = [c for c in d["changes"] if self.policy.can_read(user, c["path"])]
+        d["generation"] = self.generation(cs_id)
+        d["copies"] = {k: v for k, v in json.loads(self.derived.get("copies", cs_id)).items()
+                       if self.policy.can_read(user, k)}
+        return d
+
+    # ======================================================================= writes (FR-CS-*)
+    def create_changeset(self, parents: list[str], files: list[dict], author: str, message: str,
+                         timestamp: int | None = None, extra: dict | None = None, user=None) -> str:
+        """Create a changeset from file updates relative to the first parent. Each entry is
+        ``{"path", "delete": True}``, ``{"path", "kind", "blob"}`` or ``{"path", "kind", "content"}``.
+        No lock is taken and no ref moves (FR-CS-05); the tree is built incrementally (FR-CS-09)."""
+        parents = [self.resolve(p) for p in parents]
+        if len(set(parents)) != len(parents):
+            raise ValueError("duplicate parents")
+        base = self.root_tree(parents[0]) if parents else None
+        changes, tree_changes, seen = [], {}, set()
+        for f in files:
+            path = normalize_path(f.get("path", ""))
+            if not path:
+                raise ValueError("empty path")
+            if path in seen:
+                raise ValueError(f"duplicate path {path}")
+            seen.add(path)
+            if user is not None and not self.policy.can_write(user, path):
+                raise PermissionDenied(f"{user} may not write {path}")
+            old = self.trees.lookup(base, path)
+            old_file = old if old is not None and old[0] != KIND_DIR else None
+            if f.get("delete"):
+                if old_file is None:
+                    raise ValueError(f"cannot delete {path}: no such file")
+                changes.append(FileChange(path, OP_DELETE))
+                tree_changes[path] = None
+                continue
+            kind = f.get("kind", "f")
+            if kind not in FILE_KINDS:
+                raise ValueError(f"bad kind {kind!r} for {path}")
+            if f.get("blob"):
+                blob = f["blob"]
+                if not self.objects.has(blob):
+                    raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
+            else:
+                blob = self.put_blob(f.get("content", b""))
+            if old_file == (kind, blob):
+                continue  # no-op
+            changes.append(FileChange(path, OP_MODIFY if old_file else OP_ADD, kind, blob))
+            tree_changes[path] = (kind, blob)
+        try:
+            new_root = self.apply_to_tree(base, tree_changes)
+        except PathConflict as e:
+            raise ValueError(str(e)) from None
+        cs = Changeset(tuple(parents), author, message, int(time.time() if timestamp is None else timestamp),
+                       tuple(sorted(changes, key=lambda c: c.path)), dict(extra or {}))
+        for c in cs.changes:
+            c.validate()
+        cs_id = cs.id
+        if self.meta.insert_changeset(cs_id, cs.encode()):
+            self.stats["changesets.created"] += 1
+        self.derived.put("tree", cs_id, new_root)
+        self.derived.derive_eager(cs_id)
+        return cs_id
+
+    # ============================================================================ refs (FR-REF)
+    def get_ref(self, name: str) -> str | None:
+        r = self.meta.get_ref(name)
+        return r[0] if r else None
+
+    def update_ref(self, name: str, old: str | None, new: str | None, user=None) -> bool:
+        if not REF_NAME.match(name or "") or ".." in name:
+            raise ValueError(f"invalid ref name {name!r}")
+        if user is not None and not self.policy.can_update_ref(user, name):
+            raise PermissionDenied(f"{user} may not move {name}")
+        if new is not None:
+            new = self.resolve(new)
+        if old is not None and not is_object_id(old):
+            old = self.resolve(old)
+        return self.meta.cas_ref(name, old, new, who=user or "")
+
+    # =================================================================================== reads
+    def lookup(self, cs_id: str, path: str):
+        return self.trees.lookup(self.root_tree(cs_id), normalize_path(path))
+
+    def read_file(self, cs_id: str, path: str, user=None) -> tuple[str, str, bytes]:
+        path = normalize_path(path)
+        if not self.policy.can_read(user, path):
+            raise PermissionDenied(f"{user} may not read {path}")
+        e = self.lookup(cs_id, path)
+        if e is None or e[0] == KIND_DIR:
+            raise NotFound(f"{path}: no such file at {cs_id[:12]}")
+        return e[0], e[1], self.read_blob(e[1])
+
+    def list_dir(self, cs_id: str, path: str = "", user=None) -> list[dict]:
+        path = normalize_path(path)
+        if not self._can_list(user, path):
+            raise PermissionDenied(f"{user} may not read {path}")
+        e = self.lookup(cs_id, path)
+        if e is None or e[0] != KIND_DIR:
+            raise NotFound(f"{path or '/'}: not a directory")
+        out = []
+        for name, (kind, oid) in sorted(self.trees.read(e[1]).items()):
+            child = f"{path}/{name}" if path else name
+            if self.policy.can_read(user, child) or (kind == KIND_DIR and self._can_list(user, child)):
+                out.append({"name": name, "path": child, "kind": kind, "id": oid})
+        return out
+
+    def _can_list(self, user, path: str) -> bool:
+        """A directory can be listed if it is readable, or if some readable directory lies beneath it
+        (a public folder inside a private one stays reachable). The second test is the policy's."""
+        if self.policy.can_read(user, path):
+            return True
+        beneath = getattr(self.policy, "readable_beneath", None)
+        return bool(beneath and beneath(user, path))
+
+    def diff(self, a: str | None, b: str, paths: list[str] | None = None, user=None) -> list[dict]:
+        out = []
+        for path, x, y in self._scoped_diff(self.root_tree(a), self.root_tree(b), paths):
+            if self.policy.can_read(user, path):
+                out.append({"path": path, "status": "A" if x is None else "D" if y is None else "M",
+                            "old": _api_entry(x), "new": _api_entry(y)})
+        return out
+
+    def _scoped_diff(self, ra, rb, paths):
+        if not paths:
+            yield from self.trees.diff(ra, rb)
+            return
+        for p in sorted({normalize_path(p) for p in paths}):
+            ea, eb = self.trees.lookup(ra, p), self.trees.lookup(rb, p)
+            da = ea[1] if ea and ea[0] == KIND_DIR else None
+            db = eb[1] if eb and eb[0] == KIND_DIR else None
+            if da or db:
+                yield from self.trees.diff(da, db, p)
+            fa = ea if ea and ea[0] != KIND_DIR else None
+            fb = eb if eb and eb[0] != KIND_DIR else None
+            if fa != fb:
+                yield (p, fa, fb)
+
+    def diff_text(self, a: str | None, b: str, paths=None, user=None, context: int = 3) -> str:
+        chunks = []
+        for f in self.diff(a, b, paths, user):
+            old = self.read_blob(f["old"]["id"]) if f["old"] else b""
+            new = self.read_blob(f["new"]["id"]) if f["new"] else b""
+            an = f"a/{f['path']}" if f["old"] else "/dev/null"
+            bn = f"b/{f['path']}" if f["new"] else "/dev/null"
+            if is_binary(old) or is_binary(new):
+                chunks.append(f"Binary files {an} and {bn} differ\n")
+                continue
+            for line in difflib.unified_diff(old.decode("utf-8", "replace").splitlines(keepends=True),
+                                             new.decode("utf-8", "replace").splitlines(keepends=True), an, bn, n=context):
+                chunks.append(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n")
+        return "".join(chunks)
+
+    def log(self, rev: str, limit: int = 50, first_parent: bool = True, path: str | None = None,
+            skip: int = 0, user=None) -> list[str]:
+        start = self.resolve(rev)
+        if path:
+            return [h["cs"] for h in self.file_history(start, path, limit + skip, user=user)][skip:]
+        out: list[str] = []
+        if first_parent:
+            cur = start
+            while cur and len(out) < limit + skip:
+                out.append(cur)
+                cur = self.get_changeset(cur).first_parent
+        else:
+            seen, heap = {start}, [(-self.generation(start), start)]
+            while heap and len(out) < limit + skip:
+                _, x = heapq.heappop(heap)
+                out.append(x)
+                for p in self.get_changeset(x).parents:
+                    if p not in seen:
+                        seen.add(p)
+                        heapq.heappush(heap, (-self.generation(p), p))
+        return out[skip:]
+
+    def file_history(self, rev: str, path: str, limit: int = 100, follow_copies: bool = True, user=None) -> list[dict]:
+        """Changesets that changed a file or directory, newest first, along the first parent
+        (BR-06). Each step is one history-tree lookup: O(path depth) per result (NFR-06)."""
+        cur = self.resolve(rev)
+        path = normalize_path(path)
+        if not self.policy.can_read(user, path):
+            raise PermissionDenied(f"{user} may not read {path}")
+        if not path:
+            return [{"cs": c, "path": ""} for c in self.log(cur, limit)]
+        out, is_dir = [], None
+        while cur and len(out) < limit:
+            e = self.htree_lookup(self.history_root(cur), path)
+            if e is None:
+                break
+            if is_dir is None:
+                is_dir = e[0] == KIND_DIR
+            elif is_dir != (e[0] == KIND_DIR):
+                break  # the path changed between file and directory: a different object
+            out.append({"cs": e[2], "path": path})
+            if follow_copies and not is_dir:
+                src = json.loads(self.derived.get("copies", e[2])).get(path)
+                if src:
+                    path = src["from"]
+            cur = self.get_changeset(e[2]).first_parent
+        return out
+
+    def blame_object_for(self, cs_id: str, path: str) -> str:
+        return json.loads(self.derived.get("blame", cs_id))[path]
+
+    def previous_version(self, parent: str, path: str):
+        e = self.htree_lookup(self.history_root(parent), path)
+        if e is None or e[0] == KIND_DIR:
+            return None
+        return e[1], self.blame_object_for(e[2], path)
+
+    def blame(self, rev: str, path: str, user=None) -> dict:
+        cs_id = self.resolve(rev)
+        path = normalize_path(path)
+        if not self.policy.can_read(user, path):
+            raise PermissionDenied(f"{user} may not read {path}")
+        e = self.htree_lookup(self.history_root(cs_id), path)
+        if e is None or e[0] == KIND_DIR:
+            raise NotFound(f"{path}: no such file")
+        bid = self.blame_object_for(e[2], path)
+        if bid == "binary":
+            return {"path": path, "binary": True, "lines": [], "changesets": {}}
+        info, lines = {}, []
+        for i, (text, (c, origin)) in enumerate(zip(split_lines(self.read_blob(e[1])), expand_runs(self.read_blame(bid)))):
+            if c not in info:
+                cs = self.get_changeset(c)
+                info[c] = {"author": cs.author, "timestamp": cs.timestamp, "summary": cs.summary()}
+            lines.append({"line": i + 1, "cs": c, "origin_line": origin, "text": text.decode("utf-8", "replace")})
+        return {"path": path, "binary": False, "lines": lines, "changesets": info}
+
+    # ============================================================ ancestry (FR-QRY-05/09, ADR-12)
+    def fp_ancestor(self, cs_id: str, n: int) -> str | None:
+        """The first-parent ancestor ``n`` steps back, in O(log n) skip-list hops."""
+        cur = cs_id
+        while n > 0:
+            skips = self.graph(cur)["s"]
+            if not skips:
+                return None
+            k = min(n.bit_length() - 1, len(skips) - 1)
+            cur, n = skips[k], n - (1 << k)
+            self.stats["ancestry.hops"] += 1
+        return cur
+
+    def is_ancestor(self, a: str, b: str) -> bool:
+        """Is ``a`` an ancestor of (or equal to) ``b``?"""
+        a, b = self.resolve(a), self.resolve(b)
+        ga, seen, stack = self.generation(a), set(), [b]
+        while stack:
+            x = stack.pop()
+            if x == a:
+                return True
+            if x in seen:
+                continue
+            seen.add(x)
+            g = self.graph(x)
+            self.stats["ancestry.visits"] += 1
+            if g["g"] <= ga:
+                continue
+            steps = min(g["l"], g["g"] - ga)  # nodes skipped have generation > ga, so none is ``a``
+            if steps > 1:
+                stack.append(self.fp_ancestor(x, steps))
+            else:
+                stack.extend(self.get_changeset(x).parents)
+        return False
+
+    def merge_bases(self, a: str, b: str) -> list[str]:
+        a, b = self.resolve(a), self.resolve(b)
+        if a == b or self.is_ancestor(a, b):
+            return [a]
+        if self.is_ancestor(b, a):
+            return [b]
+        PA, PB, STALE = 1, 2, 4
+        flags = {a: PA, b: PB}
+        heap = [(-self.generation(a), a), (-self.generation(b), b)]
+        heapq.heapify(heap)
+        found: list[str] = []
+        while heap and any(not flags[x] & STALE for _, x in heap):
+            _, x = heapq.heappop(heap)
+            f = flags[x]
+            self.stats["ancestry.visits"] += 1
+            if f & (PA | PB) == (PA | PB):
+                if not f & STALE:
+                    found.append(x)
+                    f |= STALE
+                    flags[x] = f
+            elif not f & STALE:
+                # cross a single-parent run the other side cannot reach (it is above the other
+                # side's highest generation) in one skip
+                other = PB if f & PA else PA
+                g = self.graph(x)
+                top_other = max((-h for h, y in heap if flags[y] & other), default=0)
+                steps = min(g["l"], g["g"] - top_other)
+                if steps >= 2:
+                    y = self.fp_ancestor(x, steps)
+                    if flags.get(y, 0) | f != flags.get(y, 0):
+                        flags[y] = flags.get(y, 0) | f
+                        heapq.heappush(heap, (-self.generation(y), y))
+                    continue
+            for p in self.get_changeset(x).parents:
+                pf = flags.get(p, 0)
+                nf = pf | (f & (PA | PB | STALE))
+                if nf != pf:
+                    flags[p] = nf
+                    heapq.heappush(heap, (-self.generation(p), p))
+        found = [r for r in found if not any(r != s and self.is_ancestor(r, s) for s in found)]
+        return sorted(found, key=lambda r: (-self.generation(r), r))
+
+    def merge_base(self, a: str, b: str) -> str | None:
+        bases = self.merge_bases(a, b)
+        return bases[0] if bases else None
+
+    # ============================================================ merge / rebase / revert (FR-WR)
+    def _three_way(self, paths, base_root: str, ours_root: str, theirs_root: str):
+        """Apply the base→theirs change at each path on top of ours: (changes, conflicts)."""
+        changes, conflicts = {}, []
+        for path in paths:
+            b = self.trees.lookup(base_root, path)
+            if b is not None and b[0] == KIND_DIR:
+                b = None  # no file here in the base
+            o, t = self.trees.lookup(ours_root, path), self.trees.lookup(theirs_root, path)
+            if t == b:
+                continue
+            if (o is not None and o[0] == KIND_DIR) or (t is not None and t[0] == KIND_DIR):
+                conflicts.append({"path": path, "reason": "file/directory conflict"})
+                continue
+            if o == b:
+                changes[path] = t
+                continue
+            if o == t:
+                continue
+            reason = "both sides changed"
+            if o is not None and t is not None and KIND_LINK not in (o[0], t[0]) and (b is None or b[0] != KIND_LINK):
+                bd = self.read_blob(b[1]) if b else b""
+                od, td = self.read_blob(o[1]), self.read_blob(t[1])
+                if is_binary(bd) or is_binary(od) or is_binary(td):
+                    reason = "binary file changed on both sides"
+                else:
+                    merged, n = merge3(bd, od, td)
+                    if n == 0:
+                        changes[path] = (t[0] if b is None or t[0] != b[0] else o[0], self.put_blob(merged))
+                        continue
+                    reason = f"{n} conflicting hunk(s)"
+            elif o is None or t is None:
+                reason = "modified on one side, deleted on the other"
+            conflicts.append({"path": path, "reason": reason, "base": _api_entry(b), "ours": _api_entry(o),
+                              "theirs": _api_entry(t)})
+        return changes, conflicts
+
+    def _commit_changes(self, parents, changes, author, message, timestamp=None, extra=None, user=None, at=None):
+        root = self.root_tree(parents[0])
+        files = []
+        for path, e in sorted(changes.items()):
+            if e is None:
+                if self.trees.lookup(root, path) is not None:
+                    files.append({"path": path, "delete": True})
+            else:
+                files.append({"path": path, "kind": e[0], "blob": e[1]})
+        try:
+            return self.create_changeset(parents, files, author, message, timestamp, extra, user)
+        except ValueError as e:
+            raise MergeConflict([{"path": "", "reason": str(e)}], at=at) from None
+
+    def merge(self, ours: str, theirs: str, author: str, message: str | None = None, ff: bool = False, user=None) -> str:
+        ours, theirs = self.resolve(ours), self.resolve(theirs)
+        if self.is_ancestor(theirs, ours):
+            return ours
+        if ff and self.is_ancestor(ours, theirs):
+            return theirs
+        base_root = self.root_tree(self.merge_base(ours, theirs))
+        paths = [p for p, _, _ in self.trees.diff(base_root, self.root_tree(theirs))]
+        changes, conflicts = self._three_way(paths, base_root, self.root_tree(ours), self.root_tree(theirs))
+        if conflicts:
+            raise MergeConflict(conflicts)
+        return self._commit_changes([ours, theirs], changes, author, message or f"Merge {theirs[:12]} into {ours[:12]}", user=user)
+
+    def rebase(self, head: str, onto: str, base: str | None = None, user=None) -> dict:
+        """Replay the stack between ``base`` (default: the merge base) and ``head`` onto ``onto``.
+        Changesets already applied upstream are dropped. Returns ``{"head", "rebased": {old: new}}``."""
+        head, onto = self.resolve(head), self.resolve(onto)
+        if self.is_ancestor(head, onto):
+            return {"head": onto, "rebased": {}}
+        mb = self.resolve(base) if base else self.merge_base(head, onto)
+        if mb is None:
+            raise ValueError("no common ancestor")
+        if mb == onto:
+            return {"head": head, "rebased": {}}
+        stack, cur = [], head
+        while cur != mb:
+            cs = self.get_changeset(cur)
+            if len(cs.parents) != 1:
+                raise ValueError(f"cannot rebase merge changeset {cur[:12]}")
+            stack.append(cur)
+            cur = cs.parents[0]
+        new_parent, mapping = onto, {}
+        for c in reversed(stack):
+            cs = self.get_changeset(c)
+            changes, conflicts = self._three_way([ch.path for ch in cs.changes], self.root_tree(cs.parents[0]),
+                                                 self.root_tree(new_parent), self.root_tree(c))
+            if conflicts:
+                raise MergeConflict(conflicts, at=c)
+            if not changes and cs.changes:
+                mapping[c] = new_parent  # already applied upstream
+                continue
+            new_parent = mapping[c] = self._commit_changes([new_parent], changes, cs.author, cs.message, cs.timestamp,
+                                                           {**cs.extra, "rebased_from": c}, user=user, at=c)
+        return {"head": new_parent, "rebased": mapping}
+
+    def revert(self, cs_id: str, onto: str, author: str, message: str | None = None, user=None) -> str:
+        cs_id, onto = self.resolve(cs_id), self.resolve(onto)
+        cs = self.get_changeset(cs_id)
+        changes, conflicts = self._three_way([c.path for c in cs.changes], self.root_tree(cs_id),
+                                             self.root_tree(onto), self.root_tree(cs.first_parent))
+        if conflicts:
+            raise MergeConflict(conflicts, at=cs_id)
+        return self._commit_changes([onto], changes, author,
+                                    message or f'Revert "{cs.summary()}"\n\nThis reverts changeset {cs_id}.',
+                                    extra={"reverts": cs_id}, user=user)
+
+    # ==================================================================================== info
+    def info(self) -> dict:
+        return {"name": self.name, "changesets": self.meta.count_changesets(),
+                "refs": {n: t for n, t, _ in self.meta.list_refs()},
+                "derived": {t: self.meta.derived_count(t) for t in self.derived.types},
+                "eager": self.derived.eager_types}
