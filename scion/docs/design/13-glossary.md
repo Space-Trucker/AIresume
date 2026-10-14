@@ -5,6 +5,7 @@
 | Agent | an automated coding client (for example Claude) that reads and writes code through Scion |
 | Antique | the code review and landing service |
 | Approval rule | per-directory requirement for approvals, by change category (docs, comment-only, logic), optionally from owners |
+| Audit log | the per-repository, hash-chained, append-only record of policy loads, denials, ref moves and administrative actions (ADR-15) |
 | Blame | for each line of a file, the changeset (and line) that introduced it |
 | Blob | a content-addressed object holding file bytes |
 | Bloom filter | a compact probabilistic set; here, the trigrams of every name beneath a directory, used to prune path searches |
@@ -25,9 +26,11 @@
 | History tree (htree) | a derived tree whose entries carry the last changeset that changed each path |
 | Landing | publishing an approved change on a target ref by server-side rebase plus CAS |
 | Merge base | the best common ancestor(s) of two changesets |
+| Object index | the per-repository record of where each object appears and which directory restricts it (`object_acl`); it decides which objects are restricted |
 | Mutual TLS | TLS in which the client also presents a certificate; between tiers its common name is the service principal (ADR-14) |
 | On-behalf-of | a service principal forwarding the identity of the end user whose permissions apply |
 | Post-merge testing | testing changes after they land, with automatic revert, instead of a pre-merge queue |
+| Possession grant | a short-lived record that a user uploaded the exact bytes of a restricted object, so they may commit those bytes by id |
 | Principal | an authenticated identity: a user, a group member, or a service (`antique`, `scion-cache`, `scion-daemon`, `postmerge`) |
 | Ref | a pointer to a changeset, such as a branch or tag (the article: "pointers to commits, such as branches and tags"); discouraged except for `main` and release branches |
 | Restricted object | an object under a read-restricted directory, or of a repository not readable by everyone; never cached by shared tiers |

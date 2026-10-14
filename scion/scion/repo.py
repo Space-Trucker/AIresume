@@ -8,6 +8,7 @@ changesets it needs.
 from __future__ import annotations
 
 import difflib
+import hashlib
 import heapq
 import json
 import os
@@ -73,6 +74,7 @@ class Repository:
         self.cache = LRUCache(300_000)
         self.trees = TreeOps(self.objects, self.cache)
         self.policy = policy or OpenPolicy()
+        self.audit = None  # an audit.AuditLog, set by the deployment (FR-IAM-10)
         self.derived = DerivedDataManager(self)
         register_default_types(self.derived)
         self.stats: Counter = Counter()
@@ -117,37 +119,104 @@ class Repository:
         return node
 
     def apply_to_tree(self, base: str | None, changes: dict) -> str:
-        return self.trees.apply(base, changes)
+        """Build a new root tree, recording in the object index where every new tree and file
+        object appears (FR-IAM-04/05)."""
+        if not self.policy.restricted_prefixes():
+            return self.trees.apply(base, changes)  # nothing is restricted: nothing to record
+        rows = []
+        restricted_prefix = self.policy.restricted_prefix
+        root = self.trees.apply(base, changes, lambda path, kind, oid: rows.append((oid, restricted_prefix(path) or "")))
+        self.meta.acl_add(rows)
+        return root
 
     # ======================================================== object protocol (FR-FP, ADR-06/13)
+    def _acl(self, ids) -> dict[str, set[str]]:
+        """The restricting directories of each restricted object; objects anyone may read are left out."""
+        return {oid: ps for oid, ps in self.meta.acl_get(ids).items() if "" not in ps}
+
     def restricted_objects(self, ids: list[str]) -> set[str]:
-        """Objects that shared tiers must not cache. In a private repository that is all of them
-        (ADR-13); directory restrictions add more (FR-IAM-05)."""
-        return set(ids) if not getattr(self.policy, "public", True) else set()
+        """Objects that shared tiers must not cache: all of a private repository's (ADR-13), plus
+        objects that appear only under read-restricted directories (FR-IAM-05/11)."""
+        if not getattr(self.policy, "public", True):
+            return set(ids)
+        return set(self._acl(ids))
+
+    def can_read_object(self, oid: str, user=None, acl=None) -> bool:
+        """Anyone who may read some place the object appears may read the object (FR-IAM-11)."""
+        prefixes = (acl if acl is not None else self._acl([oid])).get(oid)
+        return not prefixes or any(self.policy.can_read(user, p) for p in prefixes)
 
     def fetch_objects(self, ids: list[str], user=None) -> list[tuple[str, int, bytes]]:
         """``get_objects`` on the authoritative tier: stored bytes as they are, flagged
-        ``F_RESTRICTED`` when shared tiers must not cache them. Only blobs and trees are served;
-        derived structures stay internal."""
+        ``F_RESTRICTED`` when shared tiers must not cache them. Restricted objects are authorized
+        for the end user on every request (ADR-06). Only blobs and trees are served; derived
+        structures stay internal."""
         if not self.policy.can_read(user, ""):
             return [(oid, F_DENIED, b"") for oid in ids]
-        restricted = self.restricted_objects(ids)
+        private = not getattr(self.policy, "public", True)
+        acl = self._acl(ids)
         out = []
         for oid in ids:
             stored = self.objects.get_stored(oid) if is_object_id(oid) else None
             if stored is None or stored_type(stored) not in PUBLIC_TYPES:
                 out.append((oid, F_MISSING, b""))
+            elif oid in acl and not self.can_read_object(oid, user, acl):
+                out.append((oid, F_DENIED, b""))
+                self.stats["objects.denied"] += 1
             else:
-                out.append((oid, F_RESTRICTED if oid in restricted else 0, stored))
+                out.append((oid, F_RESTRICTED if private or oid in acl else 0, stored))
         self.stats["objects.served"] += len(out)
         return out
 
     def missing_objects(self, ids: list[str], user=None) -> list[str]:
         """``has_objects``: the ids this repository does not have, so uploads skip known
-        content (FR-WR-06). Only writers may ask."""
+        content (FR-WR-06). Only writers may ask, and objects the caller may not read are
+        reported missing, so the answer reveals nothing about restricted content."""
         if not self.policy.can_write(user, ""):
             raise PermissionDenied(f"{user} may not write to {self.name}")
-        return [oid for oid in ids if not (is_object_id(oid) and self.objects.has(oid))]
+        acl = self._acl([oid for oid in ids if is_object_id(oid)])
+        return [oid for oid in ids if not (is_object_id(oid) and self.objects.has(oid))
+                or (oid in acl and not self.can_read_object(oid, user, acl))]
+
+    def acl_epoch(self) -> str:
+        """Changes whenever objects shared tiers already hold may have stopped being cacheable:
+        when the repository stops being readable by everyone, and at every re-index of the object
+        index. Tiers compare it and purge the repository's objects when it changes (ADR-20)."""
+        public = getattr(self.policy, "public", True)
+        marker = self.meta.kv_get("acl_reindexed") or ""
+        return hashlib.sha256(f"public={public};reindexed={marker}".encode()).hexdigest()[:16]
+
+    def reindex_acl(self) -> dict:
+        """Rebuild the object index under the current policy (FR-IAM-09, UC-22 step 3): every
+        object every changeset wrote, at every place it appeared. Run it after a policy change, then
+        restart the caches, which may still hold objects that were public before (R-07)."""
+        prefix_of = self.policy.restricted_prefix
+        rows: set[tuple[str, str]] = {(EMPTY_TREE_ID, "")}
+        changesets = 0
+        after = 0
+        while True:
+            batch = self.meta.tail(after, 1000)
+            if not batch:
+                break
+            for after, cs_id in batch:
+                changesets += 1
+                root = self.root_tree(cs_id)
+                rows.add((root, prefix_of("") or ""))
+                dirs = set()
+                for ch in self.get_changeset(cs_id).changes:
+                    if ch.blob:
+                        rows.add((ch.blob, prefix_of(ch.path) or ""))
+                    parts = ch.path.split("/")
+                    dirs.update("/".join(parts[:k]) for k in range(1, len(parts)))
+                for d in dirs:
+                    e = self.trees.lookup(root, d)
+                    if e is not None and e[0] == KIND_DIR:
+                        rows.add((e[1], prefix_of(d) or ""))
+        self.meta.acl_replace(sorted(rows))
+        self.meta.kv_set("acl_reindexed", f"{time.time()}:{os.getpid()}")  # a new ACL epoch (ADR-20)
+        restricted = sum(1 for _, p in rows if p)
+        return {"changesets": changesets, "entries": len(rows), "restricted_entries": restricted,
+                "epoch": self.acl_epoch()}
 
     def put_objects(self, items, user=None) -> int:
         """Store uploaded blobs after verifying each against its id. Trees are always derived on
@@ -164,8 +233,12 @@ class Repository:
             if otype != "blob":
                 raise ValueError("only blobs may be uploaded; trees are derived on the server")
             checked.append((oid, stored))
+        acl = self._acl([oid for oid, _ in checked])
         for oid, stored in checked:
             self.objects.put_stored(oid, stored, verify=False)
+            if oid in acl and user is not None and not self.can_read_object(oid, user, acl):
+                # the uploader proved they hold these bytes, so they may commit them by id
+                self.meta.grant_add(oid, user)
         self.stats["objects.uploaded"] += len(checked)
         return len(checked)
 
@@ -250,6 +323,7 @@ class Repository:
             raise ValueError("duplicate parents")
         base = self.root_tree(parents[0]) if parents else None
         changes, tree_changes, seen, pending = [], {}, set(), []
+        inline = {blob_id(f["content"]) for f in files if not f.get("blob") and isinstance(f.get("content"), bytes)}
         for f in files:
             path = normalize_path(f.get("path", ""))
             if not path:
@@ -272,8 +346,14 @@ class Repository:
                 raise ValueError(f"bad kind {kind!r} for {path}")
             if f.get("blob"):
                 blob = f["blob"]
-                if not self.objects.has(blob):
+                if blob in inline:
+                    pass  # the bytes come with this very request
+                elif not self.objects.has(blob):
                     raise ValueError(f"blob {blob[:12]} for {path} has not been uploaded")
+                elif user is not None and not self.can_read_object(blob, user) and not self.meta.grant_has(blob, user):
+                    # an object you may not read can't be republished somewhere else by its id,
+                    # unless you uploaded its bytes yourself
+                    raise PermissionDenied(f"{user} may not use object {blob[:12]}")
             else:
                 data = f.get("content", b"")
                 limit = getattr(self.policy, "max_file_bytes", None)
@@ -316,7 +396,10 @@ class Repository:
             new = self.resolve(new)
         if old is not None and not is_object_id(old):
             old = self.resolve(old)
-        return self.meta.cas_ref(name, old, new, who=user or "")
+        moved = self.meta.cas_ref(name, old, new, who=user or "")
+        if moved and self.audit is not None:
+            self.audit.append("ref.update", user, name, {"old": old, "new": new})
+        return moved
 
     # =================================================================================== reads
     def lookup(self, cs_id: str, path: str):

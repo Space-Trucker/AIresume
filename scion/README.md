@@ -2,11 +2,13 @@
 
 > **Status: being rebuilt.** The design baseline in [`docs/design/`](docs/design/00-process.md) was approved
 > at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system is being rebuilt from the
-> baseline in milestones B1–B5. **Built so far:** B1, the version control core, and B2, the server API,
+> baseline in milestones B1–B5. **Built so far:** B1, the version control core; B2, the server API,
 > the daemon → cache → server tiers with snapshots, the `scn` client (full, sparse and virtual checkouts),
-> multiple repositories per deployment, and TLS with mutual TLS between tiers. Still to come: B3 (directory
-> permissions, audit, Antique review and landing), B4 (git ingestion, post-merge testing, bisect and revert,
-> grep, superfans, backup) and B5 (system verification). Progress is in
+> multiple repositories per deployment, and TLS with mutual TLS between tiers; and B3, directory
+> permissions enforced on every read path and tier, protected refs and release branches, a hash-chained
+> audit log, and Antique: semantic review rules, review pages, webhooks and lock-free group-commit landing.
+> Still to come: B4 (git ingestion, post-merge testing, bisect and revert, grep, superfans, backup) and B5
+> (system verification). Progress is in
 > [`docs/design/11-traceability.md`](docs/design/11-traceability.md). The sections below describe the target system.
 
 A working implementation of the system described in Anthropic's engineering post
@@ -68,7 +70,8 @@ follow its gap list.
 
 ```bash
 cd scion
-python3 -m unittest discover -s tests   # 61 tests: core, fuzzing, tiers, client and CLI, TLS, multi-repository
+python3 -m unittest discover -s tests   # core, fuzzing, tiers, client and CLI, TLS, IAM, review and landing
+SCION_SIM_AGENTS=32 SCION_SIM_ROUNDS=5 python3 -m unittest tests/test_simulation.py   # the landing stress run
 ```
 
 Running the pieces by hand:
@@ -86,8 +89,14 @@ $scn api commit -m "first" --file src/x.py=scion/__init__.py --ref main   # a wr
 $scn clone wc --objects unix:/tmp/scion/d.sock --sparse src
 cd wc && echo hi >> src/x.py
 python3 -m scion scn commit -m "change"        # created on the server; there is nothing to push
-python3 -m scion scn log
+python3 -m scion scn review create --title "change"
+python3 -m scion scn --server http://127.0.0.1:7070 --repo monorepo --user you review approve 1
+python3 -m scion scn review land 1                # rebased onto main and published with one compare-and-swap
 ```
+
+The review pages are at `http://127.0.0.1:7070/antique`. Directory permissions, protected refs, review
+rules and webhooks go in `repos/<name>/policy.json`; principals, groups and tokens in `deployment.json`
+(see `iam.py` and `antique.py`). After tightening a policy, run `scion-admin reindex-acl`.
 
 For production-like transport, give every TCP hop TLS and the tiers client certificates (ADR-14):
 `scion-admin gen-certs DIR` makes a development CA and certificates (it needs the `openssl` tool);
@@ -104,8 +113,8 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 |---|---|
 | working copy | `clone [--sparse dirs] [--virtual]`, `status`, `add`, `rm`, `restore`, `diff`, `commit`, `update`, `rebase`, `stack`, `sparse show/add/remove`, `materialize`, `watch start/stop` (inotify fsmonitor) |
 | server queries | `log [path]`, `show`, `blame`, `history`, `cat`, `ls`, `search`, `merge-base`, `diff -r A -r B [--merge-base]`; B4 adds `grep` |
-| repository | `repos`, `whoami`, `refs`, `ref-log NAME`, `is-ancestor A B` |
-| review (B3) | `review create/update/list/show/approve/comment/land/abandon/landing` |
+| repository | `repos`, `whoami`, `refs`, `ref-log NAME`, `is-ancestor A B`, `release create NAME`, `audit [--verify]` |
+| review | `review create/update/list/show/approve/comment/requirements/land/abandon/landing` |
 | automation | `api <method> k=v ...` (any RPC), `api commit --file PATH=LOCAL` (write without a checkout); B4 adds `revert [--land]` and `bisect --file PATH:REGEX` or `--cmd` |
 
 ## Layout
@@ -123,6 +132,7 @@ After `pip install -e .`, the console scripts `scn`, `scion-server`, `scion-cach
 | `rpc.py`, `server.py`, `tiers.py`, `snapshot.py` | the RPC layer (TLS, mutual TLS, failover), scion-server, scion-cache, scion-daemon, snapshots |
 | `client.py`, `fsmonitor.py`, `cli.py` | `scn`: working copies (full, sparse, virtual), the inotify monitor, the CLI |
 | `antique.py`, `classify.py` | code review with semantic approval rules, lock-free landing, landing index |
+| `audit.py`, `notify.py`, `ui.py` | the hash-chained audit log, webhooks, and the review pages |
 | `search.py` | path search over bloom-filtered search trees; server-side grep |
 | `ingest.py` | streaming, incremental, verified git → Scion ingestion |
 | `postmerge.py`, `tools/` | post-merge worker, deploy gate, bisect, revert pipeline, benchmarks |

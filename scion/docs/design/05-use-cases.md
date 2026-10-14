@@ -322,8 +322,8 @@ scenario · extensions · postconditions · frequency.
   1. The admin edits the policy (repository rules, directory rules, groups, protected refs, review rules, tokens, rate limits).
   2. The servers load the policy.
   3. The admin re-indexes ACLs so existing objects under newly restricted directories become restricted.
-  4. The admin restarts or flushes the caches, which may still hold objects that were public before the change.
-* **Extensions:** 3a. Re-indexing is skipped: existing objects stay readable by id (a documented risk, R-07).
+  4. The caches and daemons, which may still hold objects that were public before the change, see the repository's new ACL epoch and purge them within about two epoch intervals (ADR-20).
+* **Extensions:** 3a. Re-indexing is skipped: existing objects stay readable by id (a documented risk, R-07). 4a. A tier can't reach its upstream: it keeps serving what it holds until it can check the epoch again.
 
 ### UC-23 Migrate a git repository
 * **Primary actor:** Migration engineer. **Level:** user goal. **Requirements:** FR-MG-01…07, FR-AD-01.

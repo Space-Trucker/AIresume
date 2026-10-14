@@ -46,12 +46,12 @@ flowchart LR
 | S3 | Forged author on a changeset | TB4 | Spoofing | the author defaults to the caller; only admins and services may set another | FR-CS-01 | — |
 | T1 | Tampered object in a cache | TB2, TB3 | Tampering | ids are content hashes; the daemon and client verify every object | FR-OBJ-04 | — |
 | T2 | Unauthorized move of `main` | TB4 | Tampering | protected refs; CAS; ref log | FR-REF-03/04 | — |
-| T3 | Landing without the required approvals | TB4 | Tampering | requirements evaluated server-side at land time; self-approval excluded; approvals per revision | FR-RV-02/04/06, BR-01/02 | admins can force-land (audited, R-12) |
+| T3 | Landing without the required approvals | TB4 | Tampering | requirements evaluated server-side at land time; self-approval excluded; approvals per revision; post-merge results reported only by services and administrators | FR-RV-02/04/06, BR-01/02 | admins can force-land (audited, R-12) |
 | T4 | Uploading crafted trees to bypass ACL indexing | TB4 | Tampering | clients may upload only blobs; trees are always derived on the server | FR-CS-01 | — |
-| R1 | Denying having moved a ref | TB4 | Repudiation | ref log with actor and time | FR-REF-04 | the ref log is not tamper-evident (hash-chain later) |
-| R2 | Unaudited policy changes or denials | — | Repudiation | audit trail | FR-IAM-10 | **gap** (see 11) |
+| R1 | Denying having moved a ref | TB4 | Repudiation | ref log with actor and time; every move also in the hash-chained audit log (ADR-15) | FR-REF-04, FR-IAM-10 | removing the newest audit entries is not detectable without an external copy of the chain head |
+| R2 | Unaudited policy changes or denials | — | Repudiation | hash-chained audit log of policy loads, denials and administrative actions (ADR-15) | FR-IAM-10 | as R1 |
 | I1 | Reading restricted files through APIs | TB4 | Information disclosure | per-path checks on read_file, list_dir, blame, history, diff, grep, search, changeset listings | FR-IAM-04 | — |
-| I2 | Reading restricted objects by id through caches | TB1–TB3 | Information disclosure | object ACL index; restricted flag; caches never store; server re-authorizes every request | FR-IAM-04/05 | objects public before a policy change remain cached until re-index and cache restart (R-07) |
+| I2 | Reading restricted objects by id through caches | TB1–TB3 | Information disclosure | object ACL index; restricted flag; caches never store; server re-authorizes every request; `has_objects` reports unreadable objects as missing; a restricted object can be committed by id only by someone who uploaded its bytes | FR-IAM-04/05 | objects public before a policy change can still be served by a tier for about two epoch intervals after it takes effect (ADR-20), or while that tier can't reach its upstream (R-07) |
 | I3 | Restricted objects in daemon snapshots | — | Information disclosure | snapshots exclude restricted objects | FR-IAM-04 | — |
 | I4 | Inferring restricted names from parent trees | TB1 | Information disclosure | parent tree objects list child names and ids | — | accepted: names of restricted directories are visible; their contents are not |
 | I5 | Identical bytes at public and restricted paths | — | Information disclosure (false positive) | bytes seen at a public path are public | FR-IAM-11 | — |
@@ -60,12 +60,12 @@ flowchart LR
 | D2 | A cache outage stampeding the servers | TB3 | Denial of service | strict tiering, single flight, failover | FR-TIER-07/10, NFR-08 | — |
 | D3 | Huge uploads | TB4 | Denial of service | request body cap (512 MB); per-file limit with bounded decompression, 413 (FR-WR-07) | FR-WR-07 | — |
 | E1 | Using a service principal from a sandbox | TB1 | Elevation of privilege | service tokens kept off job nodes; the daemon authenticates upstream with its own identity | FR-IAM-08 | deployment discipline |
-| E2 | Admin endpoints exposed to users | TB4 | Elevation of privilege | `derive`, `record_landing`, `land_changeset` and force-land require admin or service | FR-IAM-06 | — |
+| E2 | Admin endpoints exposed to users | TB4 | Elevation of privilege | `derive`, `reindex_acl`, `audit_log`, `land_changeset`, post-merge reporting and force-land require admin or service; the review pages use the same checks plus CSRF tokens | FR-IAM-06, FR-RV-09 | — |
 
 ## 8.4 Security requirements carried into implementation
 
 1. Tokens required in every non-development deployment (FR-IAM-07). Built in B2.
 2. TLS/mTLS between all tiers before production (NFR-20). Built in B2 (ADR-14).
-3. Audit log of policy changes, access denials and admin actions (FR-IAM-10). Planned for B3.
-4. Re-index ACLs and restart caches as part of the policy-change procedure (UC-22). Planned for B3/B4.
+3. Audit log of policy changes, access denials and admin actions (FR-IAM-10). Built in B3 (ADR-15).
+4. Re-index ACLs as part of the policy-change procedure (UC-22); the tiers purge through ACL epochs (ADR-20). Built in B3 and the B2 review fixes.
 5. A per-file size limit on uploads (R-10). Built in B2 (FR-WR-07).

@@ -435,7 +435,14 @@ classDiagram
     +store : ObjectStore
     +upstream : ObjectSource
     +restricted : bounded set
+    +guard : EpochGuard
     +fetch(repo, ids, user) list
+    +purge(repo)
+  }
+  class EpochGuard {
+    +interval
+    +epochs
+    +ensure(repo) epoch
   }
   class Caller {
     +principal
@@ -472,6 +479,7 @@ classDiagram
   ObjectSource <|.. RemoteSource
   ObjectSource <|.. CachingSource
   CachingSource --> ObjectSource : upstream
+  CachingSource --> EpochGuard
   RemoteSource --> RpcClient
   FailoverClient --> RpcClient
   RpcServer --> Service
@@ -985,6 +993,11 @@ erDiagram
   OBJECT_ACL {
     string object PK
     string prefix PK
+  }
+  OBJECT_GRANTS {
+    string object PK
+    string user PK
+    float at
   }
   GIT_MAP {
     string git PK

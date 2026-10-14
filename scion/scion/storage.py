@@ -6,6 +6,7 @@ evict least-recently-used objects, which is always safe because any object can b
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 import threading
 from collections import OrderedDict
@@ -94,6 +95,15 @@ class MemoryObjectStore(ObjectStore):
 
     def __len__(self):
         return len(self._d)
+
+    def purge_namespace(self, ns: str) -> int:
+        """Drop every object of one repository (ADR-20)."""
+        prefix = ns + "/"
+        with self._lock:
+            keys = [k for k in self._d if k.startswith(prefix)]
+            for k in keys:
+                self._size -= len(self._d.pop(k))
+        return len(keys)
 
 
 class FileObjectStore(ObjectStore):
@@ -209,6 +219,16 @@ class BoundedFileObjectStore(FileObjectStore):
 
     def __len__(self):
         return len(self._lru)
+
+    def purge_namespace(self, ns: str) -> int:
+        """Drop every object of one repository, on disk and in the LRU (ADR-20)."""
+        prefix = ns + "/"
+        with self._lock:
+            keys = [k for k in self._lru if k.startswith(prefix)]
+            for k in keys:
+                self._size -= self._lru.pop(k)
+            shutil.rmtree(os.path.join(self.root, ns), ignore_errors=True)
+        return len(keys)
 
 
 class LRUCache:

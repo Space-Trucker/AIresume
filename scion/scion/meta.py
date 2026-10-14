@@ -52,7 +52,19 @@ CREATE TABLE IF NOT EXISTS kv (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 ) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS object_acl (
+    oid    TEXT NOT NULL,
+    prefix TEXT NOT NULL,
+    PRIMARY KEY (oid, prefix)
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS object_grants (
+    oid  TEXT NOT NULL,
+    user TEXT NOT NULL,
+    at   REAL NOT NULL,
+    PRIMARY KEY (oid, user)
+) WITHOUT ROWID;
 """
+GRANT_SECONDS = 24 * 3600
 
 
 class MetaStore:
@@ -197,6 +209,37 @@ class MetaStore:
     def blob_index_paths(self, blob: str, limit: int = 50) -> list[str]:
         return [r[0] for r in self.execute("SELECT path FROM blob_index WHERE blob = ? ORDER BY path LIMIT ?",
                                            (blob, limit))]
+
+    # -- object ACL index (FR-IAM-04/05/09/11) --------------------------------------------------------
+    # One row per (object, directory that restricts a place it appears); "" marks a place everyone
+    # may read, which makes the object public (FR-IAM-11).
+    def acl_add(self, rows) -> None:
+        self.executemany("INSERT OR IGNORE INTO object_acl (oid, prefix) VALUES (?, ?)", rows)
+
+    def acl_get(self, ids) -> dict[str, set[str]]:
+        out: dict[str, set[str]] = {}
+        ids = list(dict.fromkeys(ids))
+        for i in range(0, len(ids), 500):
+            chunk = ids[i:i + 500]
+            q = f"SELECT oid, prefix FROM object_acl WHERE oid IN ({','.join('?' * len(chunk))})"
+            for oid, prefix in self.execute(q, chunk):
+                out.setdefault(oid, set()).add(prefix)
+        return out
+
+    def grant_add(self, oid: str, user: str) -> None:
+        """Record that ``user`` uploaded the exact bytes of an object they may not otherwise read."""
+        now = time.time()
+        self.execute("INSERT OR REPLACE INTO object_grants (oid, user, at) VALUES (?, ?, ?)", (oid, user, now))
+        self.execute("DELETE FROM object_grants WHERE at < ?", (now - GRANT_SECONDS,))
+
+    def grant_has(self, oid: str, user: str) -> bool:
+        return self.execute("SELECT 1 FROM object_grants WHERE oid = ? AND user = ? AND at >= ?",
+                            (oid, user, time.time() - GRANT_SECONDS)).fetchone() is not None
+
+    def acl_replace(self, rows) -> None:
+        with self.transaction() as c:
+            c.execute("DELETE FROM object_acl")
+            c.executemany("INSERT OR IGNORE INTO object_acl (oid, prefix) VALUES (?, ?)", rows)
 
     # -- small key/value settings ------------------------------------------------------------------
     def kv_get(self, key: str) -> str | None:

@@ -61,6 +61,17 @@ class RateLimiter:
         self._lock = threading.Lock()
         self.rejected = {"rate": 0, "concurrency": 0}
 
+    MAX_BUCKETS = 10_000
+
+    def _prune(self) -> None:
+        """Forget principals with a full bucket and nothing in flight: a new bucket starts full, so
+        nothing changes for them (called with the lock held)."""
+        now = time.monotonic()
+        for key, b in list(self._buckets.items()):
+            if not self._inflight.get(key) and b.tokens + (now - b.last) * b.rate >= b.burst:
+                del self._buckets[key]
+                self._inflight.pop(key, None)
+
     def limits(self, principal: str, klass: str) -> dict:
         lim = dict(self.default.get(klass, UNLIMITED))
         lim.update(self.per_principal.get(principal, {}).get(klass, {}))
@@ -81,6 +92,8 @@ class RateLimiter:
                 raise RateLimited(0.05, f"too many concurrent {klass} requests for {principal}")
             bucket = self._buckets.get(key)
             if bucket is None:
+                if len(self._buckets) >= self.MAX_BUCKETS:
+                    self._prune()
                 bucket = self._buckets[key] = TokenBucket(lim["rate"], lim["burst"])
             wait = bucket.take(min(cost, bucket.burst))  # one request never needs more than a full bucket
             if wait > 0:

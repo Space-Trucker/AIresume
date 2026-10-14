@@ -11,7 +11,9 @@ FR-TIER-07), which keeps one tier's failure from overloading the next (NFR-08).
 
 Objects are keyed by (repository, id) (ADR-13). Objects the server flags restricted are passed
 through and never stored (ADR-06, FR-IAM-05); every request for them reaches the server, which
-re-authorizes the end user.
+re-authorizes the end user. When a policy change makes objects a tier already holds uncacheable,
+the repository's ACL epoch changes, and each tier purges that repository's objects the next time
+it checks the epoch, at most ``epoch_seconds`` after the last check (ADR-20).
 """
 from __future__ import annotations
 
@@ -19,6 +21,7 @@ import itertools
 import json
 import os
 import threading
+import time
 from collections import Counter, OrderedDict
 
 from .iam import Identity
@@ -71,6 +74,12 @@ class RemoteSource(ObjectSource):
         return out
 
     def _fetch_batch(self, repo, ids, user):
+        return self._each(lambda client: client.get_objects(repo, ids, on_behalf=user))
+
+    def acl_epochs(self, repos: list[str]) -> dict:
+        return self._each(lambda client: client.call("acl_epochs", repos=repos))
+
+    def _each(self, fn):
         start = next(self._rr)
         last: Exception | None = None
         for k in range(len(self.clients)):
@@ -79,7 +88,7 @@ class RemoteSource(ObjectSource):
             try:
                 self._check_tier(i, client)
                 self.requests += 1
-                return client.get_objects(repo, ids, on_behalf=user)
+                return fn(client)
             except RemoteError as e:
                 if e.status < 500:
                     raise RpcError(e.status, e.code, str(e), e.data) from None
@@ -90,17 +99,72 @@ class RemoteSource(ObjectSource):
         raise RpcError(503, "upstream_unavailable", f"no {self.expect} answered: {last}")
 
 
+class EpochGuard:
+    """Keeps what a tier holds consistent with each repository's ACL epoch (ADR-20).
+
+    Before a tier serves a repository's objects, the epoch must have been checked upstream within
+    ``interval`` seconds. When it changed, every object of that repository is purged first: some
+    may no longer be cacheable. The last epochs seen can be saved, so a daemon restarted on its old
+    disk store purges what it held under another epoch. If the upstream can't be reached, the tier
+    keeps serving what it has and checks again a second later."""
+
+    def __init__(self, fetch_epochs, purge, interval: float = 10.0, state_path: str | None = None):
+        self.fetch_epochs, self.purge, self.interval, self.state_path = fetch_epochs, purge, interval, state_path
+        self.epochs: dict[str, str | None] = {}
+        if state_path and os.path.exists(state_path):
+            try:
+                with open(state_path) as f:
+                    self.epochs = json.load(f)
+            except (OSError, ValueError):
+                self.epochs = {}  # unknown: everything held is purged at the first check
+        self._checked: dict[str, float] = {}
+        self._lock = threading.Lock()
+        self.purges = 0
+        self.check_failures = 0
+
+    def ensure(self, repo: str) -> str | None:
+        last = self._checked.get(repo)
+        if last is not None and time.monotonic() - last < self.interval:
+            return self.epochs.get(repo)
+        with self._lock:  # one check at a time; the others then find it fresh
+            last = self._checked.get(repo)
+            if last is not None and time.monotonic() - last < self.interval:
+                return self.epochs.get(repo)
+            try:
+                current = self.fetch_epochs([repo]).get(repo)
+            except (RpcError, OSError):
+                self.check_failures += 1
+                self._checked[repo] = time.monotonic() - self.interval + min(1.0, self.interval)
+                return self.epochs.get(repo)
+            if repo not in self.epochs or current != self.epochs[repo]:
+                self.purge(repo)
+                self.purges += 1
+                self.epochs[repo] = current
+                self._save()
+            self._checked[repo] = time.monotonic()
+            return current
+
+    def _save(self) -> None:
+        if not self.state_path:
+            return
+        tmp = self.state_path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(self.epochs, f)
+        os.replace(tmp, self.state_path)
+
+
 class CachingSource(ObjectSource):
     """A read-through cache in front of an upstream source (06 §6.7, object in a cache tier).
     Concurrent misses for one object become one upstream request (single flight, FR-TIER-10)."""
 
     COUNTERS = ("hits", "misses", "coalesced", "upstream_requests", "restricted_passthrough",
-                "bytes_served", "bytes_fetched", "rejected_objects")
+                "bytes_served", "bytes_fetched", "rejected_objects", "purged")
 
     MAX_RESTRICTED = 1_000_000
 
-    def __init__(self, store: ObjectStore, upstream: ObjectSource, verify: bool = False):
-        self.store, self.upstream, self.verify = store, upstream, verify
+    def __init__(self, store: ObjectStore, upstream: ObjectSource, verify: bool = False,
+                 guard: EpochGuard | None = None):
+        self.store, self.upstream, self.verify, self.guard = store, upstream, verify, guard
         # Keys known to be restricted are always forwarded. The memory is bounded: a forgotten key
         # just takes one more ordinary miss, which the server flags restricted again.
         self.restricted: OrderedDict[str, None] = OrderedDict()
@@ -112,7 +176,19 @@ class CachingSource(ObjectSource):
         with self._lock:
             self.counters[key] += n
 
+    def purge(self, repo: str) -> None:
+        """Forget everything held for one repository (ADR-20)."""
+        prefix = repo + "/"
+        with self._lock:
+            for k in [k for k in self.restricted if k.startswith(prefix)]:
+                del self.restricted[k]
+        purge = getattr(self.store, "purge_namespace", None)
+        if purge:
+            self._count("purged", purge(repo))
+
     def fetch(self, repo, ids, user):
+        if self.guard is not None:
+            self.guard.ensure(repo)
         result: dict[str, tuple[int, bytes]] = {}
         owned, forward, waits = [], [], []
         for oid in dict.fromkeys(ids):
@@ -190,6 +266,9 @@ class CachingSource(ObjectSource):
         c["bytes_cached"] = getattr(self.store, "size_bytes", None)
         c["evictions"] = getattr(self.store, "evictions", 0)
         c["restricted_ids"] = len(self.restricted)
+        if self.guard is not None:
+            c["epoch_purges"] = self.guard.purges
+            c["epoch_check_failures"] = self.guard.check_failures
         return c
 
 
@@ -203,6 +282,14 @@ class ObjectTierService(Service):
         self.register("get_objects", self._get_objects, klass="objects", binary_out=True,
                       tiers=self.allowed_callers, cost=ids_cost)
         self.register("tier_info", lambda c, p: {"tier": self.tier, "object_callers": list(self.allowed_callers)})
+        self.register("acl_epochs", self._acl_epochs, tiers=self.allowed_callers)
+
+    def _acl_epochs(self, caller, params):
+        repos = params.get("repos")
+        if not isinstance(repos, list) or len(repos) > 1000:
+            raise ValueError("repos must be a list of at most 1000 names")
+        guard = self.source.guard
+        return {validate_repo_name(r): guard.ensure(r) if guard else None for r in repos}
 
     def _get_objects(self, caller, params):
         ids = params.get("ids")
@@ -225,12 +312,13 @@ class ObjectTierService(Service):
 
 
 def make_cache_service(upstreams: list[str], max_bytes: int, identity: Identity | None = None,
-                       token: str | None = None, tls: ClientTls | None = None,
-                       verbose: bool = False) -> ObjectTierService:
+                       token: str | None = None, tls: ClientTls | None = None, verbose: bool = False,
+                       epoch_seconds: float = 10.0) -> ObjectTierService:
     """scion-cache: in memory, misses to the servers (FR-TIER-05/06)."""
     upstream = RemoteSource(upstreams, principal="scion-cache", tier="cache", token=token, tls=tls)
-    return ObjectTierService("cache", CachingSource(MemoryObjectStore(max_bytes), upstream), ("daemon",),
-                             identity, verbose=verbose)
+    source = CachingSource(MemoryObjectStore(max_bytes), upstream)
+    source.guard = EpochGuard(upstream.acl_epochs, source.purge, epoch_seconds)
+    return ObjectTierService("cache", source, ("daemon",), identity, verbose=verbose)
 
 
 class DaemonService(ObjectTierService):
@@ -239,9 +327,12 @@ class DaemonService(ObjectTierService):
 
     def __init__(self, store_dir: str, upstreams: list[str], max_bytes: int, snapshot_dir: str | None = None,
                  refresh_seconds: float = 300.0, identity: Identity | None = None, token: str | None = None,
-                 tls: ClientTls | None = None, verbose: bool = False):
+                 tls: ClientTls | None = None, verbose: bool = False, epoch_seconds: float = 10.0):
         upstream = RemoteSource(upstreams, principal="scion-daemon", tier="daemon", token=token, tls=tls)
         source = CachingSource(BoundedFileObjectStore(store_dir, max_bytes), upstream, verify=True)
+        # the store survives restarts, so the epochs it was filled under are saved beside it
+        source.guard = EpochGuard(upstream.acl_epochs, source.purge, epoch_seconds,
+                                  os.path.join(store_dir, "epochs.json"))
         super().__init__("daemon", source, ("client",), identity, verbose=verbose)
         self.snapshot_dir, self.refresh_seconds = snapshot_dir, refresh_seconds
         self.snapshots_loaded: dict[str, str] = {}
@@ -261,7 +352,11 @@ class DaemonService(ObjectTierService):
             info = latest_snapshot(d) if os.path.isdir(d) else None
             if not info or self.snapshots_loaded.get(repo) == info["file"]:
                 continue
-            n = load_snapshot(os.path.join(d, info["file"]), self.source.store, repo)
+            epoch = self.source.guard.ensure(repo)
+            if epoch is None or info.get("epoch") != epoch:
+                self.metrics.incr("snapshot.stale")  # taken under another ACL epoch: may hold uncacheable objects
+                continue
+            n = load_snapshot(os.path.join(d, info["file"]), self.source.store, repo, expect_epoch=epoch)
             self.snapshots_loaded[repo] = info["file"]
             self.snapshot_objects += n
             self.metrics.incr("snapshot.imported", n)

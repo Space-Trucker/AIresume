@@ -2,18 +2,29 @@
 
 Every query the ``scn`` client makes is one of these public RPCs (FR-QRY-10), so CI jobs and
 agents can ask questions and write changesets without a checkout (FR-WR-01). Every RPC names its
-repository (ADR-13); the repository-level rules decide who may use it at all (FR-IAM-01/02).
+repository (ADR-13); the repository-level rules decide who may use it at all (FR-IAM-01/02), and
+directory rules filter what each caller sees (FR-IAM-03/04). The server also hosts Antique, the
+code review and landing service, and its review pages.
 """
 from __future__ import annotations
 
 import base64
 import binascii
+import json
+import re
+import threading
+from collections import Counter
 
+from .antique import Antique
 from .deployment import Deployment
 from .iam import PermissionDenied
-from .repo import Repository
+from .notify import Notifier
+from .repo import NotFound, Repository
 from .rpc import MAX_IDS_PER_REQUEST, Service, ids_cost, pack_objects, unpack_objects
 from .search import search_paths
+from .ui import ReviewUI
+
+RELEASE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
 
 MAX_LIMIT = 10_000
 
@@ -80,6 +91,7 @@ class ScionService(Service):
           cost=ids_cost)
         r("has_objects", lambda c, p: self._repo(c, p).missing_objects(_ids(p), c.user), klass="objects",
           cost=ids_cost)
+        r("acl_epochs", self._acl_epochs, tiers=self.object_callers)
         r("put_objects", self._put_objects, klass="write", binary_in=True)
         # -- writes (FR-WR-*) ----------------------------------------------------------------------
         r("create_changeset", self._create_changeset, klass="write")
@@ -89,10 +101,64 @@ class ScionService(Service):
         r("revert", self._revert, klass="write")
         r("update_ref", self._update_ref, klass="write")
         r("derive", self._derive, klass="heavy")
+        # -- refs, audit and administration (FR-REF-05, FR-IAM-09/10) ------------------------------
+        r("create_release", self._create_release, klass="write")
+        r("audit_log", self._audit_log)
+        r("audit_verify", lambda c, p: self._admin_repo(c, p).audit.verify(), klass="heavy")
+        r("reindex_acl", self._reindex_acl, klass="heavy")
+        # -- Antique (FR-RV-*, FR-LD-*) ----------------------------------------------------------------
+        r("antique.create", self._cr_create, klass="write")
+        r("antique.update", lambda c, p: self._cr(c, p, lambda a: a.update(self._need_user(c), _int(p, "id", 0, 1, 1 << 62),
+                                                                           _str(p, "head"))), klass="write")
+        r("antique.get", lambda c, p: self._cr(c, p, lambda a: a.get(_int(p, "id", 0, 1, 1 << 62))))
+        r("antique.list", self._cr_list)
+        r("antique.approve", lambda c, p: self._cr(c, p, lambda a: a.approve(self._need_user(c),
+                                                                             _int(p, "id", 0, 1, 1 << 62))), klass="write")
+        r("antique.comment", self._cr_comment, klass="write")
+        r("antique.requirements", lambda c, p: self._cr(c, p, lambda a: {"requirements": a.requirements(
+            _int(p, "id", 0, 1, 1 << 62))})["requirements"], klass="heavy")
+        r("antique.land", lambda c, p: self._cr(c, p, lambda a: a.land(self._need_user(c), _int(p, "id", 0, 1, 1 << 62),
+                                                                       force=bool(p.get("force", False)))), klass="write")
+        r("antique.abandon", lambda c, p: self._cr(c, p, lambda a: a.abandon(self._need_user(c),
+                                                                             _int(p, "id", 0, 1, 1 << 62))), klass="write")
+        r("antique.land_changeset", lambda c, p: self._antique(c, p).land_changeset(
+            self._need_user(c), _str(p, "cs"), _str(p, "ref", "main")), klass="write")
+        r("antique.find_landing", lambda c, p: self._antique(c, p).find_landing(_str(p, "cs")))
+        r("antique.postmerge_claim", lambda c, p: self._postmerge(c, p).postmerge_claim(self._need_user(c)),
+          klass="write")
+        r("antique.postmerge_report", lambda c, p: self._postmerge(c, p).postmerge_report(
+            _int(p, "id", 0, 1, 1 << 62), bool(p.get("passed")), _str(p, "log", "")), klass="write")
+        r("antique.postmerge_status", lambda c, p: self._antique(c, p).postmerge_status(
+            _str(p, "ref", "main"), _int(p, "limit", 50, 1)))
+        self._antiques: dict[str, Antique] = {}
+        self._antiques_lock = threading.Lock()
+        self.notifier = Notifier(self._webhooks)
+        self.ui = ReviewUI(self)
 
     @property
     def identity(self):
         return self.deployment.identity
+
+    # -- requests: live policies and audited denials --------------------------------------------------
+    def dispatch(self, name, body, query, caller):
+        self.deployment.maybe_reload()  # group, token and admin changes apply to the next request
+        try:
+            return super().dispatch(name, body, query, caller)
+        except PermissionDenied as e:
+            self._audit_denial(name, body, query, caller, e)
+            raise
+
+    def _audit_denial(self, method, body, query, caller, error) -> None:
+        try:
+            repo_name = (query.get("repo") or [None])[-1] or (json.loads(body or b"{}").get("params") or {}).get("repo")
+            repo = self.deployment.repo(repo_name)
+        except Exception:  # an unknown or unnamed repository has no audit log to write to
+            return
+        repo.audit.append("denied", caller.user, method, {"principal": caller.principal, "tier": caller.tier,
+                                                         "message": str(error)[:500]})
+
+    def handle_http(self, method, path, query, headers, body, secure):
+        return self.ui.handle(method, path, query, headers, body, secure)
 
     def reload(self) -> None:
         """Re-read the identity and policy documents (UC-22)."""
@@ -123,13 +189,16 @@ class ScionService(Service):
             out["repo_admin"] = self.deployment.repo(p["repo"]).policy.is_admin(c.user)
         return out
 
-    def _list_repos(self, c, p):
+    def readable_repos(self, user) -> list[dict]:
         out = []
         for name in self.deployment.names():
             pol = self.deployment.policy_for(name)
-            if pol.can_read_repo(c.user):
-                out.append({"name": name, "public": pol.public, "writable": pol.can_write_repo(c.user)})
+            if pol.can_read_repo(user):
+                out.append({"name": name, "public": pol.public, "writable": pol.can_write_repo(user)})
         return out
+
+    def _list_repos(self, c, p):
+        return self.readable_repos(c.user)
 
     def _server_info(self, c, p):
         if p.get("repo"):
@@ -188,6 +257,19 @@ class ScionService(Service):
         repo = self.deployment.repo(p.get("repo"))  # unreadable repositories come back DENIED per object
         return pack_objects(repo.fetch_objects(_ids(p), c.user))
 
+    def _acl_epochs(self, c, p):
+        """Each repository's ACL epoch, for the tiers (ADR-20); unknown repositories map to None."""
+        repos = p.get("repos")
+        if not isinstance(repos, list) or len(repos) > 1000 or not all(isinstance(x, str) for x in repos):
+            raise ValueError("repos must be a list of at most 1000 names")
+        out = {}
+        for name in repos:
+            try:
+                out[name] = self.deployment.repo(name).acl_epoch()
+            except (NotFound, ValueError):
+                out[name] = None
+        return out
+
     def _put_objects(self, c, p):
         repo = self._repo(c, p, write=True)
         return {"stored": repo.put_objects(unpack_objects(p["_body"]), c.user)}
@@ -222,6 +304,9 @@ class ScionService(Service):
         ref = p.get("update_ref")
         if ref:
             moved = repo.update_ref(_str(ref, "name"), ref.get("old"), cs_id, user=c.user)
+            if moved and ref.get("record_landing"):  # index a direct landing (FR-LD-05)
+                self.antique(repo.name).record_landing(cs_id, ref["name"], repo.resolve(ref["old"]) if ref.get("old")
+                                                       else None)
         return {"id": cs_id, "ref_updated": moved}
 
     def _merge(self, c, p):
@@ -237,14 +322,117 @@ class ScionService(Service):
         repo = self._repo(c, p)
         return repo.update_ref(_str(p, "name"), p.get("old"), p.get("new"), user=c.user)
 
-    def _derive(self, c, p):
+    def _admin_repo(self, c, p) -> Repository:
         repo = self._repo(c, p)
         if not repo.policy.is_admin(c.user):
-            raise PermissionDenied("derive is for administrators")
+            raise PermissionDenied("this operation is for administrators")
+        return repo
+
+    def _derive(self, c, p):
+        repo = self._admin_repo(c, p)
         cs = repo.resolve(_str(p, "rev", "main"))
-        return {"type": _str(p, "type"), "computed": repo.derived.backfill(p["type"], cs)}
+        computed = repo.derived.backfill(_str(p, "type"), cs)
+        repo.audit.append("derive", c.user, p["type"], {"cs": cs, "computed": computed})
+        return {"type": p["type"], "computed": computed}
+
+    def _reindex_acl(self, c, p):
+        repo = self._admin_repo(c, p)
+        result = repo.reindex_acl()
+        repo.audit.append("acl.reindex", c.user, repo.name, result)
+        return result
+
+    def _audit_log(self, c, p):
+        repo = self._admin_repo(c, p)
+        return repo.audit.entries(_int(p, "limit", 100, 1), p.get("action"), p.get("before"))
+
+    def _create_release(self, c, p):
+        """Create ``release/<name>`` at a changeset (FR-REF-05): the ref must not exist, and only
+        principals allowed to move ``release/*`` may do it."""
+        repo = self._repo(c, p)
+        name = _str(p, "name")
+        if not RELEASE_NAME.match(name):
+            raise ValueError(f"invalid release name {name!r}")
+        ref = f"release/{name}"
+        if not repo.policy.can_update_ref(c.user, ref):
+            raise PermissionDenied(f"{c.user or 'anonymous'} may not create {ref}")
+        cs = repo.resolve(_str(p, "rev", "main"))
+        if not repo.update_ref(ref, None, cs, user=c.user):
+            raise ValueError(f"{ref} already exists")
+        repo.audit.append("release.create", c.user, ref, {"cs": cs})
+        return {"ref": ref, "target": cs}
+
+    # -- Antique ---------------------------------------------------------------------------------------
+    @staticmethod
+    def _need_user(c) -> str:
+        if not c.user:
+            raise PermissionDenied("this operation needs an identity (X-Scion-User)")
+        return c.user
+
+    def _webhooks(self, repo_name: str) -> list[str]:
+        try:
+            return list(self.deployment.repo(repo_name).policy.review.get("webhooks", []))
+        except Exception:
+            return []
+
+    def antique(self, repo_name: str) -> Antique:
+        repo = self.deployment.repo(repo_name)
+        with self._antiques_lock:
+            a = self._antiques.get(repo.name)
+            if a is None:
+                a = self._antiques[repo.name] = Antique(repo, notify=self.notifier, audit=repo.audit.append)
+            return a
+
+    def _antique(self, c, p, write: bool = False) -> Antique:
+        return self.antique(self._repo(c, p, write=write).name)
+
+    def _postmerge(self, c, p) -> Antique:
+        """Post-merge results feed the deploy gate, so only services and administrators report them."""
+        a = self._antique(c, p)
+        if not (a.policy.is_service(c.user) or a.policy.is_admin(c.user)):
+            raise PermissionDenied("post-merge jobs are claimed and reported by services and administrators")
+        return a
+
+    def _view(self, c, repo: Repository, cr: dict) -> dict:
+        """What a caller may see of a CR: files and comments under directories they can't read are
+        left out (FR-IAM-04)."""
+        can = repo.policy.can_read
+        for g in (cr.get("requirements") or {}).get("groups", []):
+            g["files"] = [f for f in g["files"] if can(c.user, f["path"])]
+        cr["comments"] = [x for x in cr.get("comments", []) if not x["path"] or can(c.user, x["path"])]
+        return cr
+
+    def _cr(self, c, p, fn):
+        a = self._antique(c, p)
+        return self._view(c, a.repo, fn(a))
+
+    def _cr_create(self, c, p):
+        a = self._antique(c, p, write=True)
+        return self._view(c, a.repo, a.create(self._need_user(c), _str(p, "title"), _str(p, "head"),
+                                              _str(p, "description", ""), _str(p, "target", "main")))
+
+    def _cr_list(self, c, p):
+        a = self._antique(c, p)
+        return [self._view(c, a.repo, cr) for cr in a.list(p.get("state"), p.get("author"), _int(p, "limit", 50, 1))]
+
+    def _cr_comment(self, c, p):
+        a = self._antique(c, p)
+        path = p.get("path")
+        if path is not None and not a.repo.policy.can_read(c.user, _str(p, "path")):
+            raise PermissionDenied(f"{c.user} may not read {path}")
+        line = p.get("line")
+        return self._view(c, a.repo, a.comment(self._need_user(c), _int(p, "id", 0, 1, 1 << 62), _str(p, "body"), path,
+                                               None if line is None else _int(p, "line", 1, 1, 1 << 31)))
 
     def stats(self) -> dict:
+        """Totals over all repositories: /stats is unauthenticated, so it names none of them."""
         s = super().stats()
-        s["repos"] = {name: dict(r.stats) for name, r in list(self.deployment._repos.items())}
+        repos, antique = Counter(), Counter()
+        for r in list(self.deployment._repos.values()):
+            repos.update(r.stats)
+        for a in list(self._antiques.values()):
+            antique.update({k: v for k, v in a.counters.items() if k != "land.max_batch"})
+            antique["land.max_batch"] = max(antique["land.max_batch"], a.counters["land.max_batch"])
+        s["repos"] = {"open": len(self.deployment._repos), **repos}
+        s["antique"] = dict(antique)
+        s["notify"] = dict(self.notifier.counters)
         return s

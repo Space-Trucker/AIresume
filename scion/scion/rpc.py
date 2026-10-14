@@ -261,8 +261,9 @@ class Service:
             return result, "application/octet-stream"
         return json.dumps({"result": result}).encode(), "application/json"
 
-    def handle_get(self, path: str, query: dict, caller: Caller):
-        """Extra GET pages: return ``(status, content_type, body)`` or None for 404."""
+    def handle_http(self, method: str, path: str, query: dict, headers, body: bytes, secure: bool):
+        """Pages outside ``/rpc/`` (such as the review UI): return ``(status, content_type, body,
+        headers)`` or None for 404. The page handler authenticates its own users."""
         return None
 
     def stats(self) -> dict:
@@ -329,28 +330,27 @@ class _Handler(BaseHTTPRequestHandler):
     def _caller(self) -> Caller:
         return self.server.service.authenticate(self.headers, _peer_cn(self.connection))
 
-    def do_GET(self):
+    def _page(self, method: str, u, body: bytes = b""):
         service: Service = self.server.service
-        u = urlparse(self.path)
         try:
-            if u.path == "/healthz":
-                return self._send(200, json.dumps(service.health()).encode())
-            if u.path == "/stats":
-                return self._send(200, json.dumps(service.stats()).encode())
-            r = service.handle_get(u.path, parse_qs(u.query), self._caller())
+            r = service.handle_http(method, u.path, parse_qs(u.query), self.headers, body,
+                                    isinstance(self.connection, ssl.SSLSocket))
             if r is None:
                 return self._send(404, _error_body("not_found", u.path))
-            status, ctype, body = r[:3]
-            return self._send(status, body, ctype, r[3] if len(r) > 3 else None)
-        except RpcError as e:
-            return self._send(e.status, _error_body(e.code, str(e), e.data))
-        except PermissionDenied as e:
-            return self._send(403, _error_body("permission_denied", str(e)))
-        except NotFound as e:
-            return self._send(404, _error_body("not_found", str(e)))
+            status, ctype, payload = r[:3]
+            return self._send(status, payload, ctype, r[3] if len(r) > 3 else None)
         except Exception as e:  # pragma: no cover - defensive
             traceback.print_exc(file=sys.stderr)
             return self._send(500, _error_body("internal", f"{type(e).__name__}: {e}"))
+
+    def do_GET(self):
+        service: Service = self.server.service
+        u = urlparse(self.path)
+        if u.path == "/healthz":
+            return self._send(200, json.dumps(service.health()).encode())
+        if u.path == "/stats":
+            return self._send(200, json.dumps(service.stats()).encode())
+        return self._page("GET", u)
 
     def do_POST(self):
         service: Service = self.server.service
@@ -369,7 +369,7 @@ class _Handler(BaseHTTPRequestHandler):
             return self._send(413, _error_body("too_large", "request body too large"))
         body = self.rfile.read(length) if length else b""
         if not u.path.startswith("/rpc/"):
-            return self._send(404, _error_body("not_found", u.path))
+            return self._page("POST", u, body)
         method = u.path[len("/rpc/"):]
         try:
             out, ctype = service.dispatch(method, body, parse_qs(u.query), self._caller())
@@ -394,6 +394,9 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, KeyError, TypeError) as e:
             return self._send(400, _error_body("bad_request", f"{type(e).__name__}: {e}"))
         except Exception as e:
+            status = getattr(e, "http_status", None)  # errors that carry their own status and code
+            if status:
+                return self._send(status, _error_body(getattr(e, "code", "error"), str(e)))
             traceback.print_exc(file=sys.stderr)
             return self._send(500, _error_body("internal", f"{type(e).__name__}: {e}"))
 

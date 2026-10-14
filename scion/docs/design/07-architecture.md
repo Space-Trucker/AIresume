@@ -52,18 +52,21 @@ Domain model: [6.1](06-uml.md#61-domain-model).
 | Changeset creation | idempotent append keyed by content hash; no locks; eager derived data computed right after |
 | Derived data races | values are deterministic, written with insert-or-ignore; a per-process single-flight lock avoids duplicate work |
 | Refs | single-row compare-and-swap; every success is appended to the ref log |
-| Landing | per-server, per-target group commit: one leader drains the queue, rebases a chain, does one CAS; retries with jittered exponential backoff up to a deadline; servers never coordinate except through the CAS |
+| Landing | per-server, per-target group commit: one leader drains the queue, rebases a chain, does one CAS; retries with jittered exponential backoff up to a deadline (then 503 `retry`); servers never coordinate except through the CAS; CRs show `landing` while queued |
 | Cache misses | single flight per object id; waiters re-read the store or re-request |
 | Request handling | a thread per connection (HTTP/1.1 keep-alive; each response leaves in one write, with TCP_NODELAY); TLS handshakes run on the connection's thread; per-thread SQLite connections in WAL mode |
 | Client fetch | breadth-first by tree level; blob batches fetched in parallel |
 | Status | a filesystem watcher process journals events; the sync cookie orders queries after earlier events |
+| Policies | each request stats `deployment.json` and the repository's `policy.json`; a changed file is reloaded at once and audited (FR-IAM-06) |
+| Audit | appends take the store's write lock, so the hash chain stays linear across servers |
 
 **Consistency model**
 * **Changesets and objects:** immutable, read-your-writes from any server sharing the store.
 * **Refs:** linearizable through compare-and-swap.
 * **Derived data:** eventually present and always identical (a deterministic function of immutable inputs).
-* **Tiers:** never stale for content (it is immutable). Only the ACL classification can change, by policy
-  update, which requires re-indexing and a cache restart (R-07).
+* **Tiers:** never stale for content (it is immutable). Only the ACL classification can change: at once
+  for a repository that turns private, at re-index for directory rules; every tier learns of it through the
+  repository's ACL epoch within about two epoch intervals and purges what it held (ADR-20, R-07).
 
 ## 7.5 Deployment and scaling view
 
@@ -111,7 +114,12 @@ with `id = sha256("changeset\0" || json)`.
 | `search` | stree root id |
 | `blame` | `{path: blame id or "binary"}` |
 
-**Metadata schema:** see the ER diagram in [6.9](06-uml.md#69-metadata-store-er).
+**Metadata schema:** see the ER diagram in [6.9](06-uml.md#69-metadata-store-er). Besides the changeset
+log, refs and derived values, each repository's store holds the object index (`object_acl`: where each
+object appears, `""` for a place everyone may read), possession grants (`object_grants`: an uploader
+may commit by id bytes they uploaded even if the object is otherwise restricted), the audit chain
+(`audit`) and Antique's tables (`crs`, `cr_revisions`, `cr_approvals`, `cr_comments`, `landings`,
+`postmerge`).
 
 ## 7.7 Protocols
 
@@ -195,3 +203,4 @@ down, owned by humans and changed only by superseding them (12 §12.6).
 | ADR-17 | Interactive review UI as server-rendered HTML forms with a session cookie and a per-session CSRF token, calling the same Antique code paths as the RPCs | FR-RV-09; standard library only | no client-side framework; page reloads per action | a separate web application |
 | ADR-18 | Reviewer notifications and component logs as small built-in mechanisms: webhooks with retry on CR events; an in-memory ring buffer of structured warnings and errors per component, exposed at `GET /logs` for superfans | FR-RV-10, FR-OP-08 | best-effort delivery; logs are recent-only | external queues and log stacks |
 | ADR-19 | History and blame follow the first parent only, merges included (BR-06, decided at M0) | footnote 1; decision 4 | lines brought in by a merge are attributed to the merge | crediting the other parent's authors (rejected at M0) |
+| ADR-20 | ACL epochs: each repository has an epoch that changes when it stops being readable by everyone and at every re-index of the object index; caches and daemons check it upstream at least every `epoch_seconds` (default 10) before serving a repository's objects, purge that repository when it changed, and save it beside a daemon's disk store; snapshots carry the epoch they were taken under and are imported only under the same epoch | the B2 review found that objects cached while public stayed on a daemon's disk, and in snapshots, after the repository turned private, surviving the restart that R-07 prescribed; restarting every daemon on every node is not an operation at this scale | a policy change reaches every tier within about two epoch intervals, without restarts; one small upstream call per repository per interval per tier; tiers that can't reach upstream keep serving what they hold | manual purges and restarts (the earlier procedure); per-object revalidation (one upstream call per hit) |
