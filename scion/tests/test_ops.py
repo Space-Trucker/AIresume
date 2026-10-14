@@ -13,12 +13,14 @@ import tempfile
 import time
 import unittest
 import zlib
+from unittest import mock
 
 import helpers  # noqa: F401
 from helpers import REPO, Cluster
 from scion.client import WorkingCopy
 from scion.objects import blob_id, encode_stored, object_id
 from scion.ratelimit import RateLimited, RateLimiter, TokenBucket
+from scion import rpc
 from scion.rpc import RemoteError, RpcClient
 
 PKG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scion")
@@ -95,6 +97,31 @@ class TestRateLimits(unittest.TestCase):
         finally:
             c.close()
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+    def test_T_OPS_01_a_connection_closed_while_idle_is_replaced_at_once(self):
+        """The CPython pilot found the first query after each checkpoint taking 106 ms: the server had
+        closed the idle keep-alive connection, and the client waited 100 ms before reconnecting, as if
+        the server were down. A reused connection that fails is replaced at once."""
+        tmp = tempfile.mkdtemp(prefix="scion-idle-")
+        with mock.patch.object(rpc._Handler, "timeout", 0.2):  # close idle connections quickly
+            c = Cluster(tmp, caches=0)
+            try:
+                api = c.client("alice")
+                api.call("whoami")
+                idle = api._local.conn
+                time.sleep(1.0)  # the server closes the idle connection
+                with mock.patch.object(rpc.time, "sleep") as slept:
+                    self.assertEqual(api.call("whoami")["user"], "alice")
+                slept.assert_not_called()
+                self.assertIsNot(api._local.conn, idle)  # replaced, not reused
+                down = RpcClient(c.server_urls[0].rsplit(":", 1)[0] + ":9", user="alice", retries=1)
+                with mock.patch.object(rpc.time, "sleep") as slept, self.assertRaises(rpc.Unreachable):
+                    down.call("whoami")  # a server that is down is still retried with backoff
+                slept.assert_called_once()
+            finally:
+                c.close()
+                shutil.rmtree(tmp, ignore_errors=True)
 
 
 class TestHealthAndStats(unittest.TestCase):

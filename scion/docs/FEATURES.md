@@ -11,7 +11,7 @@ and mapped to the code that implements it. Claims that are about Anthropic's org
 scale numbers, or history (for example, over 30,000 changes merged per day) are context, not features, and are
 listed at the end for completeness.
 
-Legend: **Done** = implemented and covered by tests (`tests/`, 197 tests, plus the end-to-end demo
+Legend: **Done** = implemented and covered by tests (`tests/`, 201 tests, plus the end-to-end demo
 `examples/demo.sh`). **Partial** = implemented with a documented simplification. **Out of scope** =
 cannot be reproduced in a repository (explained).
 
@@ -150,6 +150,15 @@ too. While rebuilding (each now has a regression test):
    main's first-parent history (and auto-revert then emptied main), landing batches left hanging by
    errors other than conflicts, file names holding `\r` misread when read back, and result pages too
    large for Spanner. Each fix has a regression test that fails on the reviewed code.
+9. `is_ancestor(first commit, tip)` took 62 steps once CPython's history held merges: the walk paid a
+   step per merge. A descent through the skip lists now answers it in O(log n) reads, merges or not
+   (ADR-12) (B6, the CPython pilot).
+10. Computing blame for a whole import at its end held every changeset id at once, so an import's
+    memory grew with the history. Blame is now computed commit by commit as the import goes (T-MG-04,
+    after decision 8).
+11. The first query after a pause took 106 ms: the server closes connections idle for 5 minutes, and
+    the client waited 100 ms before reconnecting, as if the server were down. It now reconnects at
+    once (T-OPS-01) (B6, the CPython pilot).
 
 In the deleted prototype:
 

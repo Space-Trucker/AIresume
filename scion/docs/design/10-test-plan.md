@@ -92,7 +92,7 @@
 | T-MG-01 | FR-MG-01/03/05/07 | ingest, verify, incremental, the git map both ways | test_ingest |
 | T-MG-02 | FR-MG-01, FR-DD-09 | blame parity with `git blame --first-parent` | test_ingest |
 | T-MG-03 | FR-MG-02 | ordering invariant | test_ingest |
-| T-OPS-01 | FR-OP-06 | token bucket, concurrency, 429 plus client backoff | test_ops |
+| T-OPS-01 | FR-OP-06 | token bucket, concurrency, 429 plus client backoff; a kept connection the server closed while idle is replaced at once, with no backoff (found by the CPython pilot) | test_ops |
 | T-OPS-02 | FR-OP-03/04 | superfan novel (hit-rate drop), threshold, restart and unreachable findings; each raised once and resolved; cache and landing-queue profiles | test_superfan |
 | T-SR-01 | FR-SR-01/02/04, FR-DD-12 | bloom pruning; grep (regex, fixed, case-insensitive, limits) filtered by permissions | test_search |
 | T-AUT-01 | FR-AUT-01 | bisect without a checkout in ⌈log₂ n⌉ probes; the range is paged by changeset, and an offset past the server's cap is refused | test_automation |

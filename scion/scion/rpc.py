@@ -592,7 +592,8 @@ class _UnixHTTPConnection(http.client.HTTPConnection):
 
 class RpcClient:
     """A keep-alive client for one endpoint. Connection failures are retried with backoff (for
-    requests that are safe to resend) and 429 responses are honored by waiting (FR-OP-06)."""
+    requests that are safe to resend) and 429 responses are honored by waiting (FR-OP-06); a kept
+    connection that the server closed while idle is replaced at once."""
 
     def __init__(self, url: str, user: str | None = None, token: str | None = None, tier: str = "client",
                  tls: ClientTls | None = None, timeout: float = 120.0, retries: int = 3, max_throttle: int = 8):
@@ -679,7 +680,7 @@ class RpcClient:
             # A request that must not be resent gets a fresh connection, so a stale keep-alive
             # connection can't fail it after it may have reached the server.
             conn = self._conn(fresh=not idempotent)
-            sent = False
+            reused, sent = conn.sock is not None, False
             try:
                 if conn.sock is None:
                     conn.connect()
@@ -689,6 +690,8 @@ class RpcClient:
                 data = resp.read()
             except (OSError, http.client.HTTPException) as e:
                 self.close()
+                if reused:  # the server closed it while idle (after 300 s): reconnect at once
+                    continue
                 attempt += 1
                 if (sent and not idempotent) or attempt > self.retries:
                     if not sent and not isinstance(e, ssl.SSLError):
