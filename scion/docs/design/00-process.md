@@ -4,13 +4,13 @@ The work behind this package was done in the wrong order: code was written first
 puts it right. It is written **from the article and from engineering analysis, not from the
 code**, so the existing code can be checked against it instead of shaping it.
 
-**Status: approved at M0 (2026-10-13); built in B1–B5; extended for B6 (2026-10-14).** The M0
+**Status: approved at M0 (2026-10-13); built in B1–B5; extended and built in B6 (2026-10-14).** The M0
 decisions are in [12-project-plan.md](12-project-plan.md) §12.7. The prototype was deleted, and the
 system was rebuilt from this baseline in milestones B1–B5; every requirement of the baseline is built
 and tested, with the evidence in [11-traceability.md](11-traceability.md). The decisions of
 2026-10-14 (§12.9) add milestone B6, to run the system as Anthropic does: metadata in Cloud Spanner,
 superfan agents, a comparison with git, and the CPython pilot. Their requirements (FR-ST-01…04,
-FR-OP-09…11) were designed before any code, and read **B6** in 11 until they are built.
+FR-OP-09…11) were designed before any code and are now built and tested (11 §11.3).
 
 ## The pre-code steps, in order
 

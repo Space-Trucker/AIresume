@@ -1,6 +1,6 @@
 # Scion: agent-scale source control
 
-> **Status: built and verified (B1–B5); B6 in progress.** The design baseline in [`docs/design/`](docs/design/00-process.md)
+> **Status: built and verified (B1–B6).** The design baseline in [`docs/design/`](docs/design/00-process.md)
 > was approved at M0 (2026-10-13). The earlier prototype was deleted by decision, and the system was rebuilt
 > from the baseline in milestones: B1, the version control core; B2, the server API, the daemon → cache →
 > server tiers with snapshots, the `scn` client (full, sparse and virtual checkouts), multiple repositories
@@ -10,7 +10,8 @@
 > with a deploy gate, bisect and revert pipelines, indexed grep, superfans reading telemetry and logs,
 > benchmarks, and backup and restore; and B5, system verification of the non-functional requirements.
 > B6 (decided 2026-10-14) runs it as Anthropic does: metadata in Cloud Spanner, superfans that are Claude
-> agents, a comparison with git on the same repository, and a migration pilot on CPython's full history.
+> agents, a comparison with git on the same repository, and a migration pilot on CPython's history (to
+> 123,515 of its 133,611 commits, every checkpoint verified against git).
 > Status per requirement: [`docs/design/11-traceability.md`](docs/design/11-traceability.md).
 
 A working implementation of the system described in Anthropic's engineering post

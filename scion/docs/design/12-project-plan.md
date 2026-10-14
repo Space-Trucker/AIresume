@@ -6,8 +6,8 @@
 |---|---|---|---|
 | Inception | vision, scope, stakeholders | M0a: 01–02 approved | approved 2026-10-13 |
 | Elaboration | requirements, use cases, UML, architecture, risks, test plan, traceability, article cross-check | **M0: design baseline approved** | approved 2026-10-13, with the decisions in 12.7 |
-| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B6 | B1–B5 done (every requirement of the baseline **I**); B6 in progress (12.9) |
-| Transition | migration pilot, cut-over, operations | M4–M5 | M4 in progress with B6 (the CPython pilot, 12.9 decision 7); M5 not started |
+| Construction | rebuild every requirement from this baseline, test-first, one traced work package at a time | B1–B6 | B1–B6 done: every requirement **I** (12.9 for B6) |
+| Transition | migration pilot, cut-over, operations | M4–M5 | M4 done with B6: the CPython pilot ran to 123,515 commits, every checkpoint verified (T-PILOT-01); M5 not started |
 
 > **Note on order.** A prototype was built before elaboration. At M0 the project lead decided to
 > delete it and rebuild from this baseline (decision 2). It stays in git history (commits
