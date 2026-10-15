@@ -93,6 +93,7 @@ Where the goal departs from what you said, the last column names the decision th
 | log every decision and why; live profit and loss; a daily report | the same (O7) | | none |
 | an AI model for the slower thinking, fast code for split-second calls | kept as your design wishes for the architecture stage; no model trained on data after the research window starts may shape the forecast that G1 judges | how, not what; a model trained on the past can't be tested on that past | decision 9 |
 | real money starting small | at most 10% of the intended capital, at least $2,000, for at least 60 trading days, then at most doubling every 60 trading days | "small" had no size or growth rule | decision 10 |
+| no Fable model, of any kind | the same: no Fable model in any role, in the system or in the work that builds and reviews it | as you said | none |
 
 ## Scope
 
@@ -125,7 +126,8 @@ goal. The architecture starts from them, within the goal:
 - an AI model does the slower thinking, and fast code makes the split-second calls;
 - the system scans the whole market all day and watches a shortlist live;
 - a risk manager with fixed limits can block any trade, and nothing overrides it;
-- live profit and loss is shown.
+- live profit and loss is shown;
+- never a Fable model, in any role. This one binds the whole program, not only the architecture.
 
 ## Constraints
 
@@ -145,7 +147,7 @@ These follow the headings of an investment policy statement.
 | Account | the paper account's default equity, **$100,000** (confirmed on day one). Every limit is a percentage of equity, but liquidity limits are in dollars, so capacity grows only with the universe's volume |
 | Legal and regulatory | a short only with a current easy-to-borrow status, which is a locate, re-checked for every held short each day; never a short under the Rule 201 short-sale price test; no spoofing, layering, wash trades or marking the close. Alpaca dropped the pattern-day-trader rule on 2026-06-04 and applies FINRA's intraday margin rule; at 100% gross the account stays far from any margin call. Short sales need at least **$2,000** of equity |
 | Taxes | out of scope while on paper; confirmed by the owner before G3 |
-| Unique | a paper account first; the broker is Alpaca; no person in the loop during the session |
+| Unique | a paper account first; the broker is Alpaca; no person in the loop during the session; no Fable model (claude-fable-*) in any role: the system's decisions, research, the independent review, monitoring, operations, or building the system |
 
 ## Risk limits
 
@@ -452,7 +454,7 @@ brackets.
 5. **The research budget.** At most 10 variants and 9 months. Every run on the history counts as a
    variant, and a stop is final for that history. Accept [yes].
 6. **The independent reviewer.** Who challenges the evidence before each gate, and who rules on the
-   findings. [An AI reviewer that sees only the evidence, as in this review; you rule on the findings.]
+   findings. [An AI reviewer that sees only the evidence, as in this review, and never a Fable model; you rule on the findings.]
 7. **Alerts when you are away.** An alert unacknowledged for 15 minutes stops new entries; at 60 minutes
    the system closes everything. Accept [yes].
 8. **Extended hours.** No orders outside 09:30–16:00, even to cut risk when news breaks at night

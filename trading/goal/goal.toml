@@ -51,6 +51,7 @@ items = [
   "scans the whole market all day and watches a shortlist live",
   "a risk manager with fixed limits can block any trade, and nothing overrides it",
   "shows live profit and loss",
+  "never a Fable model, in any role",
 ]
 
 [constraints]
@@ -69,6 +70,7 @@ max_short_interest_pct = 15                 # a short only where short interest 
 max_days_to_cover = 5                       # and short interest is at most this many days of average volume
 short_ex_date_max_pct = 0.5                 # no short held over an ex-date of a distribution of this % of the price or more
 etb_loss_close_minutes = 30                 # a held short that loses easy-to-borrow status is closed this soon after the next open
+models_text = "no Fable model (claude-fable-*) is used in any role: the system's decisions, research, the independent review, monitoring, operations, or building the system"
 universe_text = "US-listed operating-company common stocks (not ADRs, SPACs, closed-end funds, units, rights or warrants) and ETFs registered under the Investment Company Act that hold listed stocks, meeting the price, dollar-volume and spread limits; leveraged and inverse ETFs, commodity pools, crypto trusts, volatility-linked products and ETNs are excluded"
 shorts_text = "a short is sent only with a current easy-to-borrow status (a locate), never under the Rule 201 short-sale price test, and only within the short-interest limits"
 events_text = "no position is held through a scheduled company event: an earnings release, an FDA action date, a trial readout, a shareholder vote or a lockup expiry; nor through the ex-date or effective date of any corporate action other than an ordinary cash dividend"
