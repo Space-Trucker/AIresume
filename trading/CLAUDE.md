@@ -10,6 +10,7 @@
 - The Alpaca key never goes into the repository, the code or a chat. It lives in environment variables
   (`APCA_API_KEY_ID`, `APCA_API_SECRET_KEY`), and it is a paper key until G3.
 - Work only in this `trading/` folder. It is independent of the rest of the repository.
+- Don't read other sessions or their transcripts. Work from this folder's files.
 
 ## Where things stand (2026-10-15)
 
