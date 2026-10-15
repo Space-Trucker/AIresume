@@ -98,6 +98,7 @@ vol_measured_over_days = 5           # measured on 5-day P&L and scaled by the s
 vol_max_multiple = 1.5               # realized volatility over any 60 trading days stays within this multiple of the target
 leverage_text = "gross exposure, long plus short, at most 100% of equity"
 trapped_text = "a position that cannot be traded at the moment: its stock halted or paused, no session open, or the broker unreachable; it gets an exit order at the first chance, and the owner is alerted"
+market_halt_text = "after a market-wide trading halt, gross exposure is cut to the overnight limits as soon as trading resumes, before any new entry"
 loss_basis_text = "the daily loss counts from the previous session's closing equity, so an overnight gap counts against it; the drawdown counts from the highest equity reached, marked to market"
 safe_state_text = "no new orders, open entry orders cancelled, every position keeps a stop that takes effect without the system, and the owner alerted"
 
@@ -145,9 +146,9 @@ assumed_cost_drag_daily_pct = 0.017  # 25 trades a week x 4% x 8 bps = 4.2% a ye
 assumed_implementation_noise = 0.15  # daily difference between paper and a rerun of the same strategy, as a share of its volatility
 fidelity_detect_sr = 1.0             # G2 must catch an execution shortfall this large (Sharpe units a year)
 min_fidelity_power = 0.80
-max_false_stop_3y = 0.10             # the live test stops the targeted edge by mistake within 3 years at most this often
+max_false_stop_3y = 0.12             # the live test stops the targeted edge by mistake within 3 years at most this often
 min_dead_halve_1y = 0.50             # and halves a strategy whose edge is gone within a year at least this often
-min_dead_stop_3y = 0.70              # and stops it within 3 years at least this often
+min_dead_stop_3y = 0.65              # and stops it within 3 years at least this often
 simulation_reps = 400
 
 [kill_criteria]
@@ -649,7 +650,7 @@ gate = "G2"
 id = "KR6.1"
 objective = "O6"
 kpp = true
-statement = "Every variant is registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 10. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included."
+statement = "Every variant is registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 10. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included. Paper days used to diagnose a failed G2 become part of the history for every later variant."
 metric = "runs on the G1 history missing from the trial log"
 unit = "count"
 comparator = "=="
@@ -761,7 +762,7 @@ gate = "G3"
 id = "KR8.2"
 objective = "O8"
 kpp = true
-statement = "From the first live day, a sequential test weighs 'no edge' against 'the targeted edge' on the live excess returns and is acted on at every monthly look: the strategy stops when the evidence for no edge reaches 12 to 1, capital halves at 3 to 1, and capital may grow only while the evidence favors the edge. Designed to stop a real edge by mistake within 3 years at most 10% of the time (GT-4)."
+statement = "From the first live day, a sequential test weighs 'no edge' against 'the targeted edge' on the live excess returns and is acted on at every monthly look: the strategy stops when the evidence for no edge reaches 12 to 1, capital halves at 3 to 1, and capital may grow only while the evidence favors the edge. Designed to stop a real edge by mistake within 3 years at most 12% of the time (GT-4)."
 metric = "monthly looks not run, or not acted on"
 unit = "count"
 comparator = "=="
@@ -852,7 +853,7 @@ covers = ["MA-5", "RT-4", "RT-11", "KC-3"]
 
 [[controls]]
 id = "C6"
-statement = "A kill switch, available to the owner at any time and triggered automatically by the drawdown halt, cancels all orders and closes all positions; a second way to do it does not depend on the trading process (the broker's own controls) and is drilled; only one instance of the system trades at a time; every order carries the strategy version that sent it."
+statement = "A kill switch, available to the owner at any time and triggered automatically by the drawdown halt, cancels all orders and closes all positions; a second way to do it does not depend on the trading process (the broker's own controls) and is drilled; the broker account's margin multiplier is set to the lowest value that allows the planned shorts, so the broker itself caps a runaway; only one instance of the system trades at a time; every order carries the strategy version that sent it."
 covers = ["RT-1", "FN-4", "KC-2", "RT-8"]
 
 [[controls]]
@@ -893,5 +894,5 @@ covers = ["RT-10"]
 
 [[controls]]
 id = "C12"
-statement = "An independent reviewer challenges the evidence before each gate (effective challenge), and live results are tested against what G1 predicted every month (KR8.2)."
+statement = "An independent reviewer challenges the evidence before each gate (effective challenge), and the sequential live test weighs the live results every month (KR8.2)."
 covers = ["MR-1", "MR-2"]

@@ -140,13 +140,15 @@ def _one_model(args: tuple) -> dict:
     if s["live"]:
         def live(sr: float, years: int) -> list[tuple[int, str]]:
             return gates.sequential(s["live"], sim.returns(252 * years, stats.daily_sr(sr) * sigma, sigma, model, rng))
-        false_stop = sum(any(a == "stop" for _, a in live(s["target_sr"], 3)) for _ in range(reps))
+        live_reps = 2 * reps      # cheap next to G1's simulations, and the rates sit near their bounds
+        false_stop = sum(any(a == "stop" for _, a in live(s["target_sr"], 3)) for _ in range(live_reps))
         dead_stop = dead_halve = 0
-        for _ in range(reps):
+        for _ in range(live_reps):
             acts = live(0.0, 3)
             dead_stop += any(a == "stop" for _, a in acts)
             dead_halve += any(a in ("halve", "stop") and d <= 252 for d, a in acts)
-        out.update(live_false_stop=false_stop / reps, dead_stop3=dead_stop / reps, dead_halve1=dead_halve / reps)
+        out.update(live_false_stop=false_stop / live_reps, dead_stop3=dead_stop / live_reps,
+                   dead_halve1=dead_halve / live_reps)
     return out
 
 

@@ -42,8 +42,11 @@ fraction of the intended capital and grows only while the evidence holds.
   needs a gross Sharpe of about 2.8, and a signal with an information coefficient of about 0.07 per
   trade, to net the aim. That is ambitious, not implausible.
 - **Odds.** On the goal's own assumptions, the chance that the program ends with a real edge trading
-  real money is at most about one in five (GT-8). The most likely outcome is that no strategy passes
-  research. In that case the program stops within its budget, having risked no money.
+  real money is at most about one in seven (14%, GT-8). The most likely outcome is that no strategy
+  passes research. In that case the program stops within its budget, having risked no money. If a
+  strategy does pass both gates, it has a real edge with probability 85%, and one worth running with
+  probability 79%. Both figures fall if real edges are smaller than assumed (63% and 40% if none is
+  above a Sharpe of 1.25).
 - **Time.** The stages run in sequence:
 
   | Stage | Duration |
@@ -51,14 +54,14 @@ fraction of the intended capital and grows only while the evidence holds.
   | Research (G1) | at most 9 months |
   | Paper trading (G2) | 120 to 150 trading days, about 6 to 7 months |
   | Real money, first step (G3) | at least 60 trading days at 10% of the intended capital |
-  | Real money, scaling | capital at most doubles every 60 trading days: at least 14 months from the first real dollar to full capital |
+  | Real money, scaling | capital at most doubles every 60 trading days: at least 240 trading days, about 11 months, from the first real dollar to full capital |
 
   If everything passes, full capital is more than two years away. Confirming the edge with live data
   takes longer still. The live test needs one to two years of real results to tell a real edge from a
   dead one, and capital grows only while it favors the edge.
 - **Money before real money.** Consolidated market data from G2 on: Alpaca's paid plan is $99 a month.
-  Intraday history back to about 2016, which may already be included (decision 6). The reviewer's
-  costs, if not a person.
+  Intraday history back to 2016, which Alpaca may already include (see the last section). The
+  reviewer's costs, if the reviewer is not a person.
 - **If nothing passes.** The program stops. It restarts only if you decide so, and only on data newer
   than the last research test.
 
@@ -84,7 +87,7 @@ Where the goal departs from what you said, the last column names the decision th
 | heavily traded stocks and ETFs, no penny stocks | operating companies and stock ETFs at $5 or more, $20,000,000 a day, spreads of 10 bps or less; no leveraged, inverse, volatility, commodity or crypto products | "heavily traded" and "penny" had no number; those products carry jumps the limits don't cover | none |
 | realistic costs | 8 bps a round trip on average, each trade charged its own spread, slippage, fees, borrow and dividends; tested at 1.5 times | "realistic" had no number; published costs come to 6.95 bps | none |
 | constant trading, only when the gain beats the cost | the whole universe evaluated every minute; a trade only when its expected gain is at least twice its cost; about 25 a week planned, 10 a week a review trigger | the activity floor never forces a trade | none |
-| makes money after costs on history it wasn't tuned on | makes money, and beats the market by more than luck: Deflated Sharpe Ratio ≥ 0.95 over at least 2,400 days, counting every variant ever evaluated (never fewer than 10), in both halves of the history | a profit over one history passes a strategy with no edge 64–100% of the time (GT-4, GT-5) | none |
+| makes money after costs on history it wasn't tuned on | makes money, and beats the market by more than luck: Deflated Sharpe Ratio ≥ 0.95 over at least 2,400 days, counting every variant ever evaluated (never fewer than 10), in both halves of the history | a profit over one history passes the best of 10 strategies with no edge 85–100% of the time (GT-4, GT-5) | none |
 | 4–8 weeks of paper trading, 300+ trades, profitable | at least 120 trading days and 300 trades, fixed in advance; profitable; and the live system must do what the tested strategy does on the same days | a strategy at the target loses money over 60 days nearly a quarter of the time, and a strategy with no edge makes money half the time over any window; paper can check the system, not prove the edge | decision 4 |
 | review every week; adjust or drop strategies, never mid-day | the same (O8): every change re-proven on paper for 60 days, and a sequential live test that halves, then stops, a fading strategy | changes judged on the same history would fool you | none |
 | log every decision and why; live profit and loss; a daily report | the same (O7) | | none |
@@ -157,7 +160,7 @@ Each limit resolves an obstacle in the goal tree below.
 | Open positions | at most **20** | the plan keeps about 15 open; with 20 slots a new trade finds them all full 4.6% of the time (GT-2) |
 | One position's value, within the session | at most **10**% | a jump of **20**% within the session (a news halt, or two 10% price bands) costs 2%, the daily limit (GT-2) |
 | One position held overnight, long or short | at most **4**% | a jump of **50**% overnight costs 2%. That covers Yahoo's +49.5% takeover gap (2008) and NVIDIA's -28.0% warning gap (2008) (GT-2) |
-| Any single jump event, one name or one industry | at most **4**% | a total loss of one overnight position (SVB, halted and delisted in 2023) costs 4%, inside the drawdown halt (GT-2) |
+| Any single jump event, one name or one industry | at most **4**% | a total loss of one overnight position (SVB, halted and delisted in 2023) costs 4%, inside the drawdown halt (GT-2, KR2.8) |
 | Held overnight in one industry, long plus short | at most **8**% | a 50% jump across an industry (US regional banks, 13 March 2023) costs 4% (GT-2) |
 | All positions held overnight, gross | at most **75**% | the planned book, about 60%, fits with room (GT-2) |
 | Held overnight, beta-adjusted net (long minus short) | at most **15**% | a 13% market-wide gap costs 1.95%. Circuit breakers pause trading but don't bound an overnight gap, so the stress is the level-2 breaker, not the 7% level-1 pause (GT-2) |
@@ -165,12 +168,13 @@ Each limit resolves an obstacle in the goal tree below.
 | Daily loss, from the previous session's closing equity | **2**%: flat, and no new entries until the next session | a gap counts against it |
 | Worst day, gaps within the jump assumptions and slippage while closing included | **2.5**% | KR2.3 |
 | Drawdown from the highest close | halt at **9**%: flat until the owner decides; equity never **10**% below its peak | the halt leaves room to close before the 10% line (KR2.2, KR2.7) |
-| Volatility that sizing aims for | **0.2**% of equity a day, about 3.2% a year, measured on **5**-day P&L | what the planned book produces (GT-2). Measured over 5 days so that trending P&L counts in full (GT-4). Realized volatility stays within **1.5** times it (KR2.8) |
+| Volatility that sizing aims for | **0.2**% of equity a day, about 3.2% a year, measured on **5**-day P&L | what the planned book produces (GT-2). Measured over 5 days so that trending P&L counts in full (GT-4). Realized volatility stays within **1.5** times it (KR2.6) |
 
 A position that can't be traded at the moment is **trapped**: its stock is halted or paused, no session
 is open, or the broker is unreachable. It gets an exit order at the first chance, and the owner is
-alerted. The **safe state** is: no new orders, open entry orders cancelled, every position keeping a
-stop that works without the system, and the owner alerted.
+alerted. After a market-wide trading halt, gross exposure is cut to the overnight limits as soon as
+trading resumes, before any new entry. The **safe state** is: no new orders, open entry orders
+cancelled, every position keeping a stop that works without the system, and the owner alerted.
 
 ## How losses and limits are measured
 
@@ -224,8 +228,9 @@ days), at about **4**% of equity each:
 - costs of about 4.2% of equity a year.
 
 Costs are budgeted at no more than **4.5**% of equity a year, just above the plan, because a strategy
-that trades much more would fail the cost stress (KR1.3) even at the target. Fewer than **10** risk-bearing trades a week
-(each risking at least **0.1**% of equity) over 4 weeks triggers a review, never a forced trade.
+that trades much more would fail the cost stress (KR1.3) even at the target. Fewer than **10**
+risk-bearing trades a week (each risking at least **0.1**% of equity) over 4 weeks triggers a review,
+never a forced trade.
 
 **The planned edge horizon is a finding, not a limit.** On real prices a stock moves about 19 bps in 5
 minutes and 168 bps in a day, and a round trip costs about 8 bps. A signal's information coefficient
@@ -246,8 +251,11 @@ G1 judges any strategy on its net results (decision 3).
 
 **Return objective.** The annualized net excess Sharpe ratio must be at least **1** (about **3**% a year
 at the volatility budget), aiming for **1.5** (about **5**% a year), and the account must also make
-money. "Excess" means the net daily return minus beta times the daily total return of SPY, with beta
-estimated by least squares over the period judged. No risk-free rate is subtracted.
+money. "Excess" removes what the market's moves explain. Start from the net daily return: it includes
+dividends and borrow fees, but not interest on cash or on short proceeds. For each position, subtract
+its weight times its 252-day beta to SPY (as of the previous close) times SPY's total return over the
+same interval the position was held. Overnight and intraday are counted separately, so a tilt toward
+the market's overnight drift doesn't count as skill. No risk-free rate is subtracted.
 
 KPP marks a key result whose failure stops the program until the owner decides.
 
@@ -281,7 +289,7 @@ KPP marks a key result whose failure stops the program until the owner decides.
 | KR5.1 (KPP) | no order trades against the system's own orders | 0 | each day | order and fill logs | inspection | G2 |
 | KR5.2 (KPP) | orders sent per fill stay at 10 or fewer | ≤ 10 | each day | order and fill logs | inspection | G2 |
 | KR5.3 (KPP) | no short sale without a current easy-to-borrow status | 0 | every short | order log and broker asset status | inspection | G2 |
-| KR6.1 (KPP) | every variant registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 10. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included | 0 missing | the whole program | a trial log the research system writes itself: append-only, hashed, timestamped outside the author's control | inspection | G1 |
+| KR6.1 (KPP) | every variant registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 10. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included. Paper days used to diagnose a failed G2 become part of the history for every later variant | 0 missing | the whole program | a trial log the research system writes itself: append-only, hashed, timestamped outside the author's control | inspection | G1 |
 | KR6.2 (KPP) | an independent reviewer challenges the evidence before each gate; every finding resolved | 0 unresolved | before G1, G2 and G3 | review records | inspection | G1, G2, G3 |
 | KR6.3 (KPP) | no model trained on data after the start of the G1 window, including a pre-trained language model, shapes G1's return forecast; such a model may serve monitoring, operations and explanation | 0 | the G1 history | trial log; each model's documented cutoff | inspection | G1 |
 | KR6.4 (KPP) | the G1 history is point-in-time and the simulation obeys the goal. Every stock that met the universe limits on each date is included, delisted ones with their delisting returns, and every input is as known at each decision. The borrow proxy is registered with the variant. Every simulated order stays within every limit, event blackout and short-sale rule. With every input lagged one more bar, the net Sharpe keeps at least half its value and rises no more than 10%. A run that breaks one is void | 0 | the G1 history | simulation order log; membership and delisting records; the lag audit | inspection | G1 |
@@ -325,14 +333,14 @@ flowchart TD
   O5 --> K5["KR5.1–KR5.3: no self-trades, message rate, borrow"]
   O6 --> K6["KR6.1–KR6.4: registration, review, model cutoff, point-in-time"]
   O7 --> K7["KR7.1–KR7.3: reasons, live P&L, daily report"]
-  O8 --> K8["KR8.1–KR8.2: weekly review, monthly retirement test"]
+  O8 --> K8["KR8.1–KR8.2: weekly review, sequential live test"]
 ```
 
 | Goal | Obstacle (how it could fail) | Resolution |
 |---|---|---|
 | O1 | no real edge exists at these horizons and costs | research budget and stop rule; the planned edge horizon |
 | O1 | the backtest flatters: overfitting, look-ahead, survivorship, the best of many variants | every run logged by the research system and counted (KR6.1); Deflated Sharpe Ratio (KR1.1); point-in-time history and a lag audit on every candidate (KR6.4); conservative fills; a Sharpe above 4 audited for leaks |
-| O1 | a model has already seen the history it is tested on | evidence only after its training cutoff (KR6.3) |
+| O1 | a model has already seen the history it is tested on | no model trained past the window's start shapes G1's forecast (KR6.3) |
 | O1 | costs higher than modeled | per-trade costs from quotes; stress at ×1.5 (KR1.3); live cost check (KR1.8); the liquidity limit |
 | O1 | the edge decays or the regime changes | ≥ 2,400 days out of sample, holding in both halves and in calm and turbulent days (KR1.9); the sequential live test (KR8.2). The history from 2016 has no 2008-like crisis; the jump and drawdown limits are the protection there |
 | O1 | the live system doesn't do what the tested strategy does | the paired fidelity test (KR1.5, KR1.6) |
@@ -377,8 +385,10 @@ flowchart TD
   - capital may grow only at or above **0**.
 
   GT-4 checks its design. It should stop a strategy with the targeted edge by mistake within 3 years at
-  most 10% of the time. It should halve a strategy whose edge is gone within a year at least half the
-  time, and stop it within 3 years at least 70% of the time.
+  most 12% of the time. It should halve a strategy whose edge is gone within a year at least half the
+  time, and stop it within 3 years at least 65% of the time. Fewer false stops would mean slower
+  detection; halving within the first year, and the drawdown halt behind it, are the faster
+  protections.
 
 ## Controls
 
@@ -393,13 +403,13 @@ the alert time (C7).
 | C3 | An order identical to one sent in the last **5** seconds is blocked. The system sends at most **2** orders a second and **120** a minute, and keeps **30**% of the broker's request budget for exits and reconciliation. |
 | C4 | Before every session and every risk-increasing order, the system checks the event and corporate-action calendar, the short-sale rules (easy-to-borrow status, the Rule 201 test, the short-interest limits) and the universe limits. |
 | C5 | Every fill is recorded as it arrives. Positions, orders and cash are reconciled with the broker:<ul><li>continuously, from its trade-update stream;</li><li>by a poll at least every 60 seconds;</li><li>after any disconnect and every restart;</li><li>at every close.</li></ul> A mismatch, an order of unknown state, or an order the system did not send blocks risk-increasing orders and alerts the owner. An order of unknown state is never sent again blind. Records are kept at least 5 years, append-only and hash-chained, with a copy off the host. |
-| C6 | A kill switch cancels all orders and closes all positions. The owner can use it at any time, and the drawdown halt triggers it automatically. A second way to do the same does not depend on the trading process (the broker's own controls) and is drilled. Only one instance of the system trades at a time. Every order carries the strategy version that sent it. |
+| C6 | A kill switch cancels all orders and closes all positions. The owner can use it at any time, and the drawdown halt triggers it automatically. A second way to do the same does not depend on the trading process (the broker's own controls) and is drilled. The broker account's margin multiplier is set to the lowest value that allows the planned shorts, so the broker itself caps a runaway. Only one instance of the system trades at a time. Every order carries the strategy version that sent it. |
 | C7 | Real-time monitoring alerts the owner within **60** seconds of: <ul><li>a blocked or rejected order;</li><li>a data gap longer than **30** seconds;</li><li>a lost connection;</li><li>a reconciliation mismatch;</li><li>a limit reaching **0.8** of its threshold.</li></ul> An alert not acknowledged within **15** minutes stops new entries; within **60** minutes, it closes every position. This relaxes RTS 6 Article 16 (alerts within 5 seconds, a person monitoring) because the owner wants an unattended system. |
 | C8 | Changes are versioned, registered, tested on history and then on paper for 60 trading days before use. They are deployed only outside the session and can be rolled back; nothing changes during a trading day. Before each open, every component is checked to run the approved version. A written runbook covers every incident the alerts name. |
 | C9 | Orders never cross the system's own orders, are never sent without intent to trade, and are not used to move the closing price; surveillance checks the logs daily. |
 | C10 | The obstacle table above is reviewed monthly, and the controls' effectiveness is reviewed in writing every quarter. |
 | C11 | Broker credentials are kept outside the code and repository. Paper and live keys are separate, and only the trading process can read them. Keys are rotated every 90 days and at once on any suspicion. The broker account uses multi-factor sign-in. An order the system did not send triggers the kill switch. |
-| C12 | An independent reviewer challenges the evidence before each gate (effective challenge), and live results are tested against G1's estimate every month (KR8.2). |
+| C12 | An independent reviewer challenges the evidence before each gate (effective challenge), and the sequential live test weighs the live results every month (KR8.2). |
 | C13 | At most **4** round trips in one name a day, and at most **300**% of equity traded in a day. Reaching either stops new entries until the owner allows them again. |
 | C14 | The host clock stays within **50** ms of UTC and is monitored; beyond it, no risk-increasing orders. |
 
