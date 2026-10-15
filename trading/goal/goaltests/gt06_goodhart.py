@@ -36,7 +36,7 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     oos = good(d1)
     base = dict(trades=trades, risk_trades=trades, oos=oos, claimed_sr=stats.sharpe(oos), conservative_fills=True,
                 max_risk_per_trade_pct=0.25, max_risk_per_position_pct=0.25, max_open_risk_pct=1.0, max_gross_pct=50,
-                max_position_pct=10, max_overnight_position_pct=0, max_holding_days=1)
+                max_position_pct=10, max_holding_days=1)
     out = []
     p = good(d2)
     out.append(("averaging down", "adds to losers in steps each inside the per-trade limit, so one position "
@@ -56,10 +56,10 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     p = good(d2)
     out.append(("padding the trade count", "a few lucky trades plus hundreds of scratch trades", "G2",
                 gates.Record(daily=p, excess=p, **{**base, "risk_trades": 20})))
-    best, srs = sim.best_of(50, d1, -0.0002, vol, "normal", rng)
-    out.append(("best of 50", "the luckiest of 50 strategies with no edge", "G1",
+    best, srs, _ = sim.best_of([0.0] * 50, d1, vol, "normal", rng)
+    out.append(("best of 50", "the luckiest of 50 strategies with no net edge", "G1",
                 gates.Record(daily=best, excess=best, trades=5000, n_trials=50, trial_srs=srs,
-                             stressed=[b - 0.0002 for b in best], conservative_fills=True)))
+                             stressed=[b - 0.0001 for b in best], conservative_fills=True)))
     p = good(d2)
     out.append(("paper's generous fills", "earns only because paper fills limit orders the moment price touches",
                 "G2", gates.Record(daily=p, excess=p, **{**base, "conservative_fills": False})))
@@ -68,8 +68,14 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
                 gates.Record(daily=leak, excess=leak, trades=5000, n_trials=1, stressed=leak, conservative_fills=True)))
     p = good(d2)
     out.append(("big overnight positions", "holds full-size positions overnight, where a gap jumps past the stop",
-                "G2", gates.Record(daily=p, excess=p, **{**base, "max_overnight_position_pct": 20, "max_position_pct": 20,
+                "G2", gates.Record(daily=p, excess=p, **{**base, "max_overnight_long_pct": 20, "max_position_pct": 20,
+                                                         "max_overnight_gross_pct": 60, "max_overnight_net_pct": 20,
                                                          "max_holding_days": 3})))
+    p = good(d2)
+    out.append(("big overnight shorts", "holds 10% short positions overnight, where a takeover bid gaps one up "
+                "50% (Yahoo, 1 February 2008)", "G2",
+                gates.Record(daily=p, excess=p, **{**base, "max_overnight_short_pct": 10, "max_overnight_gross_pct": 20,
+                                                   "max_overnight_net_pct": 20, "max_holding_days": 3})))
     return out
 
 

@@ -8,12 +8,13 @@ import math
 import random
 
 NOISE_MODELS = ("normal", "t4", "garch", "ar1")
+AR1_RHO = 0.1
 
 
 def _t4(rng: random.Random) -> float:
-    z = rng.gauss(0, 1)
-    chi2 = sum(rng.gauss(0, 1) ** 2 for _ in range(4))
-    return z / math.sqrt(chi2 / 4) / math.sqrt(2)  # Student t(4) has variance 2
+    # t(4) = z / sqrt(chi2_4 / 4), and chi2_4 = -2 ln(u1 u2); t(4) has variance 2
+    u = (1.0 - rng.random()) * (1.0 - rng.random())
+    return rng.gauss(0, 1) / math.sqrt(-math.log(u)) if u < 1.0 else 0.0
 
 
 def noise(n: int, model: str, rng: random.Random) -> list[float]:
@@ -31,7 +32,7 @@ def noise(n: int, model: str, rng: random.Random) -> list[float]:
             out.append(prev)
         return out
     if model == "ar1":
-        rho, prev, out = 0.1, 0.0, []
+        rho, prev, out = AR1_RHO, rng.gauss(0, 1), []
         s = math.sqrt(1 - rho * rho)
         for _ in range(n):
             prev = rho * prev + s * rng.gauss(0, 1)
@@ -40,20 +41,28 @@ def noise(n: int, model: str, rng: random.Random) -> list[float]:
     raise ValueError(model)
 
 
+def five_day_factor(model: str) -> float:
+    """Variance of a 5-day sum of the noise over 5 times its daily variance: 1 unless the noise is
+    autocorrelated. A volatility budget measured on 5-day P&L sizes positions down by its root."""
+    if model != "ar1":
+        return 1.0
+    return 1 + 2 * sum((1 - k / 5) * AR1_RHO ** k for k in range(1, 5))
+
+
 def returns(n: int, mu: float, sigma: float, model: str, rng: random.Random) -> list[float]:
     return [mu + sigma * x for x in noise(n, model, rng)]
 
 
-def best_of(n_trials: int, n_days: int, mu: float, sigma: float, model: str,
-            rng: random.Random) -> tuple[list[float], list[float]]:
-    """``n_trials`` strategies with the same true daily mean; returns the one with the highest
-    in-sample Sharpe and the list of every trial's Sharpe (for the Deflated Sharpe Ratio)."""
+def best_of(mus: list[float], n_days: int, sigma: float, model: str,
+            rng: random.Random) -> tuple[list[float], list[float], int]:
+    """One strategy per true daily mean in ``mus``; returns the one with the highest Sharpe, every
+    strategy's Sharpe (for the Deflated Sharpe Ratio), and the index of the one chosen."""
     from .stats import sharpe
-    best, best_sr, srs = None, -math.inf, []
-    for _ in range(n_trials):
+    best, best_sr, best_i, srs = None, -math.inf, -1, []
+    for i, mu in enumerate(mus):
         r = returns(n_days, mu, sigma, model, rng)
         s = sharpe(r)
         srs.append(s)
         if s > best_sr:
-            best, best_sr = r, s
-    return best, srs
+            best, best_sr, best_i = r, s, i
+    return best, srs, best_i

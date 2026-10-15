@@ -1,13 +1,16 @@
-"""Real price history for the tests that need real market behavior (GT-3, GT-5).
+"""Real price history for the tests that need real market behavior (GT-2, GT-3, GT-5).
 
-This environment can reach PyPI but not market-data vendors, so the data comes from files that public
-Python packages ship for their own tests. Each wheel is pinned by version and checked against
-PyPI's SHA-256 before anything is read from it. Nothing in a wheel is executed: only CSV members
-are read. Files are cached in ``trading/goal/.data-cache`` (ignored by git), not committed.
+This environment can reach PyPI and GitHub but not market-data vendors, so the data comes from files
+that public Python projects ship for their own tests and examples. Each source is pinned (a wheel by
+version, a GitHub file by commit) and checked against a SHA-256 before anything is read from it.
+Nothing downloaded is executed: only CSV text is read. Files are cached in
+``trading/goal/.data-cache`` (ignored by git), not committed.
 
 * S&P 500 index, daily, 1999-2018, from ``arch`` 8.0.0 (``arch/data/sp500``);
 * Alphabet (GOOG), daily, 2004-2013, and EUR/USD, hourly, 2017-2018, from ``backtesting`` 0.6.6;
-* Microsoft (MSFT), daily, 1986-2017, from ``pmdarima`` 2.1.1.
+* Microsoft (MSFT), daily, 1986-2017, from ``pmdarima`` 2.1.1;
+* Oracle (ORCL) 1995-2014, NVIDIA (NVDA) 1999-2014 and Yahoo (YHOO) 1996-2014, daily, split-adjusted,
+  from the example data of ``backtrader`` (github.com/mementum/backtrader, ``datas/``).
 """
 from __future__ import annotations
 
@@ -31,6 +34,13 @@ MEMBERS = {
     "goog": ("backtesting", "backtesting/test/GOOG.csv"),
     "eurusd_h1": ("backtesting", "backtesting/test/EURUSD.csv"),
     "msft": ("pmdarima", "pmdarima/datasets/data/msft.tar.gz"),
+}
+# files fetched from a pinned GitHub commit: name -> (path in the repository, SHA-256)
+GITHUB_REPO, GITHUB_COMMIT = "mementum/backtrader", "b853d7c90b6721476eb5a5ea3135224e33db1f14"
+GITHUB_FILES = {
+    "orcl": ("datas/orcl-1995-2014.txt", "352b9e0985969d2eb27bfbf65049da3c68fd2a5eebc2d43bec7ccfe553521253"),
+    "nvda": ("datas/nvda-1999-2014.txt", "d16ee01711b8a39085a2c3a5d9840bb0ef43091a9e2909e5c819c3020a3ac28f"),
+    "yhoo": ("datas/yhoo-1996-2014.txt", "3d75e5763360a2807f821a31448b6d74f7ca1117d538f2e4984ef19b315a6c6d"),
 }
 
 
@@ -56,10 +66,26 @@ def _wheel(package: str) -> bytes:
     return data
 
 
+def _github(name: str) -> bytes:
+    member, digest = GITHUB_FILES[name]
+    url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_COMMIT}/{member}"
+    with urllib.request.urlopen(url, timeout=120) as r:
+        raw = r.read()
+    if hashlib.sha256(raw).hexdigest() != digest:
+        raise RuntimeError(f"{member}: SHA-256 does not match the pinned value")
+    return raw
+
+
 def _csv_text(name: str) -> str:
     path = os.path.join(CACHE, f"{name}.csv")
     if os.path.exists(path):
         return open(path).read()
+    if name in GITHUB_FILES:
+        text = _github(name).decode("utf-8")
+        os.makedirs(CACHE, exist_ok=True)
+        with open(path, "w") as out:
+            out.write(text)
+        return text
     package, member = MEMBERS[name]
     raw = zipfile.ZipFile(io.BytesIO(_wheel(package))).read(member)
     if member.endswith(".csv.gz"):

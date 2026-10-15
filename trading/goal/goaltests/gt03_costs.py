@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 
 from . import data, stats
-from .spec import Check
+from .spec import Check, rule
 
 TEST = "GT-3"
 
@@ -100,14 +100,28 @@ def run(spec: dict) -> list[Check]:
         add("the return objective is achievable at the stated activity", False, "unspecified: " + ", ".join(need))
         return out
     sigma_annual = r["vol_target_daily_pct"] / 100 * math.sqrt(252)
-    net_target = ret["min_net_excess_sharpe"] * sigma_annual
     trades = a["planned_risk_trades_per_week"] * 52
     size = r["typical_position_pct"] / 100
     drag = trades * size * cost / 1e4
-    gross_per_trade_bps = (net_target + drag) / (trades * size) * 1e4
     move = stock_d * math.sqrt(min(a["typical_holding_minutes"], 5 * 390) / 390)
-    ic = gross_per_trade_bps / (SIGN_BET_EFFICIENCY * move)
-    add("the return objective needs at most a 'great' signal at the planned activity", ic <= IC_GREAT,
-        f"net {net_target:.1%}/yr + costs {drag:.2%}/yr over {trades} trades of {size:.0%}: "
-        f"{gross_per_trade_bps:.1f} bps gross per trade vs a {move:.0f} bps move: IC {ic:.3f}")
+    target = ret.get("target_net_excess_sharpe", ret["min_net_excess_sharpe"])
+    for label, sr in (("targeted", target), ("minimum", ret["min_net_excess_sharpe"])):
+        net = sr * sigma_annual
+        gross_per_trade_bps = (net + drag) / (trades * size) * 1e4
+        ic = gross_per_trade_bps / (SIGN_BET_EFFICIENCY * move)
+        detail = (f"Sharpe {sr:g}: net {net:.1%}/yr + costs {drag:.2%}/yr over {trades} trades of {size:.1%}: "
+                  f"{gross_per_trade_bps:.1f} bps gross per trade vs a {move:.0f} bps move: IC {ic:.3f}")
+        if label == "targeted":
+            add("the targeted return needs at most a 'great' signal at the planned activity", ic <= IC_GREAT, detail)
+        else:
+            add("the minimum return at the planned activity", None, detail)
+    # the cost stress (KR1.3) at the planned activity: the targeted edge must survive it, or G1 would
+    # reject the very strategy the goal aims for
+    mult = costs.get("stress_cost_multiplier")
+    floor = rule(spec, "G1").get("stress_sr_min")
+    if mult and floor is not None:
+        stressed = (target * sigma_annual - (mult - 1) * drag) / sigma_annual
+        add("the targeted edge survives the cost stress at the planned activity", stressed >= floor,
+            f"Sharpe {target:g} - {mult - 1:g} x costs {drag:.2%}/yr / volatility {sigma_annual:.1%}/yr = {stressed:.2f} "
+            f"vs a floor of {floor:g}")
     return out

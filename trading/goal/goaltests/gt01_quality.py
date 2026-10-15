@@ -29,6 +29,8 @@ REQUIRED_NUMBERS = {
     "activity": ["cost_budget_pct_per_year", "min_risk_trades_per_week"],
     "returns": ["min_net_excess_sharpe", "target_net_excess_sharpe"],
 }
+# a required number that may instead be given as several more specific ones
+ALTERNATIVES = {"max_position_overnight_pct": ("max_overnight_long_pct", "max_overnight_short_pct")}
 
 
 def _words(text: str, terms: list[str]) -> list[str]:
@@ -74,7 +76,9 @@ def run(spec: dict) -> list[Check]:
 
     for section, keys in REQUIRED_NUMBERS.items():
         values = spec.get(section, {})
-        absent = [key for key in keys if not isinstance(values.get(key), (int, float))]
+        number = lambda key: isinstance(values.get(key), (int, float))  # noqa: E731
+        absent = [key for key in keys if not number(key)
+                  and not (key in ALTERNATIVES and all(number(k) for k in ALTERNATIVES[key]))]
         add(f"{section}: the limits are numbers", not absent, "unspecified: " + ", ".join(absent) if absent else "")
     for section in ("constraints", "risk", "costs", "activity"):
         texts = [v for key, v in spec.get(section, {}).items() if key.endswith("_text") and isinstance(v, str)]

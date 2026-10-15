@@ -38,6 +38,15 @@ def run(spec: dict, ctx: dict | None = None) -> list[Check]:
     table = ", ".join(f"prior {p:.0%}: {posterior(p, power, false_pass):.0%}" for p in PRIORS)
     add(f"a strategy that passes G1 and G2 is real with probability at least {need:.0%}", post >= need,
         f"prior {prior:.0%}, power {power:.0%}, false pass {false_pass:.2%} ({source}): {post:.0%}; {table}")
+    # the chance the whole program ends at real money with a real edge, if each registered variant
+    # independently has the prior chance of one (variants of one idea are less independent, so this
+    # is an upper bound); GT-4's rates are already for the best of the whole variant budget
+    trials = ev.get("assumed_trials", 10)
+    any_real = 1 - (1 - prior) ** trials
+    add("chance the program reaches real money with a real edge, on these assumptions", None,
+        f"some variant of {trials} is real: at most {any_real:.0%}; it passes both gates: {power:.0%}; "
+        f"together at most {any_real * power:.0%}. With no real edge, a false one reaches real money "
+        f"{false_pass:.2%} of the time. Most likely nothing passes and the kill criteria stop the program")
     kill = spec.get("kill_criteria", {})
     add("the goal says when to stop if nothing passes (research budget)", "max_research_cycles" in kill or "max_research_months" in kill)
     g3 = rule(spec, "G3")

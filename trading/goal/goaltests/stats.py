@@ -66,6 +66,25 @@ def min_track_record(sr: float, sr_star: float = 0.0, confidence: float = 0.95, 
     return 1 + (1 - skew * sr + (kurt - 1) / 4 * sr * sr) * (z / (sr - sr_star)) ** 2
 
 
+def autocorr_factor(xs: list[float], lags: int) -> float:
+    """How much autocorrelation inflates the variance of a mean: 1 + 2 * sum of rho_k over lags 1 to
+    ``lags`` with Bartlett weights 1 - k/(lags+1) (Newey and West). Never below 1, so negative
+    autocorrelation does not make a record look longer than it is. Dividing the number of
+    observations by it gives the effective number of independent observations."""
+    n = len(xs)
+    if lags <= 0 or n <= lags + 1:
+        return 1.0
+    m = fmean(xs)
+    d = [x - m for x in xs]
+    c0 = sum(v * v for v in d)
+    if c0 == 0:
+        return 1.0
+    f = 1.0
+    for k in range(1, lags + 1):
+        f += 2 * (1 - k / (lags + 1)) * sum(d[i] * d[i - k] for i in range(k, n)) / c0
+    return max(f, 1.0)
+
+
 def max_drawdown(returns: list[float]) -> float:
     """Largest fall from a peak of the compounded equity curve, as a fraction of the peak."""
     eq = peak = 1.0

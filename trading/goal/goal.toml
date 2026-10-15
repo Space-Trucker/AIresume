@@ -57,21 +57,26 @@ universe_text = "US-listed common stocks and ETFs on national exchanges that mee
 [risk]
 risk_per_position_pct = 0.5          # loss at the stop for one position, all its fills together
 stop_required = true                 # every position has a stop from the moment it opens
-max_open_risk_pct = 1.5              # sum of the losses at the stops of all open positions
-max_positions = 10
-max_position_pct = 20                # notional of one position
-typical_position_pct = 10            # planning value for GT-3
-max_position_overnight_pct = 10
-max_overnight_gross_pct = 25
+max_open_risk_per_side_pct = 1.5     # sum of the losses at the stops of all open longs; the same for all shorts
+max_open_risk_pct = 2.0              # the same sum over every open position, long and short
+max_positions = 15
+max_position_pct = 20                # notional of one position, intraday
+typical_position_pct = 5             # planning value (GT-2, GT-3)
+max_overnight_long_pct = 7           # one long held overnight: NVIDIA's -28.0% gap costs 1.96% (GT-2)
+max_overnight_short_pct = 4          # one short held overnight: Yahoo's +49.5% takeover gap costs 1.98% (GT-2)
+max_overnight_gross_pct = 60         # all positions held overnight, long plus short
+max_overnight_net_pct = 25           # held overnight, beta-adjusted long minus short: a 7% market gap costs 1.75%
 max_gross_exposure_pct = 100         # long plus short
 daily_loss_limit_pct = 2.0           # from the day's opening equity: then flat and no new entries that day
+max_day_loss_pct = 2.5               # no day loses more, gaps and slippage while closing included (KR2.3)
 max_drawdown_halt_pct = 10.0         # from peak equity: then flat and halted until the owner decides
-vol_target_daily_pct = 0.5           # standard deviation of daily P&L that sizing aims for
+vol_target_daily_pct = 0.25          # P&L volatility that sizing aims for, per day
+vol_measured_over_days = 5           # measured on 5-day P&L and scaled by the square root of 5
 leverage_text = "gross exposure, long plus short, at most 100% of equity"
 
 [costs]
 round_trip_cost_bps = 8              # planning average; each trade is charged its own costs, below
-stress_cost_multiplier = 2
+stress_cost_multiplier = 1.5         # every cost 50% higher (GT-3: at the planned activity x2 leaves no strategy the goal aims for)
 cost_text = "each fill pays its quoted half-spread at the decision time, 1.5 bps slippage, and the SEC and FINRA fees on sales; a short held overnight pays the broker's borrow fee"
 fill_model_text = "conservative: a limit order fills only when the price trades through its limit; a market order fills at the far side of the quote at the decision time, plus slippage"
 
@@ -79,7 +84,7 @@ fill_model_text = "conservative: a limit order fills only when the price trades 
 min_risk_trades_per_week = 10        # trades risking at least 0.1% of equity
 planned_risk_trades_per_week = 25
 typical_holding_minutes = 780        # two trading days
-cost_budget_pct_per_year = 15        # costs paid, as % of equity per year
+cost_budget_pct_per_year = 8         # costs paid, as % of equity per year: about 1.5 times the planned 5.2%
 activity_text = "the system evaluates the eligible universe every minute of the regular session and opens a position only when its expected gain exceeds twice its cost"
 
 [returns]
@@ -97,7 +102,7 @@ max_false_real_money = 0.005
 min_power = 0.80
 max_false_halt_per_year = 0.10
 assumed_trials = 10                  # the trial budget for the whole program on one data history
-assumed_cost_drag_daily_pct = 0.04   # 25 trades a week x 10% x 8 bps
+assumed_cost_drag_daily_pct = 0.021  # 25 trades a week x 5% x 8 bps = 5.2% a year
 simulation_reps = 400
 
 [kill_criteria]
@@ -153,7 +158,7 @@ metric = "Deflated Sharpe Ratio of daily net excess returns"
 unit = "probability"
 comparator = ">="
 threshold = 0.95
-window = "at least 2,000 trading days of walk-forward out-of-sample history"
+window = "at least 2,250 trading days of walk-forward out-of-sample history"
 data = "historical consolidated bars and quotes; the trial log"
 method = "analysis"
 gate = "G1"
@@ -462,10 +467,12 @@ purpose = "Is there an edge, net of costs, on history not used to find it?"
 [gates.rule]
 kind = "dsr"
 metric = "excess"
-min_days = 2000
+min_days = 2250
 dsr_min = 0.95
+sr_min = 1.0
 stress_sr_min = 0.5
 plausibility_sr_max = 4.0
+autocorr_lags = 5
 require_conservative_fills = true
 
 [[gates]]
@@ -482,6 +489,7 @@ max_drawdown_pct = 10.0
 rule_breaches = 0
 shortfall_alpha = 0.05
 combined_psr_min = 0.99
+autocorr_lags = 5
 require_conservative_fills = true
 
 [[gates]]
