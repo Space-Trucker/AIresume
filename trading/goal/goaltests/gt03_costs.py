@@ -9,19 +9,23 @@ information coefficient IC earns about 0.8 x IC of a standard deviation per trad
 the sign, so break-even needs IC = cost / (0.8 x move)."""
 from __future__ import annotations
 
+import functools
 import math
 
 from . import data, stats
 from .spec import Check, rule
 
 TEST = "GT-3"
+KIND = "external"
 
 # external cost inputs (see TESTS.md for sources)
 SEC_FEE_PER_MILLION = 20.60        # SEC Section 31, from 2026-04-04, on sales
 FINRA_TAF_PER_SHARE = 0.000195     # FINRA TAF from 2026-01-01, on sales, capped at $9.79
 TYPICAL_PRICE = 50.0               # for the per-share fee in basis points
 SPREAD_LARGE_CAP_BPS = 3.7         # average spread across the 100 largest US stocks (Nasdaq)
-SLIPPAGE_PER_SIDE_BPS = 1.5        # latency and small-order slippage, an assumption per side
+IMPACT_Y = (0.5, 0.75, 1.0)        # the square-root law's coefficient: low, central, high (Almgren et al. 2005,
+                                   # Toth et al. 2011); impact per side = Y x daily volatility x sqrt(size / volume)
+SLIPPAGE_NO_DATA_BPS = 1.5         # per side, used only when the price data can't be read, and then said so
 IC_GOOD, IC_GREAT, IC_TOO_GOOD = 0.05, 0.10, 0.15
 SIGN_BET_EFFICIENCY = math.sqrt(2 / math.pi)  # E[return x sign(forecast)] / sigma per unit IC
 
@@ -29,11 +33,16 @@ HORIZONS_MIN = [("10 seconds", 10 / 60), ("1 minute", 1), ("5 minutes", 5), ("30
                 ("1 hour", 60), ("1 day", 390), ("5 days", 5 * 390)]
 
 
-def external_round_trip_bps() -> float:
-    fees = SEC_FEE_PER_MILLION / 1e6 * 1e4 + FINRA_TAF_PER_SHARE / TYPICAL_PRICE * 1e4
-    return SPREAD_LARGE_CAP_BPS + 2 * SLIPPAGE_PER_SIDE_BPS + fees
+def fees_bps() -> float:
+    return SEC_FEE_PER_MILLION / 1e6 * 1e4 + FINRA_TAF_PER_SHARE / TYPICAL_PRICE * 1e4
 
 
+def impact_bps(daily_vol_bps: float, size_pct_of_volume: float, y: float) -> float:
+    """Market impact per side by the square-root law."""
+    return y * daily_vol_bps * math.sqrt(size_pct_of_volume / 100)
+
+
+@functools.lru_cache(maxsize=1)
 def daily_vol() -> dict:
     """Median daily standard deviation of close-to-close returns, single stocks and the index."""
     out = {}
@@ -54,20 +63,48 @@ def ic_needed(cost_bps: float, move_bps: float) -> float:
 
 def run(spec: dict) -> list[Check]:
     out: list[Check] = []
-    add = lambda name, ok, detail="": out.append(Check(TEST, name, ok, detail))  # noqa: E731
-    ext = external_round_trip_bps()
+    add = lambda name, ok, detail="", kind="": out.append(Check(TEST, name, ok, detail, kind))  # noqa: E731
     costs = spec.get("costs", {})
     stated = costs.get("round_trip_cost_bps")
-    add("the cost model is not cheaper than published costs", stated is not None and stated >= ext,
-        f"stated {stated} bps vs {ext:.2f} bps (spread {SPREAD_LARGE_CAP_BPS}, slippage 2 x {SLIPPAGE_PER_SIDE_BPS}, fees)"
-        if stated is not None else f"no cost is stated; published costs come to {ext:.2f} bps per round trip")
-    cost = stated if stated is not None else ext
+    adv = spec.get("constraints", {}).get("max_position_adv_pct")
     try:
         vol = daily_vol()
     except Exception as e:  # noqa: BLE001
-        add("horizon feasibility", None, f"no data: {e}")
+        vol, note = None, f"no data ({e}): slippage {SLIPPAGE_NO_DATA_BPS} bps a side assumed"
+    stock_d = (vol["goog"] + vol["msft"]) / 2 * 1e4 if vol else None  # bps per day
+    # slippage from outside the goal: the square-root law at the goal's participation limit, the
+    # central coefficient (a name trading at the universe's minimum volume, a full-size position)
+    if stock_d is not None and adv is not None:
+        side = impact_bps(stock_d, adv, IMPACT_Y[1])
+        note = f"impact {side:.2f} bps a side at {adv:g}% of daily volume (square-root law, Y {IMPACT_Y[1]})"
+    else:
+        side = SLIPPAGE_NO_DATA_BPS
+        note = note if vol is None else f"no participation limit: slippage {SLIPPAGE_NO_DATA_BPS} bps a side assumed"
+    ext = SPREAD_LARGE_CAP_BPS + 2 * side + fees_bps()
+    add("the cost model is not cheaper than published costs", stated is not None and stated >= ext,
+        (f"stated {stated} bps vs {ext:.2f} bps: spread {SPREAD_LARGE_CAP_BPS} (the 100 largest stocks), {note}, fees"
+         if stated is not None else f"no cost is stated; published costs come to {ext:.2f} bps per round trip"))
+    # the stress must cover the plan's own worst case within its limits: every trade in a name at the
+    # universe's spread limit, full size at the participation limit. A milder stress tests less than
+    # the limits allow; KR1.3's check below bounds it from the other side
+    spread_cap, mult = spec.get("constraints", {}).get("universe_max_spread_bps"), costs.get("stress_cost_multiplier")
+    if stated is not None and spread_cap is not None:
+        at_limits = spread_cap + 2 * side + fees_bps()
+        stressed_cost = stated * (mult or 1)
+        add("the stressed cost covers a round trip at the universe's limits", at_limits <= stressed_cost,
+            f"{spread_cap:g} bps spread + 2 x {side:.2f} impact + {fees_bps():.2f} fees = {at_limits:.2f} bps vs "
+            f"{stated:g} x {mult or 1:g} = {stressed_cost:.2f} bps")
+    # a full-size position in the least liquid name the universe admits must fit the participation limit
+    c = spec.get("constraints", {})
+    if adv is not None and "universe_min_dollar_volume_usd" in c and spec.get("risk", {}).get("typical_position_pct"):
+        dollars = c.get("starting_equity_usd", 100000) * spec["risk"]["typical_position_pct"] / 100
+        room = adv / 100 * c["universe_min_dollar_volume_usd"]
+        add("a typical position fits the participation limit in the least liquid name the universe admits", dollars <= room,
+            f"${dollars:,.0f} vs {adv:g}% of ${c['universe_min_dollar_volume_usd']:,} = ${room:,.0f}", kind="consistency")
+    cost = stated if stated is not None else ext
+    if vol is None:
+        add("horizon feasibility", None, note)
         return out
-    stock_d = (vol["goog"] + vol["msft"]) / 2 * 1e4  # bps per day
     rows = []
     for label, minutes in HORIZONS_MIN:
         move = stock_d * math.sqrt(minutes / 390)
@@ -101,15 +138,15 @@ def run(spec: dict) -> list[Check]:
             rows.append(f"{label}: every-forecast IC {ic_sign:.3f}; at IC 0.10, {share:.1%} of forecasts clear the entry rule")
         add(f"the entry rule (gain at least {entry:g} x cost) by horizon, two models", None, "; ".join(rows))
 
-    # market impact at the participation limit: the square-root law (impact per side about Y x daily
-    # volatility x the square root of the position's share of daily volume, Y between 0.5 and 1;
-    # Almgren et al. 2005, Toth et al. 2011) against the cost model's slippage
-    adv = spec.get("constraints", {}).get("max_position_adv_pct")
+    # market impact at the participation limit (the square-root law) against the slippage the cost model
+    # charges, at its stress level: the central estimate must fit
     slip = costs.get("slippage_bps_per_side")
     if adv is not None and slip is not None:
-        lo, hi = (y * stock_d * math.sqrt(adv / 100) for y in (0.5, 1.0))
-        add("market impact at the participation limit is about the slippage the cost model charges", lo <= slip * 1.5,
-            f"{adv:g}% of daily volume: {lo:.1f} to {hi:.1f} bps a side vs {slip:g} bps charged")
+        lo, mid, hi = (impact_bps(stock_d, adv, y) for y in IMPACT_Y)
+        add("market impact at the participation limit fits the slippage charged at the stress level",
+            mid <= slip * (mult or 1),
+            f"{adv:g}% of daily volume: {lo:.1f} to {hi:.1f} bps a side, central {mid:.1f}, vs {slip:g} x {mult or 1:g} "
+            f"= {slip * (mult or 1):.2f} bps")
 
     # the return objective at the stated activity: the gross edge each trade needs
     a, r = spec.get("activity", {}), spec.get("risk", {})

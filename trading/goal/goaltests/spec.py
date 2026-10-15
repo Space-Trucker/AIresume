@@ -8,12 +8,22 @@ from dataclasses import dataclass
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # trading/goal
 
 
+# What a check rests on (the review of version 4 asked for the counts to be reported apart):
+# "external": the right answer and the bar both come from outside the goal (data, published figures,
+#     rules, simulations whose truth is set by construction, the owner's own words, the tests' anchors);
+# "consistency": the goal's own numbers checked against each other, or against a rule the test states;
+# "presence": a statement, a field or a wording rule;
+# "hygiene": the goal against itself (GOAL.md against goal.toml), which can't show the goal is right.
+KINDS = ("external", "consistency", "presence", "hygiene")
+
+
 @dataclass
 class Check:
     test: str        # GT-n
     name: str
     passed: bool | None  # None: informational
     detail: str
+    kind: str = ""   # one of KINDS; empty takes the test module's KIND
 
 
 def load(path: str) -> dict:

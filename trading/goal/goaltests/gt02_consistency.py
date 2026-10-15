@@ -4,14 +4,19 @@ real overnight price gaps for the limits that must hold across a night. The gap 
 of the S&P 500 and five large stocks, 1999-2018 (``data.py``)."""
 from __future__ import annotations
 
+import functools
 import math
 import random
 
-from . import data, stats
+from . import anchors, data, stats
 from .spec import Check, constraints, risk, rule
 
 TEST = "GT-2"
-STOP_SLIPPAGE = 1.25   # a stop in a fast market fills worse than its price; 25% worse is assumed
+KIND = "consistency"
+STOP_SLIPPAGE_NO_DATA = 1.25   # used only when the price data can't be read, and then said so
+STRESS_DAY_MOVE = 0.03         # a market-wide stress day: the S&P 500 closes 3% or more against the side
+MIN_STOPS_PER_DAY = 5          # stress days with fewer stops hit say little about a book's average fill
+DEFAULT_STOP_ATR = 2.0         # the stop distance when the goal plans none (GT-5's random strategies use it)
 SESSION_MINUTES = 390
 STOCKS = ("goog", "msft", "orcl", "nvda", "yhoo")
 # Stress gaps from outside the goal, each checked against the price data below:
@@ -44,6 +49,7 @@ def _gap_on(name: str, day: str) -> float:
     return b[i]["open"] / b[i - 1]["close"] - 1
 
 
+@functools.lru_cache(maxsize=1)
 def overnight_gaps() -> dict:
     """|open / previous close - 1| quantiles of single stocks from 1999, with the 2% largest gaps
     dropped as a proxy for earnings nights, which the goal forbids holding through. (The index's
@@ -57,6 +63,56 @@ def overnight_gaps() -> dict:
     return out
 
 
+def _atr(b: list[dict], i: int, n: int = 14) -> float:
+    trs = [max(b[j]["high"] - b[j]["low"], abs(b[j]["high"] - b[j - 1]["close"]), abs(b[j]["low"] - b[j - 1]["close"]))
+           / b[j - 1]["close"] for j in range(max(1, i - n + 1), i + 1)]
+    return sum(trs) / len(trs)
+
+
+@functools.lru_cache(maxsize=1)
+def typical_atr() -> float:
+    """Median 14-day average true range of Google and Microsoft from 1999, as a fraction of price: a
+    typical liquid stock's daily range (GT-3 measures their volatility the same way)."""
+    out = []
+    for name in ("goog", "msft"):
+        b = [r for r in data.bars(name) if r["date"].year >= 1999]
+        out.append(stats.quantile([_atr(b, i) for i in range(15, len(b))], 0.5))
+    return sum(out) / len(out)
+
+
+@functools.lru_cache(maxsize=8)
+def stop_slippage(k_atr: float) -> tuple[float, float, int, str]:
+    """How much worse than planned stops fill on market-wide stress days, on real prices: the five stocks
+    from 1999, a stop k_atr average true ranges from each day's close, long and short, held up to 5
+    days; a stop fills at its price, or at the open when the price gaps through it. For each stress day
+    (the S&P 500 closing 3% or more against the side) with at least 5 stops hit, the day's average loss
+    over the planned loss. Returns its 95th percentile, its worst, the number of such days, and the
+    worst day."""
+    market = {r["date"]: r["close"] for r in data.bars("sp500")}
+    dates = sorted(market)
+    move = {dates[i]: market[dates[i]] / market[dates[i - 1]] - 1 for i in range(1, len(dates))}
+    days: dict[tuple, list[float]] = {}
+    for name in STOCKS:
+        b = [r for r in data.bars(name) if r["date"].year >= 1999]
+        for i in range(15, len(b) - 6):
+            dist = k_atr * _atr(b, i)
+            for side in (1, -1):
+                entry = b[i]["close"]
+                stop = entry * (1 - side * dist)
+                for j in range(i + 1, i + 6):
+                    bar = b[j]
+                    if (bar["low"] <= stop) if side > 0 else (bar["high"] >= stop):
+                        fill = min(bar["open"], stop) if side > 0 else max(bar["open"], stop)
+                        days.setdefault((bar["date"], side), []).append(side * (entry - fill) / (entry * dist))
+                        break
+    stress = sorted(((sum(v) / len(v), f"{d:%Y-%m-%d} ({'longs' if side > 0 else 'shorts'}, {len(v)} stops)")
+                     for (d, side), v in days.items()
+                     if d in move and side * move[d] <= -STRESS_DAY_MOVE and len(v) >= MIN_STOPS_PER_DAY), reverse=True)
+    ratios = sorted(r for r, _ in stress)
+    return (stats.quantile(ratios, anchors.STRESS_SLIPPAGE_PERCENTILE), stress[0][0], len(stress), stress[0][1])
+
+
+@functools.lru_cache(maxsize=1)
 def residual_vol() -> float:
     """Median over years and stocks of the daily volatility left after removing the market (S&P 500),
     the volatility a long-short book of single names carries."""
@@ -76,6 +132,14 @@ def residual_vol() -> float:
 
 
 def drawdown_sim(r: dict, room: bool, years: int = 4000, seed: str = "gt2-drawdown") -> tuple[float, float]:
+    """See ``_drawdown_sim``; cached on the numbers it reads, since the mutation test (GT-10) runs it often."""
+    return _drawdown_sim(r["vol_target_daily_pct"], r["max_drawdown_halt_pct"], r["max_drawdown_pct"],
+                         r.get("max_position_overnight_pct", 4), r.get("drawdown_room_margin_pct", 0.0), room, years, seed)
+
+
+@functools.lru_cache(maxsize=64)
+def _drawdown_sim(vol_pct: float, halt: float, line: float, cap_pct: float, margin: float, room: bool,
+                  years: int, seed: str) -> tuple[float, float]:
     """Share of simulated years in which equity falls past max_drawdown_pct below its peak, and share
     halted, with and without positions shrinking as the drawdown deepens. Each day: the book's
     ordinary P&L at the volatility budget and the targeted Sharpe ratio (t-distributed, 4 degrees of
@@ -84,9 +148,8 @@ def drawdown_sim(r: dict, room: bool, years: int = 4000, seed: str = "gt2-drawdo
     max_drawdown_halt_pct. Starting drawdowns are spread from 0 to the halt, so the dangerous zone is
     visited often."""
     rng = random.Random(seed)
-    vol, halt, line = r["vol_target_daily_pct"] / 100, r["max_drawdown_halt_pct"], r["max_drawdown_pct"]
+    vol, cap = vol_pct / 100, cap_pct / 100
     mu = 1.5 / math.sqrt(252) * vol
-    cap, margin = r.get("max_position_overnight_pct", 4) / 100, r.get("drawdown_room_margin_pct", 0.0)
     worst = max(JUMPS)
     crossed = halted = 0
     for _ in range(years):
@@ -117,6 +180,8 @@ def capacity(r: dict, a: dict) -> tuple[int, str]:
     otherwise the tightest of the exposure and open-risk limits at the planned sizes."""
     if r.get("max_positions"):
         return int(r["max_positions"]), f"{r['max_positions']} slots"
+    if "min_position_risk_pct" not in r:
+        return 0, "no fixed count and no floor on the risk a position carries: the book has no bound"
     bounds = []
     size = r.get("typical_position_pct")
     if size:
@@ -124,10 +189,13 @@ def capacity(r: dict, a: dict) -> tuple[int, str]:
         key = "max_overnight_gross_pct" if nights else "max_gross_exposure_pct"
         if key in r:
             bounds.append((int(r[key] // size), f"{r[key]:g}% {'overnight ' if nights else ''}gross / {size:g}% each"))
-    floor = r.get("min_position_risk_pct", a.get("risk_bearing_min_risk_pct"))
-    if r.get("max_open_risk_pct") and floor:
-        bounds.append((int(r["max_open_risk_pct"] / floor + 1e-9),
-                       f"{r['max_open_risk_pct']:g}% open risk / at least {floor:g}% each"))
+    # the open-risk cap holds as many positions as the plan's risk per position allows; without a planned
+    # risk, as many as the floor allows, the most favourable case, and the detail says so
+    each = r.get("typical_position_risk_pct", r["min_position_risk_pct"])
+    if r.get("max_open_risk_pct") and each:
+        bounds.append((int(r["max_open_risk_pct"] / each + 1e-9),
+                       f"{r['max_open_risk_pct']:g}% open risk / {each:g}% each"
+                       + ("" if "typical_position_risk_pct" in r else " (the floor: no planned risk per position)")))
     if not bounds:
         return 0, "neither a position count nor exposure limits at a planned size bound the book"
     n, why = min(bounds)
@@ -144,33 +212,88 @@ def erlang_b(load: float, servers: int) -> float:
 
 def run(spec: dict) -> list[Check]:
     out: list[Check] = []
-    add = lambda name, ok, detail="": out.append(Check(TEST, name, ok, detail))  # noqa: E731
+    add = lambda name, ok, detail="", kind="": out.append(Check(TEST, name, ok, detail, kind))  # noqa: E731
     r, c = risk(spec), constraints(spec)
     a, costs = spec.get("activity", {}), spec.get("costs", {})
     daily = r.get("daily_loss_limit_pct")
 
+    # 0. the owner's own limits (goal_v1.toml): the goal may be stricter, never looser
+    line = r.get("max_drawdown_pct", r.get("max_drawdown_halt_pct"))
+    per_owner = r.get("risk_per_position_pct", r.get("risk_per_trade_pct"))
+    session = c.get("order_session", c.get("session"))
+    for what, ok, detail in (
+            ("holds at most 5 trading days and 7 calendar days",
+             c.get("max_holding_trading_days", math.inf) <= anchors.OWNER_MAX_HOLD_TRADING_DAYS
+             and c.get("max_holding_calendar_days", 0) <= anchors.OWNER_MAX_HOLD_CALENDAR_DAYS,
+             f"{c.get('max_holding_trading_days', 'unspecified')} trading, {c.get('max_holding_calendar_days', 'unspecified')} calendar days"),
+            ("risks at most 0.5% of equity on one position at its stop",
+             per_owner is not None and per_owner <= anchors.OWNER_RISK_PER_POSITION_PCT, f"{per_owner}%"),
+            ("stops for the day at a loss of at most 2%", daily is not None and daily <= anchors.OWNER_DAILY_LOSS_LIMIT_PCT,
+             f"{daily}%"),
+            ("never falls more than 10% below its peak", line is not None and line <= anchors.OWNER_MAX_DRAWDOWN_PCT,
+             f"{line}%"),
+            ("uses no borrowed money: gross exposure at most 100%",
+             r.get("max_gross_exposure_pct", math.inf) <= anchors.OWNER_MAX_GROSS_PCT, f"{r.get('max_gross_exposure_pct')}%"),
+            ("trades the regular session only", session == anchors.OWNER_SESSION, f"{session}"),
+            ("holds no position through an earnings release",
+             c.get("hold_through_earnings") is anchors.OWNER_HOLD_THROUGH_EARNINGS, f"{c.get('hold_through_earnings')}"),
+            ("trades long and short", set(anchors.OWNER_DIRECTIONS) <= set(c.get("directions", [])),
+             ", ".join(c.get("directions", [])))):
+        add(f"the owner's limit: {what}", ok, detail, kind="external")
+
+    # 0b. the limits in order: the daily limit, then the worst day it allows, then the halt, then the line
+    #     the owner set; the margin and the largest single event fit between the halt and the line
+    halt, worst_day, margin = r.get("max_drawdown_halt_pct"), r.get("max_day_loss_pct"), r.get("drawdown_room_margin_pct")
+    if "max_drawdown_pct" in r and halt is not None:
+        chain = [x for x in (daily, worst_day, halt, r["max_drawdown_pct"]) if x is not None]
+        add("the limits are in order: daily limit < worst day < drawdown halt < drawdown line",
+            all(x < y for x, y in zip(chain, chain[1:])), " < ".join(f"{x:g}%" for x in chain))
+        if margin is not None:
+            add("the halt leaves the margin below the drawdown line", halt + margin <= r["max_drawdown_pct"],
+                f"{halt:g}% + {margin:g}% vs {r['max_drawdown_pct']:g}%")
+        if "max_jump_loss_pct" in r:
+            room = r["max_drawdown_pct"] - (margin or 0)
+            add("the largest single event the goal allows can't cross the drawdown line from the peak",
+                r["max_jump_loss_pct"] <= room, f"{r['max_jump_loss_pct']:g}% vs {room:g}%")
+
     # 1. stops hit together, with slippage, must fit inside the daily loss limit. A market-wide move
     #    stops out one side of the book; a goal that caps only the total must survive all of it. The
-    #    open-risk caps bound this whether or not the number of positions is fixed.
+    #    open-risk caps bound this whether or not the number of positions is fixed. How much worse than
+    #    planned the stops fill is measured on real stress days, at the plan's stop distance: a 1-in-20
+    #    stress day for one side against the daily limit; the worst day in the data for a whipsaw
+    #    against the worst-day bound
     per = r.get("risk_per_position_pct", r.get("risk_per_trade_pct"))
     count = r.get("max_positions")
     by_count = per * count if per and count else math.inf
+    planned_stop = (r["typical_position_risk_pct"] / r["typical_position_pct"]
+                    if r.get("typical_position_risk_pct") and r.get("typical_position_pct") else None)
+    try:
+        k = planned_stop / typical_atr() if planned_stop else DEFAULT_STOP_ATR
+        p95, worst_slip, n_days, worst_when = stop_slippage(round(k, 2))
+        basis = (f"stops {k:.2f} average true ranges away ({'the plan' if planned_stop else 'assumed'}); on {n_days} "
+                 f"stress days stops filled {p95:.2f} times the planned loss at the 95th percentile and {worst_slip:.2f} "
+                 f"at worst ({worst_when})")
+    except Exception as e:  # noqa: BLE001
+        p95 = worst_slip = STOP_SLIPPAGE_NO_DATA
+        basis = f"no data ({e}): stops assumed to fill 25% worse"
     if daily and per and ("max_open_risk_per_side_pct" in r or "max_open_risk_pct" in r or count):
         if "max_open_risk_per_side_pct" in r:
             side = min(r["max_open_risk_per_side_pct"], by_count)
-            worst = side * STOP_SLIPPAGE
+            worst = side * p95
             add("every stop on one side hit at once (a market-wide move) stays inside the daily loss limit",
-                worst <= daily, f"{side:g}% open risk per side x {STOP_SLIPPAGE} slippage = {worst:.2f}% vs {daily:g}%")
+                worst <= daily, f"{side:g}% open risk per side x {p95:.2f} = {worst:.2f}% vs {daily:g}%; {basis}",
+                kind="external")
             total = min(r.get("max_open_risk_pct", 2 * side), 2 * side)
             bound = r.get("max_day_loss_pct", daily)
-            add("every stop on both sides hit in one day (a whipsaw) stays inside the worst-day bound",
-                total * STOP_SLIPPAGE <= bound,
-                f"{total:g}% total open risk x {STOP_SLIPPAGE} = {total * STOP_SLIPPAGE:.2f}% vs {bound:g}%")
+            whip = side * worst_slip + (total - side) * p95
+            add("every stop on both sides hit in one day (a gap, then a reversal) stays inside the worst-day bound",
+                whip <= bound, f"{side:g}% x {worst_slip:.2f} + {total - side:g}% x {p95:.2f} = {whip:.2f}% vs {bound:g}%",
+                kind="external")
         else:
             total = min(r.get("max_open_risk_pct", by_count), by_count)
-            worst = total * STOP_SLIPPAGE
+            worst = total * p95
             add("every stop hit at once stays inside the daily loss limit", worst <= daily,
-                f"{total:g}% open risk x {STOP_SLIPPAGE} slippage = {worst:.2f}% vs {daily:g}%")
+                f"{total:g}% open risk x {p95:.2f} = {worst:.2f}% vs {daily:g}%; {basis}", kind="external")
     else:
         add("every stop hit at once stays inside the daily loss limit", False, "a limit is unspecified")
 
@@ -183,8 +306,9 @@ def run(spec: dict) -> list[Check]:
         except Exception as e:  # noqa: BLE001
             add("overnight gaps fit inside the daily loss limit", None, f"no data: {e}")
         else:
-            add("stress gaps match the price data", abs(long_gap - LONG_GAP[2]) < 0.001 and abs(short_gap - SHORT_GAP[2]) < 0.001,
-                f"{LONG_GAP[3]}: {long_gap:+.1%}; {SHORT_GAP[3]}: {short_gap:+.1%}")
+            add("stress gaps match the price data (the test's own constants)",
+                abs(long_gap - LONG_GAP[2]) < 0.001 and abs(short_gap - SHORT_GAP[2]) < 0.001,
+                f"{LONG_GAP[3]}: {long_gap:+.1%}; {SHORT_GAP[3]}: {short_gap:+.1%}", kind="hygiene")
             either = r.get("max_position_overnight_pct", r.get("max_position_pct"))
             long_cap = r.get("max_overnight_long_pct", either)
             short_cap = r.get("max_overnight_short_pct", either)
@@ -195,7 +319,7 @@ def run(spec: dict) -> list[Check]:
             elif jump is not None:
                 worst_seen = max(abs(LONG_GAP[2]), SHORT_GAP[2]) * 100
                 add("the overnight jump assumption covers the largest gaps in the data", jump >= worst_seen,
-                    f"{jump:g}% vs {SHORT_GAP[3]} {SHORT_GAP[2]:+.1%} and {LONG_GAP[3]} {LONG_GAP[2]:+.1%}")
+                    f"{jump:g}% vs {SHORT_GAP[3]} {SHORT_GAP[2]:+.1%} and {LONG_GAP[3]} {LONG_GAP[2]:+.1%}", kind="external")
                 one = max(long_cap, short_cap) * jump / 100
                 add("one position held overnight through the assumed jump fits inside the daily loss limit", one <= daily,
                     f"{max(long_cap, short_cap):g}% x {jump:g}% = {one:.2f}% vs {daily:g}%")
@@ -221,6 +345,18 @@ def run(spec: dict) -> list[Check]:
                             f"{r['max_overnight_industry_pct']:g}% x {jump:g}% = {industry:.2f}% vs {bound:g}%")
                     else:
                         add("overnight exposure to one industry is limited", False, "a jump that hits a whole industry is unbounded")
+                # each tier's jump against an outside anchor: a market rule or a named event
+                for key, floor, why in (("jump_intraday_pct", anchors.JUMP_INTRADAY_MIN_PCT,
+                                         "the 10% Limit Up-Limit Down band near the open and the close"),
+                                        ("jump_overnight_etf_pct", anchors.JUMP_ETF_MIN_PCT,
+                                         "a 13% market fall, the level-2 circuit breaker"),
+                                        ("jump_overnight_event_prone_pct", anchors.JUMP_EVENT_PRONE_MIN_PCT,
+                                         "a total loss (SVB, 2023) or a doubling against a short")):
+                    if key in r:
+                        label = {"jump_intraday_pct": "intraday", "jump_overnight_etf_pct": "index-fund overnight",
+                                 "jump_overnight_event_prone_pct": "event-prone overnight"}[key]
+                        add(f"the {label} jump is at least {why}",
+                            r[key] >= floor, f"{r[key]:g}% vs {floor:g}%", kind="external")
                 # positions whose jump differs from an ordinary stock's: each tier's cap through its own
                 # jump must fit the daily limit, as the ordinary cap does
                 for kind, cap_key, jump_key in (("broad index fund", "max_overnight_etf_pct", "jump_overnight_etf_pct"),
@@ -246,9 +382,9 @@ def run(spec: dict) -> list[Check]:
                     with_rule, _ = drawdown_sim(r, room)
                     without, _ = drawdown_sim(r, False)
                     add("equity stays above the drawdown line in at least 99.9% of simulated years, jumps included",
-                        with_rule <= 0.001,
-                        f"crossed in {with_rule:.2%} of years{' with positions shrinking as the drawdown deepens' if room else ''}; "
-                        f"{without:.2%} at full size; the worst event the jump assumptions allow at full size is {worst:.2f}%")
+                        with_rule <= anchors.DRAWDOWN_CROSS_MAX, kind="external", detail=
+                        (f"crossed in {with_rule:.2%} of years{' with positions shrinking as the drawdown deepens' if room else ''}; "
+                         f"{without:.2%} at full size; the worst event the jump assumptions allow at full size is {worst:.2f}%"))
                     if margin is not None:
                         gross, rt = r.get("max_gross_exposure_pct", 100), costs.get("round_trip_cost_bps", 0)
                         closing = gross * rt / 2 / 1e4 * costs.get("stress_cost_multiplier", 1)
@@ -297,7 +433,7 @@ def run(spec: dict) -> list[Check]:
         open_avg = a["planned_risk_trades_per_week"] / 5 * a["typical_holding_minutes"] / SESSION_MINUTES
         blocked = erlang_b(open_avg, slots)
         add("the planned activity fits the book (a new trade finds it full at most 10% of the time)",
-            blocked <= 0.10, f"{a['planned_risk_trades_per_week']}/week held {a['typical_holding_minutes'] / SESSION_MINUTES:.1f} days "
+            blocked <= anchors.BOOK_FULL_MAX, f"{a['planned_risk_trades_per_week']}/week held {a['typical_holding_minutes'] / SESSION_MINUTES:.1f} days "
             f"= {open_avg:.1f} open on average; {basis}: full {blocked:.1%} of the time")
         size = r.get("typical_position_pct")
         if size:
@@ -327,7 +463,7 @@ def run(spec: dict) -> list[Check]:
                         f"{open_avg:.1f} positions x {size:g}% x {resid:.2%} market-neutral daily volatility per stock "
                         f"= {book:.2f}%/day vs a budget of {vol:g}%")
     else:
-        add("the planned activity fits the book", False,
+        add("the planned activity fits the book (a new trade finds it full at most 10% of the time)", False,
             "no planned activity or holding time" if not all(k in a for k in plan) else basis)
 
     # 4. gross exposure from the position limits
@@ -369,6 +505,10 @@ def run(spec: dict) -> list[Check]:
             add(f"the {label} activity fits the cost budget", yearly <= a["cost_budget_pct_per_year"],
                 f"{a[key]}/week x {typical:g}% x {costs['round_trip_cost_bps']:g} bps "
                 f"= {yearly:.2f}%/yr vs {a['cost_budget_pct_per_year']:g}%")
+        entry, mult = a.get("entry_min_gain_to_cost"), costs.get("stress_cost_multiplier")
+        if entry is not None and mult is not None:
+            add("an entry the rule admits still pays its costs at the stress level", entry >= mult,
+                f"expected gain at least {entry:g} x cost vs costs raised {mult:g} x")
     else:
         add("activity bounds and a cost budget stated", False, "constant trading has no upper or lower bound")
 
@@ -401,6 +541,11 @@ def run(spec: dict) -> list[Check]:
             add("a rotation clears its switching cost at least as an entry clears its own cost",
                 1 + a["rotation_margin_to_cost"] >= entry,
                 f"advantage at least {1 + a['rotation_margin_to_cost']:g} x the candidate's round-trip cost vs entry at {entry:g} x")
+            if "planned_risk_trades_per_week" in a:
+                add("the daily rotation cap allows no more rotations a week than the planned round trips",
+                    a["max_rotations_per_day"] * 5 <= a["planned_risk_trades_per_week"] and 0 < a["max_rotation_share"] <= 1,
+                    f"{a['max_rotations_per_day']:g} a day x 5 vs {a['planned_risk_trades_per_week']:g} a week; "
+                    f"share {a['max_rotation_share']:g}")
             if slots and all(k in a for k in plan):
                 week = a["planned_risk_trades_per_week"]
                 load = week / 5 * a["typical_holding_minutes"] / SESSION_MINUTES

@@ -126,6 +126,17 @@ therefore has an *oracle*, the source of the right answer, that lies outside the
 | GT-7 control coverage | the checklists in SEC 15c3-5, FINRA 15-09, RTS 6, MiFID II record and clock rules, SR 11-7 (now SR 26-2), and the Knight Capital order |
 | GT-8 outside view | published base rates for traders and trading strategies |
 | GT-9 effective challenge | independent reviewers who see only the goal documents |
+| GT-10 deliberate defects | copies of the goal broken on purpose, one defect each, judged wrong from outside the goal |
+
+An oracle outside the goal is not enough: the bar that turns its answer into pass or fail must be
+outside the goal too. The independent review of version 4 found GT-4, GT-5 and GT-8 judging their
+answers against the goal's own tolerances, so loosening a tolerance in the goal loosened the test. Since
+round 5 every bar lives in the tests (`goaltests/anchors.py`): the owner's own words, a rule or a
+published figure, or a judgment that says when it was set and what was known then. The goal's own
+tolerances are claims; a claim looser than the test's bar fails. Each check also says what it rests
+on, and the counts are reported apart: checks with an outside answer and an outside bar, consistency
+checks between the goal's own numbers, presence and wording checks, and document hygiene (GOAL.md against
+goal.toml), which can't show the goal is right.
 
 A test fails the goal when the goal would let a no-edge strategy through too often, would stop a
 real edge too often, contradicts itself, cannot be measured, or misses a control the checklists
@@ -138,8 +149,11 @@ Three rules keep that loop honest, added after the review of version 4 found the
 - **A test simulates the rule as the goal writes it.** GT-4 judges every condition G1 and G2 impose,
   including the ones that make passing harder, or it says which it leaves out.
 - **A check that can't fail is not evidence.** A consistency check that passes whenever a setting exists
-  is replaced by a simulation that can fail, and each gaming probe uses noise of a realistic size.
-  The suite's sensitivity is itself tested: deliberately broken copies of the goal must fail it.
+  is replaced by a simulation that can fail, and each gaming probe uses noise of a realistic size and
+  sits just inside every limit except the one it targets, so that limit alone decides it.
+  The suite's sensitivity is itself tested (GT-10): 70 deliberately broken copies of the goal must each
+  fail a check the unbroken goal passes. A defect that no outside source can call wrong is listed as a
+  known gap, not hidden.
 
 ## Sources
 

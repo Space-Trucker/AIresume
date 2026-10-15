@@ -59,6 +59,7 @@ class Record:
     max_risk_per_trade_pct: float = 0.0
     max_risk_per_position_pct: float = 0.0
     max_open_risk_pct: float = 0.0
+    max_open_risk_side_pct: float | None = None  # the larger side's open risk; when not given, the total stands in
     max_gross_pct: float = 0.0
     max_position_pct: float = 0.0
     max_overnight_long_pct: float = 0.0        # largest long position held overnight
@@ -274,7 +275,8 @@ def risk_rule_violations(risk: dict, rec: Record) -> list[str]:
     checks = [("risk_per_trade_pct", rec.max_risk_per_trade_pct, "risk per trade"),
               ("risk_per_position_pct", rec.max_risk_per_position_pct, "risk per position"),
               ("max_open_risk_pct", rec.max_open_risk_pct, "open risk"),
-              ("max_open_risk_per_side_pct", rec.max_open_risk_pct, "open risk on one side"),
+              ("max_open_risk_per_side_pct", rec.max_open_risk_side_pct if rec.max_open_risk_side_pct is not None
+               else rec.max_open_risk_pct, "open risk on one side"),
               ("max_gross_exposure_pct", rec.max_gross_pct, "gross exposure"),
               ("max_position_pct", rec.max_position_pct, "position size"),
               ("max_position_overnight_pct", overnight, "overnight position size"),

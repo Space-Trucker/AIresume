@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import random
 
-from . import gates, sim, stats
+from . import anchors, gates, sim, stats
 from .spec import Check, constraints, risk, rule
 
 TEST = "GT-6"
+KIND = "external"
 
 
 def _lucky(n: int, daily_sr_annual: float, vol: float, rng: random.Random) -> list[float]:
@@ -23,6 +24,21 @@ def _lucky(n: int, daily_sr_annual: float, vol: float, rng: random.Random) -> li
         if stats.annualize_sr(stats.sharpe(r)) >= daily_sr_annual:
             return r
     raise RuntimeError("could not draw a lucky window")
+
+
+def _window(n: int, lo: float, hi: float, vol: float, rng: random.Random) -> list[float]:
+    """A track record whose own Sharpe ratio lies in [lo, hi] and is positive in each half and in the
+    calmer and the more turbulent days: one that clears every clause near the bar, so only the flaw a
+    probe targets can stop it."""
+    for _ in range(5000):
+        r = sim.returns(n, stats.daily_sr((lo + hi) / 2) * vol, vol, "normal", rng)
+        sr = stats.annualize_sr(stats.sharpe(r))
+        halves = [stats.annualize_sr(stats.sharpe(p)) for p in (r[:n // 2], r[n // 2:])]
+        regime = gates.regime_proxy(r)
+        parts = [sum(x for x, g in zip(r, regime) if g == flag) for flag in (0, 1)]
+        if lo <= sr <= hi and min(halves) >= 0.3 and min(parts) > 0:
+            return r
+    raise RuntimeError("could not draw a window")
 
 
 def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
@@ -40,9 +56,9 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     paper = lambda p, **kw: gates.Record(daily=p, excess=p, rerun=list(p), **{**base, **kw})  # noqa: E731
     out = []
     p = good(d2)
-    out.append(("averaging down", "adds to losers in steps each inside the per-trade limit, so one position "
-                "risks 4x that limit", "G2",
-                paper(p, max_risk_per_trade_pct=0.5, max_risk_per_position_pct=2.0, max_position_pct=20)))
+    out.append(("averaging down", "adds to losers in steps each inside the per-trade limit and every size limit, so "
+                "one position risks twice the owner's 0.5%", "G2",
+                paper(p, max_risk_per_trade_pct=0.5, max_risk_per_position_pct=1.0)))
     p = good(d2)
     out.append(("selling tails without a stop", "many small wins, a rare crash not yet seen", "G2",
                 paper(p, every_position_has_stop=False)))
@@ -54,12 +70,19 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
                 gates.Record(daily=[m + b for m, b in zip(mkt, beyond)], excess=beyond, rerun=list(beyond),
                              **{**base, "max_gross_pct": 100, "max_position_pct": 4})))
     p = good(d2)
-    out.append(("padding the trade count", "a few lucky trades plus hundreds of scratch trades", "G2",
-                paper(p, risk_trades=20)))
-    best, _, _ = sim.best_of([0.0] * 50, d1, vol, "normal", rng)
-    out.append(("best of 50", "the luckiest of 50 strategies with no net edge", "G1",
-                gates.Record(daily=best, excess=best, trades=5000, n_trials=50, lag_audit_ok=True,
-                             stressed=[b - 0.0001 for b in best], conservative_fills=True)))
+    out.append(("padding the trade count", "lucky trades plus scratch trades: one risk-bearing round trip short of the "
+                "owner's 300", "G2", paper(p, trades=5000, risk_trades=anchors.OWNER_MIN_PAPER_TRADES - 1)))
+    # the luckiest of 50 no-edge strategies, shown at a Sharpe ratio that clears every other clause of G1:
+    # only the correction for the variants tried can stop it, once with an honest count and once with a
+    # count of one (the floor on the count must catch it)
+    lucky = _window(d1, 1.05, 1.12, vol, rng)
+    stressed = [x - 0.02 * vol for x in lucky]
+    out.append(("best of 50", "the luckiest of 50 strategies with no net edge, its 50 variants reported", "G1",
+                gates.Record(daily=lucky, excess=lucky, trades=5000, n_trials=50, lag_audit_ok=True,
+                             stressed=stressed, conservative_fills=True)))
+    out.append(("best of 50, reported as one", "the same record, with only the winning variant reported", "G1",
+                gates.Record(daily=lucky, excess=lucky, trades=5000, n_trials=1, lag_audit_ok=True,
+                             stressed=stressed, conservative_fills=True)))
     p = good(d2)
     out.append(("paper's generous fills", "earns only because paper fills limit orders the moment price touches",
                 "G2", paper(p, conservative_fills=False)))
@@ -92,6 +115,24 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
                 f"{stats.annualize_sr(stats.sharpe(leaky)):.1f}, below the audit ceiling", "G1",
                 gates.Record(daily=leaky, excess=leaky, trades=5000, n_trials=1, stressed=leaky,
                              conservative_fills=True, lag_audit_ok=audit_ok)))
+    # riding the market in research: always long through a long rising market, so the raw Sharpe clears
+    # G1 while nothing is earned beyond the market
+    rng3 = random.Random("gt6-long-only")
+    market = _window(d1, 1.55, 1.7, 0.01, rng3)
+    noise = [0.0005 * rng3.gauss(0, 1) for _ in market]
+    beyond = [x - sum(noise) / len(noise) - 0.00002 for x in noise]        # nothing beyond the market but costs
+    raw = [m + b for m, b in zip(market, beyond)]
+    out.append(("long through a bull market", "always long in a rising market: a raw Sharpe above the bar, no excess "
+                "return", "G1", gates.Record(daily=raw, excess=beyond, trades=5000, n_trials=1, lag_audit_ok=True,
+                                             stressed=[x - 0.00001 for x in raw], conservative_fills=True)))
+    # an excess return, but a loss: 15% net long, the most the overnight limit allows, through a crash
+    excess = good(d2)
+    crash = [0.02 * rng3.gauss(0, 1) for _ in excess]
+    shift = (-(sum(excess) + 0.01) / 0.15 - sum(crash)) / len(crash)     # the window ends 1% down
+    crash = [m + shift for m in crash]
+    out.append(("excess return but a loss", "beats the market while the account loses money in a crash", "G2",
+                gates.Record(daily=[x + 0.15 * m for x, m in zip(excess, crash)], excess=excess, rerun=list(excess),
+                             **{**base, "max_overnight_net_pct": 15, "max_overnight_dollar_net_pct": 15})))
     p = good(d2)
     out.append(("big overnight shorts", "holds 10% short positions overnight, where a takeover bid gaps one up "
                 "50% (Yahoo, 1 February 2008)", "G2",

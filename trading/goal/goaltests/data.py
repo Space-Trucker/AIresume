@@ -15,6 +15,7 @@ Nothing downloaded is executed: only CSV text is read. Files are cached in
 from __future__ import annotations
 
 import csv
+import functools
 import gzip
 import hashlib
 import io
@@ -101,7 +102,13 @@ def _csv_text(name: str) -> str:
 
 
 def bars(name: str) -> list[dict]:
-    """Rows with date (datetime), open, high, low, close, oldest first."""
+    """Rows with date (datetime), open, high, low, close, oldest first (a fresh list each call; the rows
+    are shared, so callers must not change them)."""
+    return list(_bars(name))
+
+
+@functools.lru_cache(maxsize=None)
+def _bars(name: str) -> tuple[dict, ...]:
     rows = []
     for row in csv.DictReader(io.StringIO(_csv_text(name))):
         key = row.get("Date") or row.get("") or next(iter(row.values()))
@@ -121,7 +128,7 @@ def bars(name: str) -> list[dict]:
             continue
         rows.append({"date": when, "open": o, "high": h, "low": lo, "close": c})
     rows.sort(key=lambda r: r["date"])
-    return rows
+    return tuple(rows)
 
 
 def available() -> tuple[bool, str]:

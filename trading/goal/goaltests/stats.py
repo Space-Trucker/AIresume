@@ -120,3 +120,29 @@ def ols_alpha_beta(y: list[float], x: list[float]) -> tuple[float, float, list[f
     beta = sum((a - mx) * (b - my) for a, b in zip(x, y)) / sxx if sxx > 0 else 0.0
     alpha = my - beta * mx
     return alpha, beta, [b - beta * a for a, b in zip(x, y)]
+
+
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson interval of a rate k/n; (0, 1) when there is nothing to count."""
+    if n <= 0:
+        return 0.0, 1.0
+    p = k / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
+def rolling_beta(y: list[float], x: list[float], window: int = 252) -> list[float | None]:
+    """For each day t, the slope of y on x over the ``window`` days before t (as of the previous close),
+    or None while fewer than ``window`` days are known."""
+    out: list[float | None] = [None] * len(y)
+    sx = sy = sxx = sxy = 0.0
+    for t in range(len(y)):
+        if t >= window:
+            n = window
+            var = sxx - sx * sx / n
+            out[t] = (sxy - sx * sy / n) / var if var > 0 else 0.0
+            a, b = x[t - window], y[t - window]
+            sx -= a; sy -= b; sxx -= a * a; sxy -= a * b  # noqa: E702
+        sx += x[t]; sy += y[t]; sxx += x[t] * x[t]; sxy += x[t] * y[t]  # noqa: E702
+    return out
