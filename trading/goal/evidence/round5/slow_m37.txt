@@ -1,0 +1,71 @@
+M01 caught         overnight stock cap 4% to 8%: GT-2 one position held overnight through the assumed jump fits inside the daily loss limit; GT-2 a total loss in one name held overnight stays within the jump-loss bound (SVB, 10 March 2023)
+M02 caught         the drawdown room margin deleted: GT-2 equity stays above the drawdown line in at least 99.9% of simulated years, jumps included
+M04 caught         G1 counts at least 5 variants, not 30: GT-1 key results state the same numbers as the settings they restate; GT-6 rejects 'best of 50, reported as one' (the same record, with only the winning variant reported)
+M05 caught         an event-prone jump of 30%, not a total loss: GT-2 the event-prone overnight jump is at least a total loss (SVB, 2023) or a doubling against a short
+M06 caught         daily loss limit 2% to 4%: GT-1 key results state the same numbers as the settings they restate; GT-2 the owner's limit: stops for the day at a loss of at most 2%
+M07 caught         open risk 2% to 5%: GT-2 every stop on both sides hit in one day (a gap, then a reversal) stays inside the worst-day bound
+M08 caught         a rotation need not clear its cost: GT-2 a rotation clears its switching cost at least as an entry clears its own cost
+M09 caught         no cost stress (multiplier 1): GT-3 the stressed cost covers a round trip at the universe's limits; GT-3 market impact at the participation limit fits the slippage charged at the stress level
+M10 caught         round trip 8 bps to 2: GT-3 the cost model is not cheaper than published costs; GT-3 the stressed cost covers a round trip at the universe's limits
+M11 caught         G2 runs 40 days, not 120: GT-1 key results state the same numbers as the settings they restate
+M12 caught         the live test stops at -0.5, not -2.3: GT-1 key results state the same numbers as the settings they restate
+M13 caught         the key result for stops at the broker deleted: GT-1 a key result covers every share covered by a stop at the broker that acts while the system is down (owner (strict risk rules); RTS 6 Art. 14)
+M14 caught         the control with the throttles (C13) deleted: GT-7 KC-2: the covering controls state what it asks for; GT-7 every order limit is applied by a control or the fault rule
+M15 caught         overnight jump 50% to 20%: GT-2 the overnight jump assumption covers the largest gaps in the data
+M16 caught         overnight net 15% to 60%: GT-2 the overnight book through a 13% market-wide gap fits inside the daily loss limit
+M17 caught         volatility budget 0.2% to 1% a day: GT-1 key results state the same numbers as the settings they restate; GT-2 equity stays above the drawdown line in at least 99.9% of simulated years, jumps included
+M18 caught         gross exposure 100% to 300% (3 times leverage): GT-2 the owner's limit: uses no borrowed money: gross exposure at most 100%
+M19 caught         KR3.1 allows 10 entries below twice their cost: GT-1 every key result that counts failures allows none
+M20 caught         G1 without the lag audit: GT-6 rejects 'a subtle look-ahead leak' (sees part of tomorrow's return: a Sharpe of 2.4, below the audit ceiling)
+M21 caught         G1 may pass 20% of no-edge strategies: GT-4 the goal's tolerance for G1's false passes is no looser than the tests' bar
+M22 caught         a prior of 50% that a candidate is real: GT-8 the goal's prior is within the base rates (at most 10%, ten times the share of reliably profitable day traders)
+M23 caught         the floor on a position's risk deleted: GT-2 the planned activity fits the book (a new trade finds it full at most 10% of the time)
+M24 caught         100 rotations a day: GT-2 the daily rotation cap allows no more rotations a week than the planned round trips
+M25 caught         the halt at the 10% line itself: GT-1 key results state the same numbers as the settings they restate; GT-2 the limits are in order: daily limit < worst day < drawdown halt < drawdown line
+M26 caught         holds through earnings: GT-2 the owner's limit: holds no position through an earnings release
+M27 caught         holds 20 trading days: GT-1 key results state the same numbers as the settings they restate; GT-2 the owner's limit: holds at most 5 trading days and 7 calendar days
+M28 caught         G1 judged on raw profit: GT-6 rejects 'long through a bull market' (always long in a rising market: a raw Sharpe above the bar, no excess return)
+M29 caught         G2 judged on raw profit: GT-6 rejects 'riding the market' (fully long in a rising market: profit with no edge); GT-6 rejects 'excess return but a loss' (beats the market while the account loses money in a crash)
+M30 caught         no stop required: GT-6 rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen)
+M31 caught         drawdown line 10% to 20%: GT-1 key results state the same numbers as the settings they restate; GT-2 the owner's limit: never falls more than 10% below its peak
+M32 caught         risk per position 0.5% to 2%: GT-2 the owner's limit: risks at most 0.5% of equity on one position at its stop; GT-6 rejects 'averaging down' (adds to losers in steps each inside the per-trade limit and every size limit, so one position risks twice the owner's 0.5%)
+M33 caught         entry at 1 times cost, not 2: GT-1 key results state the same numbers as the settings they restate; GT-2 an entry the rule admits still pays its costs at the stress level
+M34 caught         spreads up to 50 bps: GT-3 the stressed cost covers a round trip at the universe's limits
+M35 caught         $1M a day of volume, not $20M: GT-3 a typical position fits the participation limit in the least liquid name the universe admits
+M36 caught         real money starts with all the capital: GT-8 the first real money is small: at most 25% of the intended capital (the owner's word)
+M37 slow           the live test without its cap: GT-4: the cap must make a decay show sooner than without it
+M38 caught         a cost drag of 0.001% a day, not the plan's: GT-4 the simulated cost drag is the plan's
+M39 caught         5 simulated variants while the budget allows 30: GT-4 the simulated search is at least the variant budget
+M40 caught         a position may be 1% of a name's daily volume: GT-3 the cost model is not cheaper than published costs; GT-3 the stressed cost covers a round trip at the universe's limits
+M41 caught         published effects counted in full: GT-8 published edges count at most at what remains after publication (McLean-Pontiff: 42%)
+M42 caught         intraday jump 20% to 5%: GT-2 the intraday jump is at least the 10% Limit Up-Limit Down band near the open and the close
+M43 caught         G2 no longer requires a profit: GT-6 rejects 'excess return but a loss' (beats the market while the account loses money in a crash)
+M44 gap            an order may be 50% of the volume while it works: no published bound on an order's share of the volume while it works; the square-root law prices the position's size against daily volume, which GT-3 checks
+M45 caught         G1's Deflated Sharpe threshold 0.95 to 0.5: GT-1 key results state the same numbers as the settings they restate; GT-6 rejects 'best of 50' (the luckiest of 50 strategies with no net edge, its 50 variants reported)
+M46 caught         joint power 50% to 20%: GT-4 the goal's tolerance for a real edge at the target passing both gates is no looser than the tests' bar
+M47 caught         the kill switch control reduced to a sentence: GT-7 RT-1: the covering controls state what it asks for; GT-7 RT-8: the covering controls state what it asks for
+M48 caught         a budget of 100 variants: GT-8 the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado); GT-4 the simulated search is at least the variant budget
+M49 caught         G1 needs 4,000 days, more than the data holds: GT-6 rejects 'best of 50' (the luckiest of 50 strategies with no net edge, its 50 variants reported); GT-6 rejects 'best of 50, reported as one' (the same record, with only the winning variant reported)
+M50 caught         the clock control deleted: GT-7 RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC; GT-7 every order limit is applied by a control or the fault rule
+M51 caught         a single jump may lose 10%: GT-1 key results state the same numbers as the settings they restate; GT-2 the largest single event the goal allows can't cross the drawdown line from the peak
+M52 caught         a passing strategy need be real only 30% of the time: GT-8 the goal asks a passing strategy to be more likely real than not (min_posterior)
+M53 caught         real edges up to Sharpe 4 in the prior: GT-8 the goal's prior puts no real edge where G1 suspects a leak
+M54 caught         G2 needs 100 risk-bearing trades, not 300: GT-1 key results state the same numbers as the settings they restate; GT-6 rejects 'padding the trade count' (lucky trades plus scratch trades: one risk-bearing round trip short of the owner's 300)
+M55 caught         KR4.1 made vague: GT-1 KR4.1 is unambiguous
+M56 caught         the marking rule made vague: GT-1 every limit, rule and control is stated without vague words
+M57 caught         the plan's positions risk 0.2% each: GT-2 the planned activity fits the book (a new trade finds it full at most 10% of the time)
+M58 caught         a worst-day bound of 2%, the daily limit itself: GT-1 key results state the same numbers as the settings they restate; GT-2 the limits are in order: daily limit < worst day < drawdown halt < drawdown line
+M59 caught         orders outside the regular session: GT-2 the owner's limit: trades the regular session only
+M60 caught         overnight dollar net 30% to 60%: GT-2 the overnight book through a 13% gap with every beta at 1 stays within the jump-loss bound
+M61 caught         paper may trail the rerun by 3 Sharpe: GT-1 key results state the same numbers as the settings they restate
+M62 caught         80% of trades matched, not 98%: GT-1 key results state the same numbers as the settings they restate; GT-4 the simulated implementation noise is what KR1.6's tolerance allows
+M63 caught         rotation shipped without its comparison: GT-2 a full book is resolved by a stated rotation rule; GT-6 rejects 'churning' (replaces held positions whenever a fresh forecast looks higher, on forecasts inflated by picking the highest of many: each switch pays two costs and loses on average)
+M64 caught         capital grows at even odds: GT-1 key results state the same numbers as the settings they restate
+M65 caught         a clock error of 500 ms: GT-7 max_clock_error_ms is within the consolidated audit trail's 50 ms
+M66 caught         250 requests a minute, more than the broker allows: GT-7 max_requests_per_minute is within Alpaca's 200 a minute, leaving room for exits and the kill path
+M67 caught         a 20% price collar: GT-7 price_collar_pct is within the 5% Limit Up-Limit Down band
+M68 caught         shorts with $500 of equity: GT-8 the goal knows the broker's minimum equity for short sales ($2,000)
+M69 caught         real money from $1,000: GT-8 the first real money keeps the right to short through a full drawdown
+M70 caught         the live test stops a real edge 12% of the time: GT-1 key results state the same numbers as the settings they restate; GT-4 the goal's tolerance for the live test stopping a real edge is no looser than the tests' bar
+M71 caught         the overnight industry cap 8% to 20%: GT-2 an industry-wide jump stays within the jump-loss bound (regional banks, 13 March 2023)
+M37 slow: caught by GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (normal); GT-4 the cap on the evidence makes a decay show sooner, as the goal says it does (normal); GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (t4)

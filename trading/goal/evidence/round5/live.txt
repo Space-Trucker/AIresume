@@ -1,0 +1,32 @@
+stop  -2.5 cap   2.89 normal: false stop  5.9% | dead halve1 62.7% stop3 72.5% | decay0 halve1 25.0% stop3 48.3% | decay-costs halve1 60.5% stop3 97.8%
+stop  -2.5 cap   2.89 t4    : false stop  4.5% | dead halve1 61.2% stop3 73.5% | decay0 halve1 24.3% stop3 49.9% | decay-costs halve1 61.6% stop3 98.7%
+stop  -2.5 cap   2.89 garch : false stop  3.7% | dead halve1 62.0% stop3 73.7% | decay0 halve1 21.6% stop3 49.3% | decay-costs halve1 61.9% stop3 98.5%
+stop  -2.5 cap   2.89 ar1   : false stop  8.3% | dead halve1 64.0% stop3 73.3% | decay0 halve1 28.6% stop3 55.1% | decay-costs halve1 64.0% stop3 97.2%
+stop  -2.5 cap  1e+09 normal: false stop  5.5% | dead halve1 59.7% stop3 72.7% | decay0 halve1 20.5% stop3 37.4% | decay-costs halve1 44.3% stop3 90.1%
+stop  -2.5 cap  1e+09 t4    : false stop  5.0% | dead halve1 63.4% stop3 73.5% | decay0 halve1 19.0% stop3 38.1% | decay-costs halve1 43.9% stop3 89.9%
+stop  -2.5 cap  1e+09 garch : false stop  3.5% | dead halve1 58.3% stop3 70.7% | decay0 halve1 16.0% stop3 29.8% | decay-costs halve1 38.3% stop3 89.2%
+stop  -2.5 cap  1e+09 ar1   : false stop  8.4% | dead halve1 63.7% stop3 71.5% | decay0 halve1 23.1% stop3 40.2% | decay-costs halve1 43.7% stop3 88.3%
+stop  -2.3 cap   2.89 normal: false stop  7.1% | dead halve1 62.8% stop3 77.9% | decay0 halve1 23.6% stop3 53.6% | decay-costs halve1 57.9% stop3 98.1%
+stop  -2.3 cap   2.89 t4    : false stop  5.7% | dead halve1 65.1% stop3 79.3% | decay0 halve1 22.1% stop3 52.6% | decay-costs halve1 59.8% stop3 97.8%
+stop  -2.3 cap   2.89 garch : false stop  4.0% | dead halve1 62.6% stop3 75.7% | decay0 halve1 20.9% stop3 50.8% | decay-costs halve1 63.5% stop3 98.8%
+stop  -2.3 cap   2.89 ar1   : false stop  9.7% | dead halve1 64.5% stop3 77.2% | decay0 halve1 26.2% stop3 53.6% | decay-costs halve1 62.9% stop3 98.0%
+stop  -2.3 cap  1e+09 normal: false stop  7.8% | dead halve1 62.9% stop3 76.9% | decay0 halve1 21.1% stop3 40.8% | decay-costs halve1 42.2% stop3 91.5%
+stop  -2.3 cap  1e+09 t4    : false stop  7.3% | dead halve1 63.3% stop3 77.8% | decay0 halve1 19.8% stop3 40.2% | decay-costs halve1 44.9% stop3 91.6%
+stop  -2.3 cap  1e+09 garch : false stop  4.5% | dead halve1 62.5% stop3 74.7% | decay0 halve1 14.2% stop3 32.2% | decay-costs halve1 36.4% stop3 89.2%
+stop  -2.3 cap  1e+09 ar1   : false stop 10.8% | dead halve1 64.1% stop3 74.3% | decay0 halve1 22.5% stop3 41.3% | decay-costs halve1 46.0% stop3 90.3%
+stop  -2.2 cap   2.89 normal: false stop  8.5% | dead halve1 60.2% stop3 77.7% | decay0 halve1 23.7% stop3 54.9% | decay-costs halve1 60.5% stop3 98.3%
+stop  -2.2 cap   2.89 t4    : false stop  7.8% | dead halve1 62.5% stop3 78.6% | decay0 halve1 23.8% stop3 55.3% | decay-costs halve1 60.1% stop3 98.6%
+stop  -2.2 cap   2.89 garch : false stop  5.5% | dead halve1 63.5% stop3 78.7% | decay0 halve1 22.9% stop3 52.9% | decay-costs halve1 60.8% stop3 98.9%
+stop  -2.2 cap   2.89 ar1   : false stop 11.5% | dead halve1 62.4% stop3 76.7% | decay0 halve1 27.9% stop3 59.0% | decay-costs halve1 61.8% stop3 98.4%
+stop  -2.2 cap  1e+09 normal: false stop  8.1% | dead halve1 62.9% stop3 76.4% | decay0 halve1 18.7% stop3 38.7% | decay-costs halve1 43.5% stop3 91.4%
+stop  -2.2 cap  1e+09 t4    : false stop  6.3% | dead halve1 62.7% stop3 77.7% | decay0 halve1 18.1% stop3 39.7% | decay-costs halve1 42.6% stop3 91.8%
+stop  -2.2 cap  1e+09 garch : false stop  5.0% | dead halve1 61.8% stop3 79.5% | decay0 halve1 13.4% stop3 31.5% | decay-costs halve1 37.6% stop3 89.4%
+stop  -2.2 cap  1e+09 ar1   : false stop 12.2% | dead halve1 64.3% stop3 76.7% | decay0 halve1 23.3% stop3 41.5% | decay-costs halve1 42.5% stop3 89.1%
+stop  -2.0 cap   2.89 normal: false stop  9.3% | dead halve1 63.3% stop3 79.9% | decay0 halve1 22.7% stop3 55.8% | decay-costs halve1 58.5% stop3 98.8%
+stop  -2.0 cap   2.89 t4    : false stop  8.5% | dead halve1 63.9% stop3 82.9% | decay0 halve1 21.5% stop3 58.8% | decay-costs halve1 57.0% stop3 98.1%
+stop  -2.0 cap   2.89 garch : false stop  7.8% | dead halve1 62.6% stop3 79.9% | decay0 halve1 19.2% stop3 57.3% | decay-costs halve1 58.6% stop3 99.4%
+stop  -2.0 cap   2.89 ar1   : false stop 14.1% | dead halve1 62.7% stop3 78.9% | decay0 halve1 29.6% stop3 63.3% | decay-costs halve1 63.5% stop3 98.2%
+stop  -2.0 cap  1e+09 normal: false stop 10.3% | dead halve1 64.1% stop3 82.2% | decay0 halve1 20.0% stop3 43.6% | decay-costs halve1 42.7% stop3 92.3%
+stop  -2.0 cap  1e+09 t4    : false stop  8.7% | dead halve1 62.9% stop3 79.9% | decay0 halve1 15.0% stop3 41.7% | decay-costs halve1 44.2% stop3 92.7%
+stop  -2.0 cap  1e+09 garch : false stop  6.8% | dead halve1 63.7% stop3 80.8% | decay0 halve1 13.1% stop3 36.8% | decay-costs halve1 37.7% stop3 90.5%
+stop  -2.0 cap  1e+09 ar1   : false stop 14.1% | dead halve1 64.0% stop3 78.0% | decay0 halve1 19.5% stop3 42.2% | decay-costs halve1 42.0% stop3 90.4%

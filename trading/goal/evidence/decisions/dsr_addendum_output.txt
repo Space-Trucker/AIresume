@@ -1,0 +1,28 @@
+A. Parameter variants (3 per idea, within-idea corr 0.8), raw-N counting, V = null variance
+  runs=  9 ideas=  3: P(find true)=0.137 P(false)=0.0041 P(true idea exists)=0.142
+  runs= 12 ideas=  4: P(find true)=0.179 P(false)=0.0043 P(true idea exists)=0.185
+  runs= 21 ideas=  7: P(find true)=0.284 P(false)=0.0027 P(true idea exists)=0.301
+  runs= 30 ideas= 10: P(find true)=0.372 P(false)=0.0023 P(true idea exists)=0.401
+  runs= 51 ideas= 17: P(find true)=0.530 P(false)=0.0019 P(true idea exists)=0.582
+
+B. Independent ideas, V = max(null, cross-sectional var excluding best trial)
+  N=  10: P(find true)=0.357 P(false pass)=0.0030 | global-null false pass=0.0047
+  N=  20: P(find true)=0.547 P(false pass)=0.0011 | global-null false pass=0.0031
+  N=  30: P(find true)=0.661 P(false pass)=0.0008 | global-null false pass=0.0025
+  N=  50: P(find true)=0.783 P(false pass)=0.0003 | global-null false pass=0.0017
+  N= 100: P(find true)=0.879 P(false pass)=0.0001 | global-null false pass=0.0011
+
+C. Sensitivity of P(find true) to the true SR of real edges and to the prior (independent ideas, V = null)
+  true SR=1.00: N=10: 0.203  N=20: 0.276  N=30: 0.329  N=50: 0.394
+  true SR=1.25: N=10: 0.316  N=20: 0.468  N=30: 0.569  N=50: 0.700
+  true SR=1.50: N=10: 0.377  N=20: 0.586  N=30: 0.715  N=50: 0.856
+  true SR=2.00: N=10: 0.401  N=20: 0.642  N=30: 0.783  N=50: 0.920
+  prior=0.025 (SR 1.5): N=10: 0.207  N=20: 0.354  N=30: 0.465  N=50: 0.615
+  prior=0.050 (SR 1.5): N=10: 0.373  N=20: 0.586  N=30: 0.715  N=50: 0.857
+  prior=0.100 (SR 1.5): N=10: 0.619  N=20: 0.834  N=30: 0.923  N=50: 0.980
+
+D. Same with T_eff = 1200 (Newey-West halves the sample), V = null at T_eff
+  N=  10: P(find true)=0.232 P(false pass)=0.0057
+  N=  20: P(find true)=0.328 P(false pass)=0.0036
+  N=  30: P(find true)=0.390 P(false pass)=0.0026
+  N=  50: P(find true)=0.478 P(false pass)=0.0022

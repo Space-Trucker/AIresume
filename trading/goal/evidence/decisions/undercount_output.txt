@@ -1,0 +1,9 @@
+Global-null false-pass probability when N_counted is used in the DSR but N_actual independent trials were really run (V = null, normal):
+  Ncounted= 10 (z*=3.219): Nact=10: 0.0064  Nact=20: 0.0128  Nact=30: 0.0191  Nact=50: 0.0316  Nact=100: 0.0622  Nact=200: 0.1206
+  Ncounted= 20 (z*=3.546): Nact=10: 0.0020  Nact=20: 0.0039  Nact=30: 0.0059  Nact=50: 0.0097  Nact=100: 0.0194  Nact=200: 0.0384
+  Ncounted= 30 (z*=3.718): Nact=10: 0.0010  Nact=20: 0.0020  Nact=30: 0.0030  Nact=50: 0.0050  Nact=100: 0.0100  Nact=200: 0.0199
+  Ncounted= 50 (z*=3.921): Nact=10: 0.0004  Nact=20: 0.0009  Nact=30: 0.0013  Nact=50: 0.0022  Nact=100: 0.0044  Nact=200: 0.0088
+true SR 1.0: s.e.(half, 1200d)=0.459  P(one half <0.25)=0.0511  P(either half <0.25)~0.0996
+true SR 1.5: s.e.(half, 1200d)=0.459  P(one half <0.25)=0.0033  P(either half <0.25)~0.0065
+189-day forward window: s.e.=1.160  P(obs SR<0 | true 1.5)=0.098
+2016-01-04 to 2026-10-15: 10.78 years ~ 2716 trading days

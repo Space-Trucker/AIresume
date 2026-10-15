@@ -485,6 +485,25 @@ that no check uses.
   it loses nothing in expectation, and the decay that keeps its costs is stopped 97–99% of the time;
 - the Alpaca blockers that only the owner can clear (below).
 
+### Mistakes in the tests and the analysis
+
+Not every error was the goal's. These were in the tests or the side calculations, and each was found
+and fixed:
+- **A circular floor** (round 4). Version 4's 75% power floor was set after the results and described
+  as set first. The statistics review found it (S-2).
+- **A wrong noise scale** (round 5). The first drawdown simulation drew its fat-tailed noise with four
+  times the intended variance, which made the room rule look too weak (0.12% of years crossing the line).
+  It was fixed before any decision used it; with the rule, 0.025%.
+- **A check in the wrong order** (round 5). Moving G2's fidelity test after its profit check made the
+  test catch only about half the execution shortfalls in simulation. The original order was restored.
+- **A loose tolerance** (round 5). At 95% matched trades, KR1.6 allowed enough noise to fail an honest
+  implementation up to 11% of the time. It is now 98%.
+- **A probe that missed its flaw** (round 5). The new "excess return but a loss" probe first ended in a
+  profit, so it tested nothing. The probe was fixed, not the goal.
+
+The side calculations behind several decisions, and the scripts the circularity reviewer used, are in
+`evidence/`.
+
 ## Version 5: results
 
 All 585 checks pass (`results/goal.txt`): 170 with an outside answer and an outside bar, 70 consistency

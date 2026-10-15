@@ -1,0 +1,15 @@
+{
+ "M37": {
+  "defect": "the live test without its cap",
+  "caught": [
+   "GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (normal)",
+   "GT-4 the cap on the evidence makes a decay show sooner, as the goal says it does (normal)",
+   "GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (t4)",
+   "GT-4 the cap on the evidence makes a decay show sooner, as the goal says it does (t4)",
+   "GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (garch)",
+   "GT-4 the cap on the evidence makes a decay show sooner, as the goal says it does (garch)",
+   "GT-4 after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (ar1)",
+   "GT-4 the cap on the evidence makes a decay show sooner, as the goal says it does (ar1)"
+  ]
+ }
+}

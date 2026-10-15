@@ -1,0 +1,56 @@
+goal: ../../../../../tmp/claude-0/-home-user-AIresume/47ede29a-4b89-5f91-8fc4-0134e08832eb/scratchpad/budget/goal_n20.toml (version 3)
+
+GT-4 do the gates tell skill from luck: 1 failing (357s)
+  · simulation setup: volatility 0.20%/day (measured over 5 days), cost drag 0.017%/day, stress x1.5, 20 variants, G1 2400 days, G2 120 days, target Sharpe 1.5, 400 runs each
+  ✓ G1 lets the best of 20 no-edge variants through at most 1% (normal): 0.25% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (normal): G1 0.25% x G2 7/10 = 0.17%
+  ✓ G1 passes the targeted edge at least 80% of the time (normal): 84.5% of 400
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (normal): 278/338 = 82.2%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (normal): fails 0.0%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (normal): 95.5%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (normal): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (normal): 6.0%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (normal): halved 63%, stopped 73%
+  ✓ G1 lets the best of 20 no-edge variants through at most 1% (t4): 0.30% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (t4): G1 0.30% x G2 7/12 = 0.18%
+  ✓ G1 passes the targeted edge at least 80% of the time (t4): 81.0% of 400; a no-edge variant was chosen and passed 1 times
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (t4): 281/324 = 86.7%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (t4): fails 0.8%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (t4): 94.8%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (t4): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (t4): 5.8%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (t4): halved 63%, stopped 72%
+  ✓ G1 lets the best of 20 no-edge variants through at most 1% (garch): 0.10% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (garch): G1 0.10% x G2 3/4 = 0.07%
+  ✓ G1 passes the targeted edge at least 80% of the time (garch): 82.5% of 400
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (garch): 290/330 = 87.9%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (garch): fails 0.2%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (garch): 95.5%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (garch): 0.5%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (garch): 3.2%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (garch): halved 64%, stopped 75%
+  ✓ G1 lets the best of 20 no-edge variants through at most 1% (ar1): 0.82% of 3061
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (ar1): G1 0.82% x G2 10/25 = 0.33%
+  ✗ G1 passes the targeted edge at least 80% of the time (ar1): 75.8% of 400; a no-edge variant was chosen and passed 1 times
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (ar1): 254/303 = 83.8%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (ar1): fails 0.2%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (ar1): 94.2%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (ar1): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (ar1): 8.9%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (ar1): halved 61%, stopped 72%
+  · share passing G1 and G2, by true Sharpe (normal noise): 0.25: 0%, 0.5: 3%, 0.75: 8%, 1: 24%, 1.25: 49%, 1.5: 68%, 1.75: 83%, 2: 90%
+  · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 0.05
+  · days of track record to show a Sharpe 1 at 99% confidence: 1368 days
+  · days of track record to show a Sharpe 1.5 at 99% confidence: 610 days
+
+GT-8 outside view: pass (0s)
+  ✓ a strategy that passes G1 and G2 has a real edge with probability at least 80%: prior 5% with edges up to Sharpe 2; passes 35% of real edges and 0.33% of no-edge strategies (GT-4): 85%; prior 2%: 69%, prior 5%: 85%, prior 10%: 92%
+  ✓ a strategy that passes G1 and G2 is worth running (Sharpe 1 or more) with probability at least 70%: 78%
+  · the same with edges no larger than Sharpe 1.25: real 66%, worth running 40%
+  · chance the program reaches real money with a real edge, on these assumptions: some variant of 20 is real: at most 64%; it then passes both gates: 35%; together at most 22%. With no real edge, a false one reaches real money 0.33% of the time. Most likely nothing passes and the kill criteria stop the program
+  ✓ the goal says when to stop if nothing passes (research budget)
+  ✓ real money starts small and grows only with evidence
+  ✓ published edges count at most at what remains after publication (McLean-Pontiff: 42%): 0.42
+  ✓ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
+
+41/42 checks pass
