@@ -1,7 +1,7 @@
 """GT-3: cost feasibility by holding horizon. Oracles: published fee schedules and spread data for the
-cost of a round trip, volatility measured on real prices, and Grinold & Kahn's rule of thumb for how
-predictive a signal can plausibly be (information coefficient 0.05 good, 0.10 great, 0.15 too good to
-be true).
+cost of a round trip, volatility measured on real prices, and practitioners' labels for how
+predictive a signal can plausibly be (information coefficient 0.05 good and 0.10 very good, MSCI Barra;
+0.15 exceptional).
 
 The question: at each horizon the goal allows, how large must the average gross gain per trade be,
 as a fraction of the typical price move over that horizon, just to pay the costs? A signal with
@@ -87,16 +87,19 @@ def run(spec: dict) -> list[Check]:
     else:
         # a trade opens only when its expected gain is a multiple of its cost (the entry rule), so the
         # planned edge must clear that multiple, not just break even
+        add("the goal names the horizon the planned edge comes from", True, f"{edge_min:g} minutes")
+        # two models of the gain per trade, and neither decides the horizon: betting the sign of every
+        # forecast (gain = 0.8 x IC x move), and trading only the forecasts the entry rule admits, the
+        # tail of a joint-normal forecast (gain = IC x move x |z| for |z| above the entry threshold)
         entry = spec.get("activity", {}).get("entry_min_gain_to_cost", 1)
-        move = stock_d * math.sqrt(min(edge_min, 5 * 390) / 390)
-        ic = ic_needed(cost * entry, move)
-        add(f"at the planned edge's shortest horizon, the entry rule (gain at least {entry:g} x cost) needs at most "
-            "a 'great' signal (IC <= 0.10)", ic <= IC_GREAT,
-            f"{edge_min:g} min: move {move:.0f} bps, IC {ic:.3f} for {entry:g} x {cost:g} bps")
-        shortest = 390 * (cost * entry / (SIGN_BET_EFFICIENCY * IC_GREAT * stock_d)) ** 2
-        add("the shortest hold at which a 'great' signal meets the entry rule", None,
-            f"{shortest:.0f} minutes ({shortest / 390:.1f} trading days); break-even alone needs "
-            f"{390 * (cost / (SIGN_BET_EFFICIENCY * IC_GREAT * stock_d)) ** 2:.0f} minutes")
+        rows = []
+        for label, minutes in (("2.5 hours", 150), ("1 day", 390), ("2 days", 780), ("3 days", 1170)):
+            move = stock_d * math.sqrt(minutes / 390)
+            ic_sign = ic_needed(cost * entry, move)
+            z = cost * entry / (IC_GREAT * move)
+            share = 2 * (1 - stats.N01.cdf(z))
+            rows.append(f"{label}: every-forecast IC {ic_sign:.3f}; at IC 0.10, {share:.1%} of forecasts clear the entry rule")
+        add(f"the entry rule (gain at least {entry:g} x cost) by horizon, two models", None, "; ".join(rows))
 
     # market impact at the participation limit: the square-root law (impact per side about Y x daily
     # volatility x the square root of the position's share of daily volume, Y between 0.5 and 1;

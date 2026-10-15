@@ -5,6 +5,7 @@ of the S&P 500 and five large stocks, 1999-2018 (``data.py``)."""
 from __future__ import annotations
 
 import math
+import random
 
 from . import data, stats
 from .spec import Check, constraints, risk, rule
@@ -29,6 +30,12 @@ SHORT_GAP = ("yhoo", "2008-02-01", 0.495, "Yahoo, 1 February 2008, takeover bid"
 SVB_EVENT = "SVB, 10 March 2023"
 CONTAGION_EVENT = "regional banks, 13 March 2023"
 STRESS_MARKET_GAP = 0.13
+# adverse single-name jumps for the drawdown simulation, as a fraction of the position: NVIDIA's
+# opening gap, Yahoo's against a short, First Republic's fall on 13 March 2023, SVB's total loss
+JUMPS = (0.280, 0.495, 0.618, 1.0)
+# how often a stock gaps 20% or more overnight away from earnings: 2 of 14,953 stock-nights in the
+# five stocks' prices, rounded up to 1.5 in 10,000 (the research notes on overnight sizing)
+JUMP_RATE = 1.5e-4
 
 
 def _gap_on(name: str, day: str) -> float:
@@ -66,6 +73,43 @@ def residual_vol() -> float:
             _, _, resid = stats.ols_alpha_beta(y, x)
             vols.append(stats.moments(resid)[1])
     return stats.quantile(vols, 0.5)
+
+
+def drawdown_sim(r: dict, room: bool, years: int = 4000, seed: str = "gt2-drawdown") -> tuple[float, float]:
+    """Share of simulated years in which equity falls past max_drawdown_pct below its peak, and share
+    halted, with and without positions shrinking as the drawdown deepens. Each day: the book's
+    ordinary P&L at the volatility budget and the targeted Sharpe ratio (t-distributed, 4 degrees of
+    freedom), plus single-name jumps on the planned 15 overnight positions at the empirical rate, each
+    an adverse move drawn from the named events; the halt flattens the book once the drawdown reaches
+    max_drawdown_halt_pct. Starting drawdowns are spread from 0 to the halt, so the dangerous zone is
+    visited often."""
+    rng = random.Random(seed)
+    vol, halt, line = r["vol_target_daily_pct"] / 100, r["max_drawdown_halt_pct"], r["max_drawdown_pct"]
+    mu = 1.5 / math.sqrt(252) * vol
+    cap, margin = r.get("max_position_overnight_pct", 4) / 100, r.get("drawdown_room_margin_pct", 0.0)
+    worst = max(JUMPS)
+    crossed = halted = 0
+    for _ in range(years):
+        dd0 = rng.uniform(0.0, halt) / 100
+        equity, peak = 1.0 - dd0, 1.0
+        for _ in range(252):
+            dd = (1 - equity / peak) * 100
+            if dd >= halt:
+                halted += 1
+                break
+            size = cap if not room else max(0.0, min(cap, (line - margin - dd) / 100 / worst))
+            scale = size / cap
+            t = rng.gauss(0, 1) / math.sqrt(sum(rng.gauss(0, 1) ** 2 for _ in range(4)) / 2)   # t, 4 d.f., unit variance
+            pnl = scale * (mu + vol * t)
+            for _ in range(15):
+                if rng.random() < JUMP_RATE:
+                    pnl -= size * rng.choice(JUMPS)
+            equity *= 1 + pnl
+            peak = max(peak, equity)
+            if (1 - equity / peak) * 100 > line:
+                crossed += 1
+                break
+    return crossed / years, halted / years
 
 
 def capacity(r: dict, a: dict) -> tuple[int, str]:
@@ -157,9 +201,15 @@ def run(spec: dict) -> list[Check]:
                     f"{max(long_cap, short_cap):g}% x {jump:g}% = {one:.2f}% vs {daily:g}%")
                 j_in = r.get("jump_intraday_pct")
                 if j_in is not None and r.get("max_position_pct"):
-                    intraday = r["max_position_pct"] * j_in / 100
-                    add("one position through an intraday jump (a halt, two price bands) fits inside the daily loss limit",
-                        intraday <= daily, f"{r['max_position_pct']:g}% x {j_in:g}% = {intraday:.2f}% vs {daily:g}%")
+                    biggest = max(r["max_position_pct"], r.get("max_position_etf_pct", 0))
+                    intraday = biggest * j_in / 100
+                    add("one position through an intraday jump (several price bands) fits inside the daily loss limit",
+                        intraday <= daily, f"{biggest:g}% x {j_in:g}% = {intraday:.2f}% vs {daily:g}%")
+                if r.get("max_position_pct"):
+                    halt_gap = r["max_position_pct"] * jump / 100
+                    add("one stock through a news halt in the session, which reopens like an overnight gap, fits inside "
+                        "the daily loss limit", halt_gap <= daily,
+                        f"{r['max_position_pct']:g}% x {jump:g}% = {halt_gap:.2f}% vs {daily:g}%")
                 bound = r.get("max_jump_loss_pct")
                 if bound is not None:
                     total = max(long_cap, short_cap)
@@ -192,12 +242,13 @@ def run(spec: dict) -> list[Check]:
                                  r.get("max_overnight_net_pct", 0) * STRESS_MARKET_GAP,
                                  (r.get("max_position_pct") or 0) * (r.get("jump_intraday_pct") or 0) / 100])
                     margin = r.get("drawdown_room_margin_pct")
-                    allowed = worst if margin is None else max(0.0, min(worst, dd - margin - halt))
-                    add("the worst jump at a drawdown just short of the halt stays inside the drawdown limit",
-                        halt + allowed <= dd,
-                        f"{halt:g}% + {allowed:.2f}% = {halt + allowed:.2f}% vs {dd:g}%"
-                        + ("" if margin is not None else
-                           f" (the worst event the jump assumptions allow, {worst:.2f}%, at full size: positions must shrink as the drawdown deepens)"))
+                    room = margin is not None and "vol_target_daily_pct" in r
+                    with_rule, _ = drawdown_sim(r, room)
+                    without, _ = drawdown_sim(r, False)
+                    add("equity stays above the drawdown line in at least 99.9% of simulated years, jumps included",
+                        with_rule <= 0.001,
+                        f"crossed in {with_rule:.2%} of years{' with positions shrinking as the drawdown deepens' if room else ''}; "
+                        f"{without:.2%} at full size; the worst event the jump assumptions allow at full size is {worst:.2f}%")
                     if margin is not None:
                         gross, rt = r.get("max_gross_exposure_pct", 100), costs.get("round_trip_cost_bps", 0)
                         closing = gross * rt / 2 / 1e4 * costs.get("stress_cost_multiplier", 1)
@@ -218,6 +269,13 @@ def run(spec: dict) -> list[Check]:
             # level-2 breaker (13%), not the level-1 pause (7%)
             net = r.get("max_overnight_net_pct", r.get("max_overnight_gross_pct",
                                                         (long_cap or 0) * r.get("max_positions", 0)))
+            if "max_overnight_dollar_net_pct" in r or "max_overnight_net_pct" in r:
+                dollars = r.get("max_overnight_dollar_net_pct", r.get("max_overnight_gross_pct", 100))
+                bound = r.get("max_jump_loss_pct", daily)
+                add("the overnight book through a 13% gap with every beta at 1 stays within the jump-loss bound",
+                    dollars * STRESS_MARKET_GAP <= bound,
+                    f"{dollars:g}% {'dollar net' if 'max_overnight_dollar_net_pct' in r else 'gross'} x 13% = "
+                    f"{dollars * STRESS_MARKET_GAP:.2f}% vs {bound:g}%: beta-adjusted limits trust betas measured in calmer times")
             if daily is not None:
                 crash = net * STRESS_MARKET_GAP
                 add("the overnight book through a 13% market-wide gap fits inside the daily loss limit", crash <= daily,
@@ -335,7 +393,7 @@ def run(spec: dict) -> list[Check]:
     if not r.get("max_positions"):
         need = ("rotation_margin_to_cost", "rotation_min_hold_minutes", "max_rotations_per_day", "max_rotation_share")
         missing = [k for k in need if k not in a] + \
-                  [f"G1 {k}" for k in ("min_rotations_judged",) if k not in rule(spec, "G1")]
+                  [f"G1 {k}" for k in ("rotation_gain_confidence",) if k not in rule(spec, "G1")]
         add("a full book is resolved by a stated rotation rule", not missing,
             "unspecified: " + ", ".join(missing) if missing else "")
         if not missing:

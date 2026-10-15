@@ -52,7 +52,8 @@ class Record:
     rerun: list[float] | None = None           # daily excess returns of the frozen G1 strategy rerun on the paper days
     rerun_match: float | None = None           # share of the rerun's round trips that paper made too
     rotations: int = 0                         # times a held position was replaced by a candidate
-    rotation_values: list[float] | None = None  # each rotation's realized value: new result less the replaced one's forgone result
+    rotation_gain: list[float] | None = None   # daily net return with rotation less the same strategy without it
+    regime: list[int] | None = None            # 1 on the more turbulent days (above the median VIX), 0 on the calmer
     # what the strategy did, for the risk rules
     every_position_has_stop: bool = True
     max_risk_per_trade_pct: float = 0.0
@@ -64,12 +65,54 @@ class Record:
     max_overnight_short_pct: float = 0.0       # largest short position held overnight
     max_overnight_gross_pct: float = 0.0
     max_overnight_net_pct: float = 0.0         # beta-adjusted, long minus short
+    max_overnight_dollar_net_pct: float = 0.0  # in dollars, long minus short
     max_holding_days: float = 0.0
     notes: list[str] = field(default_factory=list)
 
 
 def _series(rec: Record, metric: str) -> list[float]:
     return rec.excess if metric == "excess" and rec.excess is not None else rec.daily
+
+
+def regime_proxy(xs: list[float], window: int = 20) -> list[int]:
+    """Where no VIX is recorded: 1 on days whose trailing volatility (the record's own, over
+    ``window`` days) is above its median, 0 otherwise. The first days use what they have."""
+    vols = []
+    for i in range(len(xs)):
+        w = xs[max(0, i - window + 1):i + 1]
+        m = sum(w) / len(w)
+        vols.append(sum((x - m) ** 2 for x in w) / len(w))
+    cut = sorted(vols)[len(vols) // 2]
+    return [1 if v > cut else 0 for v in vols]
+
+
+def hac_lower(xs: list[float], confidence: float, lags: int) -> tuple[float, float]:
+    """(mean, one-sided lower confidence bound of the mean), the variance widened for autocorrelation
+    (Newey-West with ``lags`` lags)."""
+    n = len(xs)
+    m, sd, _, _ = stats.moments(xs)
+    se = sd * math.sqrt(stats.autocorr_factor(xs, lags) / n) if n > 1 else math.inf
+    return m, m - stats.N01.inv_cdf(confidence) * se
+
+
+def lag_audit(now: list[float], lagged: list[float], alpha: float = 0.01) -> tuple[bool, str]:
+    """The lag audit: the same strategy with every input one bar older. A leak collapses the Sharpe
+    ratio, misaligned data raises it. Fails when, beyond the paired standard error at ``alpha``, the
+    lagged Sharpe ratio falls below half the original or rises more than 10% above it."""
+    n = min(len(now), len(lagged))
+    a, b = now[:n], lagged[:n]
+    s_a, s_b = stats.sharpe(a), stats.sharpe(b)
+    ma, sa, _, _ = stats.moments(a)
+    mb, sb, _, _ = stats.moments(b)
+    cov = sum((x - ma) * (y - mb) for x, y in zip(a, b)) / max(n - 1, 1)
+    rho = cov / (sa * sb) if sa > 0 and sb > 0 else 0.0
+    se = math.sqrt(max(2 * (1 - rho), 1e-12) / n)          # paired difference of two daily Sharpe ratios
+    z = stats.N01.inv_cdf(1 - alpha)
+    if s_a / 2 - s_b > z * se:
+        return False, f"lagged Sharpe {stats.annualize_sr(s_b):.2f} far below half of {stats.annualize_sr(s_a):.2f}: a leak"
+    if s_b - 1.1 * s_a > z * se:
+        return False, f"lagged Sharpe {stats.annualize_sr(s_b):.2f} far above {stats.annualize_sr(s_a):.2f}: misaligned data"
+    return True, "clean"
 
 
 def _fills(rule: dict, rec: Record) -> str | None:
@@ -108,7 +151,7 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
         if ceiling is not None and stats.annualize_sr(sr) > ceiling and not rec.audit_passed:
             return False, f"Sharpe {stats.annualize_sr(sr):.1f} above {ceiling}: audit for leaks first"
         if rule.get("require_lag_audit") and rec.lag_audit_ok is not True:
-            return False, "no clean lag audit" if rec.lag_audit_ok is None else "results improve with inputs lagged: a leak"
+            return False, "no clean lag audit" if rec.lag_audit_ok is None else "the lag audit failed: a leak, or misaligned data"
         if "sr_min" in rule and stats.annualize_sr(sr) < rule["sr_min"]:
             return False, f"Sharpe {stats.annualize_sr(sr):.2f} < {rule['sr_min']}"
         if "min_sr_each_half" in rule:
@@ -118,6 +161,12 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
                     return False, f"Sharpe below {rule['min_sr_each_half']} in one half of the history"
         if rule.get("require_net_profit") and sum(rec.daily) <= 0:
             return False, "the history does not make money after costs"
+        if rule.get("require_positive_by_regime"):
+            regime = rec.regime if rec.regime is not None and len(rec.regime) == n else regime_proxy(series)
+            for flag, name in ((0, "calmer"), (1, "more turbulent")):
+                part = [x for x, r in zip(series, regime) if r == flag]
+                if part and sum(part) <= 0:
+                    return False, f"no excess return in the {name} half of the days"
         if rec.n_trials is None:
             return False, "the number of variants evaluated is not stated"
         trials = max(rec.n_trials, rule.get("min_trials", 1))
@@ -130,17 +179,15 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
                 return False, "no results with stressed costs"
             if stats.annualize_sr(stats.sharpe(rec.stressed)) < rule["stress_sr_min"]:
                 return False, "fails with costs raised to the stress level"
-        if "min_rotations_judged" in rule and rec.rotations > 0:
-            values = rec.rotation_values
-            if values is None:
-                return False, "rotations not followed to the replaced positions' planned exits"
-            if len(values) < rule["min_rotations_judged"]:
-                return False, f"{len(values)} rotations < {rule['min_rotations_judged']}: too few to judge; run without rotation"
-            m, sd, _, _ = stats.moments(values)
-            low = m - stats.N01.inv_cdf(rule.get("rotation_confidence", 0.5)) * sd / math.sqrt(len(values))
+        if "rotation_gain_confidence" in rule and rec.rotations > 0:
+            # rotation is an add-on judged against the same strategy without it; the strategy itself
+            # can still pass without rotation
+            if rec.rotation_gain is None:
+                return False, "a rotating strategy without its no-rotation twin: ship and judge the twin"
+            m, low = hac_lower(rec.rotation_gain, rule["rotation_gain_confidence"], rule.get("autocorr_lags", 0))
             if low <= 0:
-                return False, (f"rotations don't clearly pay: mean {m:+.5f} of equity each, lower bound {low:+.5f}; "
-                               "run without rotation")
+                return False, (f"rotation doesn't clearly pay ({m * 1e4:+.2f} bp a day, lower bound {low * 1e4:+.2f}): "
+                               "ship and judge the strategy without rotation")
         return True, f"DSR {d:.3f}"
     if kind == "paper":
         series = _series(rec, rule.get("metric", "excess"))
@@ -162,25 +209,27 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
             return False, "drawdown limit"
         if (why := _fills(rule, rec)) is not None:
             return False, why
-        if "fidelity_margin_sr" in rule:
-            if rec.rerun is None or rec.rerun_match is None or len(rec.rerun) != n:
-                return False, "no rerun of the frozen G1 strategy to compare with"
-            if rec.rerun_match < rule.get("min_trade_match", 0.0):
-                return False, f"only {rec.rerun_match:.0%} of the rerun's trades made on paper"
-            gap = [p - q for p, q in zip(series, rec.rerun)]
-            gm, gsd, _, _ = stats.moments(gap)
-            vol = stats.moments(rec.rerun)[1]
-            margin = rule["fidelity_margin_sr"] / math.sqrt(252) * vol
-            if gsd > 0:
-                g_eff = n / stats.autocorr_factor(gap, rule.get("autocorr_lags", 0))
-                z = (gm + margin) / (gsd / math.sqrt(g_eff))
-                if stats.N01.cdf(z) < rule.get("fidelity_alpha", 0.05):
-                    return False, f"paper falls short of the rerun (z {z:.2f})"
         m = sum(series) / n
         if m <= 0:
             return False, "paper excess return not positive"
         if rule.get("require_net_profit") and sum(daily) <= 0:
             return False, "the paper account did not make money"
+        if "fidelity_noninferiority_sr" in rule:
+            # non-inferiority: paper must show, with confidence, that it trails the rerun of the frozen
+            # strategy by less than the margin; noise makes that harder to show, so G2 runs on (up to
+            # max_days) until it is shown or the days run out
+            if rec.rerun is None or rec.rerun_match is None or len(rec.rerun) != n:
+                return False, "no rerun of the frozen G1 strategy to compare with"
+            if rec.rerun_match < rule.get("min_trade_match", 0.0):
+                return False, f"only {rec.rerun_match:.0%} of trades matched between paper and the rerun"
+            gap = [p - q for p, q in zip(series, rec.rerun)]
+            vol = stats.moments(rec.rerun)[1]
+            margin = rule["fidelity_noninferiority_sr"] / math.sqrt(252) * vol
+            gm, low = hac_lower(gap, 1 - rule.get("fidelity_alpha", 0.05), rule.get("autocorr_lags", 0))
+            if low <= -margin:
+                if n < rule.get("max_days", n):
+                    return None, f"continue: fidelity not yet shown (lower bound {low / vol * math.sqrt(252):+.2f} Sharpe)"
+                return False, f"paper may trail the rerun by more than {rule['fidelity_noninferiority_sr']:g} Sharpe"
         return True, f"excess {m * 252:+.2%} a year"
     raise ValueError(f"unknown gate rule kind {kind!r}")
 
@@ -232,7 +281,8 @@ def risk_rule_violations(risk: dict, rec: Record) -> list[str]:
               ("max_overnight_long_pct", rec.max_overnight_long_pct, "overnight long position"),
               ("max_overnight_short_pct", rec.max_overnight_short_pct, "overnight short position"),
               ("max_overnight_gross_pct", rec.max_overnight_gross_pct, "overnight gross exposure"),
-              ("max_overnight_net_pct", rec.max_overnight_net_pct, "overnight net exposure")]
+              ("max_overnight_net_pct", rec.max_overnight_net_pct, "overnight net exposure"),
+              ("max_overnight_dollar_net_pct", rec.max_overnight_dollar_net_pct, "overnight dollar net exposure")]
     for key, observed, what in checks:
         if key in risk and observed > risk[key] + 1e-9:
             out.append(f"{what} {observed:g}% > {risk[key]:g}%")

@@ -131,6 +131,16 @@ A test fails the goal when the goal would let a no-edge strategy through too oft
 real edge too often, contradicts itself, cannot be measured, or misses a control the checklists
 require. The goal is revised until every test passes, and `REPORT.md` records each revision.
 
+Three rules keep that loop honest, added after the review of version 4 found them broken:
+- **A threshold is set before the run it judges.** When the goal is changed to pass a test, the test's
+  bound stays where it was; when a bound itself changes, `REPORT.md` says so and why, and a bound set
+  after seeing a result is reported as such. Version 4's 75% power floor broke this rule.
+- **A test simulates the rule as the goal writes it.** GT-4 judges every condition G1 and G2 impose,
+  including the ones that make passing harder, or it says which it leaves out.
+- **A check that can't fail is not evidence.** A consistency check that passes whenever a setting exists
+  is replaced by a simulation that can fail, and each gaming probe uses noise of a realistic size.
+  The suite's sensitivity is itself tested: deliberately broken copies of the goal must fail it.
+
 ## Sources
 
 - ISO/IEC/IEEE 29148:2018, *Systems and software engineering — Life cycle processes — Requirements

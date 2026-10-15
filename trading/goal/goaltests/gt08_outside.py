@@ -39,6 +39,15 @@ def _average(curve: dict, lo: float, hi: float) -> float:
     return sum(at(lo + (hi - lo) * (i + 0.5) / steps) for i in range(steps)) / steps
 
 
+def _point(curve: dict, x: float) -> float:
+    """GT-4's pass rate at one true Sharpe ratio (linear between points; flat beyond the last)."""
+    pts = sorted([(0.0, 0.0)] + list(curve.items()))
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        if x0 <= x <= x1:
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    return pts[-1][1]
+
+
 def run(spec: dict, ctx: dict | None = None) -> list[Check]:
     out: list[Check] = []
     add = lambda name, ok, detail="": out.append(Check(TEST, name, ok, detail))  # noqa: E731
@@ -70,12 +79,39 @@ def run(spec: dict, ctx: dict | None = None) -> list[Check]:
             add(f"the same with edges no larger than Sharpe {harsh:g}", None,
                 f"real {posterior(prior, ph, false_pass):.0%}, worth running "
                 f"{prior * hw / (prior * ph + (1 - prior) * false_pass):.0%}")
+        # the 5% prior read two ways, each applied consistently: per distinct idea (the budget's
+        # minimum number of distinct ideas, each real with the prior's chance), or per program (the
+        # outside view's base rates are rates per trader, so per program)
         trials = ev.get("assumed_trials", 10)
-        any_real = 1 - (1 - prior) ** trials
-        add("chance the program reaches real money with a real edge, on these assumptions", None,
-            f"some variant of {trials} is real: at most {any_real:.0%}; it then passes both gates: {power_all:.0%}; "
-            f"together at most {any_real * power_all:.0%}. With no real edge, a false one reaches real money "
-            f"{false_pass:.2%} of the time. Most likely nothing passes and the kill criteria stop the program")
+        kill = spec.get("kill_criteria", {})
+        ideas = max(1, kill.get("max_variants", trials) // max(1, kill.get("max_variants_per_idea", 1)))
+        per_idea = 1 - (1 - prior * power_all) ** ideas
+        per_program = prior * power_all
+        add("chance the program reaches real money with a real edge, both readings of the prior", None,
+            f"per idea, with at least {ideas} distinct ideas: about {per_idea:.0%}; per program, as the outside "
+            f"view's base rates are measured: about {per_program:.1%}. With no real edge, a false one reaches real "
+            f"money {false_pass:.2%} of the time. Most likely nothing passes and the kill criteria stop the program")
+        # hindsight: the builder already knows the history, which can act like variants nobody counted
+        per_variant = 1 - (1 - gt4.get("fp1", false_pass)) ** (1 / max(trials, 1))
+        p2_null = gt4.get("p2_null", 0.5)
+        rows = []
+        for uncounted in (100, 1000):
+            fp_m = (1 - (1 - per_variant) ** (trials + uncounted)) * p2_null
+            rows.append(f"{uncounted} uncounted: a false edge reaches real money {fp_m:.1%}, "
+                        f"a passing strategy is real {posterior(prior, power_all, max(fp_m, 1e-4)):.0%}")
+        add("if hindsight acts like variants nobody counted (the claims above assume none)", None, "; ".join(rows))
+        # other priors over the size of a real edge: exponential, so small edges are commoner
+        import math as _m
+        for mean in (0.75, 0.5):
+            weights = [(_m.exp(-x / mean) / mean) for x in [(i + 0.5) * 0.01 for i in range(400)]]
+            pts = [(i + 0.5) * 0.01 for i in range(400)]
+            norm = sum(weights)
+            p_all = sum(w * _point(curve, x) for w, x in zip(weights, pts)) / norm
+            w_worth = sum(w for w, x in zip(weights, pts) if x >= worth) / norm
+            p_worth = (sum(w * _point(curve, x) for w, x in zip(weights, pts) if x >= worth) / norm)
+            add(f"with real edges exponential, mean Sharpe {mean:g} ({w_worth:.0%} of them worth running)", None,
+                f"a passing strategy is real {posterior(prior, p_all, false_pass):.0%}, worth running "
+                f"{prior * p_worth / (prior * p_all + (1 - prior) * false_pass):.0%}")
     else:
         if gt4:
             false_pass, power, source = max(gt4["program"], 1e-4), gt4["power1"] * gt4["power2"], "measured by GT-4"

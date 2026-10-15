@@ -12,8 +12,8 @@ For each gate rule as the goal writes it:
   targeted edge, and how fast does the live test stop one whose edge is gone?
 Under four noise shapes: normal, fat tails, volatility clustering, autocorrelation. When the goal
 measures its volatility budget over 5-day periods, positions are sized so 5-day volatility meets it.
-Under normal noise it also maps how often a strategy passes both gates for a range of true edges,
-which GT-8 weighs by the goal's prior."""
+Under autocorrelated noise, the shape that binds, it also maps how often a strategy passes both
+gates for a range of true edges, which GT-8 weighs by the goal's prior."""
 from __future__ import annotations
 
 import math
@@ -28,6 +28,7 @@ TEST = "GT-4"
 V1_DEFAULTS = {"vol_daily": 0.010, "vol_days": 1, "drag_daily": 0.0007, "stress_mult": 2.0, "trials": 10,
                "oos_days": 252, "paper_days": 20, "paper_trades": 300, "target_sr": 2.0}
 CURVE_SRS = (0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)
+CURVE_MODEL = "ar1"   # the curve GT-8 weighs uses the noise shape that binds (autocorrelated P&L)
 
 
 def _setup(spec: dict) -> dict:
@@ -44,12 +45,14 @@ def _setup(spec: dict) -> dict:
     s["oos_days"] = g1.get("min_days", s["oos_days"])
     s["paper_days"] = g2.get("min_days", s["paper_days"])
     s["extend_days"] = g2.get("extend_days", 0)
+    s["max_paper_days"] = max(g2.get("max_days", 0), s["paper_days"] + s["extend_days"])
     s["paper_trades"] = max(g2.get("min_trades", 0), g2.get("min_risk_trades", 0), s["paper_trades"])
     s["target_sr"] = ret.get("target_net_excess_sharpe", s["target_sr"])
     s["min_sr"] = ret.get("min_net_excess_sharpe", None)
     s["max_false_pass_g1"] = ev.get("max_false_pass_g1", 0.05)
     s["max_false_real_money"] = ev.get("max_false_real_money", 0.01)
-    s["min_power"] = ev.get("min_power", 0.80)
+    s["min_power"] = ev.get("min_power")
+    s["min_joint_power"] = ev.get("min_joint_power")
     s["max_false_halt"] = ev.get("max_false_halt_per_year", 0.10)
     s["reps"] = ev.get("simulation_reps", 400)
     s["halt"] = r.get("max_drawdown_halt_pct", 10.0)
@@ -88,14 +91,27 @@ def _g1_record(s: dict, mus: list[float], sigma: float, model: str,
 def _g2_record(s: dict, mu: float, sigma: float, model: str, rng: random.Random,
                shortfall_sr: float = 0.0) -> gates.Record:
     """Paper trading: the frozen strategy's returns on the paper days (what a rerun shows), plus
-    implementation noise, minus any execution shortfall, in Sharpe units a year."""
-    n = s["paper_days"] + s["extend_days"]
+    implementation noise, minus any execution shortfall, in Sharpe units a year. Long enough for G2
+    to run on to its longest; ``_g2`` judges it at the minimum first."""
+    n = s["max_paper_days"]
     strategy = sim.returns(n, mu, sigma, model, rng)
     cut = shortfall_sr / math.sqrt(252) * sigma
     paper = [x + s["impl_noise"] * sigma * rng.gauss(0, 1) - cut for x in strategy]
     return gates.Record(daily=paper, excess=paper, trades=s["paper_trades"], risk_trades=s["paper_trades"],
                         days_to_min_trades=s["paper_days"], rerun=strategy, rerun_match=0.98,
                         conservative_fills=True)
+
+
+def _g2(g2: dict, s: dict, rec: gates.Record) -> tuple[bool | None, str]:
+    """G2 as the goal runs it: judged after its minimum days; when the rule says to continue (the
+    fidelity test not yet decisive), judged again at its longest."""
+    first = s["paper_days"] + s["extend_days"]
+    cut = lambda k: gates.Record(**{**rec.__dict__, "daily": rec.daily[:k], "excess": rec.excess[:k],  # noqa: E731
+                                    "rerun": rec.rerun[:k] if rec.rerun is not None else None})
+    ok, why = gates.evaluate(g2, cut(first))
+    if ok is None and len(rec.daily) > first:
+        ok, why = gates.evaluate(g2, rec)
+    return bool(ok), why
 
 
 def _one_model(args: tuple) -> dict:
@@ -113,7 +129,7 @@ def _one_model(args: tuple) -> dict:
         rec, _ = _g1_record(s, null, sigma, model, rng)
         if gates.evaluate(g1, rec)[0]:
             passed += 1
-            reached += bool(gates.evaluate(g2, _g2_record(s, 0.0, sigma, model, rng))[0])
+            reached += _g2(g2, s, _g2_record(s, 0.0, sigma, model, rng))[0]
     # one variant has the targeted edge; power counts passes of that one
     real = [mu1] + [0.0] * (s["trials"] - 1)
     found = wrong = confirmed = 0
@@ -122,16 +138,16 @@ def _one_model(args: tuple) -> dict:
         if gates.evaluate(g1, rec)[0]:
             if chosen == 0:
                 found += 1
-                confirmed += bool(gates.evaluate(g2, _g2_record(s, mu1, sigma, model, rng))[0])
+                confirmed += _g2(g2, s, _g2_record(s, mu1, sigma, model, rng))[0]
             else:
                 wrong += 1
     out = {"model": model, "tries": tries, "fp1": passed / tries, "passed": passed, "reached": reached,
            "reps": reps, "pw1": found / reps, "wrong": wrong, "found": found, "confirmed": confirmed,
            "pw2": confirmed / found if found else 0.0}
     # G2's fidelity test: an honest implementation, and one that loses Sharpe units to execution
-    if "fidelity_margin_sr" in g2:
+    if "fidelity_margin_sr" in g2 or "fidelity_noninferiority_sr" in g2:
         def fidelity_fails(cut: float) -> bool:
-            ok, why = gates.evaluate(g2, _g2_record(s, mu1, sigma, model, rng, cut))
+            ok, why = _g2(g2, s, _g2_record(s, mu1, sigma, model, rng, cut))
             return not ok and "rerun" in why
         out["fid_false"] = sum(fidelity_fails(0.0) for _ in range(reps)) / reps
         out["fid_power"] = sum(fidelity_fails(s["fidelity_detect_sr"]) for _ in range(reps)) / reps
@@ -149,24 +165,46 @@ def _one_model(args: tuple) -> dict:
             dead_halve += any(a in ("halve", "stop") and d <= 252 for d, a in acts)
         out.update(live_false_stop=false_stop / live_reps, dead_stop3=dead_stop / live_reps,
                    dead_halve1=dead_halve / live_reps)
+        # capital: 10% of the intended at first, doubling at most every 60 days while the latest look
+        # allows growth, halving on a look at or below the halving line; how often does a dead strategy
+        # reach full capital within 3 years, and how often is the targeted edge halved within a year?
+        def capital(sr: float) -> tuple[bool, bool]:
+            acts = live(sr, 3)
+            cap, last, halved_1y, full = 0.1, "hold", False, False
+            by_day = dict(acts)
+            for day in range(1, 252 * 3 + 1):
+                if day in by_day:
+                    last = by_day[day]
+                    if last == "stop":
+                        return full, halved_1y
+                    if last == "halve":
+                        cap /= 2
+                        halved_1y |= day <= 252
+                if day % 60 == 0 and last == "grow":
+                    cap = min(1.0, cap * 2)
+                full |= cap >= 1.0
+            return full, halved_1y
+        dead_full = sum(capital(0.0)[0] for _ in range(live_reps)) / live_reps
+        target_halved = sum(capital(s["target_sr"])[1] for _ in range(live_reps)) / live_reps
+        out.update(dead_full3=dead_full, target_halved1=target_halved)
     return out
 
 
 def _curve(args: tuple) -> dict:
-    """How often a strategy passes both gates, by true edge (normal noise): one real variant among
+    """How often a strategy passes both gates, by true edge (autocorrelated noise): one real variant among
     the budget, the best taken to G1, and if it passes, to G2."""
     s, g1, g2 = args
     rng = random.Random("gt4-curve")
-    sigma = _sigma(s, "normal")
+    sigma = _sigma(s, CURVE_MODEL)
     reps = max(100, s["reps"] // 2)
     out = {}
     for sr in CURVE_SRS:
         mu = stats.daily_sr(sr) * sigma
         both = 0
         for _ in range(reps):
-            rec, chosen = _g1_record(s, [mu] + [0.0] * (s["trials"] - 1), sigma, "normal", rng)
+            rec, chosen = _g1_record(s, [mu] + [0.0] * (s["trials"] - 1), sigma, CURVE_MODEL, rng)
             if gates.evaluate(g1, rec)[0]:
-                both += bool(gates.evaluate(g2, _g2_record(s, mu if chosen == 0 else 0.0, sigma, "normal", rng))[0])
+                both += _g2(g2, s, _g2_record(s, mu if chosen == 0 else 0.0, sigma, CURVE_MODEL, rng))[0]
         out[sr] = both / reps
     return out
 
@@ -195,12 +233,24 @@ def run(spec: dict, ctx: dict | None = None) -> list[Check]:
         add(f"a no-edge strategy reaches real money at most {s['max_false_real_money']:.1%} of the time ({model})",
             program <= s["max_false_real_money"],
             f"G1 {res['fp1']:.2%} x G2 {res['reached']}/{res['passed']} = {program:.2%}")
-        add(f"G1 passes the targeted edge at least {s['min_power']:.0%} of the time ({model})",
-            res["pw1"] >= s["min_power"],
-            f"{res['pw1']:.1%} of {res['reps']}" + (f"; a no-edge variant was chosen and passed {res['wrong']} times"
-                                                    if res["wrong"] else ""))
-        add(f"G2 passes the targeted edge at least {s['min_power']:.0%} of the time after G1 ({model})",
-            res["pw2"] >= s["min_power"], f"{res['confirmed']}/{res['found']} = {res['pw2']:.1%}")
+        def interval(k: int, n: int) -> str:
+            p = k / n if n else 0.0
+            h = 1.96 * math.sqrt(p * (1 - p) / n) if n else 0.0
+            return f"{p:.1%} (95% interval {max(0.0, p - h):.1%} to {min(1.0, p + h):.1%})"
+        if s["min_power"] is not None:      # a goal that sets a floor for each gate
+            add(f"G1 passes the targeted edge at least {s['min_power']:.0%} of the time ({model})",
+                res["pw1"] >= s["min_power"],
+                f"{res['pw1']:.1%} of {res['reps']}" + (f"; a no-edge variant was chosen and passed {res['wrong']} times"
+                                                        if res["wrong"] else ""))
+            add(f"G2 passes the targeted edge at least {s['min_power']:.0%} of the time after G1 ({model})",
+                res["pw2"] >= s["min_power"], f"{res['confirmed']}/{res['found']} = {res['pw2']:.1%}")
+        else:
+            add(f"G1 and G2 power at the targeted edge, reported ({model})", None,
+                f"G1 {interval(res['found'], res['reps'])}; G2 after G1 {interval(res['confirmed'], res['found'])}")
+        if s["min_joint_power"] is not None:
+            joint = res["confirmed"] / res["reps"]
+            add(f"a real edge at the target passes both gates more often than not ({model})",
+                joint > s["min_joint_power"], interval(res["confirmed"], res["reps"]))
         if "fid_false" in res:
             add(f"G2's fidelity test passes an honest implementation at least 95% of the time ({model})",
                 res["fid_false"] <= 0.05, f"fails {res['fid_false']:.1%}")
@@ -216,14 +266,19 @@ def run(spec: dict, ctx: dict | None = None) -> list[Check]:
                 f"and stops it within 3 years at least {s['min_dead_stop_3y']:.0%} ({model})",
                 res["dead_halve1"] >= s["min_dead_halve_1y"] and res["dead_stop3"] >= s["min_dead_stop_3y"],
                 f"halved {res['dead_halve1']:.0%}, stopped {res['dead_stop3']:.0%}")
+            if "dead_full3" in res:
+                add(f"capital under the live test, reported ({model})", None,
+                    f"a dead strategy reaches full capital within 3 years {res['dead_full3']:.0%} of the time; "
+                    f"the targeted edge is halved within a year {res['target_halved1']:.0%} of the time")
         if summary:
             summary["program"] = max(summary["program"], program)
             summary["power1"] = min(summary["power1"], res["pw1"])
             summary["power2"] = min(summary["power2"], res["pw2"])
             summary["p2_null"] = max(summary.get("p2_null", 0.0), p2)
+            summary["fp1"] = max(summary.get("fp1", 0.0), res["fp1"])
     if summary:
         summary["curve"] = curve
-    add("share passing G1 and G2, by true Sharpe (normal noise)", None,
+    add(f"share passing G1 and G2, by true Sharpe ({CURVE_MODEL} noise)", None,
         ", ".join(f"{k:g}: {v:.0%}" for k, v in curve.items()))
     if s["daily_limit"]:
         rng = random.Random("gt4-daily")

@@ -36,7 +36,7 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     # a paper record: what paper trading shows, with a rerun of the frozen strategy that matches it
     base = dict(trades=trades, risk_trades=trades, days_to_min_trades=d2, rerun_match=0.98, conservative_fills=True,
                 max_risk_per_trade_pct=0.25, max_risk_per_position_pct=0.25, max_open_risk_pct=1.0, max_gross_pct=50,
-                max_position_pct=10, max_holding_days=1)
+                max_position_pct=4, max_holding_days=1)
     paper = lambda p, **kw: gates.Record(daily=p, excess=p, rerun=list(p), **{**base, **kw})  # noqa: E731
     out = []
     p = good(d2)
@@ -52,7 +52,7 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     beyond = [n - sum(noise) / len(noise) - 0.0002 for n in noise]         # nothing beyond the market but costs
     out.append(("riding the market", "fully long in a rising market: profit with no edge", "G2",
                 gates.Record(daily=[m + b for m, b in zip(mkt, beyond)], excess=beyond, rerun=list(beyond),
-                             **{**base, "max_gross_pct": 100, "max_position_pct": 10})))
+                             **{**base, "max_gross_pct": 100, "max_position_pct": 4})))
     p = good(d2)
     out.append(("padding the trade count", "a few lucky trades plus hundreds of scratch trades", "G2",
                 paper(p, risk_trades=20)))
@@ -71,13 +71,27 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     out.append(("big overnight positions", "holds full-size positions overnight, where a gap jumps past the stop",
                 "G2", paper(p, max_overnight_long_pct=20, max_position_pct=20, max_overnight_gross_pct=60,
                             max_overnight_net_pct=20, max_holding_days=3)))
+    # churning, at realistic noise: about one rotation every two days, each a 4% position whose result
+    # over the rest of its hold differs from the replaced one's by about 356 bps (168 bps a day over
+    # 4.5 days), so the daily difference in returns has a standard deviation of about 10 bp of equity;
+    # each rotation loses 2 bp of equity on average (two costs on inflated forecasts)
     churn = _lucky(d1, 3.0, vol, rng)
-    rot = [0.0002 * rng.gauss(0, 1) for _ in range(400)]
-    rot = [v - sum(rot) / len(rot) - 0.00002 for v in rot]                 # each switch loses 0.2 bp of equity
+    gain = [(-0.0002 + 0.0014 * rng.gauss(0, 1)) if rng.random() < 0.5 else 0.0 for _ in churn]
     out.append(("churning", "replaces held positions whenever a fresh forecast looks higher, on forecasts "
                 "inflated by picking the highest of many: each switch pays two costs and loses on average", "G1",
                 gates.Record(daily=churn, excess=churn, trades=5000, n_trials=1, lag_audit_ok=True, stressed=churn,
-                             conservative_fills=True, rotations=len(rot), rotation_values=rot)))
+                             conservative_fills=True, rotations=d1 // 2, rotation_gain=gain)))
+    # a subtle leak: the signal sees part of the next bar's return, enough for a Sharpe of about 2.5,
+    # below the ceiling that triggers an audit; the lag audit, run as the goal defines it, must catch it
+    nxt = [rng.gauss(0, vol) for _ in range(d1 + 1)]
+    signal_now = [nxt[t + 1] + 6 * vol * rng.gauss(0, 1) for t in range(d1)]
+    leaky = [(1 if signal_now[t] > 0 else -1) * nxt[t + 1] for t in range(d1)]
+    lagged = [(1 if signal_now[t - 1] > 0 else -1) * nxt[t + 1] if t else 0.0 for t in range(d1)]
+    audit_ok, _ = gates.lag_audit(leaky, lagged)
+    out.append(("a subtle look-ahead leak", f"sees part of tomorrow's return: a Sharpe of "
+                f"{stats.annualize_sr(stats.sharpe(leaky)):.1f}, below the audit ceiling", "G1",
+                gates.Record(daily=leaky, excess=leaky, trades=5000, n_trials=1, stressed=leaky,
+                             conservative_fills=True, lag_audit_ok=audit_ok)))
     p = good(d2)
     out.append(("big overnight shorts", "holds 10% short positions overnight, where a takeover bid gaps one up "
                 "50% (Yahoo, 1 February 2008)", "G2",
