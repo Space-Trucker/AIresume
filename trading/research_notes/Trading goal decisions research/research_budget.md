@@ -52,10 +52,10 @@ No source found sets a research time budget. Treat 9 months as staged go/no-go c
 
      | Counted trials N | Sharpe needed for DSR ≥ 0.95 | Chance of finding a real edge | Chance of a false pass |
      |---|---|---|---|
-     | 10 | 1.04 | 0.38 | <0.6% |
-     | 20 | 1.15 | 0.58 | <0.6% |
-     | 30 | 1.21 | 0.71 | <0.6% |
-     | 50 | 1.27 | 0.86 | <0.6% |
+     | 10 | 1.04 | 0.38 | 0.59% |
+     | 20 | 1.15 | 0.58 | 0.35% |
+     | 30 | 1.21 | 0.71 | 0.27% |
+     | 50 | 1.27 | 0.86 | 0.22% |
 
      - The share of passes that are real (positive predictive value) is ≥98.7% throughout.
      - When every trial is counted, the false-pass rate *falls* as N rises.
@@ -208,7 +208,7 @@ At T = 2,400 daily observations, the standard error of an annualized Sharpe rati
 - **Hurdle.** The observed net Sharpe needed for DSR ≥ 0.95 rises only from 1.04 (N = 10) to 1.15 (20), 1.27 (50) and 1.35 (100).
 - **Power.** Power for a true Sharpe of 1.5 falls more gently: 0.92, 0.86, 0.76, 0.67.
 - **Program success.** Under the 5% prior, the chance of finding a real edge rises much faster than power falls: 0.38, 0.58, 0.86, 0.97 for N = 10, 20, 50, 100.
-- **False passes** stay below 0.6%. The DSR ≥ 0.95 gate is far stricter than a 5% familywise test: about 0.6% at N = 10.
+- **False passes** stay at or below 0.64% (0.59% under the 5% prior at N = 10, falling as N grows). The DSR ≥ 0.95 gate is far stricter than a 5% familywise test: 0.64% at N = 10 when there is no real edge at all.
 
 **10 is too few** if the trials are distinct ideas, and far too few if they are parameter variants. The biggest threats to power are the Newey-West T_eff and the choice of V, not N.
 
