@@ -1,0 +1,155 @@
+# Version 1: the goal as agreed in conversation on 2026-10-15, written down as stated and not yet
+# tested. Holding period and short selling as defined there; budget "whatever the paper account has".
+# A value that was not stated is left out; the tests treat it as unspecified.
+
+[meta]
+version = "1"
+status = "as agreed in conversation, before testing"
+
+[intent]
+mission = "Build a system that watches US stocks in real time, spots short-term chances in price, volume and technical data, and trades them by itself under strict risk rules. It has to prove on a paper account that it makes money after realistic costs before any real money goes in."
+viewpoint = "owner"
+non_goals = []
+
+[[stakeholders]]
+id = "S1"
+name = "Owner"
+needs = ["a system that trades by itself all day", "money made after costs", "no real money until paper trading proves it"]
+
+[constraints]
+starting_equity_usd = 100000          # the paper account's default; "whatever budget on paper"
+max_holding_trading_days = 5          # "minutes up to about 5 days"; never weeks
+directions = ["long", "short"]
+session = "regular"                   # "trade regular market hours only (9:30am-4:00pm New York time)"
+hold_through_earnings = false
+universe_text = "heavily traded stocks and ETFs, no penny stocks"
+
+[risk]
+risk_per_trade_pct = 0.5              # "lose at most 0.5% of the account on any one trade if its stop-loss is hit"
+max_positions = 5
+max_position_pct = 20
+max_gross_exposure_pct = 100          # "no borrowed money to start"
+leverage_text = "no borrowed money to start"
+daily_loss_limit_pct = 2.0            # "stop trading for the day once the account is down 2%"
+max_drawdown_halt_pct = 10.0          # paper: "never falls more than 10% below its peak"
+kill_switch = true
+
+[costs]
+cost_text = "realistic costs; every paper trade gets charged a simulated cost"
+
+[activity]
+activity_text = "constant trading; watches constantly but only trades when the expected gain beats the cost"
+
+[[objectives]]
+id = "O1"
+title = "Make money after costs"
+statement = "The system makes money after realistic costs."
+
+[[objectives]]
+id = "O2"
+title = "Strict risk rules"
+statement = "A risk manager with fixed limits can block any trade, and nothing overrides it."
+
+[[objectives]]
+id = "O3"
+title = "Trade by itself all day"
+statement = "The system scans the whole market all day, watches a shortlist live, decides and trades by itself; fast code makes the split-second calls and an AI model does the slower thinking."
+
+[[objectives]]
+id = "O4"
+title = "Records and reports"
+statement = "It logs every decision and the reason for it, shows live profit and loss, and writes a daily report."
+
+[[objectives]]
+id = "O5"
+title = "Improves"
+statement = "We review every week and adjust or drop strategies after testing them, never in the middle of a trading day."
+
+[[key_results]]
+id = "KR1.1"
+objective = "O1"
+kpp = true
+statement = "Each strategy makes money after realistic costs on historical data it wasn't tuned on."
+metric = "net profit on untuned historical data"
+comparator = ">"
+threshold = 0.0
+unit = "USD"
+gate = "G1"
+
+[[key_results]]
+id = "KR1.2"
+objective = "O1"
+kpp = true
+statement = "Paper trading for 4-8 weeks and 300+ trades is profitable after simulated costs."
+metric = "net profit on paper"
+comparator = ">"
+threshold = 0.0
+unit = "USD"
+window = "4-8 weeks and 300+ trades"
+gate = "G2"
+
+[[key_results]]
+id = "KR2.1"
+objective = "O2"
+kpp = true
+statement = "The account never falls more than 10% below its peak."
+metric = "maximum drawdown"
+comparator = "<="
+threshold = 10.0
+unit = "% of peak equity"
+gate = "G2"
+
+[[key_results]]
+id = "KR2.2"
+objective = "O2"
+kpp = true
+statement = "No broken risk rules."
+metric = "risk rule breaches"
+comparator = "=="
+threshold = 0
+unit = "count"
+gate = "G2"
+
+[[key_results]]
+id = "KR3.1"
+objective = "O3"
+kpp = false
+statement = "No crashes."
+gate = "G2"
+
+[[key_results]]
+id = "KR4.1"
+objective = "O4"
+kpp = false
+statement = "Every decision is logged with its reason, and a daily report is written."
+gate = "G2"
+
+[[gates]]
+id = "G1"
+name = "Testing on past data"
+[gates.rule]
+kind = "net_positive"                  # profitable after costs on untuned data; no length or selection rule
+
+[[gates]]
+id = "G2"
+name = "Paper trading"
+[gates.rule]
+kind = "net_positive"
+min_days = 20                          # 4 weeks (up to 8)
+min_trades = 300
+max_drawdown_pct = 10.0
+rule_breaches = 0
+
+[[gates]]
+id = "G3"
+name = "Real money, starting small"
+[gates.rule]
+kind = "owner_decision"
+
+[[controls]]
+id = "C1"
+statement = "A kill switch closes everything immediately."
+
+[[controls]]
+id = "C2"
+statement = "A risk manager with fixed limits can block any trade."

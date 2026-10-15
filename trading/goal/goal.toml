@@ -1,0 +1,557 @@
+# The goal, machine-readable: the single source of every number in GOAL.md. The tests in goaltests/
+# read this file; GT-1 checks that GOAL.md says the same. Percentages are of account equity.
+
+[meta]
+version = "2"
+status = "revised after the goal tests; awaiting the owner's review"
+date = "2026-10-15"
+
+[intent]
+mission = "An autonomous system that trades liquid US stocks and ETFs, long and short, over holding periods from minutes to five trading days. It earns a return beyond what market moves and chance would give, net of every cost, and never breaks its risk limits. It proves this on a paper account before any real money, and trades real money only when the owner decides, starting with a fraction of the intended capital."
+viewpoint = "owner"
+non_goals = [
+  "competing on speed: market making, latency arbitrage, or any edge that depends on holds shorter than the edge horizon",
+  "options, futures, crypto, currencies, OTC securities, and leveraged or inverse ETFs",
+  "short sales of hard-to-borrow stocks",
+  "orders outside the regular session, 09:30 to 16:00 New York time",
+  "positions held longer than 5 trading days or 7 calendar days",
+  "leverage: gross exposure above 100% of equity",
+  "a promised return: the goal fixes how results are judged, not what they will be",
+  "the system's architecture, data sources and code, which are decided after the goal",
+  "tax optimization",
+]
+
+[[stakeholders]]
+id = "S1"
+name = "Owner"
+needs = ["trading that runs by itself through every session", "a net return beyond the market and chance",
+         "no real money until the evidence says so", "a daily account of what was done and why", "a way to stop everything at once"]
+
+[[stakeholders]]
+id = "S2"
+name = "Broker (Alpaca)"
+needs = ["orders within its margin, short-sale and rate rules", "positions reconciled with its records"]
+
+[[stakeholders]]
+id = "S3"
+name = "Market and regulators"
+needs = ["orderly markets", "no manipulative orders", "accurate records"]
+
+[[stakeholders]]
+id = "S4"
+name = "Independent reviewer"
+needs = ["evidence that can be reproduced", "every strategy variant tried, logged", "a say before each gate"]
+
+[constraints]
+starting_equity_usd = 100000        # the paper account's default; confirm on day one; limits are in % of equity
+max_holding_trading_days = 5
+max_holding_calendar_days = 7
+directions = ["long", "short"]
+order_session = "regular"
+hold_through_earnings = false        # no position held through its issuer's scheduled earnings release
+universe_min_price_usd = 5
+universe_min_dollar_volume_usd = 20000000   # 20-day median daily dollar volume
+universe_max_spread_bps = 10                # 20-day median quoted spread
+universe_text = "US-listed common stocks and ETFs on national exchanges that meet the price, dollar-volume and spread limits, excluding leveraged and inverse ETFs; shorts only in names the broker lists as easy to borrow"
+
+[risk]
+risk_per_position_pct = 0.5          # loss at the stop for one position, all its fills together
+stop_required = true                 # every position has a stop from the moment it opens
+max_open_risk_pct = 1.5              # sum of the losses at the stops of all open positions
+max_positions = 10
+max_position_pct = 20                # notional of one position
+typical_position_pct = 10            # planning value for GT-3
+max_position_overnight_pct = 10
+max_overnight_gross_pct = 25
+max_gross_exposure_pct = 100         # long plus short
+daily_loss_limit_pct = 2.0           # from the day's opening equity: then flat and no new entries that day
+max_drawdown_halt_pct = 10.0         # from peak equity: then flat and halted until the owner decides
+vol_target_daily_pct = 0.5           # standard deviation of daily P&L that sizing aims for
+leverage_text = "gross exposure, long plus short, at most 100% of equity"
+
+[costs]
+round_trip_cost_bps = 8              # planning average; each trade is charged its own costs, below
+stress_cost_multiplier = 2
+cost_text = "each fill pays its quoted half-spread at the decision time, 1.5 bps slippage, and the SEC and FINRA fees on sales; a short held overnight pays the broker's borrow fee"
+fill_model_text = "conservative: a limit order fills only when the price trades through its limit; a market order fills at the far side of the quote at the decision time, plus slippage"
+
+[activity]
+min_risk_trades_per_week = 10        # trades risking at least 0.1% of equity
+planned_risk_trades_per_week = 25
+typical_holding_minutes = 780        # two trading days
+cost_budget_pct_per_year = 15        # costs paid, as % of equity per year
+activity_text = "the system evaluates the eligible universe every minute of the regular session and opens a position only when its expected gain exceeds twice its cost"
+
+[returns]
+min_net_excess_sharpe = 1.0          # annualized; below this a strategy is not worth running
+target_net_excess_sharpe = 1.5       # annualized; what the gates are sized to detect
+edge_min_horizon_minutes = 150       # the edge must come from holds of 2.5 hours or more (GT-3)
+
+[evaluation]
+prior_edge_probability = 0.05        # chance a new candidate has a real net edge before testing (GT-8)
+min_posterior = 0.80
+published_edge_haircut = 0.5         # published effects counted at half their reported size or less
+max_false_pass_g1 = 0.05
+max_false_pass_g2 = 0.20
+max_false_real_money = 0.005
+min_power = 0.80
+max_false_halt_per_year = 0.10
+assumed_trials = 10                  # the trial budget for the whole program on one data history
+assumed_cost_drag_daily_pct = 0.04   # 25 trades a week x 10% x 8 bps
+simulation_reps = 400
+
+[kill_criteria]
+max_research_cycles = 4              # each cycle at most 3 pre-registered variants, within the trial budget
+max_research_months = 9
+drawdown = "a fall of max_drawdown_halt_pct from peak halts trading until the owner decides"
+no_edge = "if no strategy passes G1 within the research budget, the program stops instead of trading anyway"
+
+[[objectives]]
+id = "O1"
+kind = "achieve"
+title = "Edge"
+statement = "Earn a net excess return, after all costs, that the evidence shows is not luck."
+
+[[objectives]]
+id = "O2"
+kind = "maintain"
+title = "Capital protection"
+statement = "Keep every loss inside the fixed limits at all times."
+
+[[objectives]]
+id = "O3"
+kind = "maintain"
+title = "Active within the horizon"
+statement = "Trade every session within the allowed holding periods, as often as the edge pays for its costs."
+
+[[objectives]]
+id = "O4"
+kind = "maintain"
+title = "Autonomy and resilience"
+statement = "Run unattended through each regular session and fail safe."
+
+[[objectives]]
+id = "O5"
+kind = "avoid"
+title = "Lawful conduct and accountability"
+statement = "Never send an order the rules forbid, and record why every order was sent."
+
+[[objectives]]
+id = "O6"
+kind = "maintain"
+title = "Honest evidence"
+statement = "Judge every result in a way that cannot fool us."
+
+# --- key results: metric, unit, comparator, threshold, window, data, verification method, gate ---
+
+[[key_results]]
+id = "KR1.1"
+objective = "O1"
+kpp = true
+statement = "The out-of-sample net excess return has a Deflated Sharpe Ratio of at least 0.95, counting every variant tried."
+metric = "Deflated Sharpe Ratio of daily net excess returns"
+unit = "probability"
+comparator = ">="
+threshold = 0.95
+window = "at least 2,000 trading days of walk-forward out-of-sample history"
+data = "historical consolidated bars and quotes; the trial log"
+method = "analysis"
+gate = "G1"
+
+[[key_results]]
+id = "KR1.2"
+objective = "O1"
+kpp = true
+statement = "The out-of-sample annualized net excess Sharpe ratio is at least 1.0."
+metric = "annualized Sharpe ratio of daily net excess returns"
+unit = "ratio"
+comparator = ">="
+threshold = 1.0
+objective_value = 1.5
+window = "the G1 out-of-sample history"
+data = "historical consolidated bars and quotes"
+method = "analysis"
+gate = "G1"
+
+[[key_results]]
+id = "KR1.3"
+objective = "O1"
+kpp = false
+statement = "With every cost doubled, the out-of-sample annualized net excess Sharpe ratio stays at or above 0.5."
+metric = "annualized Sharpe ratio of daily net excess returns at twice the cost model"
+unit = "ratio"
+comparator = ">="
+threshold = 0.5
+window = "the G1 out-of-sample history"
+data = "historical consolidated bars and quotes"
+method = "analysis"
+gate = "G1"
+
+[[key_results]]
+id = "KR1.4"
+objective = "O1"
+kpp = true
+statement = "Out-of-sample and paper results together give a Probabilistic Sharpe Ratio against zero of at least 0.99."
+metric = "Probabilistic Sharpe Ratio of the combined daily net excess returns"
+unit = "probability"
+comparator = ">="
+threshold = 0.99
+window = "the G1 history plus at least 60 paper trading days, or 120 if the first 60 lose"
+data = "paper account fills, revalued with the conservative fill model"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR1.5"
+objective = "O1"
+kpp = false
+statement = "Paper results are not significantly below the G1 estimate (one-sided p of at least 0.05)."
+metric = "one-sided p-value of paper mean daily excess return against the G1 estimate"
+unit = "probability"
+comparator = ">="
+threshold = 0.05
+window = "the G2 paper period"
+data = "paper account fills, revalued with the conservative fill model"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR1.6"
+objective = "O1"
+kpp = true
+statement = "Measured live trading cost per round trip does not exceed the cost model (one-sided 95% confidence)."
+metric = "mean implementation cost per round trip, decision price to fill, plus fees"
+unit = "bps"
+comparator = "<="
+threshold = 8
+window = "at least 300 live round trips"
+data = "live fills and decision-time quotes"
+method = "analysis"
+gate = "G3"
+
+[[key_results]]
+id = "KR2.1"
+objective = "O2"
+kpp = true
+statement = "No risk limit is ever broken."
+metric = "orders or positions outside any limit in the risk section"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every paper and live trading day"
+data = "order, fill and position logs"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR2.2"
+objective = "O2"
+kpp = true
+statement = "Equity never falls 10% or more below its peak."
+metric = "maximum drawdown from peak equity"
+unit = "% of peak equity"
+comparator = "<"
+threshold = 10.0
+window = "the whole paper and live record"
+data = "daily account equity from the broker"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR2.3"
+objective = "O2"
+kpp = false
+statement = "No trading day loses more than 2.5% of its opening equity: the 2% limit plus 0.5% for slippage while closing."
+metric = "worst one-day loss"
+unit = "% of the day's opening equity"
+comparator = "<="
+threshold = 2.5
+window = "every paper and live trading day"
+data = "intraday account equity"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR2.4"
+objective = "O2"
+kpp = true
+statement = "The kill switch cancels every open order and closes every position within 60 seconds of activation."
+metric = "seconds from activation to no open orders and no positions"
+unit = "seconds"
+comparator = "<="
+threshold = 60
+window = "a drill every 20 trading days on paper, and one before G3"
+data = "broker order and position records"
+method = "demonstration"
+gate = "G2"
+
+[[key_results]]
+id = "KR3.1"
+objective = "O3"
+kpp = false
+statement = "At least 10 risk-bearing round trips per week, on average over each 4-week window."
+metric = "round trips risking at least 0.1% of equity, per week"
+unit = "trades per week"
+comparator = ">="
+threshold = 10
+window = "each rolling 4-week window of paper and live trading"
+data = "fill logs"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR3.2"
+objective = "O3"
+kpp = false
+statement = "Every position is closed within 5 trading days and 7 calendar days of opening."
+metric = "positions held past either limit"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every paper and live trading day"
+data = "position logs"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR3.3"
+objective = "O3"
+kpp = false
+statement = "The eligible universe is evaluated in at least 99% of regular-session minutes."
+metric = "share of session minutes with a completed evaluation on data under 5 seconds old"
+unit = "%"
+comparator = ">="
+threshold = 99
+window = "every paper and live trading day"
+data = "the system's evaluation log"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR4.1"
+objective = "O4"
+kpp = false
+statement = "The system is running and connected in at least 99.5% of regular-session minutes."
+metric = "share of session minutes running, connected and able to place orders"
+unit = "%"
+comparator = ">="
+threshold = 99.5
+window = "each month of paper and live trading"
+data = "health log and broker connection log"
+method = "analysis"
+gate = "G2"
+
+[[key_results]]
+id = "KR4.2"
+objective = "O4"
+kpp = false
+statement = "After any restart, positions and open orders match the broker within 60 seconds, and no difference remains at the close."
+metric = "seconds to reconcile after restart; differences at the close"
+unit = "seconds; count"
+comparator = "<="
+threshold = 60
+window = "every restart and every close"
+data = "broker positions and orders against the system's own records"
+method = "test"
+gate = "G2"
+
+[[key_results]]
+id = "KR4.3"
+objective = "O4"
+kpp = false
+statement = "The owner is alerted within 60 seconds of a blocked order, a rejected order, a data gap longer than 30 seconds, or a lost connection."
+metric = "seconds from the event to the alert"
+unit = "seconds"
+comparator = "<="
+threshold = 60
+window = "every such event, and a monthly drill"
+data = "event and alert logs"
+method = "demonstration"
+gate = "G2"
+
+[[key_results]]
+id = "KR5.1"
+objective = "O5"
+kpp = true
+statement = "No order trades against the system's own orders, and orders sent per fill stay at 10 or fewer."
+metric = "self-trades; orders sent per fill"
+unit = "count; ratio"
+comparator = "<="
+threshold = 10
+window = "each trading day"
+data = "order and fill logs"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR5.2"
+objective = "O5"
+kpp = false
+statement = "Every order records its strategy version, signal, expected gain, cost and risk at the moment it is sent."
+metric = "orders without a complete reason record"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every order"
+data = "order log"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR5.3"
+objective = "O5"
+kpp = true
+statement = "No short sale is sent unless the broker lists the stock as easy to borrow at that moment."
+metric = "short sales sent without a current easy-to-borrow status"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every short sale"
+data = "order log and the broker's asset status"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR5.4"
+objective = "O5"
+kpp = false
+statement = "A daily report reaches the owner by 17:00 New York time on every trading day."
+metric = "trading days without the report by 17:00"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every paper and live trading day"
+data = "report delivery log"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR6.1"
+objective = "O6"
+kpp = true
+statement = "Every strategy variant is registered, with its hypothesis, rules and data windows, before it is tested."
+metric = "variants tested without a prior registration"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "the whole program"
+data = "the trial log, with timestamps"
+method = "inspection"
+gate = "G1"
+
+[[key_results]]
+id = "KR6.2"
+objective = "O6"
+kpp = true
+statement = "An independent reviewer challenges the evidence before each gate, and every finding is resolved."
+metric = "unresolved review findings at the gate"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "before G1, G2 and G3"
+data = "review records"
+method = "inspection"
+gate = "G1"
+
+# --- gates: the rule each one applies, as goaltests/gates.py defines it ---
+
+[[gates]]
+id = "G1"
+name = "Research on history"
+purpose = "Is there an edge, net of costs, on history not used to find it?"
+[gates.rule]
+kind = "dsr"
+metric = "excess"
+min_days = 2000
+dsr_min = 0.95
+stress_sr_min = 0.5
+plausibility_sr_max = 4.0
+require_conservative_fills = true
+
+[[gates]]
+id = "G2"
+name = "Paper trading"
+purpose = "Does the system work, live and unattended, and do its results match G1 once paper's generous fills are corrected?"
+[gates.rule]
+kind = "paper"
+metric = "excess"
+min_days = 60
+extend_days = 60
+min_risk_trades = 300
+max_drawdown_pct = 10.0
+rule_breaches = 0
+shortfall_alpha = 0.05
+combined_psr_min = 0.99
+require_conservative_fills = true
+
+[[gates]]
+id = "G3"
+name = "Real money, small first"
+purpose = "Do real fills match the cost model, with real money at risk?"
+[gates.rule]
+kind = "owner_decision"
+max_initial_capital_fraction = 0.10
+min_days = 60
+scale_rule = "capital at most doubles each 60 trading days, and only while every G2 criterion still holds and live costs match the model"
+
+# --- controls: each covers items of the external checklists GT-7 applies ---
+
+[[controls]]
+id = "C1"
+statement = "Before every order: buying power, gross and overnight exposure, open risk and the daily loss limit are checked, and an order that would exceed one is blocked."
+covers = ["MA-1"]
+
+[[controls]]
+id = "C2"
+statement = "Before every order: its size is within the position limits, a limit price is within 1% of the current quote, and its value is at most 20% of equity."
+covers = ["MA-2", "RT-2"]
+
+[[controls]]
+id = "C3"
+statement = "An order identical to one sent in the last 5 seconds is blocked, and the system sends at most 2 orders a second and 120 a minute."
+covers = ["MA-3", "RT-2", "KC-2"]
+
+[[controls]]
+id = "C4"
+statement = "Before every order: earnings blackout, easy-to-borrow status for shorts, and the universe limits are checked."
+covers = ["MA-4"]
+
+[[controls]]
+id = "C5"
+statement = "Every fill is recorded as it arrives; positions, orders and cash are reconciled with the broker after every restart and at every close."
+covers = ["MA-5", "RT-4"]
+
+[[controls]]
+id = "C6"
+statement = "A kill switch, available to the owner at any time and triggered automatically by the drawdown halt, cancels all orders and closes all positions; every order carries the strategy version that sent it."
+covers = ["RT-1", "FN-4", "KC-2"]
+
+[[controls]]
+id = "C7"
+statement = "Real-time monitoring alerts the owner within 60 seconds of a blocked or rejected order, a data gap, a lost connection or a limit near its threshold; alerts must be acknowledged."
+covers = ["RT-3", "FN-4", "KC-1"]
+
+[[controls]]
+id = "C8"
+statement = "Changes are versioned, tested on history and paper before use, deployed only outside the session, and can be rolled back; nothing changes during a trading day."
+covers = ["FN-2", "FN-3", "RT-5"]
+
+[[controls]]
+id = "C9"
+statement = "Orders never cross the system's own orders, are never sent without intent to trade, and are not used to move the closing price; surveillance checks the logs daily."
+covers = ["FN-5"]
+
+[[controls]]
+id = "C10"
+statement = "The risks in GOAL.md's obstacle table are reviewed monthly, and the controls' effectiveness is reviewed in writing every quarter."
+covers = ["FN-1", "MA-6", "RT-6"]
+
+[[controls]]
+id = "C11"
+statement = "Broker credentials are kept outside the code and repository, paper and live keys are separate, and only the trading process can read them."
+covers = ["RT-7"]
+
+[[controls]]
+id = "C12"
+statement = "An independent reviewer challenges the evidence before each gate (effective challenge), and live results are compared every month with what G1 and G2 predicted."
+covers = ["MR-1", "MR-2"]
