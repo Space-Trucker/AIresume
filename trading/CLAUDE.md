@@ -29,6 +29,9 @@ What exists:
   about 10 minutes on 4 CPUs and downloads its price data once, pinned and hash-checked. Their bars are
   in `goal/goaltests/anchors.py`. `goal/REPORT.md` records every round and every review.
 - **The research.** `reports/` and `research_notes/` hold the evidence behind each decision in the goal.
+- **Research ideas.** `research_notes/ideas.md`, none of them in the plan yet: a news-reading model fenced
+  by date (a candidate for step 4), removing a model's knowledge after a date (parked), and a frontier
+  model pruned down to finance (not pursued).
 - **Slice A.** The plumbing paper bot: `requirements/REQUIREMENTS.md` (SR-A-01 to SR-A-40) and
   `design/DESIGN.md`. It trades a fixed test pattern in five index ETFs and claims no edge.
 

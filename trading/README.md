@@ -25,7 +25,7 @@ key as an environment secret (`goal/REPORT.md`, last section).
 | [`goal/goal_v1.toml`](goal/goal_v1.toml) | the goal as first agreed in conversation, kept for comparison |
 | [`goal/goaltests/`](goal/goaltests) | the tests (Python 3.11+, standard library only) |
 | [`reports/`](reports) | research reports: the evidence behind each decision in `GOAL.md` |
-| [`research_notes/`](research_notes) | the researchers' notes behind each report, every fact labeled by how well it was checked |
+| [`research_notes/`](research_notes) | the researchers' notes behind each report, every fact labeled by how well it was checked, and `ideas.md`: research ideas not yet in the plan |
 
 ```bash
 cd trading/goal
