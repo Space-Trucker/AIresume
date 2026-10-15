@@ -51,6 +51,8 @@ class Record:
     days_to_min_trades: int | None = None      # paper days until the minimum number of risk-bearing trades
     rerun: list[float] | None = None           # daily excess returns of the frozen G1 strategy rerun on the paper days
     rerun_match: float | None = None           # share of the rerun's round trips that paper made too
+    rotations: int = 0                         # times a held position was replaced by a candidate
+    rotation_values: list[float] | None = None  # each rotation's realized value: new result less the replaced one's forgone result
     # what the strategy did, for the risk rules
     every_position_has_stop: bool = True
     max_risk_per_trade_pct: float = 0.0
@@ -128,6 +130,17 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
                 return False, "no results with stressed costs"
             if stats.annualize_sr(stats.sharpe(rec.stressed)) < rule["stress_sr_min"]:
                 return False, "fails with costs raised to the stress level"
+        if "min_rotations_judged" in rule and rec.rotations > 0:
+            values = rec.rotation_values
+            if values is None:
+                return False, "rotations not followed to the replaced positions' planned exits"
+            if len(values) < rule["min_rotations_judged"]:
+                return False, f"{len(values)} rotations < {rule['min_rotations_judged']}: too few to judge; run without rotation"
+            m, sd, _, _ = stats.moments(values)
+            low = m - stats.N01.inv_cdf(rule.get("rotation_confidence", 0.5)) * sd / math.sqrt(len(values))
+            if low <= 0:
+                return False, (f"rotations don't clearly pay: mean {m:+.5f} of equity each, lower bound {low:+.5f}; "
+                               "run without rotation")
         return True, f"DSR {d:.3f}"
     if kind == "paper":
         series = _series(rec, rule.get("metric", "excess"))

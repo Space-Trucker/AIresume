@@ -8,9 +8,10 @@ The full output of the latest runs is in `results/`.
 
 | Version | What it is | Checks passing | Main problems |
 |---|---|---|---|
-| 1 | the goal as agreed in conversation (`goal_v1.toml`) | 41 of 152 | vague, inconsistent and statistically blind; see below |
+| 1 | the goal as agreed in conversation (`goal_v1.toml`) | 41 of 153 | vague, inconsistent and statistically blind; see below |
 | 2 | the first revision, after the first round of tests; reviewed independently | (superseded) | stricter tests and three reviewers found 35 problems |
-| 3 | the current goal (`goal.toml`), after the stricter tests and the review | 387 of 387 | none open; 10 decisions wait for the owner |
+| 3 | the goal after the stricter tests and the review | 387 of 387 | the tests then passed; round 4's research found errors the tests had missed, and 10 decisions were open |
+| 4 | the current goal (`goal.toml`), after research on the open decisions | 418 of 418 | none open; every decision settled, and any can be overturned |
 
 The goal went through three rounds:
 - **Round 1.** The first tests found version 1 vague, inconsistent and statistically blind. Version 2
@@ -21,10 +22,14 @@ The goal went through three rounds:
   Version 3 responds to all of them: 29 accepted as proposed, 6 accepted with a different number or
   design. One sub-proposal was not adopted, with the reason given, and none was declined outright.
   Each is recorded below.
+- **Round 4.** Research on the open decisions, with each key fact cross-checked, settled them and found
+  errors in version 3 that its tests had missed: the planned edge horizon, room for a jump near the
+  drawdown halt, and the claim that bigger overnight positions double the return. Version 4 fixes them,
+  and new checks now fail version 3 on the first two.
 
 What the owner most needs to know is in `GOAL.md`, under "What to expect":
 - At the aim, the goal is about 5% a year above the market, after costs.
-- The chance of reaching real money with a real edge is at most about one in seven.
+- The chance of reaching real money with a real edge is at most about one in five.
 - If everything passes, full capital is more than two years away.
 
 ## How the goal was tested
@@ -48,7 +53,7 @@ and checked against a SHA-256.
 
 ```bash
 cd trading/goal
-python3 -m goaltests                  # the current goal, about 4 minutes
+python3 -m goaltests                  # the current goal, about 7 minutes
 python3 -m goaltests goal_v1.toml     # the goal as first agreed
 ```
 
@@ -58,7 +63,7 @@ Version 1 wrote down what was agreed in conversation: holds up to 5 days, long a
 paper, 0.5% risk per trade, 5 positions, 20% per position, a 2% daily stop, a 10% drawdown limit, a kill
 switch, constant trading, realistic costs, profitable on history and over 4–8 weeks of paper.
 
-Run through the final tests, it passes 41 of 152 checks (`results/goal_v1.txt`). What fails, by test:
+Run through the final tests, it passes 41 of 153 checks (`results/goal_v1.txt`). What fails, by test:
 
 | Test | What fails in version 1 |
 |---|---|
@@ -67,7 +72,7 @@ Run through the final tests, it passes 41 of 152 checks (`results/goal_v1.txt`).
 | GT-3 (3 failing) | <ul><li>no cost model</li><li>holds from seconds allowed, with nothing said about where the edge comes from; below about 2.5 hours costs need a signal beyond "great"</li></ul> |
 | GT-4 (20 failing) | <ul><li>"profitable on history" passes the best of 10 no-edge variants 99.5–100% of the time</li><li>a no-edge strategy reaches real money 48–53% of the time</li><li>when one variant is real, a lucky no-edge one is chosen and passes instead in a quarter to two-fifths of runs</li><li>the 10% drawdown limit stops a real edge in 29–51% of years</li></ul> |
 | GT-5 (4 failing) | on real prices, the best of 10 random strategies passes the history gate in 85–98% of windows, and paper in 43–52% |
-| GT-6 (9 failing) | none of 9 ways to game the goal is caught |
+| GT-6 (10 failing) | none of 10 ways to game the goal is caught |
 | GT-7 (29 failing) | none of 29 control items is covered to the checklists' standard. Version 1 did name a kill switch and a risk manager; neither was specified enough to count |
 | GT-8 (5 failing) | a strategy that passes is real with probability 4%; no research budget, no capital staging, no correction for variants tried, no discount on published effects |
 
@@ -210,7 +215,7 @@ takes −2.5 and states what it achieves, with margin for simulation noise:
 - a dead strategy is halved within a year at least half the time;
 - a dead strategy is stopped within 3 years at least 65% of the time.
 
-## Version 3: results
+## Version 3: results (superseded by version 4)
 
 All 387 checks pass (`results/goal.txt`). The figures that matter, across the four noise shapes:
 
@@ -234,6 +239,96 @@ GT-4 also maps how often a strategy passes both gates by its true Sharpe:
 The gates are built to find edges near the target and above. A real edge with a Sharpe near 1, worth
 running but no more, passes only about one time in five.
 
+## Round 4: research on the open decisions
+
+Version 3 left ten decisions to the owner. The owner settled two: no fixed number of positions, and
+120 days of paper trading. For the rest, the owner asked for researched, cross-checked evidence. Nine
+researchers took one topic each, and a report draws their notes together:
+`../reports/Trading goal decisions research.md`, with the notes in `../research_notes/`. This environment
+blocked direct page fetches and capped web searches, so most facts were checked against search-result
+extracts, and each carries a label saying how well it was checked. Two facts that changed the goal's
+citations were checked again directly: the Fed, OCC and FDIC replaced SR 11-7 with SR 26-2 on 17 April
+2026, and RTS 6 Article 16(5) asks for alerts within 5 seconds.
+
+The research found errors in version 3 itself. Where arithmetic shows one, a test now fails version 3
+on it:
+
+| Finding | The arithmetic | Fix in version 4 | Test that now fails version 3 |
+|---|---|---|---|
+| The planned edge horizon was a break-even horizon | under the entry rule (expected gain at least twice the cost), a great signal (IC 0.10) needs holds of 558 minutes; at 150 minutes it needs an IC of 0.19 | the plan expects its edge from holds of 2 trading days (780 minutes) or more, held overnight | GT-3 now applies the entry rule's multiple |
+| A jump near the drawdown halt crosses the 10% line | 9% plus the 4% single-jump bound is 13% | the worst jump the assumptions allow is kept within the room left to the line, less 0.5% | GT-2, new check |
+| "8% overnight doubles the aim" | with about 15 names overnight, the open-risk and overnight-gross limits bind first: ×1.00 to ×1.25 | 4% kept; the volatility budget named as the lever | (arithmetic in the report) |
+| KR6.3 barred the system's own walk-forward retraining | "no model trained on data after the window's start" covers every walk-forward model | the cutoff is each decision's date, with an audit | (wording) |
+| 0.5% risk per position read as a fixed size | at 0.5% each, the 2% open-risk cap holds 4 positions; the plan keeps 15 | 0.5% is the maximum; at least 0.1% at entry | (wording) |
+| A 60-minute flatten could land after the close | an alert after 15:00 closes at the next open | faults close at 60 minutes or 15:45, whichever comes first | (wording) |
+| The second kill path needed a person | Alpaca cancels nothing when a client disconnects | a second path independent of the process, its host and the owner | (wording) |
+| G3's $2,000 floor can't reproduce the tested sizes | a 4% position at $2,000 is $80 | at least $2,500, and enough for 10 shares of a median-priced stock | (wording) |
+| SR 11-7 cited as current | rescinded on 17 April 2026 | SR 26-2 cited | (citation) |
+
+What changed, by decision (the evidence and confidence for each are in `GOAL.md`):
+1. **Overnight size.** 4% kept for a stock. New tiers by jump: 10% for a broad index fund (a 20% jump),
+   2% for an event-prone position (a 100% jump: a biotech short, or a bank under a run). Room kept for a
+   jump near the halt.
+2. **Positions.** No fixed count. Every position risks 0.1% to 0.5% at entry. A rotation rule decides
+   when a better candidate replaces held positions (KR3.5, KR3.6), and expected gains must not be
+   inflated (KR3.7). A guard of 50 open positions catches a malfunction.
+3. **Edge horizon.** Holds of 2 trading days or more, held overnight, as the planning basis.
+5. **Research budget.** 20 variants instead of 10, at most 2 per idea, so at least 10 distinct ideas, in
+   at most four 3-month stages within 12 months. The research suggested about 30. The goal fixed each
+   gate's power floor at 75% (it was 80%) and took the largest budget that keeps it: G1's power under
+   autocorrelated returns is 81.5% at 10 variants, 75.8% at 20 and 70.5% at 30. The chance of reaching
+   real money with a real edge rises from 14% to 22%.
+6. **Reviewer.** A panel of at least two AI reviewers from different model families, never a Fable model,
+   after scripts recompute the headline numbers (KR6.2), tested on three planted flaws (KR6.5); a paid
+   human review of the G1 statistics before real money passes $100,000.
+7. **Alerts.** Faults and warnings handled apart: a fault puts the system in the safe state at once and
+   has every stop confirmed at the broker within 60 seconds; an unacknowledged fault closes everything at
+   60 minutes or 15:45; an unacknowledged warning only stops new entries after 15 minutes; every alert
+   repeats through a second channel after 5 minutes.
+8. **Extended hours.** None, as the owner said; the research leans the same way.
+9. **AI model.** Only models trained on data from before each decision shape G1's forecast, with a
+   cutoff audit; ideas an AI model proposes count as variants.
+10. **Capital and taxes.** G3's entry conditions name what to settle: capital, wash-sale tracking across
+    accounts, the section 475(f) election and its deadline, or the home country's rules.
+
+The tests grew with the goal:
+- GT-2 checks the jump tiers, the drawdown room and its margin, the book's size without a fixed count,
+  and the rotation rule.
+- GT-3 judges the planned horizon by the entry rule's multiple, not by break-even.
+- GT-6 adds a tenth way to game the goal: churning, replacing held positions on inflated forecasts.
+- G1's rule judges rotation: a strategy that rotates passes only if its rotations clearly pay.
+
+Two recommendations were adopted in a different form:
+- **The count guard.** The research suggested 25, above the natural bound of 20 positions at entry. The
+  goal sets 50: stops moved to break-even free risk budget, so a book within every limit can hold more
+  than 20 positions. The guard is there to catch a malfunction, not to bind.
+- **The research budget.** The research suggested about 30 variants, within a range of 20 to 50. The
+  goal takes 20, the largest budget that keeps each gate's power at 75% or more.
+
+## Version 4: results
+
+All 418 checks pass (`results/goal.txt`). The figures that matter, across the four noise shapes:
+
+| Test | Result |
+|---|---|
+| GT-1 | every statement verifiable, unambiguous, free of design, traced to one of 8 objectives; 41 key results; every objective has a goal kind and a question; `GOAL.md` agrees with `goal.toml` |
+| GT-2 | <ul><li>**Stops:** every stop on one side, filling 25% worse, costs 1.88% against the 2% daily limit; both sides cost 2.5%, the worst-day bound.</li><li>**Jumps:** one position through its assumed jump costs 2.00% overnight or within the session; so do a broad index fund at 10% through 20%, and an event-prone position at 2% through 100%; a total loss of one overnight stock, or a 50% jump across an industry, costs 4%, the jump-loss bound; a 13% market gap costs 1.95%.</li><li>**Drawdown room:** a jump just short of the halt ends at 9.5% at most, against the 10% line; the 0.5% margin covers closing the whole book at stressed costs (0.06%).</li><li>**The book:** no fixed count; at the planned 4% size the limits hold 18 positions overnight and 20 risk-bearing ones; 15 open on average, full 8.6% of the time; about 2.2 candidates a week meet a full book, and rotations are capped at 5 a week inside the planned 25 round trips.</li><li>**The plan:** 60% held overnight against a 75% limit; volatility 0.20%/day against a 0.2% budget; costs 4.2% a year against a 4.5% budget.</li></ul> |
+| GT-3 | <ul><li>costs 8 bps against 6.95 bps published;</li><li>at the planned horizon of 2 trading days the entry rule needs an IC of 0.085; a great signal meets it from 558 minutes (1.4 trading days), and version 3's 150 minutes would need 0.19;</li><li>the aim at the plan needs an IC of 0.074;</li><li>the target survives the cost stress at 0.84 against 0.5;</li><li>market impact at the liquidity limit is 1.2–2.4 bps against 1.5 charged.</li></ul> |
+| GT-4 | <ul><li>**False passes:** G1 passes the best of 20 no-edge variants 0.10–0.82% of the time, against a 1% limit; a no-edge strategy reaches real money 0.07–0.33% of the time, against 0.5%.</li><li>**Power:** G1 passes the target 75.8–84.5% of the time and G2 82.2–87.9%, against 75%. At 10 variants G1's range was 81.5–85.8%; the lowest figure is for autocorrelated returns.</li><li>**Fidelity:** the test fails an honest implementation at most 0.8% of the time, and catches a one-Sharpe execution shortfall 94.2–95.5% of the time.</li><li>**Halts:** the 9% halt stops a real edge in at most 0.5% of years.</li><li>**Live test:** it stops a real edge by mistake within 3 years 3.2–8.9% of the time; it halves a dead strategy within a year 61–64% of the time and stops it within 3 years 72–75% of the time.</li></ul> |
+| GT-5 | on real prices, G1 passes the best of 20 random strategies in 0 of 26 windows, balanced or always long; paper passes 42–44% of them, against the stated 50% |
+| GT-6 | all 10 ways to game the goal are caught: by the risk limits (averaging down, no stops, big overnight longs or shorts), G1 (the best of 50, a look-ahead leak, churning), or G2 (riding the market, padding trades, paper's generous fills) |
+| GT-7 | all 29 items covered; one stated deviation, the 60-second alert instead of RTS 6 Article 16(5)'s 5 seconds |
+| GT-8 | <ul><li>a strategy that passes both gates has a real edge with probability 85%, and is worth running with probability 78%;</li><li>with real edges no larger than a Sharpe of 1.25, those fall to 66% and 40%;</li><li>the program reaches real money with a real edge at most 22% of the time (14% at 10 variants);</li><li>a false edge reaches real money 0.33% of the time.</li></ul> |
+
+How often a strategy passes both gates, by its true Sharpe (normal noise):
+
+| True Sharpe | 0.5 | 0.75 | 1.0 | 1.25 | 1.5 | 1.75 | 2.0 |
+|---|---|---|---|---|---|---|---|
+| Passes both gates, 10 variants (version 3) | 2% | 6% | 22% | 46% | 73% | 86% | 94% |
+| Passes both gates, 20 variants (version 4) | 3% | 8% | 24% | 49% | 68% | 83% | 90% |
+
+Each candidate faces a slightly higher bar, and twice as many candidates get a test.
+
 ## What the tests can't show
 
 - **Rule versus wording.** The gates are judged as `goaltests/gates.py` writes them. The tests check
@@ -248,10 +343,18 @@ running but no more, passes only about one time in five.
 - **The prior.** It is a judgment. GT-8 shows how the answer moves with it.
 - **Control coverage.** GT-7 checks that every checklist item is claimed by a control, not that the
   control is enough. The independent review judged that.
+- **The research behind version 4.** Most of its external facts were checked against search-result
+  extracts, because this environment blocked direct page fetches; many are single-source, and each is
+  labeled in the report. The decisions that rest mainly on arithmetic on the goal's own limits (1, 2, 5
+  and the capital part of 10) are as good as those limits.
+- **Rotation.** No study tests "replace the weakest position when the book is full" for a system like
+  this one. Whether rotation pays is left to the system's own evidence (KR3.6).
 
 ## What remains for the owner
 
-The ten decisions at the end of `GOAL.md`, each with a default. Before the API key is used:
+The decisions at the end of `GOAL.md` are settled on the evidence; any can be overturned. One is a
+choice only the owner can make: whether the review panel may include another company's model, which means
+sending it the evidence. Before the API key is used:
 - allow Alpaca's hosts in this environment's network settings;
 - arrange consolidated market data;
 - confirm the intraday history from 2016;

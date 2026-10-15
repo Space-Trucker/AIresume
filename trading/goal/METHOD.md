@@ -12,7 +12,7 @@ systems engineering, investment management, and supervision of algorithmic tradi
 | 3. Objectives and constraints | CFA Institute Investment Policy Statement (IPS) | return and risk objectives; constraints on horizon, liquidity, legal and regulatory matters, taxes, unique circumstances |
 | 4. Measures | INCOSE technical measurement (MOE, MOP, KPP) with GQM (Basili) | each objective measured from the owner's viewpoint (MOE), what the system must achieve (MOP), and the few parameters whose failure stops the program (KPP), each with a threshold |
 | 5. Statement quality | ISO/IEC/IEEE 29148 characteristics | every statement necessary, unambiguous, singular, feasible, verifiable, and free of design |
-| 6. Evidence | Fed SR 11-7 model risk management; *A Backtesting Protocol* (Arnott, Harvey, Markowitz); the Deflated Sharpe Ratio, the Probabilistic Sharpe Ratio and minimum track record length (Bailey, López de Prado); the probability of backtest overfitting | how we will know the goal is met without fooling ourselves: pre-registration, out-of-sample data, correction for every strategy tried, effective challenge |
+| 6. Evidence | Fed SR 11-7 model risk management (replaced by SR 26-2 on 17 April 2026); *A Backtesting Protocol* (Arnott, Harvey, Markowitz); the Deflated Sharpe Ratio, the Probabilistic Sharpe Ratio and minimum track record length (Bailey, López de Prado); the probability of backtest overfitting | how we will know the goal is met without fooling ourselves: pre-registration, out-of-sample data, correction for every strategy tried, effective challenge |
 | 7. Control baseline | SEC Rule 15c3-5 (Market Access), FINRA Regulatory Notice 15-09, EU RTS 6 (Delegated Regulation 2017/589) | the controls regulators expect of any algorithmic trader: pre-trade limits, kill switch, monitoring, testing, change management |
 | 8. Decision gates | stage gates with pre-registered decision rules | research, then paper trading, then live trading with a small amount; entry and exit criteria for each, and when to stop |
 | 9. Outside view | reference class forecasting (Kahneman, Lovallo, Flyvbjerg) | how ambitious the goal can be, judged from how similar efforts turned out, not from our own plans |
@@ -63,6 +63,12 @@ The set of statements must be complete, consistent and possible to validate.
 - conceptual soundness;
 - outcomes analysis, including back-testing;
 - ongoing monitoring, all under *effective challenge* by competent, independent people.
+
+On 17 April 2026 the Fed, OCC and FDIC replaced SR 11-7 with SR 26-2 (OCC Bulletin 2026-13). It keeps
+effective challenge, now defined as expertise, enough independence to be objective, and the standing to
+effect change, and it leaves generative and agentic AI outside its scope. No regulator has said whether
+an AI reviewer can provide effective challenge, so the goal uses a panel of AI reviewers from different
+model families, tests it on planted flaws, and adds a paid human review before real money grows.
 
 The backtest literature adds:
 - hypotheses written down before they are tested;
@@ -117,7 +123,7 @@ therefore has an *oracle*, the source of the right answer, that lies outside the
 | GT-4 gate power and false passes | simulated strategies whose true edge is known because we set it |
 | GT-5 null strategies on real data | random strategies, which have no edge by construction, run on real price history |
 | GT-6 metric gaming (Goodhart) | strategies built to look good while having no edge, or hidden risk |
-| GT-7 control coverage | the checklists in SEC 15c3-5, FINRA 15-09, RTS 6, MiFID II record and clock rules, SR 11-7, and the Knight Capital order |
+| GT-7 control coverage | the checklists in SEC 15c3-5, FINRA 15-09, RTS 6, MiFID II record and clock rules, SR 11-7 (now SR 26-2), and the Knight Capital order |
 | GT-8 outside view | published base rates for traders and trading strategies |
 | GT-9 effective challenge | independent reviewers who see only the goal documents |
 
@@ -133,7 +139,7 @@ require. The goal is revised until every test passes, and `REPORT.md` records ea
 - INCOSE, *Technical Measurement Guide* (INCOSE-TP-2003-020-01): [summary](https://www.psmsc.com/Downloads/TWGMarch06/02_TechnicalMeasurementGuide_Roedler.pdf)
 - V. Basili et al., "The Goal Question Metric Approach" (1994): [Basili's GQM slides](https://www.cs.umd.edu/users/basili/qip/tsld025.htm)
 - CFA Institute, *Elements of an Investment Policy Statement*: [institutional](https://rpc.cfainstitute.org/-/media/documents/article/position-paper/investment-policy-statement-institutional-investors.pdf), [individual](https://rpc.cfainstitute.org/-/media/documents/article/position-paper/investment-policy-statement-individual-investors.pdf)
-- Federal Reserve, [SR 11-7, Guidance on Model Risk Management](https://www.federalreserve.gov/supervisionreg/srletters/sr1107.htm) (2011)
+- Federal Reserve, [SR 11-7, Guidance on Model Risk Management](https://www.federalreserve.gov/supervisionreg/srletters/sr1107.htm) (2011), rescinded on 17 April 2026 and replaced by SR 26-2 / OCC Bulletin 2026-13 (summaries by [Baker Tilly](https://www.bakertilly.com/insights/updated-interagency-guidance-on-model-risk-management) and [Forvis Mazars](https://www.forvismazars.us/forsights/2026/06/implications-of-the-updated-interagency-mrm-guidance); the primary text was not reachable from this environment)
 - SEC, [Rule 15c3-5 adopting release 34-63241](https://www.sec.gov/rules/final/2010/34-63241.pdf) and [small entity guide](https://www.sec.gov/rules/final/2010/34-63241-secg.htm); SEC, [Knight Capital order](https://www.sec.gov/news/press-release/2013-222) (2013)
 - FINRA, [Regulatory Notice 15-09](https://www.finra.org/rules-guidance/notices/15-09) (2015)
 - EU, [Delegated Regulation 2017/589 (RTS 6)](https://www.legislation.gov.uk/eur/2017/589/data.html)

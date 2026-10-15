@@ -1,5 +1,5 @@
 """GT-7: control coverage. Oracle: the controls regulators expect of algorithmic trading (SEC Rule
-15c3-5, FINRA Regulatory Notice 15-09, EU RTS 6), model risk guidance (Fed SR 11-7), and the failures
+15c3-5, FINRA Regulatory Notice 15-09, EU RTS 6), model risk guidance (Fed SR 11-7, replaced by SR 26-2 in April 2026), and the failures
 in the SEC's Knight Capital order. Every item must be covered by a goal control, or declared not
 applicable with a reason. A control may cover an item with a stated deviation from it, which is
 reported."""
@@ -32,8 +32,8 @@ CHECKLIST = {
     "RT-9": "RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles",
     "RT-10": "MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC",
     "RT-11": "MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years",
-    "MR-1": "SR 11-7: effective challenge by competent, independent reviewers",
-    "MR-2": "SR 11-7: ongoing monitoring and outcomes analysis (results against expectations)",
+    "MR-1": "SR 11-7 / SR 26-2: effective challenge by reviewers with expertise, independence and the standing to effect change",
+    "MR-2": "SR 11-7 / SR 26-2: ongoing monitoring and outcomes analysis (results against expectations)",
     "KC-1": "Knight Capital: alerts designed and treated as alerts",
     "KC-2": "Knight Capital: a control that halts the system's own runaway behavior",
     "KC-3": "Knight Capital: the system's view of its orders and positions checked against the market's, as it trades",

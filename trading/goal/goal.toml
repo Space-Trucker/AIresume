@@ -2,7 +2,7 @@
 # read this file; GT-1 checks that GOAL.md says the same. Percentages are of account equity.
 
 [meta]
-version = "3"
+version = "4"
 status = "revised after the goal tests and an independent review of version 2; awaiting the owner's decisions"
 date = "2026-10-15"
 
@@ -76,16 +76,22 @@ shorts_text = "a short is sent only with a current easy-to-borrow status (a loca
 events_text = "no position is held through a scheduled company event: an earnings release, an FDA action date, a trial readout, a shareholder vote or a lockup expiry; nor through the ex-date or effective date of any corporate action other than an ordinary cash dividend"
 
 [risk]
-risk_per_position_pct = 0.5          # loss at the stop for one position, all its fills together
+risk_per_position_pct = 0.5          # the most one position may lose at its stop, all its fills together
+min_position_risk_pct = 0.1          # and the least it risks when it opens: with the open-risk cap, at most 20 positions at entry
 stop_required = true                 # every share held is covered by a stop from the moment it is bought or sold short
 max_open_risk_per_side_pct = 1.5     # sum of the losses at the stops of all open longs; the same for all shorts
 max_open_risk_pct = 2.0              # the same sum over every open position, long and short
-max_positions = 20
+# no fixed number of positions: the limits in this section bound the book, and [activity] rotation_text
+# says what happens when a better candidate meets a full book
 max_position_pct = 10                # notional of one position: a 20% jump within the session costs 2%
 typical_position_pct = 4             # planning value (GT-2, GT-3)
-max_position_overnight_pct = 4       # one position held overnight, long or short: a 50% jump costs 2%
+max_position_overnight_pct = 4       # one stock held overnight, long or short: a 50% jump costs 2%
+max_overnight_etf_pct = 10           # one broad, unleveraged index fund held overnight: a 20% jump costs 2%
+max_overnight_event_prone_pct = 2    # one event-prone position held overnight (event_prone_text): a 100% jump costs 2%
 jump_overnight_pct = 50              # the jump a position held overnight or through a halt must survive (Yahoo +49.5%, 2008)
 jump_intraday_pct = 20               # the jump within the session: two 10% price bands, or a news halt
+jump_overnight_etf_pct = 20          # a broad index fund overnight: above the 13% market gap of the level-2 circuit breaker
+jump_overnight_event_prone_pct = 100 # an event-prone position overnight: a doubling against a short, a total loss on a long
 max_jump_loss_pct = 4                # no single jump event, in one name or one industry, loses more (a total loss of one position)
 max_overnight_industry_pct = 8       # held overnight in one industry, long plus short
 max_overnight_gross_pct = 75         # all positions held overnight, long plus short
@@ -95,6 +101,7 @@ daily_loss_limit_pct = 2.0           # then flat and no new entries until the ne
 max_day_loss_pct = 2.5               # no day loses more, gaps and slippage while closing included (KR2.3)
 max_drawdown_halt_pct = 9.0          # then flat and halted until the owner decides
 max_drawdown_pct = 10.0              # equity never falls this far below its peak (KR2.2)
+drawdown_room_margin_pct = 0.5       # kept between the worst jump the assumptions allow and max_drawdown_pct (drawdown_room_text)
 vol_target_daily_pct = 0.2           # P&L volatility that sizing aims for, per day
 vol_measured_over_days = 5           # measured on 5-day P&L and scaled by the square root of 5
 vol_max_multiple = 1.5               # realized volatility over any 60 trading days stays within this multiple of the target
@@ -103,6 +110,9 @@ trapped_text = "a position that cannot be traded at the moment: its stock halted
 market_halt_text = "after a market-wide trading halt, gross exposure is cut to the overnight limits as soon as trading resumes, before any new entry"
 loss_basis_text = "the daily loss counts from the previous session's closing equity, so an overnight gap counts against it; the drawdown counts from the highest equity reached, marked to market"
 safe_state_text = "no new orders, open entry orders cancelled, every position keeps a stop that takes effect without the system, and the owner alerted"
+etf_text = "a broad index fund: an unleveraged exchange-traded fund tracking a broad US equity index (such as the S&P 500, the Nasdaq-100, the Russell 2000 or a total-market index); a leveraged, inverse, sector or single-stock fund is a stock for these limits"
+event_prone_text = "an event-prone position: a short in a biotechnology or pharmaceutical company, whose stock a regulatory decision or a takeover can double overnight; a long in a bank or other deposit-funded lender whose stock or industry has fallen 20% or more over the last 5 trading days, which a run can wipe out (SVB, March 2023)"
+drawdown_room_text = "at every moment, the loss the jump assumptions allow from the worst single event (one position through its jump, a total loss of one stock held overnight, one industry through its jump, or the overnight book through a 13% market gap) is at most max_drawdown_pct less the current drawdown less drawdown_room_margin_pct; positions shrink as the drawdown deepens, so no jump within the assumptions carries equity past max_drawdown_pct"
 
 [costs]
 round_trip_cost_bps = 8              # planning average; each trade is charged its own costs, below
@@ -121,13 +131,20 @@ cost_budget_pct_per_year = 4.5       # costs paid, as % of equity per year: just
 entry_min_gain_to_cost = 2           # a position opens only when its expected gain is at least this multiple of its expected cost
 risk_bearing_min_risk_pct = 0.1      # a round trip counts as risk-bearing when its loss at the stop is at least this
 activity_text = "the system evaluates the eligible universe every minute of the regular session; the entry rule is never relaxed to meet the activity floor"
+rotation_margin_to_cost = 1          # a rotation's advantage, after the candidate's round-trip cost, is at least this multiple of that cost
+rotation_min_hold_minutes = 15       # a position is not replaced sooner than this after opening
+rotation_min_hold_fraction = 0.2     # nor within this share of its planned holding time, whichever is longer
+max_rotations_per_day = 3
+max_rotation_share = 0.2             # of the round trips of the last 5 trading days; rotations count inside the planned activity
+rotation_review_count = 30           # on paper and live, the weekly review judges rotation on the latest this many
+rotation_text = "the number of positions is not fixed: the book holds every position the limits allow. When a candidate can't open because a limit is full, it may take the place of held positions, whole or in part, the lowest-valued first, when its value exceeds theirs by at least rotation_margin_to_cost times its round-trip cost and by at least one standard deviation of the error in such comparisons, measured on past rotations, and when it has done so at two consecutive evaluations. A candidate's value is its expected gain less its round-trip cost, less what a typical new entry would earn on the risk and the time it would occupy. A held position's value is its expected remaining gain, re-estimated from its signal now and never from its profit or loss since entry, less the same charge for its remaining time, less any extra cost of closing it before its planned exit; its own closing cost is not counted, since it is paid either way. A position is not replaced within rotation_min_hold_minutes or rotation_min_hold_fraction of its planned hold, whichever is longer; there are at most max_rotations_per_day rotations a day and at most max_rotation_share of the round trips of the last 5 trading days; a name replaced is not re-entered the same day, and no rotation closes and reopens the same name in the same direction; there is no rotation while the market's median spread or volatility is above its 90th percentile of the last year. Every rotation records both values, and the position closed is followed to its planned exit as if it had been held, so each rotation's realized value is known: the new position's result less the closed one's forgone result. The expected gains both rules use are calibrated on the trades those rules select, since the highest of 1,000 to 2,000 forecasts is inflated by its own selection"
 
 [returns]
 min_net_excess_sharpe = 1.0          # annualized; below this a strategy is not worth running
 target_net_excess_sharpe = 1.5       # annualized; what the gates are sized to detect
 min_net_excess_return_pct = 3        # a year: Sharpe 1.0 at the volatility budget
 target_net_excess_return_pct = 5     # a year: Sharpe 1.5 at the volatility budget
-planned_edge_horizon_minutes = 150   # the plan expects the edge from holds of 2.5 hours or more (GT-3); a planning basis, not a limit
+planned_edge_horizon_minutes = 780   # the plan expects the edge from holds of 2 trading days or more, held overnight (GT-3); a planning basis, not a limit
 require_net_profit = true            # excess return is not enough: the account must also make money
 excess_text = "the net daily return, without interest on cash or short proceeds but with dividends and borrow fees, minus for each position its weight times its 252-day beta to SPY (as of the previous close) times SPY's total return over the same interval the position was held, overnight and intraday separately; no risk-free rate is subtracted"
 
@@ -141,9 +158,9 @@ published_edge_multiplier = 0.42     # published effects count at most at what r
 max_false_pass_g1 = 0.01
 max_false_pass_g2 = 0.50             # paper trading can't tell a small edge from luck in 120 days: half of no-edge strategies make money
 max_false_real_money = 0.005
-min_power = 0.80
+min_power = 0.75                     # each gate passes the targeted edge at least this often: 5 points of power traded for twice as many ideas (decision 5)
 max_false_halt_per_year = 0.10
-assumed_trials = 10                  # the variant budget for the whole program on one data history
+assumed_trials = 20                  # the variant budget for the whole program on one data history
 assumed_cost_drag_daily_pct = 0.017  # 25 trades a week x 4% x 8 bps = 4.2% a year
 assumed_implementation_noise = 0.15  # daily difference between paper and a rerun of the same strategy, as a share of its volatility
 fidelity_detect_sr = 1.0             # G2 must catch an execution shortfall this large (Sharpe units a year)
@@ -154,12 +171,13 @@ min_dead_stop_3y = 0.65              # and stops it within 3 years at least this
 simulation_reps = 400
 
 [kill_criteria]
-max_research_cycles = 4
-max_variants_per_cycle = 3
-max_variants = 10                    # the binding total
-max_research_months = 9
+max_research_cycles = 4              # stages of 3 months; each stage's ideas are registered before its G1 runs
+max_variants_per_cycle = 5
+max_variants_per_idea = 2            # so at least 10 distinct ideas get a test
+max_variants = 20                    # the binding total
+max_research_months = 12
 drawdown = "a fall of max_drawdown_halt_pct from peak halts trading until the owner decides"
-no_edge = "if no strategy passes G1 within the research budget, the program stops instead of trading anyway; it restarts only if the owner decides, and only on data after the last G1 test"
+no_edge = "if no strategy passes G1 within the research budget, the program stops instead of trading anyway; it restarts only if the owner decides, and only on data after the last G1 test (a fresh 2,400-day test needs about 9.5 years of it). The budget is final: never extended because a variant nearly passed"
 
 [measurement]
 mark_text = "positions are marked at the consolidated mid-price; a quote older than data_max_age_seconds keeps its last valid mid; a halted name is marked at its last trade and flagged"
@@ -179,10 +197,15 @@ alert_seconds = 60
 data_gap_seconds = 30
 data_max_age_seconds = 5
 limit_warning_fraction = 0.8         # the owner is warned when a limit reaches this share of its threshold
-unacknowledged_alert_minutes = 15    # an alert not acknowledged by then stops new entries until it is
-unacknowledged_flatten_minutes = 60  # and by then closes every position
+alert_repeat_minutes = 5             # an alert not acknowledged by then is repeated through a second channel
+unacknowledged_alert_minutes = 15    # a warning not acknowledged by then stops new entries until it is
+unacknowledged_flatten_minutes = 60  # a fault not acknowledged by then closes every position (fault_text)
+flatten_cutoff_new_york = "15:45"    # or at this time, if earlier: closing orders are sent while the session is open
+stop_check_seconds = 60              # after a fault, every position's stop is confirmed at the broker within this time
+fault_text = "a fault is an alert that the system itself may be wrong: an order or fill the system did not send (the kill switch fires at once), a reconciliation mismatch, an order of unknown state, data older than data_gap_seconds, a lost connection, a restart, or orders rejected repeatedly. A fault puts the system in the safe state at once; within stop_check_seconds every position's stop is confirmed from the broker's own records and a position without a working stop is closed at once; unacknowledged, it closes every position after unacknowledged_flatten_minutes or at flatten_cutoff_new_york, whichever comes first, and the system stays stopped until the owner acknowledges. A warning (a limit near its threshold, a single rejected order, a market event) only stops new entries once unacknowledged; exits and stops keep running, and the daily loss limit and the drawdown halt still apply"
 max_round_trips_per_symbol_per_day = 4
 max_traded_pct_per_day = 300         # notional traded in a day, % of equity: beyond it, no new entries until the owner allows them
+max_open_positions_guard = 50        # a check against a malfunction, not a limit on the strategy: at the planned sizes the limits hold 18 to 25 positions; reaching it stops new entries until the owner allows them
 api_reserve_pct = 30                 # of the broker's request budget, kept free for exits and reconciliation
 max_clock_error_ms = 50              # the host clock against UTC: beyond it, no risk-increasing orders
 report_deadline_new_york = "17:00"
@@ -551,6 +574,48 @@ method = "analysis"
 gate = "G2"
 
 [[key_results]]
+id = "KR3.5"
+objective = "O3"
+kpp = false
+statement = "Every rotation follows the rotation rule: its recorded advantage clears the margin over the candidate's round-trip cost, the position replaced is past its minimum hold, the daily and 5-day rotation caps hold, and the name replaced is not re-entered that day."
+metric = "rotations that break the rotation rule"
+unit = "count"
+comparator = "=="
+threshold = 0
+window = "every rotation"
+data = "order and rotation logs"
+method = "inspection"
+gate = "G2"
+
+[[key_results]]
+id = "KR3.6"
+objective = "O3"
+kpp = false
+statement = "If the strategy rotates, rotation pays: over at least 50 out-of-sample rotations in G1, a rotation's mean realized value (the new position's net result less what the replaced position would have earned to its planned exit) is above zero, and so is its one-sided 90% lower confidence bound. On paper and live, the weekly review switches rotation off when the mean over the latest 30 rotations is below zero with a t-statistic below -1."
+metric = "one-sided 90% lower confidence bound of a rotation's mean realized value"
+unit = "% of equity"
+comparator = ">"
+threshold = 0
+window = "G1's out-of-sample rotations (at least 50); then the latest 30, at every weekly review"
+data = "rotation log and the record of each replaced position followed to its planned exit"
+method = "analysis"
+gate = "G1"
+
+[[key_results]]
+id = "KR3.7"
+objective = "O3"
+kpp = false
+statement = "Expected gains are not inflated: over G1's out-of-sample trades, the fifth of entries with the lowest recorded expected gain relative to cost realize on average at least half of their expected gross gain, so a trade at the entry threshold pays its cost."
+metric = "realized gross gain over recorded expected gain, lowest fifth of entries by expected gain to cost"
+unit = "ratio"
+comparator = ">="
+threshold = 0.5
+window = "G1's out-of-sample trades"
+data = "trade log"
+method = "analysis"
+gate = "G1"
+
+[[key_results]]
 id = "KR4.1"
 objective = "O4"
 kpp = false
@@ -596,7 +661,7 @@ gate = "G2"
 id = "KR4.4"
 objective = "O4"
 kpp = false
-statement = "Within 60 seconds of a lost connection, data older than 30 seconds, or a failed limit check, the system is in the safe state and the owner is alerted."
+statement = "Within 60 seconds of a fault (fault_text) or a failed limit check, the system is in the safe state, every position's stop is confirmed at the broker or the position is closed, and the owner is alerted."
 metric = "seconds from the fault to the safe state and the alert"
 unit = "seconds"
 comparator = "<="
@@ -652,7 +717,7 @@ gate = "G2"
 id = "KR6.1"
 objective = "O6"
 kpp = true
-statement = "Every variant is registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 10. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included. Paper days used to diagnose a failed G2 become part of the history for every later variant."
+statement = "Every variant is registered before it is tested, and G1 counts every variant ever evaluated on its history, never fewer than 20. A variant is any run on the G1 history whose results anyone sees and that differs from earlier runs in its program logic, data, features, parameters or their ranges, universe, cost, fill or borrow model, walk-forward schedule or excess method, re-runs after bug fixes included; an idea or feature a pre-trained model proposes is registered like any other. A G1 run shows the researcher only whether it passed, its Deflated Sharpe Ratio and the count of variants; diagnostics come from the training window. Paper days used to diagnose a failed G2 become part of the history for every later variant."
 metric = "runs on the G1 history missing from the trial log"
 unit = "count"
 comparator = "=="
@@ -666,8 +731,8 @@ gate = "G1"
 id = "KR6.2"
 objective = "O6"
 kpp = true
-statement = "An independent reviewer challenges the evidence before each gate, and every finding is resolved."
-metric = "unresolved review findings at the gate"
+statement = "Before each gate, at least two independent AI reviewers from different model families, never a Fable model, challenge the evidence after scripts have recomputed its headline numbers from the raw records; each sees only the evidence and the criteria set in advance. Every finding gets a written disposition (fixed, accepted with a reason, or rejected with evidence), and a finding marked blocking closes only with a fix the reviewers confirm or a second independent review."
+metric = "findings at the gate without a written disposition, and blocking findings not closed"
 unit = "count"
 comparator = "=="
 threshold = 0
@@ -680,13 +745,13 @@ gate = ["G1", "G2", "G3"]
 id = "KR6.3"
 objective = "O6"
 kpp = true
-statement = "No model trained on data after the start of the G1 out-of-sample window, including a pre-trained language model, shapes G1's return forecast; such a model may serve monitoring, operations and explanation."
-metric = "G1 forecasts shaped by a model whose training data reach past the window's start"
+statement = "Every model that shapes G1's return forecast was trained only on data from before each decision it informs (pre-training, fine-tuning, instruction data and any teacher model included), and a cutoff audit checks it. A model whose training data can't be shown to predate each decision, such as a current language model or a time-series foundation model, serves only monitoring, operations and explanation; data it extracts or labels for the forecast counts as shaping it."
+metric = "G1 forecasts shaped by a model whose training data reach past the decision they inform"
 unit = "count"
 comparator = "=="
 threshold = 0
 window = "the G1 out-of-sample history"
-data = "the trial log and each model's documented training cutoff"
+data = "the trial log, each model's documented training data and the cutoff audit"
 method = "inspection"
 gate = "G1"
 
@@ -702,6 +767,20 @@ threshold = 0
 window = "the G1 out-of-sample history"
 data = "the simulation's order log; the history's membership and delisting records; the lag audit"
 method = "inspection"
+gate = "G1"
+
+[[key_results]]
+id = "KR6.5"
+objective = "O6"
+kpp = false
+statement = "Before G1, the review panel finds at least 2 of 3 flaws planted in a copy of the evidence without its knowledge (such as a one-bar look-ahead, an unregistered variant, or delisted stocks left out); a panel that finds fewer is strengthened, a human expert added, and tested again."
+metric = "planted flaws the panel finds"
+unit = "count of 3"
+comparator = ">="
+threshold = 2
+window = "before G1, and after any change to the panel"
+data = "review records and the planted-flaw key, kept sealed until the panel reports"
+method = "demonstration"
 gate = "G1"
 
 [[key_results]]
@@ -784,7 +863,7 @@ purpose = "Is there an edge, net of costs, on history not used to find it?"
 kind = "dsr"
 metric = "excess"
 min_days = 2400
-min_trials = 10
+min_trials = 20
 dsr_min = 0.95
 sr_min = 1.0
 min_sr_each_half = 0.25
@@ -794,6 +873,8 @@ require_lag_audit = true
 require_net_profit = true
 autocorr_lags = 5
 require_conservative_fills = true
+min_rotations_judged = 50            # a strategy that rotates is judged on at least this many out-of-sample rotations (KR3.6)
+rotation_confidence = 0.90           # and the one-sided lower bound of their mean value at this confidence must be above zero
 
 [[gates]]
 id = "G2"
@@ -821,10 +902,12 @@ purpose = "Do real fills match the cost model, with real money at risk?"
 [gates.rule]
 kind = "owner_decision"
 max_initial_capital_fraction = 0.10
-min_initial_capital_usd = 2000       # so short sales are allowed from the first day
+min_initial_capital_usd = 2500       # short sales need $2,000 of equity, and this keeps it through a 10% drawdown
+min_shares_typical_position = 10     # the starting capital lets a typical position hold this many shares of the universe's median-priced stock, so whole shares stay within 10% of the tested sizes
+human_review_capital_usd = 100000    # capital grows past this only after a paid human expert, paid whatever the verdict, has reviewed the G1 statistics
 min_days = 60
-scale_rule = "capital at most doubles each 60 trading days, and only while the live test allows growth (KR8.2), every G2 criterion still holds, live costs match the model (KR1.8), and no participation limit binds on more than 5% of trades"
-entry_conditions = "the owner has confirmed the tax treatment of the account; the starting capital is at least min_initial_capital_usd and large enough that whole-share short positions keep to the percentage limits"
+scale_rule = "capital at most doubles each 60 trading days, and only while the live test allows growth (KR8.2), every G2 criterion still holds, live costs match the model (KR1.8), and no participation limit binds on more than 5% of trades; it grows past human_review_capital_usd only after the human review"
+entry_conditions = "the owner has confirmed the tax treatment of the account with an adviser: for a US taxpayer, how wash sales are tracked across all the owner's accounts (the broker applies the rule only within one account) and whether to elect mark-to-market accounting under section 475(f), which must be made before the tax year it applies to; for a taxpayer elsewhere, how the home country taxes frequent trading. The starting capital is at least min_initial_capital_usd and lets a typical position hold min_shares_typical_position shares of the universe's median-priced stock; if max_initial_capital_fraction of the intended capital is less, the first step starts at that minimum instead, and the owner accepts that it is not small"
 
 # --- controls: each covers items of the external checklists GT-7 applies ---
 
@@ -855,12 +938,12 @@ covers = ["MA-5", "RT-4", "RT-11", "KC-3"]
 
 [[controls]]
 id = "C6"
-statement = "A kill switch, available to the owner at any time and triggered automatically by the drawdown halt, cancels all orders and closes all positions; a second way to do it does not depend on the trading process (the broker's own controls) and is drilled; the broker account's margin multiplier is set to the lowest value that allows the planned shorts, so the broker itself caps a runaway; only one instance of the system trades at a time; every order carries the strategy version that sent it."
+statement = "A kill switch, available to the owner at any time and triggered automatically by the drawdown halt, cancels all orders and closes all positions; a second way to do it depends neither on the trading process, nor on its host, nor on a person being there: it closes everything through the broker when the trading process stops reporting for alert_seconds or the owner asks, and the broker's own controls remain a third way; both are drilled (the broker cancels nothing by itself when a client disconnects); the broker account's margin multiplier is set to the lowest value that allows the planned shorts, so the broker itself caps a runaway; only one instance of the system trades at a time; every order carries the strategy version that sent it."
 covers = ["RT-1", "FN-4", "KC-2", "RT-8"]
 
 [[controls]]
 id = "C7"
-statement = "Real-time monitoring alerts the owner within alert_seconds of a blocked or rejected order, a data gap, a lost connection, a reconciliation mismatch, or a limit at limit_warning_fraction of its threshold; an alert not acknowledged within unacknowledged_alert_minutes stops new entries, and within unacknowledged_flatten_minutes closes every position. This relaxes RTS 6 Article 16 (alerts within 5 seconds, a person monitoring) by the owner's choice of an unattended system."
+statement = "Real-time monitoring alerts the owner within alert_seconds of a blocked or rejected order, a data gap, a lost connection, a reconciliation mismatch, or a limit at limit_warning_fraction of its threshold, and repeats an unacknowledged alert through a second channel after alert_repeat_minutes. A fault (fault_text) puts the system in the safe state at once, has every stop confirmed at the broker within stop_check_seconds, and, unacknowledged, closes every position after unacknowledged_flatten_minutes or at flatten_cutoff_new_york, whichever comes first; an unacknowledged warning stops new entries after unacknowledged_alert_minutes. This relaxes RTS 6 Article 16 (alerts within 5 seconds, a person monitoring) by the owner's choice of an unattended system."
 covers = ["RT-3", "FN-4", "KC-1"]
 deviations = ["RT-3: RTS 6 asks for alerts within 5 seconds and a person monitoring during trading; the goal allows 60 seconds and no person, because the owner wants an unattended system"]
 
@@ -886,7 +969,7 @@ covers = ["RT-7"]
 
 [[controls]]
 id = "C13"
-statement = "At most max_round_trips_per_symbol_per_day round trips in one name a day, and at most max_traded_pct_per_day of equity traded in a day; reaching either stops new entries until the owner allows them again."
+statement = "At most max_round_trips_per_symbol_per_day round trips in one name a day, at most max_traded_pct_per_day of equity traded in a day, and at most max_open_positions_guard open positions, a check against a malfunction rather than a limit on the strategy; reaching any of them stops new entries until the owner allows them again."
 covers = ["RT-2", "RT-9", "KC-2"]
 
 [[controls]]
@@ -896,5 +979,5 @@ covers = ["RT-10"]
 
 [[controls]]
 id = "C12"
-statement = "An independent reviewer challenges the evidence before each gate (effective challenge), and the sequential live test weighs the live results every month (KR8.2)."
+statement = "A panel of independent AI reviewers challenges the evidence before each gate (effective challenge, KR6.2), tested on planted flaws (KR6.5), with a paid human review before real money passes human_review_capital_usd; the sequential live test weighs the live results every month (KR8.2)."
 covers = ["MR-1", "MR-2"]

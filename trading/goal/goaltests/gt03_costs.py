@@ -85,10 +85,18 @@ def run(spec: dict) -> list[Check]:
         add("the goal says which horizons the planned edge comes from", False,
             f"holding from seconds is allowed, but only {', '.join(feasible)} can pay costs with at most a 'great' signal")
     else:
+        # a trade opens only when its expected gain is a multiple of its cost (the entry rule), so the
+        # planned edge must clear that multiple, not just break even
+        entry = spec.get("activity", {}).get("entry_min_gain_to_cost", 1)
         move = stock_d * math.sqrt(min(edge_min, 5 * 390) / 390)
-        ic = ic_needed(cost, move)
-        add("at the planned edge's shortest horizon, costs need at most a 'great' signal (IC <= 0.10)", ic <= IC_GREAT,
-            f"{edge_min:g} min: move {move:.0f} bps, break-even IC {ic:.3f}")
+        ic = ic_needed(cost * entry, move)
+        add(f"at the planned edge's shortest horizon, the entry rule (gain at least {entry:g} x cost) needs at most "
+            "a 'great' signal (IC <= 0.10)", ic <= IC_GREAT,
+            f"{edge_min:g} min: move {move:.0f} bps, IC {ic:.3f} for {entry:g} x {cost:g} bps")
+        shortest = 390 * (cost * entry / (SIGN_BET_EFFICIENCY * IC_GREAT * stock_d)) ** 2
+        add("the shortest hold at which a 'great' signal meets the entry rule", None,
+            f"{shortest:.0f} minutes ({shortest / 390:.1f} trading days); break-even alone needs "
+            f"{390 * (cost / (SIGN_BET_EFFICIENCY * IC_GREAT * stock_d)) ** 2:.0f} minutes")
 
     # market impact at the participation limit: the square-root law (impact per side about Y x daily
     # volatility x the square root of the position's share of daily volume, Y between 0.5 and 1;

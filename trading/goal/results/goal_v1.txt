@@ -70,7 +70,7 @@ GT-1 statement quality (ISO/IEC/IEEE 29148): 30 failing (0s)
   ✓ every KPP is decided at a gate
   ✗ kill criteria stated (when the program stops)
 
-GT-2 internal consistency: 11 failing (0s)
+GT-2 internal consistency: 11 failing (1s)
   ✗ every stop hit at once stays inside the daily loss limit: 2.5% open risk x 1.25 slippage = 3.12% vs 2%
   ✓ stress gaps match the price data: NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
   ✓ one position's 1-in-100 overnight gap fits inside the daily loss limit: 20% x 5.31% = 1.06% vs 2%
@@ -79,7 +79,7 @@ GT-2 internal consistency: 11 failing (0s)
   ✗ the overnight book through a 13% market-wide gap fits inside the daily loss limit: 100% gross x 13% = 13.00% vs 2%
   ✗ overnight exposure limited separately from intraday: positions may be held for days, but only intraday sizes are set
   ✗ jumps sized as jumps (a gap or a halt is not a slipped stop): the limits assume a stop bounds the loss; across a gap or a halt it doesn't
-  ✗ the planned activity fits the position limit: no planned activity or holding time
+  ✗ the planned activity fits the book: no planned activity or holding time
   · position limits and the gross exposure limit: 5 x 20% = 100% vs 100%: the position limits bind first
   ✗ short selling is consistent with the leverage rule: a short sale is borrowed stock; state leverage as gross exposure instead
   ✓ drawdown halt is above the daily loss limit: halt after 5 days at the limit
@@ -94,7 +94,7 @@ GT-3 cost feasibility by horizon: 3 failing (0s)
   ✗ the goal says which horizons the planned edge comes from: holding from seconds is allowed, but only 1 day, 5 days can pay costs with at most a 'great' signal
   ✗ the return objective is achievable at the stated activity: unspecified: min_net_excess_sharpe, vol_target_daily_pct, planned_risk_trades_per_week, typical_holding_minutes, typical_position_pct
 
-GT-4 do the gates tell skill from luck: 20 failing (3s)
+GT-4 do the gates tell skill from luck: 20 failing (6s)
   · simulation setup: volatility 1.00%/day (measured over 1 day), cost drag 0.070%/day, stress x2, 10 variants, G1 252 days, G2 20 days, target Sharpe 2.0, 400 runs each
   ✗ G1 lets the best of 10 no-edge variants through at most 5% (normal): 99.75% of 400
   ✗ a no-edge strategy reaches real money at most 1.0% of the time (normal): G1 99.75% x G2 211/399 = 52.75%
@@ -120,14 +120,14 @@ GT-4 do the gates tell skill from luck: 20 failing (3s)
   · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 4.12
   · days of track record to show a Sharpe 2 at 99% confidence: 345 days
 
-GT-5 random strategies on real prices: 4 failing (2s)
+GT-5 random strategies on real prices: 4 failing (3s)
   · real data: 4011 aligned days of sp500, msft, orcl, nvda, yhoo, 1999-01-22 to 2014-12-31
   ✗ G1 passes the best of 10 balanced random strategies at most 5% of the time (real data): 59/60 windows of 252 days = 98%
   ✗ G2 passes a balanced random strategy at most 20% of the time (real data): 76/178 windows of 20 days = 43%
   ✗ G1 passes the best of 10 long-only random strategies at most 5% of the time (real data): 51/60 windows of 252 days = 85%
   ✗ G2 passes a long-only random strategy at most 20% of the time (real data): 92/178 windows of 20 days = 52%
 
-GT-6 metric gaming: 9 failing (0s)
+GT-6 metric gaming: 10 failing (0s)
   ✗ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit, so one position risks 4x that limit): passes the goal
   ✗ rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen): passes the goal
   ✗ rejects 'riding the market' (fully long in a rising market: profit with no edge): passes the goal
@@ -136,6 +136,7 @@ GT-6 metric gaming: 9 failing (0s)
   ✗ rejects 'paper's generous fills' (earns only because paper fills limit orders the moment price touches): passes the goal
   ✗ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): passes the goal
   ✗ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): passes the goal
+  ✗ rejects 'churning' (replaces held positions whenever a fresh forecast looks higher, on forecasts inflated by picking the highest of many: each switch pays two costs and loses on average): passes the goal
   ✗ rejects 'big overnight shorts' (holds 10% short positions overnight, where a takeover bid gaps one up 50% (Yahoo, 1 February 2008)): passes the goal
 
 GT-7 control coverage: 29 failing (0s)
@@ -161,8 +162,8 @@ GT-7 control coverage: 29 failing (0s)
   ✗ RT-9 RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles: not covered
   ✗ RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC: not covered
   ✗ RT-11 MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years: not covered
-  ✗ MR-1 SR 11-7: effective challenge by competent, independent reviewers: not covered
-  ✗ MR-2 SR 11-7: ongoing monitoring and outcomes analysis (results against expectations): not covered
+  ✗ MR-1 SR 11-7 / SR 26-2: effective challenge by reviewers with expertise, independence and the standing to effect change: not covered
+  ✗ MR-2 SR 11-7 / SR 26-2: ongoing monitoring and outcomes analysis (results against expectations): not covered
   ✗ KC-1 Knight Capital: alerts designed and treated as alerts: not covered
   ✗ KC-2 Knight Capital: a control that halts the system's own runaway behavior: not covered
   ✗ KC-3 Knight Capital: the system's view of its orders and positions checked against the market's, as it trades: not covered
@@ -176,4 +177,4 @@ GT-8 outside view: 5 failing (0s)
   ✗ published edges count at most at what remains after publication (McLean-Pontiff: 42%): not stated
   ✗ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
 
-41/152 checks pass
+41/153 checks pass

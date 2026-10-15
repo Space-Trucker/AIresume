@@ -7,7 +7,7 @@ from __future__ import annotations
 import math
 
 from . import data, stats
-from .spec import Check, constraints, risk
+from .spec import Check, constraints, risk, rule
 
 TEST = "GT-2"
 STOP_SLIPPAGE = 1.25   # a stop in a fast market fills worse than its price; 25% worse is assumed
@@ -80,7 +80,7 @@ def capacity(r: dict, a: dict) -> tuple[int, str]:
         key = "max_overnight_gross_pct" if nights else "max_gross_exposure_pct"
         if key in r:
             bounds.append((int(r[key] // size), f"{r[key]:g}% {'overnight ' if nights else ''}gross / {size:g}% each"))
-    floor = a.get("risk_bearing_min_risk_pct")
+    floor = r.get("min_position_risk_pct", a.get("risk_bearing_min_risk_pct"))
     if r.get("max_open_risk_pct") and floor:
         bounds.append((int(r["max_open_risk_pct"] / floor + 1e-9),
                        f"{r['max_open_risk_pct']:g}% open risk / at least {floor:g}% each"))
@@ -171,6 +171,38 @@ def run(spec: dict) -> list[Check]:
                             f"{r['max_overnight_industry_pct']:g}% x {jump:g}% = {industry:.2f}% vs {bound:g}%")
                     else:
                         add("overnight exposure to one industry is limited", False, "a jump that hits a whole industry is unbounded")
+                # positions whose jump differs from an ordinary stock's: each tier's cap through its own
+                # jump must fit the daily limit, as the ordinary cap does
+                for kind, cap_key, jump_key in (("broad index fund", "max_overnight_etf_pct", "jump_overnight_etf_pct"),
+                                                ("event-prone position", "max_overnight_event_prone_pct",
+                                                 "jump_overnight_event_prone_pct")):
+                    if cap_key in r or jump_key in r:
+                        tier_cap, tier_jump = r.get(cap_key), r.get(jump_key)
+                        ok = tier_cap is not None and tier_jump is not None and tier_cap * tier_jump / 100 <= daily
+                        add(f"one {kind} held overnight through its own jump fits inside the daily loss limit", ok,
+                            f"{tier_cap:g}% x {tier_jump:g}% = {tier_cap * tier_jump / 100:.2f}% vs {daily:g}%"
+                            if tier_cap is not None and tier_jump is not None else "a cap or its jump is unspecified")
+                # the drawdown line: the halt fires at max_drawdown_halt_pct, but a jump can land on a book
+                # already near it. Unless positions shrink as the drawdown deepens, the worst jump the
+                # assumptions allow, added to a drawdown just short of the halt, crosses the line
+                dd, halt = r.get("max_drawdown_pct"), r.get("max_drawdown_halt_pct")
+                if dd is not None and halt is not None:
+                    worst = max([bound or 0.0, max(long_cap, short_cap) * jump / 100,
+                                 r.get("max_overnight_industry_pct", 0) * jump / 100,
+                                 r.get("max_overnight_net_pct", 0) * STRESS_MARKET_GAP,
+                                 (r.get("max_position_pct") or 0) * (r.get("jump_intraday_pct") or 0) / 100])
+                    margin = r.get("drawdown_room_margin_pct")
+                    allowed = worst if margin is None else max(0.0, min(worst, dd - margin - halt))
+                    add("the worst jump at a drawdown just short of the halt stays inside the drawdown limit",
+                        halt + allowed <= dd,
+                        f"{halt:g}% + {allowed:.2f}% = {halt + allowed:.2f}% vs {dd:g}%"
+                        + ("" if margin is not None else
+                           f" (the worst event the jump assumptions allow, {worst:.2f}%, at full size: positions must shrink as the drawdown deepens)"))
+                    if margin is not None:
+                        gross, rt = r.get("max_gross_exposure_pct", 100), costs.get("round_trip_cost_bps", 0)
+                        closing = gross * rt / 2 / 1e4 * costs.get("stress_cost_multiplier", 1)
+                        add("the drawdown margin covers closing the whole book at the halt, at stressed costs", margin >= closing,
+                            f"{margin:g}% vs {gross:g}% x {rt / 2:g} bps x {costs.get('stress_cost_multiplier', 1):g} = {closing:.2f}%")
             else:
                 single = max(long_cap, short_cap) * stock_q99
                 add("one position's 1-in-100 overnight gap fits inside the daily loss limit", single <= daily,
@@ -296,4 +328,27 @@ def run(spec: dict) -> list[Check]:
                 add(f"the stated return matches the Sharpe ratio at the volatility budget ({pct_key})",
                     abs(implied - ret[pct_key]) <= 0.5,
                     f"Sharpe {ret[sr_key]:g} x {yearly:.2f}%/yr = {implied:.1f}%/yr vs {ret[pct_key]:g}%")
+
+    # 10. without a fixed count, a full book needs a rule for what may take a held position's place: a
+    #     switch must clear its cost at least as an entry clears its own, rotations are capped inside the
+    #     planned activity, and enough of them are judged to tell whether they pay
+    if not r.get("max_positions"):
+        need = ("rotation_margin_to_cost", "rotation_min_hold_minutes", "max_rotations_per_day", "max_rotation_share")
+        missing = [k for k in need if k not in a] + \
+                  [f"G1 {k}" for k in ("min_rotations_judged",) if k not in rule(spec, "G1")]
+        add("a full book is resolved by a stated rotation rule", not missing,
+            "unspecified: " + ", ".join(missing) if missing else "")
+        if not missing:
+            entry = a.get("entry_min_gain_to_cost", 1)
+            add("a rotation clears its switching cost at least as an entry clears its own cost",
+                1 + a["rotation_margin_to_cost"] >= entry,
+                f"advantage at least {1 + a['rotation_margin_to_cost']:g} x the candidate's round-trip cost vs entry at {entry:g} x")
+            if slots and all(k in a for k in plan):
+                week = a["planned_risk_trades_per_week"]
+                load = week / 5 * a["typical_holding_minutes"] / SESSION_MINUTES
+                full = erlang_b(load, slots) * week
+                cap = min(a["max_rotation_share"] * week, a["max_rotations_per_day"] * 5)
+                add("rotation opportunities and the cap, within the planned round trips", None,
+                    f"about {full:.1f} candidates a week meet a full book; at most {cap:g} rotations a week, "
+                    f"counted inside the {week} planned round trips and so inside the cost budget")
     return out

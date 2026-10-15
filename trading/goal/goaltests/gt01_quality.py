@@ -23,7 +23,7 @@ DESIGN = ["ai model", "fast code", "code", "database", "python", "server", "llm"
 REQUIRED_NUMBERS = {
     "constraints": ["max_holding_trading_days", "max_holding_calendar_days", "universe_min_price_usd",
                     "universe_min_dollar_volume_usd", "universe_max_spread_bps"],
-    "risk": ["risk_per_position_pct", "max_open_risk_pct", "max_positions", "max_position_pct",
+    "risk": ["risk_per_position_pct", "max_open_risk_pct", "max_position_pct",
              "max_position_overnight_pct", "max_gross_exposure_pct", "daily_loss_limit_pct",
              "max_drawdown_halt_pct", "vol_target_daily_pct"],
     "costs": ["round_trip_cost_bps", "stress_cost_multiplier"],

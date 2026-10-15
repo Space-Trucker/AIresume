@@ -71,6 +71,13 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     out.append(("big overnight positions", "holds full-size positions overnight, where a gap jumps past the stop",
                 "G2", paper(p, max_overnight_long_pct=20, max_position_pct=20, max_overnight_gross_pct=60,
                             max_overnight_net_pct=20, max_holding_days=3)))
+    churn = _lucky(d1, 3.0, vol, rng)
+    rot = [0.0002 * rng.gauss(0, 1) for _ in range(400)]
+    rot = [v - sum(rot) / len(rot) - 0.00002 for v in rot]                 # each switch loses 0.2 bp of equity
+    out.append(("churning", "replaces held positions whenever a fresh forecast looks higher, on forecasts "
+                "inflated by picking the highest of many: each switch pays two costs and loses on average", "G1",
+                gates.Record(daily=churn, excess=churn, trades=5000, n_trials=1, lag_audit_ok=True, stressed=churn,
+                             conservative_fills=True, rotations=len(rot), rotation_values=rot)))
     p = good(d2)
     out.append(("big overnight shorts", "holds 10% short positions overnight, where a takeover bid gaps one up "
                 "50% (Yahoo, 1 February 2008)", "G2",
