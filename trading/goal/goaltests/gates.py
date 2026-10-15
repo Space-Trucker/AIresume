@@ -209,11 +209,6 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
             return False, "drawdown limit"
         if (why := _fills(rule, rec)) is not None:
             return False, why
-        m = sum(series) / n
-        if m <= 0:
-            return False, "paper excess return not positive"
-        if rule.get("require_net_profit") and sum(daily) <= 0:
-            return False, "the paper account did not make money"
         if "fidelity_noninferiority_sr" in rule:
             # non-inferiority: paper must show, with confidence, that it trails the rerun of the frozen
             # strategy by less than the margin; noise makes that harder to show, so G2 runs on (up to
@@ -230,6 +225,11 @@ def evaluate(rule: dict, rec: Record) -> tuple[bool | None, str]:
                 if n < rule.get("max_days", n):
                     return None, f"continue: fidelity not yet shown (lower bound {low / vol * math.sqrt(252):+.2f} Sharpe)"
                 return False, f"paper may trail the rerun by more than {rule['fidelity_noninferiority_sr']:g} Sharpe"
+        m = sum(series) / n
+        if m <= 0:
+            return False, "paper excess return not positive"
+        if rule.get("require_net_profit") and sum(daily) <= 0:
+            return False, "the paper account did not make money"
         return True, f"excess {m * 252:+.2%} a year"
     raise ValueError(f"unknown gate rule kind {kind!r}")
 
