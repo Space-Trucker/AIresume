@@ -4,15 +4,17 @@ An autonomous trading system for US stocks and ETFs, built top-down: the goal fi
 requirements, then the architecture, then the code. It is independent of everything else in this
 repository.
 
-**Status: goal stage, goal frozen.** The goal is defined, tested and independently reviewed twice.
+**Status: requirements and design, slice A (the plumbing paper bot); goal frozen.** The goal is defined, tested and independently reviewed twice.
 Version 5 answers the review of version 4, and its tests hold their own bars, fixed outside the goal,
 and must catch 70 deliberately broken copies of it. Any decision can still be overturned (the end of
-`GOAL.md`). No requirements, architecture or code exist yet, and nothing can reach Alpaca from here
-until the owner allows its hosts and adds a paper key as an environment secret (`goal/REPORT.md`, last
-section).
+`GOAL.md`). The requirements and design for slice A, a paper bot that proves only the plumbing, are written;
+no code exists yet. Nothing can reach Alpaca from here until the owner allows its hosts and adds a paper
+key as an environment secret (`goal/REPORT.md`, last section).
 
 | File | What it is |
 |---|---|
+| [`requirements/REQUIREMENTS.md`](requirements/REQUIREMENTS.md) | slice A's requirements: what the plumbing paper bot must do, each traced to the goal and verified by a test, a drill, a probe or an inspection |
+| [`design/DESIGN.md`](design/DESIGN.md) | slice A's design: two hosts, the broker adapter, the order state machine, the kill path, the ledger, testing, and the day-one probes with their fallbacks |
 | [`goal/GOAL.md`](goal/GOAL.md) | the goal: mission, what to expect, what changed from what was asked, scope, constraints, risk limits, objectives and key results, gates, controls, and the decisions with their evidence |
 | [`goal/goal.toml`](goal/goal.toml) | the same goal, machine-readable; every number in `GOAL.md` comes from here |
 | [`goal/METHOD.md`](goal/METHOD.md) | how the goal is defined: the methods combined, and why |
