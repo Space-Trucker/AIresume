@@ -4,8 +4,12 @@
 (`../reports/Trading goal decisions research.md`) and on the owner's answers: no fixed number of
 positions, and 120 days of paper trading. Version 5 answers an independent review of version 4 by four
 reviewers who saw only the goal: a fact check, a check against Alpaca's actual interface, a statistics
-review, and an audit of the tests for circularity (`reviews/v4/`, `REPORT.md`). The goal is now frozen:
-it changes only if building or testing shows it wrong. The decisions, with what the research found, are
+review, and an audit of the tests for circularity (`reviews/v4/`, `REPORT.md`). The last found the tests
+judging the goal by its own numbers; since round 5 the tests hold their own bars, and those found five
+more things to fix here: a key result that contradicted its gate, a worst-day bound real stop fills
+exceed, a plan the book couldn't hold, a spread limit the cost stress didn't cover, and a live test
+slower than the bar set for it before any results. The goal is now frozen: it changes only if building
+or testing shows it wrong. The decisions, with what the research found, are
 at the end; the owner can still overturn any of them. The method behind the goal is in `METHOD.md`. Every number here comes from `goal.toml`, which the tests read. This document sets what
 the system must achieve and how that will be judged. How it is built comes next, top-down.
 
@@ -58,7 +62,8 @@ fraction of the intended capital and grows only while the evidence holds.
   no money. If a strategy does pass both gates, it has a real edge with probability 87%, and
   one worth running with probability 83%, on the goal's prior over edge sizes; both fall if
   real edges are smaller than assumed (62% and 41% if none is above a Sharpe of
-  1.25). Every one of these figures assumes the history is out of sample for the researcher. It isn't
+  1.25). At the tests' own reference, where small edges are commoner and the rate at which a strategy
+  with no edge reaches real money is taken at its upper bound, they are 67% and 61%. Every one of these figures assumes the history is out of sample for the researcher. It isn't
   quite: the builder, a person or an AI model, already knows 2016 to 2026. That is why the live test
   starts on the first paper day, the first data no one has seen, and capital grows only when that
   evidence favors the edge 3 to 1.
@@ -95,7 +100,7 @@ Where the goal departs from what you said, the last column names the decision th
 | at most 5 positions | no fixed number: as many as the risk and exposure limits allow, about 15 open as planned. When a better candidate meets a full book, it replaces the lowest-valued position only if the switch pays after its cost | you asked for a dynamic book; a count would block good trades, and the limits already bound the risk | settled (decision 2) |
 | at most 20% in one position | 4% for a stock at any moment, 10% for a broad index fund, 2% for an event-prone position; all shrinking as the drawdown deepens | a position must survive a jump at a cost of at most 2%: 50% for a stock, overnight or through a news halt in the session, which reopens like an overnight gap; 20% for a broad index fund; 100% for a biotech short or a bank under a run. Near the halt, a jump must not carry equity past the 10% line | settled (decision 1) |
 | lose at most 0.5% on a trade if its stop is hit | the same, for a position with all its fills together, plus 1.5% at the stops on each side and 2% in total | adding to a loser can't multiply the risk; every stop on one side hit at once stays inside the daily limit | none |
-| stop for the day at -2% | the same, counted from the previous close, so an overnight gap counts | otherwise a gap leaves a fresh 2% to lose | none |
+| stop for the day at -2% | the same, counted from the previous close, so an overnight gap counts. A day can still lose up to 3.5%: stops that gap through their price fill worse, up to 1.9 times the planned loss on the worst stress day in the price data | otherwise a gap leaves a fresh 2% to lose; no limit can stop a gap | none |
 | never more than 10% below the peak | halt at 9%, so 10% is never reached | a halt at 10% would fire only after the line was crossed | none |
 | no borrowed money to start | gross exposure at most 100% of equity | a short sale is borrowed stock, so "no borrowed money" can't be literal; this is the closest meaning | none |
 | a kill switch | the same, plus a second path that doesn't depend on the system, drills every 20 days, and a rule for positions that can't be traded (a halted stock) | a kill switch can't sell a halted stock | none |

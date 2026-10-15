@@ -1,6 +1,6 @@
 goal: goal_v1.toml (version 1)
 
-GT-1 statement quality (ISO/IEC/IEEE 29148): 30 failing (0s)
+GT-1 statement quality (ISO/IEC/IEEE 29148): 46 failing (0s)
   ✓ mission stated
   ✓ viewpoint stated
   ✗ non-goals stated (scope is bounded): nothing is declared out of scope
@@ -60,26 +60,52 @@ GT-1 statement quality (ISO/IEC/IEEE 29148): 30 failing (0s)
   ✗ costs: the limits are numbers: unspecified: round_trip_cost_bps, stress_cost_multiplier
   ✗ activity: the limits are numbers: unspecified: cost_budget_pct_per_year, min_risk_trades_per_week
   ✗ returns: the limits are numbers: unspecified: min_net_excess_sharpe, target_net_excess_sharpe
-  ✗ constraints: no vague limits: heavily traded, penny
-  ✓ risk: no vague limits
-  ✗ costs: no vague limits: realistic
-  ✗ activity: no vague limits: constantly
+  ✗ every limit, rule and control is stated without vague words: activity.activity_text: constantly; constraints.universe_text: heavily traded; constraints.universe_text: penny; costs.cost_text: realistic
+  ✗ a key result covers an edge net of costs and luck, on history it was not built on (owner; Bailey and Lopez de Prado): no key result states it
+  ✓ a key result covers paper trading makes money after costs before real money (owner): KR1.2
+  ✗ a key result covers every share covered by a stop at the broker that acts while the system is down (owner (strict risk rules); RTS 6 Art. 14): no key result states it
+  ✗ a key result covers a kill switch (owner; RTS 6 Art. 12): no key result states it
+  ✗ a key result covers the drawdown halt (owner (never more than 10% below the peak)): no key result states it
+  ✗ a key result covers no order breaks a limit (owner (a risk manager with fixed limits blocks any trade); 15c3-5): no key result states it
+  ✗ a key result covers positions closed within the holding limit (owner): no key result states it
+  ✓ a key result covers a daily report (owner): KR4.1
+  ✗ a key result covers live profit and loss the owner can see (owner): no key result states it
+  ✗ a key result covers positions and orders match the broker's (15c3-5(c)(2); Knight Capital): no key result states it
+  ✗ a key result covers no trades against the system's own orders (FINRA 15-09 (wash trades)): no key result states it
+  ✗ a key result covers short sales only when easy to borrow (Regulation SHO (locate)): no key result states it
+  ✗ a key result covers message rates bounded (RTS 6 Art. 15): no key result states it
+  ✗ a key result covers every variant registered and counted (Harvey, Liu and Zhu; Bailey and Lopez de Prado): no key result states it
+  ✗ a key result covers point-in-time history (survivorship and look-ahead bias): no key result states it
+  ✗ a key result covers independent challenge before each gate (SR 11-7 / SR 26-2): no key result states it
+  ✗ a key result covers a live test that stops a strategy whose edge has gone (owner (drop strategies)): no key result states it
+  ✗ a key result covers weekly review, and changes only through the evidence (owner): no key result states it
+  ✗ a key result covers live costs checked against the cost model (the cost model is an assumption until real fills test it): no key result states it
+  ✓ every key result that counts failures allows none
+  ✗ key results state the same numbers as the settings they restate: KR1.1: the setting its threshold restates is missing; KR1.2: the setting its threshold restates is missing; KR1.2: the setting its threshold restates is missing; KR1.2: the setting its objective_value restates is missing; KR2.2 statement does not state 10; KR3.1: the setting its statement restates is missing
   ✓ gate G1 has a machine-checkable rule: net_positive
   ✓ gate G2 has a machine-checkable rule: net_positive
-  ✓ gate G3 has a machine-checkable rule: owner_decision
+  · gate G3 is the owner's decision, not a rule the tests can run: its key results are judged by the owner with the evidence (KR1.8 among them)
   ✓ every KPP is decided at a gate
   ✗ kill criteria stated (when the program stops)
 
 GT-2 internal consistency: 11 failing (1s)
-  ✗ every stop hit at once stays inside the daily loss limit: 2.5% open risk x 1.25 slippage = 3.12% vs 2%
-  ✓ stress gaps match the price data: NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
+  ✓ the owner's limit: holds at most 5 trading days and 7 calendar days: 5 trading, unspecified calendar days
+  ✓ the owner's limit: risks at most 0.5% of equity on one position at its stop: 0.5%
+  ✓ the owner's limit: stops for the day at a loss of at most 2%: 2.0%
+  ✓ the owner's limit: never falls more than 10% below its peak: 10.0%
+  ✓ the owner's limit: uses no borrowed money: gross exposure at most 100%: 100%
+  ✓ the owner's limit: trades the regular session only: regular
+  ✓ the owner's limit: holds no position through an earnings release: False
+  ✓ the owner's limit: trades long and short: long, short
+  ✗ every stop hit at once stays inside the daily loss limit: 2.5% open risk x 1.35 = 3.38% vs 2%; stops 2.00 average true ranges away (assumed); on 31 stress days stops filled 1.35 times the planned loss at the 95th percentile and 1.48 at worst (2002-10-10 (shorts, 5 stops))
+  ✓ stress gaps match the price data (the test's own constants): NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
   ✓ one position's 1-in-100 overnight gap fits inside the daily loss limit: 20% x 5.31% = 1.06% vs 2%
   ✗ one long held overnight through the worst unscheduled gap down fits inside the daily loss limit: 20% x 28.0% (NVIDIA, 3 July 2008, unscheduled revenue warning) = 5.60% vs 2%
   ✗ one short held overnight through a takeover gap fits inside the daily loss limit: 20% x 49.5% (Yahoo, 1 February 2008, takeover bid) = 9.90% vs 2%
   ✗ the overnight book through a 13% market-wide gap fits inside the daily loss limit: 100% gross x 13% = 13.00% vs 2%
   ✗ overnight exposure limited separately from intraday: positions may be held for days, but only intraday sizes are set
   ✗ jumps sized as jumps (a gap or a halt is not a slipped stop): the limits assume a stop bounds the loss; across a gap or a halt it doesn't
-  ✗ the planned activity fits the book: no planned activity or holding time
+  ✗ the planned activity fits the book (a new trade finds it full at most 10% of the time): no planned activity or holding time
   · position limits and the gross exposure limit: 5 x 20% = 100% vs 100%: the position limits bind first
   ✗ short selling is consistent with the leverage rule: a short sale is borrowed stock; state leverage as gross exposure instead
   ✓ drawdown halt is above the daily loss limit: halt after 5 days at the limit
@@ -94,49 +120,55 @@ GT-3 cost feasibility by horizon: 3 failing (0s)
   ✗ the goal says which horizons the planned edge comes from: holding from seconds is allowed, but only 1 day, 5 days can pay costs with at most a 'great' signal
   ✗ the return objective is achievable at the stated activity: unspecified: min_net_excess_sharpe, vol_target_daily_pct, planned_risk_trades_per_week, typical_holding_minutes, typical_position_pct
 
-GT-4 do the gates tell skill from luck: 20 failing (6s)
-  · simulation setup: volatility 1.00%/day (measured over 1 day), cost drag 0.070%/day, stress x2, 10 variants, G1 252 days, G2 20 days, target Sharpe 2.0, 400 runs each
-  ✗ G1 lets the best of 10 no-edge variants through at most 5% (normal): 99.75% of 400
-  ✗ a no-edge strategy reaches real money at most 1.0% of the time (normal): G1 99.75% x G2 211/399 = 52.75%
-  ✗ G1 passes the targeted edge at least 80% of the time (normal): 68.2% of 400; a no-edge variant was chosen and passed 127 times
-  ✗ G2 passes the targeted edge at least 80% of the time after G1 (normal): 190/273 = 69.6%
-  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (normal): 38.0%
-  ✗ G1 lets the best of 10 no-edge variants through at most 5% (t4): 99.50% of 400
-  ✗ a no-edge strategy reaches real money at most 1.0% of the time (t4): G1 99.50% x G2 207/398 = 51.75%
-  ✗ G1 passes the targeted edge at least 80% of the time (t4): 69.8% of 400; a no-edge variant was chosen and passed 121 times
-  ✗ G2 passes the targeted edge at least 80% of the time after G1 (t4): 207/279 = 74.2%
-  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (t4): 42.0%
-  ✗ G1 lets the best of 10 no-edge variants through at most 5% (garch): 99.75% of 400
-  ✗ a no-edge strategy reaches real money at most 1.0% of the time (garch): G1 99.75% x G2 190/399 = 47.50%
-  ✗ G1 passes the targeted edge at least 80% of the time (garch): 73.8% of 400; a no-edge variant was chosen and passed 105 times
-  ✗ G2 passes the targeted edge at least 80% of the time after G1 (garch): 213/295 = 72.2%
-  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (garch): 29.0%
-  ✗ G1 lets the best of 10 no-edge variants through at most 5% (ar1): 100.00% of 400
-  ✗ a no-edge strategy reaches real money at most 1.0% of the time (ar1): G1 100.00% x G2 201/400 = 50.25%
-  ✗ G1 passes the targeted edge at least 80% of the time (ar1): 60.2% of 400; a no-edge variant was chosen and passed 159 times
-  ✗ G2 passes the targeted edge at least 80% of the time after G1 (ar1): 176/241 = 73.0%
-  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (ar1): 50.7%
-  · share passing G1 and G2, by true Sharpe (normal noise): 0.25: 50%, 0.5: 48%, 0.75: 56%, 1: 54%, 1.25: 62%, 1.5: 56%, 1.75: 57%, 2: 66%
+GT-4 do the gates tell skill from luck: 14 failing (5s)
+  · simulation setup: volatility 1.00%/day (measured over 1 day), cost drag 0.070%/day, stress x2, 10 variants, G1 252 days, G2 20 days, target Sharpe 2.0, 400 runs each. Bars from the tests (anchors.py), or the goal's claim where it is stricter
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (normal; judged at the upper bound): 99.75% (95% interval 98.60% to 99.96%) of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (normal; judged at the upper bound): G1 passed 399, then G2 211: 52.75% (95% interval 47.85% to 57.59%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (normal): G1 68.2% (95% interval 63.5% to 72.6%); G2 after G1 69.6% (95% interval 63.9% to 74.8%); G1 is below the 80% convention
+  ✗ a real edge at the target passes both gates more often than not (normal): 47.5% (95% interval 42.7% to 52.4%)
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (normal; judged at the upper bound): 38.0% (95% interval 33.4% to 42.8%)
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (t4; judged at the upper bound): 99.50% (95% interval 98.20% to 99.86%) of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (t4; judged at the upper bound): G1 passed 398, then G2 207: 51.75% (95% interval 46.86% to 56.61%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (t4): G1 69.8% (95% interval 65.1% to 74.0%); G2 after G1 74.2% (95% interval 68.8% to 79.0%); G1 is below the 80% convention
+  ✓ a real edge at the target passes both gates more often than not (t4): 51.7% (95% interval 46.9% to 56.6%)
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (t4; judged at the upper bound): 42.0% (95% interval 37.3% to 46.9%)
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (garch; judged at the upper bound): 99.75% (95% interval 98.60% to 99.96%) of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (garch; judged at the upper bound): G1 passed 399, then G2 190: 47.50% (95% interval 42.65% to 52.39%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (garch): G1 73.8% (95% interval 69.2% to 77.8%); G2 after G1 72.2% (95% interval 66.8% to 77.0%); G1 is below the 80% convention
+  ✓ a real edge at the target passes both gates more often than not (garch): 53.2% (95% interval 48.4% to 58.1%)
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (garch; judged at the upper bound): 29.0% (95% interval 24.8% to 33.6%)
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (ar1; judged at the upper bound): 100.00% (95% interval 99.05% to 100.00%) of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (ar1; judged at the upper bound): G1 passed 400, then G2 201: 50.25% (95% interval 45.37% to 55.12%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (ar1): G1 60.2% (95% interval 55.4% to 64.9%); G2 after G1 73.0% (95% interval 67.1% to 78.2%); G1 is below the 80% convention
+  ✗ a real edge at the target passes both gates more often than not (ar1): 44.0% (95% interval 39.2% to 48.9%)
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (ar1; judged at the upper bound): 50.7% (95% interval 45.9% to 55.6%)
+  · share passing G1 and G2, by true Sharpe (ar1 noise): 0.25: 44%, 0.5: 52%, 0.75: 40%, 1: 51%, 1.25: 57%, 1.5: 53%, 1.75: 58%, 2: 64%
   · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 4.12
   · days of track record to show a Sharpe 2 at 99% confidence: 345 days
 
-GT-5 random strategies on real prices: 4 failing (3s)
+GT-5 random strategies on real prices: 3 failing (4s)
   · real data: 4011 aligned days of sp500, msft, orcl, nvda, yhoo, 1999-01-22 to 2014-12-31
-  ✗ G1 passes the best of 10 balanced random strategies at most 5% of the time (real data): 59/60 windows of 252 days = 98%
-  ✗ G2 passes a balanced random strategy at most 20% of the time (real data): 76/178 windows of 20 days = 43%
-  ✗ G1 passes the best of 10 long-only random strategies at most 5% of the time (real data): 51/60 windows of 252 days = 85%
-  ✗ G2 passes a long-only random strategy at most 20% of the time (real data): 92/178 windows of 20 days = 52%
+  ✗ G1 never passes the best of 10 balanced random strategies on the real history: 56/56 windows of 252 days, about 14.9 independent: an alarm, not a rate (GT-4 measures the rate)
+  · G2 on a balanced random strategy, real windows (reported): 68/167 windows of 20 days, about 175 independent: 41%
+  ✓ G2 passes a balanced random strategy at most 50% of the time (synthetic histories of real days; judged at the upper bound): 465/1000 = 46.5% (95% interval 43.4% to 49.6%)
+  ✗ G1 never passes the best of 10 long-only random strategies on the real history: 46/56 windows of 252 days, about 14.9 independent: an alarm, not a rate (GT-4 measures the rate)
+  · G2 on a long-only random strategy, real windows (reported): 91/167 windows of 20 days, about 175 independent: 54%
+  ✗ G2 passes a long-only random strategy at most 50% of the time (synthetic histories of real days; judged at the upper bound): 529/1000 = 52.9% (95% interval 49.8% to 56.0%)
 
-GT-6 metric gaming: 10 failing (0s)
-  ✗ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit, so one position risks 4x that limit): passes the goal
+GT-6 metric gaming: 13 failing (0s)
+  ✗ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit and every size limit, so one position risks twice the owner's 0.5%): passes the goal
   ✗ rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen): passes the goal
   ✗ rejects 'riding the market' (fully long in a rising market: profit with no edge): passes the goal
-  ✗ rejects 'padding the trade count' (a few lucky trades plus hundreds of scratch trades): passes the goal
-  ✗ rejects 'best of 50' (the luckiest of 50 strategies with no net edge): passes the goal
+  ✗ rejects 'padding the trade count' (lucky trades plus scratch trades: one risk-bearing round trip short of the owner's 300): passes the goal
+  ✗ rejects 'best of 50' (the luckiest of 50 strategies with no net edge, its 50 variants reported): passes the goal
+  ✗ rejects 'best of 50, reported as one' (the same record, with only the winning variant reported): passes the goal
   ✗ rejects 'paper's generous fills' (earns only because paper fills limit orders the moment price touches): passes the goal
   ✗ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): passes the goal
   ✗ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): passes the goal
   ✗ rejects 'churning' (replaces held positions whenever a fresh forecast looks higher, on forecasts inflated by picking the highest of many: each switch pays two costs and loses on average): passes the goal
+  ✗ rejects 'a subtle look-ahead leak' (sees part of tomorrow's return: a Sharpe of 1.5, below the audit ceiling): passes the goal
+  ✗ rejects 'long through a bull market' (always long in a rising market: a raw Sharpe above the bar, no excess return): passes the goal
+  ✓ rejects 'excess return but a loss' (beats the market while the account loses money in a crash): G2: net -0.0100
   ✗ rejects 'big overnight shorts' (holds 10% short positions overnight, where a takeover bid gaps one up 50% (Yahoo, 1 February 2008)): passes the goal
 
 GT-7 control coverage: 29 failing (0s)
@@ -170,11 +202,24 @@ GT-7 control coverage: 29 failing (0s)
   ✗ KC-4 Knight Capital: written procedures for responding to incidents: not covered
   ✗ KC-5 Knight Capital: every component verified to run the approved version before trading: not covered
 
-GT-8 outside view: 5 failing (0s)
-  ✗ a strategy that passes G1 and G2 has a real edge with probability at least 80%: prior 5%, power 42%, false pass 52.75% (measured by GT-4): 4%; prior 2%: 2%, prior 5%: 4%, prior 10%: 8%; the prior says nothing about how large a real edge is
+GT-8 outside view: 6 failing (0s)
+  ✗ the goal's prior is within the base rates (at most 10%, ten times the share of reliably profitable day traders): no prior is stated
+  ✗ at the tests' reference, a strategy that passes G1 and G2 is more likely real than not, and more likely worth running (Sharpe 1 or more) than not: prior 5%; real edges exponential, mean Sharpe 0.75; GT-4 passes 42% of them, and 57.59% of no-edge strategies at the upper bound (52.75% measured): real 4%, worth running 1%
+  · with real edges exponential, mean Sharpe 0.75, at the measured rate and the goal's prior: a passing strategy is real 4%, worth running 1%
+  · with real edges exponential, mean Sharpe 0.5, at the measured rate and the goal's prior: a passing strategy is real 4%, worth running 1%
   ✗ the goal says when to stop if nothing passes (research budget)
   ✗ real money starts small and grows only with evidence: 'starting small' has no size or growth rule
   ✗ published edges count at most at what remains after publication (McLean-Pontiff: 42%): not stated
-  ✗ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
+  ✗ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado): G1 counts at least None variants; the budget is None
 
-41/153 checks pass
+GT-10 deliberate defects: pass (1s)
+  ✓ catches M06 (daily loss limit 2% to 4%): GT-2 the owner's limit: stops for the day at a loss of at most 2%
+  ✓ catches M11 (G2 runs 40 days, not 120): GT-6 rejects 'a subtle look-ahead leak' (sees part of tomorrow's return: a Sharpe of 2.6, below the audit ceiling)
+  ✓ catches M18 (gross exposure 100% to 300% (3 times leverage)): GT-2 the owner's limit: uses no borrowed money: gross exposure at most 100%
+  ✓ catches M26 (holds through earnings): GT-2 the owner's limit: holds no position through an earnings release
+  ✓ catches M27 (holds 20 trading days): GT-2 the owner's limit: holds at most 5 trading days and 7 calendar days
+  ✓ catches M55 (KR4.1 made vague): GT-1 KR4.1 is unambiguous; and 1 more
+  · deliberate defects caught by the fast tests: 6 of 6 caught; 0 missed; 0 left to the slow simulations; 0 known gaps; 64 not applicable to this goal
+
+60/185 checks pass
+by what they rest on: external 18/55; consistency 3/15; presence 38/114; hygiene 1/1 (external: the answer and the bar both from outside the goal)

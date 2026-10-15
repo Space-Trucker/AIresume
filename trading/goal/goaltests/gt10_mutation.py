@@ -126,6 +126,8 @@ def _apply(spec: dict, target: str, value) -> dict | None:
             return None
         if field is None:
             krs.remove(k)
+        elif k[field] == value:
+            return None
         else:
             k[field] = value
         return s
@@ -144,8 +146,8 @@ def _apply(spec: dict, target: str, value) -> dict | None:
         values = g.get("rule") if g else None
     else:
         values = s.get(parts[0])
-    if values is None or parts[1] not in values:
-        return None
+    if values is None or parts[1] not in values or values[parts[1]] == value:
+        return None                       # nothing there, or already so: no defect to plant
     if value == DELETE:
         del values[parts[1]]
     else:

@@ -1,4 +1,4 @@
-goal: goal.toml (version 4)
+goal: goal.toml (version 5)
 
 GT-1 statement quality (ISO/IEC/IEEE 29148): pass (0s)
   ✓ mission stated
@@ -177,7 +177,7 @@ GT-1 statement quality (ISO/IEC/IEEE 29148): pass (0s)
   ✓ KR3.6 is free of design
   ✓ KR3.7 is verifiable (metric, unit, threshold, window, data, method, gate)
   ✓ KR3.7 traces to an objective
-  ✓ KR3.7 uses an ISO 29148 verification method: analysis
+  ✓ KR3.7 uses an ISO 29148 verification method: inspection
   ✓ KR3.7 belongs to a gate that exists: G1
   ✓ KR3.7 is unambiguous
   ✓ KR3.7 is free of design
@@ -288,164 +288,355 @@ GT-1 statement quality (ISO/IEC/IEEE 29148): pass (0s)
   ✓ costs: the limits are numbers
   ✓ activity: the limits are numbers
   ✓ returns: the limits are numbers
-  ✓ constraints: no vague limits
-  ✓ risk: no vague limits
-  ✓ costs: no vague limits
-  ✓ activity: no vague limits
+  ✓ every limit, rule and control is stated without vague words
+  ✓ a key result covers an edge net of costs and luck, on history it was not built on (owner; Bailey and Lopez de Prado): KR1.1
+  ✓ a key result covers paper trading makes money after costs before real money (owner): KR1.6
+  ✓ a key result covers every share covered by a stop at the broker that acts while the system is down (owner (strict risk rules); RTS 6 Art. 14): KR2.5
+  ✓ a key result covers a kill switch (owner; RTS 6 Art. 12): KR2.4
+  ✓ a key result covers the drawdown halt (owner (never more than 10% below the peak)): KR2.2
+  ✓ a key result covers no order breaks a limit (owner (a risk manager with fixed limits blocks any trade); 15c3-5): KR2.1
+  ✓ a key result covers positions closed within the holding limit (owner): KR3.2
+  ✓ a key result covers a daily report (owner): KR7.3
+  ✓ a key result covers live profit and loss the owner can see (owner): KR7.2
+  ✓ a key result covers positions and orders match the broker's (15c3-5(c)(2); Knight Capital): KR4.2
+  ✓ a key result covers no trades against the system's own orders (FINRA 15-09 (wash trades)): KR5.1
+  ✓ a key result covers short sales only when easy to borrow (Regulation SHO (locate)): KR5.3
+  ✓ a key result covers message rates bounded (RTS 6 Art. 15): KR5.2
+  ✓ a key result covers every variant registered and counted (Harvey, Liu and Zhu; Bailey and Lopez de Prado): KR6.1
+  ✓ a key result covers point-in-time history (survivorship and look-ahead bias): KR6.4
+  ✓ a key result covers independent challenge before each gate (SR 11-7 / SR 26-2): KR6.2
+  ✓ a key result covers a live test that stops a strategy whose edge has gone (owner (drop strategies)): KR8.2
+  ✓ a key result covers weekly review, and changes only through the evidence (owner): KR8.1
+  ✓ a key result covers live costs checked against the cost model (the cost model is an assumption until real fills test it): KR1.8
+  ✓ every key result that counts failures allows none
+  ✓ key results state the same numbers as the settings they restate
   ✓ gate G1 has a machine-checkable rule: dsr
   ✓ gate G2 has a machine-checkable rule: paper
-  ✓ gate G3 has a machine-checkable rule: owner_decision
+  · gate G3 is the owner's decision, not a rule the tests can run: its key results are judged by the owner with the evidence (KR1.8 among them)
   ✓ every KPP is decided at a gate
   ✓ kill criteria stated (when the program stops)
-  ✓ GOAL.md names every key result
-  ✓ GOAL.md shows every number goal.toml sets
+  ✓ GOAL.md and goal.toml name the same key results
+  ✓ GOAL.md shows every number goal.toml sets, the evaluation and the gates included
 
-GT-2 internal consistency: pass (1s)
-  ✓ every stop on one side hit at once (a market-wide move) stays inside the daily loss limit: 1.5% open risk per side x 1.25 slippage = 1.88% vs 2%
-  ✓ every stop on both sides hit in one day (a whipsaw) stays inside the worst-day bound: 2% total open risk x 1.25 = 2.50% vs 2.5%
-  ✓ stress gaps match the price data: NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
+GT-2 internal consistency: pass (12s)
+  ✓ the owner's limit: holds at most 5 trading days and 7 calendar days: 5 trading, 7 calendar days
+  ✓ the owner's limit: risks at most 0.5% of equity on one position at its stop: 0.5%
+  ✓ the owner's limit: stops for the day at a loss of at most 2%: 2.0%
+  ✓ the owner's limit: never falls more than 10% below its peak: 10.0%
+  ✓ the owner's limit: uses no borrowed money: gross exposure at most 100%: 100%
+  ✓ the owner's limit: trades the regular session only: regular
+  ✓ the owner's limit: holds no position through an earnings release: False
+  ✓ the owner's limit: trades long and short: long, short
+  ✓ the limits are in order: daily limit < worst day < drawdown halt < drawdown line: 2% < 3.5% < 9% < 10%
+  ✓ the halt leaves the margin below the drawdown line: 9% + 0.5% vs 10%
+  ✓ the largest single event the goal allows can't cross the drawdown line from the peak: 4% vs 9.5%
+  ✓ every stop on one side hit at once (a market-wide move) stays inside the daily loss limit: 1.5% open risk per side x 1.19 = 1.78% vs 2%; stops 1.27 average true ranges away (the plan); on 61 stress days stops filled 1.19 times the planned loss at the 95th percentile and 1.90 at worst (2000-10-19 (shorts, 6 stops))
+  ✓ every stop on both sides hit in one day (a gap, then a reversal) stays inside the worst-day bound: 1.5% x 1.90 + 0.5% x 1.19 = 3.45% vs 3.5%
+  ✓ stress gaps match the price data (the test's own constants): NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
   ✓ the overnight jump assumption covers the largest gaps in the data: 50% vs Yahoo, 1 February 2008, takeover bid +49.5% and NVIDIA, 3 July 2008, unscheduled revenue warning -28.0%
   ✓ one position held overnight through the assumed jump fits inside the daily loss limit: 4% x 50% = 2.00% vs 2%
-  ✓ one position through an intraday jump (a halt, two price bands) fits inside the daily loss limit: 10% x 20% = 2.00% vs 2%
+  ✓ one position through an intraday jump (several price bands) fits inside the daily loss limit: 10% x 20% = 2.00% vs 2%
+  ✓ one stock through a news halt in the session, which reopens like an overnight gap, fits inside the daily loss limit: 4% x 50% = 2.00% vs 2%
   ✓ a total loss in one name held overnight stays within the jump-loss bound (SVB, 10 March 2023): 4% vs 4%
   ✓ an industry-wide jump stays within the jump-loss bound (regional banks, 13 March 2023): 8% x 50% = 4.00% vs 4%
+  ✓ the intraday jump is at least the 10% Limit Up-Limit Down band near the open and the close: 20% vs 10%
+  ✓ the index-fund overnight jump is at least a 13% market fall, the level-2 circuit breaker: 20% vs 13%
+  ✓ the event-prone overnight jump is at least a total loss (SVB, 2023) or a doubling against a short: 100% vs 100%
   ✓ one broad index fund held overnight through its own jump fits inside the daily loss limit: 10% x 20% = 2.00% vs 2%
   ✓ one event-prone position held overnight through its own jump fits inside the daily loss limit: 2% x 100% = 2.00% vs 2%
-  ✓ the worst jump at a drawdown just short of the halt stays inside the drawdown limit: 9% + 0.50% = 9.50% vs 10%
+  ✓ equity stays above the drawdown line in at least 99.9% of simulated years, jumps included: crossed in 0.03% of years with positions shrinking as the drawdown deepens; 2.27% at full size; the worst event the jump assumptions allow at full size is 4.00%
   ✓ the drawdown margin covers closing the whole book at the halt, at stressed costs: 0.5% vs 100% x 4 bps x 1.5 = 0.06%
+  ✓ the overnight book through a 13% gap with every beta at 1 stays within the jump-loss bound: 30% dollar net x 13% = 3.90% vs 4%: beta-adjusted limits trust betas measured in calmer times
   ✓ the overnight book through a 13% market-wide gap fits inside the daily loss limit: 15% net x 13% = 1.95% vs 2%
   ✓ overnight exposure limited separately from intraday
   ✓ jumps sized as jumps (a gap or a halt is not a slipped stop)
-  ✓ the planned activity fits the book (a new trade finds it full at most 10% of the time): 25/week held 3.0 days = 15.0 open on average; at most 18 positions (75% overnight gross / 4% each; 2% open risk / at least 0.1% each): full 8.6% of the time
+  ✓ the planned activity fits the book (a new trade finds it full at most 10% of the time): 25/week held 3.0 days = 15.0 open on average; at most 18 positions (2% open risk / 0.11% each; 75% overnight gross / 4% each): full 8.6% of the time
   ✓ the planned book fits the gross exposure limit: 15.0 x 4% = 60% vs 100%
   ✓ the planned book can be held overnight (typical holds span nights): 60% held overnight vs an overnight gross limit of 75%
   ✓ a typical position fits the overnight position limits: 4% vs 4%
   ✓ the volatility budget is within reach of the planned book (0.5 to 1.5 times what it produces): 15.0 positions x 4% x 1.28% market-neutral daily volatility per stock = 0.20%/day vs a budget of 0.2%
-  · no fixed number of positions: the limits bound the book: at most 18 positions (75% overnight gross / 4% each; 2% open risk / at least 0.1% each)
+  · no fixed number of positions: the limits bound the book: at most 18 positions (2% open risk / 0.11% each; 75% overnight gross / 4% each)
   ✓ short selling is consistent with the leverage rule
   ✓ drawdown halt is above the daily loss limit: halt after 4 days at the limit
   ✓ daily loss limit is at least 3 ordinary days of volatility: 2% vs 3 x 0.2%
   ✓ the minimum activity fits the cost budget: 10/week x 4% x 8 bps = 1.66%/yr vs 4.5%
   ✓ the planned activity fits the cost budget: 25/week x 4% x 8 bps = 4.16%/yr vs 4.5%
+  ✓ an entry the rule admits still pays its costs at the stress level: expected gain at least 2 x cost vs costs raised 1.5 x
   ✓ a return objective is stated
   ✓ the stated return matches the Sharpe ratio at the volatility budget (min_net_excess_return_pct): Sharpe 1 x 3.17%/yr = 3.2%/yr vs 3%
   ✓ the stated return matches the Sharpe ratio at the volatility budget (target_net_excess_return_pct): Sharpe 1.5 x 3.17%/yr = 4.8%/yr vs 5%
   ✓ a full book is resolved by a stated rotation rule
   ✓ a rotation clears its switching cost at least as an entry clears its own cost: advantage at least 2 x the candidate's round-trip cost vs entry at 2 x
+  ✓ the daily rotation cap allows no more rotations a week than the planned round trips: 3 a day x 5 vs 25 a week; share 0.2
   · rotation opportunities and the cap, within the planned round trips: about 2.2 candidates a week meet a full book; at most 5 rotations a week, counted inside the 25 planned round trips and so inside the cost budget
 
 GT-3 cost feasibility by horizon: pass (0s)
-  ✓ the cost model is not cheaper than published costs: stated 8 bps vs 6.95 bps (spread 3.7, slippage 2 x 1.5, fees)
+  ✓ the cost model is not cheaper than published costs: stated 8 bps vs 7.50 bps: spread 3.7 (the 100 largest stocks), impact 1.78 bps a side at 0.02% of daily volume (square-root law, Y 0.75), fees
+  ✓ the stressed cost covers a round trip at the universe's limits: 8 bps spread + 2 x 1.78 impact + 0.25 fees = 11.80 bps vs 8 x 1.5 = 12.00 bps
+  ✓ a typical position fits the participation limit in the least liquid name the universe admits: $4,000 vs 0.02% of $20,000,000 = $4,000
   · typical stock moves by horizon (real data): daily 168 bps (GOOG, MSFT), index 104 bps; break-even IC at 8.0 bps: 10 seconds: move 3 bps, IC 2.894; 1 minute: move 8 bps, IC 1.182; 5 minutes: move 19 bps, IC 0.528; 30 minutes: move 46 bps, IC 0.216; 1 hour: move 66 bps, IC 0.153; 1 day: move 168 bps, IC 0.060; 5 days: move 375 bps, IC 0.027
   · horizons where costs need an implausible signal (IC > 0.15): 10 seconds, 1 minute, 5 minutes, 30 minutes, 1 hour
-  ✓ at the planned edge's shortest horizon, the entry rule (gain at least 2 x cost) needs at most a 'great' signal (IC <= 0.10): 780 min: move 237 bps, IC 0.085 for 2 x 8 bps
-  · the shortest hold at which a 'great' signal meets the entry rule: 558 minutes (1.4 trading days); break-even alone needs 140 minutes
-  ✓ market impact at the participation limit is about the slippage the cost model charges: 0.02% of daily volume: 1.2 to 2.4 bps a side vs 1.5 bps charged
+  ✓ the goal names the horizon the planned edge comes from: 780 minutes
+  · the entry rule (gain at least 2 x cost) by horizon, two models: 2.5 hours: every-forecast IC 0.193; at IC 0.10, 12.4% of forecasts clear the entry rule; 1 day: every-forecast IC 0.120; at IC 0.10, 34.0% of forecasts clear the entry rule; 2 days: every-forecast IC 0.085; at IC 0.10, 50.0% of forecasts clear the entry rule; 3 days: every-forecast IC 0.069; at IC 0.10, 58.1% of forecasts clear the entry rule
+  ✓ market impact at the participation limit fits the slippage charged at the stress level: 0.02% of daily volume: 1.2 to 2.4 bps a side, central 1.8, vs 1.5 x 1.5 = 2.25 bps
   ✓ the targeted return needs at most a 'great' signal at the planned activity: Sharpe 1.5: net 4.8%/yr + costs 4.16%/yr over 1300 trades of 4.0%: 17.2 bps gross per trade vs a 290 bps move: IC 0.074
   · the minimum return at the planned activity: Sharpe 1: net 3.2%/yr + costs 4.16%/yr over 1300 trades of 4.0%: 14.1 bps gross per trade vs a 290 bps move: IC 0.061
   ✓ the targeted edge survives the cost stress at the planned activity: Sharpe 1.5 - 0.5 x costs 4.16%/yr / volatility 3.2%/yr = 0.84 vs a floor of 0.5
 
-GT-4 do the gates tell skill from luck: pass (373s)
-  · simulation setup: volatility 0.20%/day (measured over 5 days), cost drag 0.017%/day, stress x1.5, 20 variants, G1 2400 days, G2 120 days, target Sharpe 1.5, 400 runs each
-  ✓ G1 lets the best of 20 no-edge variants through at most 1% (normal): 0.25% of 4000
-  ✓ a no-edge strategy reaches real money at most 0.5% of the time (normal): G1 0.25% x G2 7/10 = 0.17%
-  ✓ G1 passes the targeted edge at least 75% of the time (normal): 84.5% of 400
-  ✓ G2 passes the targeted edge at least 75% of the time after G1 (normal): 278/338 = 82.2%
-  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (normal): fails 0.0%
-  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (normal): 95.5%
-  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (normal): 0.0%
-  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (normal): 6.0%
-  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (normal): halved 63%, stopped 73%
-  ✓ G1 lets the best of 20 no-edge variants through at most 1% (t4): 0.30% of 4000
-  ✓ a no-edge strategy reaches real money at most 0.5% of the time (t4): G1 0.30% x G2 7/12 = 0.18%
-  ✓ G1 passes the targeted edge at least 75% of the time (t4): 81.0% of 400; a no-edge variant was chosen and passed 1 times
-  ✓ G2 passes the targeted edge at least 75% of the time after G1 (t4): 281/324 = 86.7%
-  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (t4): fails 0.8%
-  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (t4): 94.8%
-  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (t4): 0.0%
-  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (t4): 5.8%
-  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (t4): halved 63%, stopped 72%
-  ✓ G1 lets the best of 20 no-edge variants through at most 1% (garch): 0.10% of 4000
-  ✓ a no-edge strategy reaches real money at most 0.5% of the time (garch): G1 0.10% x G2 3/4 = 0.07%
-  ✓ G1 passes the targeted edge at least 75% of the time (garch): 82.5% of 400
-  ✓ G2 passes the targeted edge at least 75% of the time after G1 (garch): 290/330 = 87.9%
-  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (garch): fails 0.2%
-  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (garch): 95.5%
-  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (garch): 0.5%
-  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (garch): 3.2%
-  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (garch): halved 64%, stopped 75%
-  ✓ G1 lets the best of 20 no-edge variants through at most 1% (ar1): 0.82% of 3061
-  ✓ a no-edge strategy reaches real money at most 0.5% of the time (ar1): G1 0.82% x G2 10/25 = 0.33%
-  ✓ G1 passes the targeted edge at least 75% of the time (ar1): 75.8% of 400; a no-edge variant was chosen and passed 1 times
-  ✓ G2 passes the targeted edge at least 75% of the time after G1 (ar1): 254/303 = 83.8%
-  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (ar1): fails 0.2%
-  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (ar1): 94.2%
-  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (ar1): 0.0%
-  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (ar1): 8.9%
-  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (ar1): halved 61%, stopped 72%
-  · share passing G1 and G2, by true Sharpe (normal noise): 0.25: 0%, 0.5: 3%, 0.75: 8%, 1: 24%, 1.25: 49%, 1.5: 68%, 1.75: 83%, 2: 90%
+GT-4 do the gates tell skill from luck: pass (545s)
+  ✓ the goal's tolerance for G1's false passes is no looser than the tests' bar: max_false_pass_g1 0.01 vs 0.05
+  ✓ the goal's tolerance for a strategy with no edge reaching real money is no looser than the tests' bar: max_false_real_money 0.005 vs 0.01
+  ✓ the goal's tolerance for G2's passes of a strategy with no edge is no looser than the tests' bar: max_false_pass_g2 0.5 vs 0.5
+  ✓ the goal's tolerance for a real edge at the target passing both gates is no looser than the tests' bar: min_joint_power 0.5 vs 0.5
+  ✓ the goal's tolerance for G2 catching an execution shortfall is no looser than the tests' bar: min_fidelity_power 0.8 vs 0.8
+  ✓ the goal's tolerance for the halt stopping a real edge is no looser than the tests' bar: max_false_halt_per_year 0.1 vs 0.1
+  ✓ the goal's tolerance for the live test stopping a real edge is no looser than the tests' bar: max_false_stop_3y 0.1 vs 0.1
+  ✓ the goal's tolerance for the live test halving a dead strategy is no looser than the tests' bar: min_dead_halve_1y 0.5 vs 0.5
+  ✓ the goal's tolerance for the live test stopping a dead strategy is no looser than the tests' bar: min_dead_stop_3y 0.75 vs 0.75
+  ✓ G1's Deflated Sharpe threshold is at least the 5% convention: 0.95 vs 0.95
+  ✓ G1's out-of-sample history fits the data the project can reach: 2400 days vs about 2700 trading days of Alpaca history from 2016
+  ✓ the simulated search is at least the variant budget: 30 simulated vs a budget of 30
+  ✓ the simulated cost drag is the plan's: 0.017% a day vs 25 trades a week x 4% x 8 bps = 0.0165% a day
+  ✓ the simulated implementation noise is what KR1.6's tolerance allows: 0.18 vs 0.184: 2% of 15 positions unmatched, each 4% x 1.68% a day, over a 0.2% budget
+  · simulation setup: volatility 0.20%/day (measured over 5 days), cost drag 0.017%/day, stress x1.5, 30 variants, G1 2400 days, G2 120 days, target Sharpe 1.5, 400 runs each. Bars from the tests (anchors.py), or the goal's claim where it is stricter
+  ✓ G1 lets the best of 30 no-edge variants through at most 1% (normal; judged at the upper bound): 0.15% (95% interval 0.07% to 0.33%) of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (normal; judged at the upper bound): G1 passed 6, then G2 4: 0.10% (95% interval 0.04% to 0.26%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (normal): G1 80.2% (95% interval 76.1% to 83.9%); G2 after G1 85.4% (95% interval 81.1% to 88.8%)
+  ✓ a real edge at the target passes both gates more often than not (normal): 68.5% (95% interval 63.8% to 72.9%)
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (normal): fails 0.0% (95% interval 0.0% to 1.0%)
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (normal): 92.0% (95% interval 88.9% to 94.3%)
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (normal; judged at the upper bound): 0.0% (95% interval 0.0% to 1.0%)
+  ✓ the live test stops the targeted edge within 3 years at most 10% of the time (normal): 7.7% (95% interval 6.5% to 9.1%)
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 75% (normal): halved 63.7% (95% interval 61.4% to 66.1%); stopped 77.4% (95% interval 75.3% to 79.4%)
+  ✓ after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (normal): halved 62.2% (95% interval 58.7% to 65.6%); stopped 99.1% (95% interval 98.1% to 99.5%); of 752 runs not stopped while the edge was real
+  ✓ the cap on the evidence makes a decay show sooner, as the goal says it does (normal): stopped within 3 years of the decay 99.1% with the cap, 92.8% without
+  · a decay to exactly no net edge, the hardest case, reported (normal): halved within a year 24%, stopped within 3 years 50% (36% without the cap)
+  · capital under the live test, reported (normal): a dead strategy reaches full capital within 3 years 8% of the time; the targeted edge is halved within a year 18% of the time
+  ✓ G1 lets the best of 30 no-edge variants through at most 1% (t4; judged at the upper bound): 0.30% (95% interval 0.17% to 0.52%) of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (t4; judged at the upper bound): G1 passed 12, then G2 5: 0.12% (95% interval 0.05% to 0.29%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (t4): G1 78.0% (95% interval 73.7% to 81.8%); G2 after G1 84.9% (95% interval 80.5% to 88.5%); G1 is below the 80% convention
+  ✓ a real edge at the target passes both gates more often than not (t4): 66.2% (95% interval 61.5% to 70.7%)
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (t4): fails 0.0% (95% interval 0.0% to 1.0%)
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (t4): 92.2% (95% interval 89.2% to 94.5%)
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (t4; judged at the upper bound): 0.0% (95% interval 0.0% to 1.0%)
+  ✓ the live test stops the targeted edge within 3 years at most 10% of the time (t4): 5.8% (95% interval 4.7% to 7.0%)
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 75% (t4): halved 65.3% (95% interval 62.9% to 67.6%); stopped 76.0% (95% interval 73.8% to 78.0%)
+  ✓ after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (t4): halved 61.4% (95% interval 57.9% to 64.8%); stopped 99.0% (95% interval 98.0% to 99.5%); of 769 runs not stopped while the edge was real
+  ✓ the cap on the evidence makes a decay show sooner, as the goal says it does (t4): stopped within 3 years of the decay 99.0% with the cap, 93.0% without
+  · a decay to exactly no net edge, the hardest case, reported (t4): halved within a year 25%, stopped within 3 years 55% (39% without the cap)
+  · capital under the live test, reported (t4): a dead strategy reaches full capital within 3 years 8% of the time; the targeted edge is halved within a year 16% of the time
+  ✓ G1 lets the best of 30 no-edge variants through at most 1% (garch; judged at the upper bound): 0.07% (95% interval 0.03% to 0.22%) of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (garch; judged at the upper bound): G1 passed 3, then G2 0: 0.00% (95% interval 0.00% to 0.10%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (garch): G1 81.2% (95% interval 77.1% to 84.8%); G2 after G1 87.1% (95% interval 83.0% to 90.3%)
+  ✓ a real edge at the target passes both gates more often than not (garch): 70.8% (95% interval 66.1% to 75.0%)
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (garch): fails 2.2% (95% interval 1.2% to 4.2%)
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (garch): 85.5% (95% interval 81.7% to 88.6%)
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (garch; judged at the upper bound): 0.8% (95% interval 0.3% to 2.2%)
+  ✓ the live test stops the targeted edge within 3 years at most 10% of the time (garch): 4.6% (95% interval 3.6% to 5.7%)
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 75% (garch): halved 62.9% (95% interval 60.5% to 65.3%); stopped 77.8% (95% interval 75.7% to 79.8%)
+  ✓ after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (garch): halved 63.8% (95% interval 60.3% to 67.1%); stopped 99.0% (95% interval 98.0% to 99.5%); of 773 runs not stopped while the edge was real
+  ✓ the cap on the evidence makes a decay show sooner, as the goal says it does (garch): stopped within 3 years of the decay 99.0% with the cap, 87.7% without
+  · a decay to exactly no net edge, the hardest case, reported (garch): halved within a year 20%, stopped within 3 years 48% (30% without the cap)
+  · capital under the live test, reported (garch): a dead strategy reaches full capital within 3 years 8% of the time; the targeted edge is halved within a year 12% of the time
+  ✓ G1 lets the best of 30 no-edge variants through at most 1% (ar1; judged at the upper bound): 0.50% (95% interval 0.32% to 0.77%) of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (ar1; judged at the upper bound): G1 passed 20, then G2 9: 0.22% (95% interval 0.12% to 0.43%)
+  · G1 and G2 power at the targeted edge, against the 80% convention (ar1): G1 69.2% (95% interval 64.6% to 73.6%); G2 after G1 80.1% (95% interval 75.0% to 84.4%); G1 is below the 80% convention
+  ✓ a real edge at the target passes both gates more often than not (ar1): 55.5% (95% interval 50.6% to 60.3%)
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (ar1): fails 0.0% (95% interval 0.0% to 1.0%)
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (ar1): 92.0% (95% interval 88.9% to 94.3%)
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (ar1; judged at the upper bound): 0.0% (95% interval 0.0% to 1.0%)
+  ✓ the live test stops the targeted edge within 3 years at most 10% of the time (ar1): 9.3% (95% interval 8.0% to 10.8%)
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 75% (ar1): halved 63.0% (95% interval 60.6% to 65.3%); stopped 76.3% (95% interval 74.2% to 78.3%)
+  ✓ after 2 good years and a decay (the edge gone, the costs remaining), the live test halves within a year at least 50% of the time and stops within 3 years at least 75% (ar1): halved 60.5% (95% interval 56.9% to 64.0%); stopped 97.4% (95% interval 95.9% to 98.3%); of 719 runs not stopped while the edge was real
+  ✓ the cap on the evidence makes a decay show sooner, as the goal says it does (ar1): stopped within 3 years of the decay 97.4% with the cap, 91.4% without
+  · a decay to exactly no net edge, the hardest case, reported (ar1): halved within a year 27%, stopped within 3 years 59% (40% without the cap)
+  · capital under the live test, reported (ar1): a dead strategy reaches full capital within 3 years 10% of the time; the targeted edge is halved within a year 21% of the time
+  · share passing G1 and G2, by true Sharpe (ar1 noise): 0.25: 0%, 0.5: 4%, 0.75: 3%, 1: 10%, 1.25: 36%, 1.5: 62%, 1.75: 76%, 2: 88%
   · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 0.05
   · days of track record to show a Sharpe 1 at 99% confidence: 1368 days
   · days of track record to show a Sharpe 1.5 at 99% confidence: 610 days
 
-GT-5 random strategies on real prices: pass (17s)
+GT-5 random strategies on real prices: pass (24s)
   · real data: 4011 aligned days of sp500, msft, orcl, nvda, yhoo, 1999-01-22 to 2014-12-31
-  ✓ G1 passes the best of 20 balanced random strategies at most 1% of the time (real data): 0/26 windows of 2400 days = 0%
-  ✓ G2 passes a balanced random strategy at most 50% of the time (real data): 30/71 windows of 120 days = 42%
-  ✓ G1 passes the best of 20 long-only random strategies at most 1% of the time (real data): 0/26 windows of 2400 days = 0%
-  ✓ G2 passes a long-only random strategy at most 50% of the time (real data): 31/71 windows of 120 days = 44%
+  ✓ G1 never passes the best of 30 balanced random strategies on the real history: 0/22 windows of 2400 days, about 1.6 independent: an alarm, not a rate (GT-4 measures the rate)
+  · G2 on a balanced random strategy, real windows (reported): 11/59 windows of 120 days, about 11 independent: 19%
+  ✓ G2 passes a balanced random strategy at most 50% of the time (synthetic histories of real days; judged at the upper bound): 294/1000 = 29.4% (95% interval 26.7% to 32.3%)
+  ✓ G1 never passes the best of 30 long-only random strategies on the real history: 0/22 windows of 2400 days, about 1.6 independent: an alarm, not a rate (GT-4 measures the rate)
+  · G2 on a long-only random strategy, real windows (reported): 21/59 windows of 120 days, about 11 independent: 36%
+  ✓ G2 passes a long-only random strategy at most 50% of the time (synthetic histories of real days; judged at the upper bound): 371/1000 = 37.1% (95% interval 34.2% to 40.1%)
 
 GT-6 metric gaming: pass (0s)
-  ✓ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit, so one position risks 4x that limit): risk per position 2% > 0.5%; position size 20% > 10%
+  ✓ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit and every size limit, so one position risks twice the owner's 0.5%): risk per position 1% > 0.5%
   ✓ rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen): a position without a stop
   ✓ rejects 'riding the market' (fully long in a rising market: profit with no edge): G2: paper excess return not positive
-  ✓ rejects 'padding the trade count' (a few lucky trades plus hundreds of scratch trades): G2: 20 risk-bearing trades < 300
-  ✓ rejects 'best of 50' (the luckiest of 50 strategies with no net edge): G1: Sharpe 0.54 < 1.0
+  ✓ rejects 'padding the trade count' (lucky trades plus scratch trades: one risk-bearing round trip short of the owner's 300): G2: 299 risk-bearing trades < 300
+  ✓ rejects 'best of 50' (the luckiest of 50 strategies with no net edge, its 50 variants reported): G1: DSR 0.826 < 0.95
+  ✓ rejects 'best of 50, reported as one' (the same record, with only the winning variant reported): G1: DSR 0.873 < 0.95
   ✓ rejects 'paper's generous fills' (earns only because paper fills limit orders the moment price touches): G2: P&L not from the conservative fill model
-  ✓ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): G1: Sharpe 8.1 above 4.0: audit for leaks first
-  ✓ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): position size 20% > 10%; overnight position size 20% > 4%; overnight net exposure 20% > 15%
-  ✓ rejects 'churning' (replaces held positions whenever a fresh forecast looks higher, on forecasts inflated by picking the highest of many: each switch pays two costs and loses on average): G1: rotations don't clearly pay: mean -0.00002 of equity each, lower bound -0.00003; run without rotation
+  ✓ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): G1: Sharpe 8.2 above 4.0: audit for leaks first
+  ✓ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): position size 20% > 4%; overnight position size 20% > 4%; overnight net exposure 20% > 15%
+  ✓ rejects 'churning' (replaces held positions whenever a fresh forecast looks higher, on forecasts inflated by picking the highest of many: each switch pays two costs and loses on average): G1: rotation doesn't clearly pay (-1.19 bp a day, lower bound -1.52): ship and judge the strategy without rotation
+  ✓ rejects 'a subtle look-ahead leak' (sees part of tomorrow's return: a Sharpe of 2.4, below the audit ceiling): G1: the lag audit failed: a leak, or misaligned data
+  ✓ rejects 'long through a bull market' (always long in a rising market: a raw Sharpe above the bar, no excess return): G1: Sharpe -0.64 < 1.0
+  ✓ rejects 'excess return but a loss' (beats the market while the account loses money in a crash): G2: the paper account did not make money
   ✓ rejects 'big overnight shorts' (holds 10% short positions overnight, where a takeover bid gaps one up 50% (Yahoo, 1 February 2008)): overnight position size 10% > 4%; overnight net exposure 20% > 15%
 
 GT-7 control coverage: pass (0s)
   ✓ MA-1 15c3-5(c)(1)(i): block orders that would exceed preset credit or capital limits: by C1
+  ✓ MA-1: the covering controls state what it asks for: one control only
   ✓ MA-2 15c3-5(c)(1)(ii): reject orders outside price or size limits, per order or over a short period: by C2
+  ✓ MA-2: the covering controls state what it asks for: one control only
   ✓ MA-3 15c3-5(c)(1)(ii): reject orders that appear to be duplicates: by C3
+  ✓ MA-3: the covering controls state what it asks for: one control only
   ✓ MA-4 15c3-5(c)(2): meet regulatory requirements before an order goes out (short-sale rules, restricted names): by C4
+  ✓ MA-4: the covering controls state what it asks for: one control only
   ✓ MA-5 15c3-5(c)(2): post-trade surveillance and immediate access to execution reports: by C5
+  ✓ MA-5: the covering controls state what it asks for: one control only
   ✓ MA-6 15c3-5(e): review the controls' effectiveness regularly, in writing: by C10
+  ✓ MA-6: the covering controls state what it asks for: one control only
   ✓ FN-1 FINRA 15-09: assess risks and respond: by C10
+  ✓ FN-1: the covering controls state what it asks for: one control only
   ✓ FN-2 FINRA 15-09: control code development and implementation (change management): by C8
+  ✓ FN-2: the covering controls state what it asks for: one control only
   ✓ FN-3 FINRA 15-09: test software and validate the system before production: by C8
+  ✓ FN-3: the covering controls state what it asks for: one control only
   ✓ FN-4 FINRA 15-09: trading systems: monitoring, alerts, kill switch: by C6, C7
+  ✓ FN-4: the covering controls state what it asks for
   ✓ FN-5 FINRA 15-09: compliance: no spoofing, layering, wash trades or marking the close: by C9
+  ✓ FN-5: the covering controls state what it asks for: one control only
   ✓ RT-1 RTS 6 Art. 12: kill functionality, knowing which strategy owns each order: by C6
+  ✓ RT-1: the covering controls state what it asks for: one control only
   ✓ RT-2 RTS 6 Art. 15: price collars, maximum order value and volume, message limits: by C2, C3, C13
+  ✓ RT-2: the covering controls state what it asks for
   ✓ RT-3 RTS 6 Art. 16: real-time monitoring with alerts: by C7; stated deviation, C7: RTS 6 asks for alerts within 5 seconds and a person monitoring during trading; the goal allows 60 seconds and no person, because the owner wants an unattended system
+  ✓ RT-3: the covering controls state what it asks for: one control only
   ✓ RT-4 RTS 6 Art. 17: post-trade controls and reconciliation: by C5
+  ✓ RT-4: the covering controls state what it asks for: one control only
   ✓ RT-5 RTS 6 Arts. 5-8: test before deployment; deploy under limits: by C8
+  ✓ RT-5: the covering controls state what it asks for: one control only
   ✓ RT-6 RTS 6 Art. 9: periodic self-assessment: by C10
+  ✓ RT-6: the covering controls state what it asks for: one control only
   ✓ RT-7 RTS 6 Art. 18: security and access (credentials): by C11
+  ✓ RT-7: the covering controls state what it asks for: one control only
   ✓ RT-8 RTS 6 Art. 14: business continuity: positions can be closed when the system or its link fails: by C6
+  ✓ RT-8: the covering controls state what it asks for: one control only
   ✓ RT-9 RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles: by C1, C13
-  ✓ RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC: by C14
+  ✓ RT-9: the covering controls state what it asks for
+  ✓ RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC: by C14; stated deviation, C14: MiFID II's RTS 25 asks for 1 ms for algorithmic trading; the goal sets 50 ms, the US consolidated audit trail's tolerance, because the system is not subject to MiFID II and decides on a scale of seconds
+  ✓ RT-10: the covering controls state what it asks for: one control only
   ✓ RT-11 MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years: by C5
+  ✓ RT-11: the covering controls state what it asks for: one control only
   ✓ MR-1 SR 11-7 / SR 26-2: effective challenge by reviewers with expertise, independence and the standing to effect change: by C12
+  ✓ MR-1: the covering controls state what it asks for: one control only
   ✓ MR-2 SR 11-7 / SR 26-2: ongoing monitoring and outcomes analysis (results against expectations): by C12
+  ✓ MR-2: the covering controls state what it asks for: one control only
   ✓ KC-1 Knight Capital: alerts designed and treated as alerts: by C7
+  ✓ KC-1: the covering controls state what it asks for: one control only
   ✓ KC-2 Knight Capital: a control that halts the system's own runaway behavior: by C3, C6, C13
+  ✓ KC-2: the covering controls state what it asks for
   ✓ KC-3 Knight Capital: the system's view of its orders and positions checked against the market's, as it trades: by C5
+  ✓ KC-3: the covering controls state what it asks for: one control only
   ✓ KC-4 Knight Capital: written procedures for responding to incidents: by C8
+  ✓ KC-4: the covering controls state what it asks for: one control only
   ✓ KC-5 Knight Capital: every component verified to run the approved version before trading: by C8
+  ✓ KC-5: the covering controls state what it asks for: one control only
+  ✓ every order limit is applied by a control or the fault rule
+  ✓ max_clock_error_ms is within the consolidated audit trail's 50 ms: 50 vs 50
+  ✓ price_collar_pct is within the 5% Limit Up-Limit Down band: 1 vs 5
+  ✓ max_requests_per_minute is within Alpaca's 200 a minute, leaving room for exits and the kill path: 100 vs 200
 
 GT-8 outside view: pass (0s)
-  ✓ a strategy that passes G1 and G2 has a real edge with probability at least 80%: prior 5% with edges up to Sharpe 2; passes 35% of real edges and 0.33% of no-edge strategies (GT-4): 85%; prior 2%: 69%, prior 5%: 85%, prior 10%: 92%
-  ✓ a strategy that passes G1 and G2 is worth running (Sharpe 1 or more) with probability at least 70%: 78%
-  · the same with edges no larger than Sharpe 1.25: real 66%, worth running 40%
-  · chance the program reaches real money with a real edge, on these assumptions: some variant of 20 is real: at most 64%; it then passes both gates: 35%; together at most 22%. With no real edge, a false one reaches real money 0.33% of the time. Most likely nothing passes and the kill criteria stop the program
+  ✓ the goal's prior is within the base rates (at most 10%, ten times the share of reliably profitable day traders): 0.05
+  ✓ the goal asks a passing strategy to be more likely real than not (min_posterior): 0.8 vs 0.5
+  ✓ the goal asks a passing strategy to be more likely real than not (min_posterior_worth_running): 0.7 vs 0.5
+  ✓ the goal's prior puts no real edge where G1 suspects a leak: edges up to Sharpe 2 vs a leak audit above 4
+  ✓ at the tests' reference, a strategy that passes G1 and G2 is more likely real than not, and more likely worth running (Sharpe 1 or more) than not: prior 5%; real edges exponential, mean Sharpe 0.75; GT-4 passes 16% of them, and 0.43% of no-edge strategies at the upper bound (0.22% measured): real 67%, worth running 61%
+  ✓ the goal's claim: at its prior (5%, edges up to Sharpe 2), a passing strategy is real with probability at least 80% and worth running at least 70%: real 87%, worth running 83%; prior 2%: 73%, prior 5%: 87%, prior 10%: 94%
+  · the same with edges no larger than Sharpe 1.25: real 62%, worth running 41%
+  · chance the program reaches real money with a real edge, both readings of the prior: per idea, with at least 15 distinct ideas: about 20%; per program, as the outside view's base rates are measured: about 1.5%. With no real edge, a false one reaches real money 0.22% of the time. Most likely nothing passes and the kill criteria stop the program
+  · if hindsight acts like variants nobody counted (the figures above assume none): 100 uncounted: a false edge reaches real money 1.4%, a passing strategy is real 52%; 1000 uncounted: a false edge reaches real money 10.5%, a passing strategy is real 13%
+  · with real edges exponential, mean Sharpe 0.75, at the measured rate and the goal's prior: a passing strategy is real 79%, worth running 72%
+  · with real edges exponential, mean Sharpe 0.5, at the measured rate and the goal's prior: a passing strategy is real 65%, worth running 54%
   ✓ the goal says when to stop if nothing passes (research budget)
   ✓ real money starts small and grows only with evidence
+  ✓ the first real money is small: at most 25% of the intended capital (the owner's word): 0.1
+  ✓ the goal knows the broker's minimum equity for short sales ($2,000): $2,000
+  ✓ the first real money keeps the right to short through a full drawdown: $2,500 vs $2,000 / (1 - 10%) = $2,222
   ✓ published edges count at most at what remains after publication (McLean-Pontiff: 42%): 0.42
-  ✓ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
+  ✓ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado): G1 counts at least 30 variants; the budget is 30
 
-418/418 checks pass
+GT-10 deliberate defects: pass (21s)
+  ✓ catches M01 (overnight stock cap 4% to 8%): GT-2 one position held overnight through the assumed jump fits inside the daily loss limit; and 1 more
+  ✓ catches M02 (the drawdown room margin deleted): GT-2 equity stays above the drawdown line in at least 99.9% of simulated years, jumps included
+  ✓ catches M04 (G1 counts at least 5 variants, not 30): GT-1 key results state the same numbers as the settings they restate; and 2 more
+  ✓ catches M05 (an event-prone jump of 30%, not a total loss): GT-2 the event-prone overnight jump is at least a total loss (SVB, 2023) or a doubling against a short
+  ✓ catches M06 (daily loss limit 2% to 4%): GT-1 key results state the same numbers as the settings they restate; and 2 more
+  ✓ catches M07 (open risk 2% to 5%): GT-2 every stop on both sides hit in one day (a gap, then a reversal) stays inside the worst-day bound
+  ✓ catches M08 (a rotation need not clear its cost): GT-2 a rotation clears its switching cost at least as an entry clears its own cost
+  ✓ catches M09 (no cost stress (multiplier 1)): GT-3 the stressed cost covers a round trip at the universe's limits; and 1 more
+  ✓ catches M10 (round trip 8 bps to 2): GT-3 the cost model is not cheaper than published costs; and 2 more
+  ✓ catches M11 (G2 runs 40 days, not 120): GT-1 key results state the same numbers as the settings they restate
+  ✓ catches M12 (the live test stops at -0.5, not -2.3): GT-1 key results state the same numbers as the settings they restate
+  ✓ catches M13 (the key result for stops at the broker deleted): GT-1 a key result covers every share covered by a stop at the broker that acts while the system is down (owner (strict risk rules); RTS 6 Art. 14)
+  ✓ catches M14 (the control with the throttles (C13) deleted): GT-7 KC-2: the covering controls state what it asks for; and 1 more
+  ✓ catches M15 (overnight jump 50% to 20%): GT-2 the overnight jump assumption covers the largest gaps in the data
+  ✓ catches M16 (overnight net 15% to 60%): GT-2 the overnight book through a 13% market-wide gap fits inside the daily loss limit
+  ✓ catches M17 (volatility budget 0.2% to 1% a day): GT-1 key results state the same numbers as the settings they restate; and 6 more
+  ✓ catches M18 (gross exposure 100% to 300% (3 times leverage)): GT-2 the owner's limit: uses no borrowed money: gross exposure at most 100%
+  ✓ catches M19 (KR3.1 allows 10 entries below twice their cost): GT-1 every key result that counts failures allows none
+  ✓ catches M20 (G1 without the lag audit): GT-6 rejects 'a subtle look-ahead leak' (sees part of tomorrow's return: a Sharpe of 2.4, below the audit ceiling)
+  ✓ catches M21 (G1 may pass 20% of no-edge strategies): GT-4 the goal's tolerance for G1's false passes is no looser than the tests' bar
+  ✓ catches M22 (a prior of 50% that a candidate is real): GT-8 the goal's prior is within the base rates (at most 10%, ten times the share of reliably profitable day traders)
+  ✓ catches M23 (the floor on a position's risk deleted): GT-2 the planned activity fits the book (a new trade finds it full at most 10% of the time)
+  ✓ catches M24 (100 rotations a day): GT-2 the daily rotation cap allows no more rotations a week than the planned round trips
+  ✓ catches M25 (the halt at the 10% line itself): GT-1 key results state the same numbers as the settings they restate; and 2 more
+  ✓ catches M26 (holds through earnings): GT-2 the owner's limit: holds no position through an earnings release
+  ✓ catches M27 (holds 20 trading days): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M28 (G1 judged on raw profit): GT-6 rejects 'long through a bull market' (always long in a rising market: a raw Sharpe above the bar, no excess return)
+  ✓ catches M29 (G2 judged on raw profit): GT-6 rejects 'riding the market' (fully long in a rising market: profit with no edge); and 1 more
+  ✓ catches M30 (no stop required): GT-6 rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen)
+  ✓ catches M31 (drawdown line 10% to 20%): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M32 (risk per position 0.5% to 2%): GT-2 the owner's limit: risks at most 0.5% of equity on one position at its stop; and 1 more
+  ✓ catches M33 (entry at 1 times cost, not 2): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M34 (spreads up to 50 bps): GT-3 the stressed cost covers a round trip at the universe's limits
+  ✓ catches M35 ($1M a day of volume, not $20M): GT-3 a typical position fits the participation limit in the least liquid name the universe admits
+  ✓ catches M36 (real money starts with all the capital): GT-8 the first real money is small: at most 25% of the intended capital (the owner's word)
+  · M37 (the live test without its cap): needs a slow simulation: GT-4: the cap must make a decay show sooner than without it
+  ✓ catches M38 (a cost drag of 0.001% a day, not the plan's): GT-4 the simulated cost drag is the plan's
+  ✓ catches M39 (5 simulated variants while the budget allows 30): GT-4 the simulated search is at least the variant budget
+  ✓ catches M40 (a position may be 1% of a name's daily volume): GT-3 the cost model is not cheaper than published costs; and 2 more
+  ✓ catches M41 (published effects counted in full): GT-8 published edges count at most at what remains after publication (McLean-Pontiff: 42%)
+  ✓ catches M42 (intraday jump 20% to 5%): GT-2 the intraday jump is at least the 10% Limit Up-Limit Down band near the open and the close
+  ✓ catches M43 (G2 no longer requires a profit): GT-6 rejects 'excess return but a loss' (beats the market while the account loses money in a crash)
+  · M44 (an order may be 50% of the volume while it works): known gap: no published bound on an order's share of the volume while it works; the square-root law prices the position's size against daily volume, which GT-3 checks
+  ✓ catches M45 (G1's Deflated Sharpe threshold 0.95 to 0.5): GT-1 key results state the same numbers as the settings they restate; and 3 more
+  ✓ catches M46 (joint power 50% to 20%): GT-4 the goal's tolerance for a real edge at the target passing both gates is no looser than the tests' bar
+  ✓ catches M47 (the kill switch control reduced to a sentence): GT-7 RT-1: the covering controls state what it asks for; and 1 more
+  ✓ catches M48 (a budget of 100 variants): GT-8 the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado); and 1 more
+  ✓ catches M49 (G1 needs 4,000 days, more than the data holds): GT-6 rejects 'best of 50' (the luckiest of 50 strategies with no net edge, its 50 variants reported); and 2 more
+  ✓ catches M50 (the clock control deleted): GT-7 RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC; and 1 more
+  ✓ catches M51 (a single jump may lose 10%): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M52 (a passing strategy need be real only 30% of the time): GT-8 the goal asks a passing strategy to be more likely real than not (min_posterior)
+  ✓ catches M53 (real edges up to Sharpe 4 in the prior): GT-8 the goal's prior puts no real edge where G1 suspects a leak
+  ✓ catches M54 (G2 needs 100 risk-bearing trades, not 300): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M55 (KR4.1 made vague): GT-1 KR4.1 is unambiguous
+  ✓ catches M56 (the marking rule made vague): GT-1 every limit, rule and control is stated without vague words
+  ✓ catches M57 (the plan's positions risk 0.2% each): GT-2 the planned activity fits the book (a new trade finds it full at most 10% of the time)
+  ✓ catches M58 (a worst-day bound of 2%, the daily limit itself): GT-1 key results state the same numbers as the settings they restate; and 2 more
+  ✓ catches M59 (orders outside the regular session): GT-2 the owner's limit: trades the regular session only
+  ✓ catches M60 (overnight dollar net 30% to 60%): GT-2 the overnight book through a 13% gap with every beta at 1 stays within the jump-loss bound
+  ✓ catches M61 (paper may trail the rerun by 3 Sharpe): GT-1 key results state the same numbers as the settings they restate
+  ✓ catches M62 (80% of trades matched, not 98%): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M63 (rotation shipped without its comparison): GT-2 a full book is resolved by a stated rotation rule; and 1 more
+  ✓ catches M64 (capital grows at even odds): GT-1 key results state the same numbers as the settings they restate
+  ✓ catches M65 (a clock error of 500 ms): GT-7 max_clock_error_ms is within the consolidated audit trail's 50 ms
+  ✓ catches M66 (250 requests a minute, more than the broker allows): GT-7 max_requests_per_minute is within Alpaca's 200 a minute, leaving room for exits and the kill path
+  ✓ catches M67 (a 20% price collar): GT-7 price_collar_pct is within the 5% Limit Up-Limit Down band
+  ✓ catches M68 (shorts with $500 of equity): GT-8 the goal knows the broker's minimum equity for short sales ($2,000)
+  ✓ catches M69 (real money from $1,000): GT-8 the first real money keeps the right to short through a full drawdown
+  ✓ catches M70 (the live test stops a real edge 12% of the time): GT-1 key results state the same numbers as the settings they restate; and 1 more
+  ✓ catches M71 (the overnight industry cap 8% to 20%): GT-2 an industry-wide jump stays within the jump-loss bound (regional banks, 13 March 2023)
+  · deliberate defects caught by the fast tests: 68 of 70 caught; 0 missed; 1 left to the slow simulations; 1 known gaps; 0 not applicable to this goal
+
+585/585 checks pass
+by what they rest on: external 170/170; consistency 70/70; presence 342/342; hygiene 3/3 (external: the answer and the bar both from outside the goal)
