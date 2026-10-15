@@ -38,6 +38,7 @@ def random_strategy(series: dict, market: dict, start: int, days: int, long_only
     either = r.get("max_position_overnight_pct", r.get("max_position_pct", 20))
     caps = {1: r.get("max_overnight_long_pct", either) / 100, -1: r.get("max_overnight_short_pct", either) / 100}
     max_hold = int(c.get("max_holding_trading_days", 5))
+    slots = r.get("max_positions") or len(series)   # at most one position per instrument
     cost = spec.get("costs", {}).get("round_trip_cost_bps", 7.0) / 1e4
     open_pos: dict[str, dict] = {}
     daily, paid, trades = [], [], 0
@@ -62,7 +63,7 @@ def random_strategy(series: dict, market: dict, start: int, days: int, long_only
                     fee += pos["size"] * cost
                     trades += 1
                     del open_pos[name]
-            if name not in open_pos and len(open_pos) < r.get("max_positions", 5) and rng.random() < 0.2:
+            if name not in open_pos and len(open_pos) < slots and rng.random() < 0.2:
                 stop_dist = 2 * _atr(b, t)
                 direction = 1 if long_only else rng.choice((1, -1))
                 close = b[t]["close"]

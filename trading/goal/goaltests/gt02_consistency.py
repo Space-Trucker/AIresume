@@ -68,6 +68,28 @@ def residual_vol() -> float:
     return stats.quantile(vols, 0.5)
 
 
+def capacity(r: dict, a: dict) -> tuple[int, str]:
+    """How many positions of the planned kind the book can hold: the fixed count if the goal sets one,
+    otherwise the tightest of the exposure and open-risk limits at the planned sizes."""
+    if r.get("max_positions"):
+        return int(r["max_positions"]), f"{r['max_positions']} slots"
+    bounds = []
+    size = r.get("typical_position_pct")
+    if size:
+        nights = a.get("typical_holding_minutes", 0) > SESSION_MINUTES and "max_overnight_gross_pct" in r
+        key = "max_overnight_gross_pct" if nights else "max_gross_exposure_pct"
+        if key in r:
+            bounds.append((int(r[key] // size), f"{r[key]:g}% {'overnight ' if nights else ''}gross / {size:g}% each"))
+    floor = a.get("risk_bearing_min_risk_pct")
+    if r.get("max_open_risk_pct") and floor:
+        bounds.append((int(r["max_open_risk_pct"] / floor + 1e-9),
+                       f"{r['max_open_risk_pct']:g}% open risk / at least {floor:g}% each"))
+    if not bounds:
+        return 0, "neither a position count nor exposure limits at a planned size bound the book"
+    n, why = min(bounds)
+    return n, f"at most {n} positions ({'; '.join([why] + [w for _, w in bounds if w != why])})"
+
+
 def erlang_b(load: float, servers: int) -> float:
     """Share of arrivals that find every server busy (Erlang's loss formula)."""
     b = 1.0
@@ -84,11 +106,14 @@ def run(spec: dict) -> list[Check]:
     daily = r.get("daily_loss_limit_pct")
 
     # 1. stops hit together, with slippage, must fit inside the daily loss limit. A market-wide move
-    #    stops out one side of the book; a goal that caps only the total must survive all of it.
+    #    stops out one side of the book; a goal that caps only the total must survive all of it. The
+    #    open-risk caps bound this whether or not the number of positions is fixed.
     per = r.get("risk_per_position_pct", r.get("risk_per_trade_pct"))
-    if daily and per and r.get("max_positions"):
+    count = r.get("max_positions")
+    by_count = per * count if per and count else math.inf
+    if daily and per and ("max_open_risk_per_side_pct" in r or "max_open_risk_pct" in r or count):
         if "max_open_risk_per_side_pct" in r:
-            side = min(r["max_open_risk_per_side_pct"], per * r["max_positions"])
+            side = min(r["max_open_risk_per_side_pct"], by_count)
             worst = side * STOP_SLIPPAGE
             add("every stop on one side hit at once (a market-wide move) stays inside the daily loss limit",
                 worst <= daily, f"{side:g}% open risk per side x {STOP_SLIPPAGE} slippage = {worst:.2f}% vs {daily:g}%")
@@ -98,7 +123,7 @@ def run(spec: dict) -> list[Check]:
                 total * STOP_SLIPPAGE <= bound,
                 f"{total:g}% total open risk x {STOP_SLIPPAGE} = {total * STOP_SLIPPAGE:.2f}% vs {bound:g}%")
         else:
-            total = min(r.get("max_open_risk_pct", per * r["max_positions"]), per * r["max_positions"])
+            total = min(r.get("max_open_risk_pct", by_count), by_count)
             worst = total * STOP_SLIPPAGE
             add("every stop hit at once stays inside the daily loss limit", worst <= daily,
                 f"{total:g}% open risk x {STOP_SLIPPAGE} slippage = {worst:.2f}% vs {daily:g}%")
@@ -172,15 +197,18 @@ def run(spec: dict) -> list[Check]:
             add("jumps sized as jumps (a gap or a halt is not a slipped stop)", jump is not None,
                 "" if jump is not None else "the limits assume a stop bounds the loss; across a gap or a halt it doesn't")
 
-    # 3. the planned activity must fit the position limit and the exposure limits (Little's law:
-    #    average open positions = trades a day x days held; Erlang: how often every slot is full)
+    # 3. the planned activity must fit the book (Little's law: average open positions = trades a day x
+    #    days held; Erlang's loss formula: how often a new trade finds the book full). With a fixed
+    #    count the book holds that many; without one, as many as the exposure and open-risk limits allow
+    #    at the planned sizes, and a full book is resolved by the rotation rule (check 10)
     plan = ("planned_risk_trades_per_week", "typical_holding_minutes")
-    if all(k in a for k in plan) and r.get("max_positions"):
+    slots, basis = capacity(r, a)
+    if all(k in a for k in plan) and slots:
         open_avg = a["planned_risk_trades_per_week"] / 5 * a["typical_holding_minutes"] / SESSION_MINUTES
-        blocked = erlang_b(open_avg, int(r["max_positions"]))
-        add("the planned activity fits the position limit (a new trade finds every slot full at most 10% of the time)",
+        blocked = erlang_b(open_avg, slots)
+        add("the planned activity fits the book (a new trade finds it full at most 10% of the time)",
             blocked <= 0.10, f"{a['planned_risk_trades_per_week']}/week held {a['typical_holding_minutes'] / SESSION_MINUTES:.1f} days "
-            f"= {open_avg:.1f} open on average; {r['max_positions']} slots full {blocked:.1%} of the time")
+            f"= {open_avg:.1f} open on average; {basis}: full {blocked:.1%} of the time")
         size = r.get("typical_position_pct")
         if size:
             gross = open_avg * size
@@ -209,7 +237,8 @@ def run(spec: dict) -> list[Check]:
                         f"{open_avg:.1f} positions x {size:g}% x {resid:.2%} market-neutral daily volatility per stock "
                         f"= {book:.2f}%/day vs a budget of {vol:g}%")
     else:
-        add("the planned activity fits the position limit", False, "no planned activity or holding time")
+        add("the planned activity fits the book", False,
+            "no planned activity or holding time" if not all(k in a for k in plan) else basis)
 
     # 4. gross exposure from the position limits
     if r.get("max_positions") and r.get("max_position_pct") and r.get("max_gross_exposure_pct"):
@@ -217,6 +246,8 @@ def run(spec: dict) -> list[Check]:
         add("position limits and the gross exposure limit", None,
             f"{r['max_positions']} x {r['max_position_pct']:g}% = {full:g}% vs {r['max_gross_exposure_pct']:g}%: "
             + ("the gross limit binds first" if full > r["max_gross_exposure_pct"] else "the position limits bind first"))
+    elif slots:
+        add("no fixed number of positions: the limits bound the book", None, basis)
 
     # 5. short selling borrows shares: "no borrowed money" contradicts it unless leverage is a number
     shorts = "short" in c.get("directions", [])
