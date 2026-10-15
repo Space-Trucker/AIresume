@@ -1,0 +1,418 @@
+goal: goal.toml (version 3)
+
+GT-1 statement quality (ISO/IEC/IEEE 29148): pass (0s)
+  ✓ mission stated
+  ✓ viewpoint stated
+  ✓ non-goals stated (scope is bounded)
+  ✓ stakeholders and their needs stated
+  ✓ O1 has a measurable key result
+  ✓ O1 states what, not how
+  ✓ O1 has a goal kind (KAOS): achieve
+  ✓ O1 states the question its key results answer (GQM)
+  ✓ O2 has a measurable key result
+  ✓ O2 states what, not how
+  ✓ O2 has a goal kind (KAOS): maintain
+  ✓ O2 states the question its key results answer (GQM)
+  ✓ O3 has a measurable key result
+  ✓ O3 states what, not how
+  ✓ O3 has a goal kind (KAOS): maintain
+  ✓ O3 states the question its key results answer (GQM)
+  ✓ O4 has a measurable key result
+  ✓ O4 states what, not how
+  ✓ O4 has a goal kind (KAOS): maintain
+  ✓ O4 states the question its key results answer (GQM)
+  ✓ O5 has a measurable key result
+  ✓ O5 states what, not how
+  ✓ O5 has a goal kind (KAOS): avoid
+  ✓ O5 states the question its key results answer (GQM)
+  ✓ O6 has a measurable key result
+  ✓ O6 states what, not how
+  ✓ O6 has a goal kind (KAOS): maintain
+  ✓ O6 states the question its key results answer (GQM)
+  ✓ O7 has a measurable key result
+  ✓ O7 states what, not how
+  ✓ O7 has a goal kind (KAOS): maintain
+  ✓ O7 states the question its key results answer (GQM)
+  ✓ O8 has a measurable key result
+  ✓ O8 states what, not how
+  ✓ O8 has a goal kind (KAOS): maintain
+  ✓ O8 states the question its key results answer (GQM)
+  ✓ KR1.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.1 traces to an objective
+  ✓ KR1.1 uses an ISO 29148 verification method: analysis
+  ✓ KR1.1 belongs to a gate that exists: G1
+  ✓ KR1.1 is unambiguous
+  ✓ KR1.1 is free of design
+  ✓ KR1.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.2 traces to an objective
+  ✓ KR1.2 uses an ISO 29148 verification method: analysis
+  ✓ KR1.2 belongs to a gate that exists: G1
+  ✓ KR1.2 is unambiguous
+  ✓ KR1.2 is free of design
+  ✓ KR1.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.3 traces to an objective
+  ✓ KR1.3 uses an ISO 29148 verification method: analysis
+  ✓ KR1.3 belongs to a gate that exists: G1
+  ✓ KR1.3 is unambiguous
+  ✓ KR1.3 is free of design
+  ✓ KR1.4 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.4 traces to an objective
+  ✓ KR1.4 uses an ISO 29148 verification method: analysis
+  ✓ KR1.4 belongs to a gate that exists: G1
+  ✓ KR1.4 is unambiguous
+  ✓ KR1.4 is free of design
+  ✓ KR1.5 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.5 traces to an objective
+  ✓ KR1.5 uses an ISO 29148 verification method: analysis
+  ✓ KR1.5 belongs to a gate that exists: G2
+  ✓ KR1.5 is unambiguous
+  ✓ KR1.5 is free of design
+  ✓ KR1.6 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.6 traces to an objective
+  ✓ KR1.6 uses an ISO 29148 verification method: analysis
+  ✓ KR1.6 belongs to a gate that exists: G2
+  ✓ KR1.6 is unambiguous
+  ✓ KR1.6 is free of design
+  ✓ KR1.7 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.7 traces to an objective
+  ✓ KR1.7 uses an ISO 29148 verification method: analysis
+  ✓ KR1.7 belongs to a gate that exists: G2
+  ✓ KR1.7 is unambiguous
+  ✓ KR1.7 is free of design
+  ✓ KR1.8 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.8 traces to an objective
+  ✓ KR1.8 uses an ISO 29148 verification method: analysis
+  ✓ KR1.8 belongs to a gate that exists: G3
+  ✓ KR1.8 is unambiguous
+  ✓ KR1.8 is free of design
+  ✓ KR1.9 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR1.9 traces to an objective
+  ✓ KR1.9 uses an ISO 29148 verification method: analysis
+  ✓ KR1.9 belongs to a gate that exists: G1
+  ✓ KR1.9 is unambiguous
+  ✓ KR1.9 is free of design
+  ✓ KR2.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.1 traces to an objective
+  ✓ KR2.1 uses an ISO 29148 verification method: inspection
+  ✓ KR2.1 belongs to a gate that exists: G2
+  ✓ KR2.1 is unambiguous
+  ✓ KR2.1 is free of design
+  ✓ KR2.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.2 traces to an objective
+  ✓ KR2.2 uses an ISO 29148 verification method: demonstration
+  ✓ KR2.2 belongs to a gate that exists: G2
+  ✓ KR2.2 is unambiguous
+  ✓ KR2.2 is free of design
+  ✓ KR2.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.3 traces to an objective
+  ✓ KR2.3 uses an ISO 29148 verification method: analysis
+  ✓ KR2.3 belongs to a gate that exists: G2
+  ✓ KR2.3 is unambiguous
+  ✓ KR2.3 is free of design
+  ✓ KR2.4 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.4 traces to an objective
+  ✓ KR2.4 uses an ISO 29148 verification method: demonstration
+  ✓ KR2.4 belongs to a gate that exists: G2
+  ✓ KR2.4 is unambiguous
+  ✓ KR2.4 is free of design
+  ✓ KR2.5 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.5 traces to an objective
+  ✓ KR2.5 uses an ISO 29148 verification method: demonstration
+  ✓ KR2.5 belongs to a gate that exists: G2
+  ✓ KR2.5 is unambiguous
+  ✓ KR2.5 is free of design
+  ✓ KR2.6 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.6 traces to an objective
+  ✓ KR2.6 uses an ISO 29148 verification method: analysis
+  ✓ KR2.6 belongs to a gate that exists: G2
+  ✓ KR2.6 is unambiguous
+  ✓ KR2.6 is free of design
+  ✓ KR2.7 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.7 traces to an objective
+  ✓ KR2.7 uses an ISO 29148 verification method: analysis
+  ✓ KR2.7 belongs to a gate that exists: G2
+  ✓ KR2.7 is unambiguous
+  ✓ KR2.7 is free of design
+  ✓ KR2.8 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR2.8 traces to an objective
+  ✓ KR2.8 uses an ISO 29148 verification method: analysis
+  ✓ KR2.8 belongs to a gate that exists: G2
+  ✓ KR2.8 is unambiguous
+  ✓ KR2.8 is free of design
+  ✓ KR3.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR3.1 traces to an objective
+  ✓ KR3.1 uses an ISO 29148 verification method: inspection
+  ✓ KR3.1 belongs to a gate that exists: G2
+  ✓ KR3.1 is unambiguous
+  ✓ KR3.1 is free of design
+  ✓ KR3.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR3.2 traces to an objective
+  ✓ KR3.2 uses an ISO 29148 verification method: inspection
+  ✓ KR3.2 belongs to a gate that exists: G2
+  ✓ KR3.2 is unambiguous
+  ✓ KR3.2 is free of design
+  ✓ KR3.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR3.3 traces to an objective
+  ✓ KR3.3 uses an ISO 29148 verification method: analysis
+  ✓ KR3.3 belongs to a gate that exists: G2
+  ✓ KR3.3 is unambiguous
+  ✓ KR3.3 is free of design
+  ✓ KR3.4 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR3.4 traces to an objective
+  ✓ KR3.4 uses an ISO 29148 verification method: analysis
+  ✓ KR3.4 belongs to a gate that exists: G2
+  ✓ KR3.4 is unambiguous
+  ✓ KR3.4 is free of design
+  ✓ KR4.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR4.1 traces to an objective
+  ✓ KR4.1 uses an ISO 29148 verification method: analysis
+  ✓ KR4.1 belongs to a gate that exists: G2
+  ✓ KR4.1 is unambiguous
+  ✓ KR4.1 is free of design
+  ✓ KR4.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR4.2 traces to an objective
+  ✓ KR4.2 uses an ISO 29148 verification method: test
+  ✓ KR4.2 belongs to a gate that exists: G2
+  ✓ KR4.2 is unambiguous
+  ✓ KR4.2 is free of design
+  ✓ KR4.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR4.3 traces to an objective
+  ✓ KR4.3 uses an ISO 29148 verification method: inspection
+  ✓ KR4.3 belongs to a gate that exists: G2
+  ✓ KR4.3 is unambiguous
+  ✓ KR4.3 is free of design
+  ✓ KR4.4 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR4.4 traces to an objective
+  ✓ KR4.4 uses an ISO 29148 verification method: demonstration
+  ✓ KR4.4 belongs to a gate that exists: G2
+  ✓ KR4.4 is unambiguous
+  ✓ KR4.4 is free of design
+  ✓ KR5.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR5.1 traces to an objective
+  ✓ KR5.1 uses an ISO 29148 verification method: inspection
+  ✓ KR5.1 belongs to a gate that exists: G2
+  ✓ KR5.1 is unambiguous
+  ✓ KR5.1 is free of design
+  ✓ KR5.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR5.2 traces to an objective
+  ✓ KR5.2 uses an ISO 29148 verification method: inspection
+  ✓ KR5.2 belongs to a gate that exists: G2
+  ✓ KR5.2 is unambiguous
+  ✓ KR5.2 is free of design
+  ✓ KR5.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR5.3 traces to an objective
+  ✓ KR5.3 uses an ISO 29148 verification method: inspection
+  ✓ KR5.3 belongs to a gate that exists: G2
+  ✓ KR5.3 is unambiguous
+  ✓ KR5.3 is free of design
+  ✓ KR6.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR6.1 traces to an objective
+  ✓ KR6.1 uses an ISO 29148 verification method: inspection
+  ✓ KR6.1 belongs to a gate that exists: G1
+  ✓ KR6.1 is unambiguous
+  ✓ KR6.1 is free of design
+  ✓ KR6.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR6.2 traces to an objective
+  ✓ KR6.2 uses an ISO 29148 verification method: inspection
+  ✓ KR6.2 belongs to a gate that exists: G1, G2, G3
+  ✓ KR6.2 is unambiguous
+  ✓ KR6.2 is free of design
+  ✓ KR6.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR6.3 traces to an objective
+  ✓ KR6.3 uses an ISO 29148 verification method: inspection
+  ✓ KR6.3 belongs to a gate that exists: G1
+  ✓ KR6.3 is unambiguous
+  ✓ KR6.3 is free of design
+  ✓ KR6.4 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR6.4 traces to an objective
+  ✓ KR6.4 uses an ISO 29148 verification method: inspection
+  ✓ KR6.4 belongs to a gate that exists: G1
+  ✓ KR6.4 is unambiguous
+  ✓ KR6.4 is free of design
+  ✓ KR7.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR7.1 traces to an objective
+  ✓ KR7.1 uses an ISO 29148 verification method: inspection
+  ✓ KR7.1 belongs to a gate that exists: G2
+  ✓ KR7.1 is unambiguous
+  ✓ KR7.1 is free of design
+  ✓ KR7.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR7.2 traces to an objective
+  ✓ KR7.2 uses an ISO 29148 verification method: demonstration
+  ✓ KR7.2 belongs to a gate that exists: G2
+  ✓ KR7.2 is unambiguous
+  ✓ KR7.2 is free of design
+  ✓ KR7.3 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR7.3 traces to an objective
+  ✓ KR7.3 uses an ISO 29148 verification method: inspection
+  ✓ KR7.3 belongs to a gate that exists: G2
+  ✓ KR7.3 is unambiguous
+  ✓ KR7.3 is free of design
+  ✓ KR8.1 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR8.1 traces to an objective
+  ✓ KR8.1 uses an ISO 29148 verification method: inspection
+  ✓ KR8.1 belongs to a gate that exists: G3
+  ✓ KR8.1 is unambiguous
+  ✓ KR8.1 is free of design
+  ✓ KR8.2 is verifiable (metric, unit, threshold, window, data, method, gate)
+  ✓ KR8.2 traces to an objective
+  ✓ KR8.2 uses an ISO 29148 verification method: inspection
+  ✓ KR8.2 belongs to a gate that exists: G3
+  ✓ KR8.2 is unambiguous
+  ✓ KR8.2 is free of design
+  ✓ constraints: the limits are numbers
+  ✓ risk: the limits are numbers
+  ✓ costs: the limits are numbers
+  ✓ activity: the limits are numbers
+  ✓ returns: the limits are numbers
+  ✓ constraints: no vague limits
+  ✓ risk: no vague limits
+  ✓ costs: no vague limits
+  ✓ activity: no vague limits
+  ✓ gate G1 has a machine-checkable rule: dsr
+  ✓ gate G2 has a machine-checkable rule: paper
+  ✓ gate G3 has a machine-checkable rule: owner_decision
+  ✓ every KPP is decided at a gate
+  ✓ kill criteria stated (when the program stops)
+  ✓ GOAL.md names every key result
+  ✓ GOAL.md shows every number goal.toml sets
+
+GT-2 internal consistency: pass (1s)
+  ✓ every stop on one side hit at once (a market-wide move) stays inside the daily loss limit: 1.5% open risk per side x 1.25 slippage = 1.88% vs 2%
+  ✓ every stop on both sides hit in one day (a whipsaw) stays inside the worst-day bound: 2% total open risk x 1.25 = 2.50% vs 2.5%
+  ✓ stress gaps match the price data: NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
+  ✓ the overnight jump assumption covers the largest gaps in the data: 50% vs Yahoo, 1 February 2008, takeover bid +49.5% and NVIDIA, 3 July 2008, unscheduled revenue warning -28.0%
+  ✓ one position held overnight through the assumed jump fits inside the daily loss limit: 4% x 50% = 2.00% vs 2%
+  ✓ one position through an intraday jump (a halt, two price bands) fits inside the daily loss limit: 10% x 20% = 2.00% vs 2%
+  ✓ a total loss in one name held overnight stays within the jump-loss bound (SVB, 10 March 2023): 4% vs 4%
+  ✓ an industry-wide jump stays within the jump-loss bound (regional banks, 13 March 2023): 8% x 50% = 4.00% vs 4%
+  ✓ the overnight book through a 13% market-wide gap fits inside the daily loss limit: 15% net x 13% = 1.95% vs 2%
+  ✓ overnight exposure limited separately from intraday
+  ✓ jumps sized as jumps (a gap or a halt is not a slipped stop)
+  ✓ the planned activity fits the position limit (a new trade finds every slot full at most 10% of the time): 25/week held 3.0 days = 15.0 open on average; 20 slots full 4.6% of the time
+  ✓ the planned book fits the gross exposure limit: 15.0 x 4% = 60% vs 100%
+  ✓ the planned book can be held overnight (typical holds span nights): 60% held overnight vs an overnight gross limit of 75%
+  ✓ a typical position fits the overnight position limits: 4% vs 4%
+  ✓ the volatility budget is within reach of the planned book (0.5 to 1.5 times what it produces): 15.0 positions x 4% x 1.28% market-neutral daily volatility per stock = 0.20%/day vs a budget of 0.2%
+  · position limits and the gross exposure limit: 20 x 10% = 200% vs 100%: the gross limit binds first
+  ✓ short selling is consistent with the leverage rule
+  ✓ drawdown halt is above the daily loss limit: halt after 4 days at the limit
+  ✓ daily loss limit is at least 3 ordinary days of volatility: 2% vs 3 x 0.2%
+  ✓ the minimum activity fits the cost budget: 10/week x 4% x 8 bps = 1.66%/yr vs 4.5%
+  ✓ the planned activity fits the cost budget: 25/week x 4% x 8 bps = 4.16%/yr vs 4.5%
+  ✓ a return objective is stated
+  ✓ the stated return matches the Sharpe ratio at the volatility budget (min_net_excess_return_pct): Sharpe 1 x 3.17%/yr = 3.2%/yr vs 3%
+  ✓ the stated return matches the Sharpe ratio at the volatility budget (target_net_excess_return_pct): Sharpe 1.5 x 3.17%/yr = 4.8%/yr vs 5%
+
+GT-3 cost feasibility by horizon: pass (0s)
+  ✓ the cost model is not cheaper than published costs: stated 8 bps vs 6.95 bps (spread 3.7, slippage 2 x 1.5, fees)
+  · typical stock moves by horizon (real data): daily 168 bps (GOOG, MSFT), index 104 bps; break-even IC at 8.0 bps: 10 seconds: move 3 bps, IC 2.894; 1 minute: move 8 bps, IC 1.182; 5 minutes: move 19 bps, IC 0.528; 30 minutes: move 46 bps, IC 0.216; 1 hour: move 66 bps, IC 0.153; 1 day: move 168 bps, IC 0.060; 5 days: move 375 bps, IC 0.027
+  · horizons where costs need an implausible signal (IC > 0.15): 10 seconds, 1 minute, 5 minutes, 30 minutes, 1 hour
+  ✓ at the planned edge's shortest horizon, costs need at most a 'great' signal (IC <= 0.10): 150 min: move 104 bps, break-even IC 0.096
+  ✓ market impact at the participation limit is about the slippage the cost model charges: 0.02% of daily volume: 1.2 to 2.4 bps a side vs 1.5 bps charged
+  ✓ the targeted return needs at most a 'great' signal at the planned activity: Sharpe 1.5: net 4.8%/yr + costs 4.16%/yr over 1300 trades of 4.0%: 17.2 bps gross per trade vs a 290 bps move: IC 0.074
+  · the minimum return at the planned activity: Sharpe 1: net 3.2%/yr + costs 4.16%/yr over 1300 trades of 4.0%: 14.1 bps gross per trade vs a 290 bps move: IC 0.061
+  ✓ the targeted edge survives the cost stress at the planned activity: Sharpe 1.5 - 0.5 x costs 4.16%/yr / volatility 3.2%/yr = 0.84 vs a floor of 0.5
+
+GT-4 do the gates tell skill from luck: pass (132s)
+  · simulation setup: volatility 0.20%/day (measured over 5 days), cost drag 0.017%/day, stress x1.5, 10 variants, G1 2400 days, G2 120 days, target Sharpe 1.5, 400 runs each
+  ✓ G1 lets the best of 10 no-edge variants through at most 1% (normal): 0.10% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (normal): G1 0.10% x G2 2/4 = 0.05%
+  ✓ G1 passes the targeted edge at least 80% of the time (normal): 83.0% of 400
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (normal): 283/332 = 85.2%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (normal): fails 0.0%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (normal): 95.2%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (normal): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (normal): 6.2%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (normal): halved 66%, stopped 73%
+  ✓ G1 lets the best of 10 no-edge variants through at most 1% (t4): 0.15% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (t4): G1 0.15% x G2 3/6 = 0.07%
+  ✓ G1 passes the targeted edge at least 80% of the time (t4): 85.8% of 400
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (t4): 290/343 = 84.5%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (t4): fails 0.0%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (t4): 90.5%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (t4): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (t4): 4.8%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (t4): halved 62%, stopped 76%
+  ✓ G1 lets the best of 10 no-edge variants through at most 1% (garch): 0.15% of 4000
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (garch): G1 0.15% x G2 3/6 = 0.07%
+  ✓ G1 passes the targeted edge at least 80% of the time (garch): 83.5% of 400
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (garch): 285/334 = 85.3%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (garch): fails 0.0%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (garch): 93.0%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (garch): 0.8%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (garch): 3.6%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (garch): halved 65%, stopped 74%
+  ✓ G1 lets the best of 10 no-edge variants through at most 1% (ar1): 0.76% of 3311
+  ✓ a no-edge strategy reaches real money at most 0.5% of the time (ar1): G1 0.76% x G2 11/25 = 0.33%
+  ✓ G1 passes the targeted edge at least 80% of the time (ar1): 81.5% of 400; a no-edge variant was chosen and passed 1 times
+  ✓ G2 passes the targeted edge at least 80% of the time after G1 (ar1): 269/326 = 82.5%
+  ✓ G2's fidelity test passes an honest implementation at least 95% of the time (ar1): fails 0.0%
+  ✓ G2's fidelity test catches an execution shortfall of 1 Sharpe at least 80% of the time (ar1): 92.5%
+  ✓ the 9% drawdown halt stops the targeted edge at most 10% of years (ar1): 0.0%
+  ✓ the live test stops the targeted edge within 3 years at most 12% of the time (ar1): 9.0%
+  ✓ the live test halves a dead strategy within a year at least 50% of the time, and stops it within 3 years at least 65% (ar1): halved 63%, stopped 75%
+  · share passing G1 and G2, by true Sharpe (normal noise): 0.25: 0%, 0.5: 2%, 0.75: 6%, 1: 22%, 1.25: 46%, 1.5: 73%, 1.75: 86%, 2: 94%
+  · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 0.05
+  · days of track record to show a Sharpe 1 at 99% confidence: 1368 days
+  · days of track record to show a Sharpe 1.5 at 99% confidence: 610 days
+
+GT-5 random strategies on real prices: pass (6s)
+  · real data: 4011 aligned days of sp500, msft, orcl, nvda, yhoo, 1999-01-22 to 2014-12-31
+  ✓ G1 passes the best of 10 balanced random strategies at most 1% of the time (real data): 0/26 windows of 2400 days = 0%
+  ✓ G2 passes a balanced random strategy at most 50% of the time (real data): 30/71 windows of 120 days = 42%
+  ✓ G1 passes the best of 10 long-only random strategies at most 1% of the time (real data): 0/26 windows of 2400 days = 0%
+  ✓ G2 passes a long-only random strategy at most 50% of the time (real data): 31/71 windows of 120 days = 44%
+
+GT-6 metric gaming: pass (0s)
+  ✓ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit, so one position risks 4x that limit): risk per position 2% > 0.5%; position size 20% > 10%
+  ✓ rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen): a position without a stop
+  ✓ rejects 'riding the market' (fully long in a rising market: profit with no edge): G2: paper excess return not positive
+  ✓ rejects 'padding the trade count' (a few lucky trades plus hundreds of scratch trades): G2: 20 risk-bearing trades < 300
+  ✓ rejects 'best of 50' (the luckiest of 50 strategies with no net edge): G1: Sharpe 0.54 < 1.0
+  ✓ rejects 'paper's generous fills' (earns only because paper fills limit orders the moment price touches): G2: P&L not from the conservative fill model
+  ✓ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): G1: Sharpe 8.1 above 4.0: audit for leaks first
+  ✓ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): position size 20% > 10%; overnight position size 20% > 4%; overnight net exposure 20% > 15%
+  ✓ rejects 'big overnight shorts' (holds 10% short positions overnight, where a takeover bid gaps one up 50% (Yahoo, 1 February 2008)): overnight position size 10% > 4%; overnight net exposure 20% > 15%
+
+GT-7 control coverage: pass (0s)
+  ✓ MA-1 15c3-5(c)(1)(i): block orders that would exceed preset credit or capital limits: by C1
+  ✓ MA-2 15c3-5(c)(1)(ii): reject orders outside price or size limits, per order or over a short period: by C2
+  ✓ MA-3 15c3-5(c)(1)(ii): reject orders that appear to be duplicates: by C3
+  ✓ MA-4 15c3-5(c)(2): meet regulatory requirements before an order goes out (short-sale rules, restricted names): by C4
+  ✓ MA-5 15c3-5(c)(2): post-trade surveillance and immediate access to execution reports: by C5
+  ✓ MA-6 15c3-5(e): review the controls' effectiveness regularly, in writing: by C10
+  ✓ FN-1 FINRA 15-09: assess risks and respond: by C10
+  ✓ FN-2 FINRA 15-09: control code development and implementation (change management): by C8
+  ✓ FN-3 FINRA 15-09: test software and validate the system before production: by C8
+  ✓ FN-4 FINRA 15-09: trading systems: monitoring, alerts, kill switch: by C6, C7
+  ✓ FN-5 FINRA 15-09: compliance: no spoofing, layering, wash trades or marking the close: by C9
+  ✓ RT-1 RTS 6 Art. 12: kill functionality, knowing which strategy owns each order: by C6
+  ✓ RT-2 RTS 6 Art. 15: price collars, maximum order value and volume, message limits: by C2, C3, C13
+  ✓ RT-3 RTS 6 Art. 16: real-time monitoring with alerts: by C7; stated deviation, C7: RTS 6 asks for alerts within 5 seconds and a person monitoring during trading; the goal allows 60 seconds and no person, because the owner wants an unattended system
+  ✓ RT-4 RTS 6 Art. 17: post-trade controls and reconciliation: by C5
+  ✓ RT-5 RTS 6 Arts. 5-8: test before deployment; deploy under limits: by C8
+  ✓ RT-6 RTS 6 Art. 9: periodic self-assessment: by C10
+  ✓ RT-7 RTS 6 Art. 18: security and access (credentials): by C11
+  ✓ RT-8 RTS 6 Art. 14: business continuity: positions can be closed when the system or its link fails: by C6
+  ✓ RT-9 RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles: by C1, C13
+  ✓ RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC: by C14
+  ✓ RT-11 MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years: by C5
+  ✓ MR-1 SR 11-7: effective challenge by competent, independent reviewers: by C12
+  ✓ MR-2 SR 11-7: ongoing monitoring and outcomes analysis (results against expectations): by C12
+  ✓ KC-1 Knight Capital: alerts designed and treated as alerts: by C7
+  ✓ KC-2 Knight Capital: a control that halts the system's own runaway behavior: by C3, C6, C13
+  ✓ KC-3 Knight Capital: the system's view of its orders and positions checked against the market's, as it trades: by C5
+  ✓ KC-4 Knight Capital: written procedures for responding to incidents: by C8
+  ✓ KC-5 Knight Capital: every component verified to run the approved version before trading: by C8
+
+GT-8 outside view: pass (0s)
+  ✓ a strategy that passes G1 and G2 has a real edge with probability at least 80%: prior 5% with edges up to Sharpe 2; passes 35% of real edges and 0.33% of no-edge strategies (GT-4): 85%; prior 2%: 68%, prior 5%: 85%, prior 10%: 92%
+  ✓ a strategy that passes G1 and G2 is worth running (Sharpe 1 or more) with probability at least 70%: 79%
+  · the same with edges no larger than Sharpe 1.25: real 63%, worth running 40%
+  · chance the program reaches real money with a real edge, on these assumptions: some variant of 10 is real: at most 40%; it then passes both gates: 35%; together at most 14%. With no real edge, a false one reaches real money 0.33% of the time. Most likely nothing passes and the kill criteria stop the program
+  ✓ the goal says when to stop if nothing passes (research budget)
+  ✓ real money starts small and grows only with evidence
+  ✓ published edges count at most at what remains after publication (McLean-Pontiff: 42%): 0.42
+  ✓ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
+
+387/387 checks pass

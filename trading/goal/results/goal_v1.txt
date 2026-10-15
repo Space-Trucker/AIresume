@@ -1,0 +1,179 @@
+goal: goal_v1.toml (version 1)
+
+GT-1 statement quality (ISO/IEC/IEEE 29148): 30 failing (0s)
+  ✓ mission stated
+  ✓ viewpoint stated
+  ✗ non-goals stated (scope is bounded): nothing is declared out of scope
+  ✓ stakeholders and their needs stated
+  ✓ O1 has a measurable key result
+  ✓ O1 states what, not how
+  ✗ O1 has a goal kind (KAOS): none
+  ✗ O1 states the question its key results answer (GQM)
+  ✓ O2 has a measurable key result
+  ✓ O2 states what, not how
+  ✗ O2 has a goal kind (KAOS): none
+  ✗ O2 states the question its key results answer (GQM)
+  ✓ O3 has a measurable key result
+  ✗ O3 states what, not how: ai model, fast code, code, split-second calls
+  ✗ O3 has a goal kind (KAOS): none
+  ✗ O3 states the question its key results answer (GQM)
+  ✓ O4 has a measurable key result
+  ✓ O4 states what, not how
+  ✗ O4 has a goal kind (KAOS): none
+  ✗ O4 states the question its key results answer (GQM)
+  ✗ O5 has a measurable key result
+  ✓ O5 states what, not how
+  ✗ O5 has a goal kind (KAOS): none
+  ✗ O5 states the question its key results answer (GQM)
+  ✗ KR1.1 is verifiable (metric, unit, threshold, window, data, method, gate): missing window, data, method
+  ✓ KR1.1 traces to an objective
+  ✓ KR1.1 belongs to a gate that exists: G1
+  ✗ KR1.1 is unambiguous: realistic
+  ✓ KR1.1 is free of design
+  ✗ KR1.2 is verifiable (metric, unit, threshold, window, data, method, gate): missing data, method
+  ✓ KR1.2 traces to an objective
+  ✓ KR1.2 belongs to a gate that exists: G2
+  ✓ KR1.2 is unambiguous
+  ✓ KR1.2 is free of design
+  ✗ KR2.1 is verifiable (metric, unit, threshold, window, data, method, gate): missing window, data, method
+  ✓ KR2.1 traces to an objective
+  ✓ KR2.1 belongs to a gate that exists: G2
+  ✓ KR2.1 is unambiguous
+  ✓ KR2.1 is free of design
+  ✗ KR2.2 is verifiable (metric, unit, threshold, window, data, method, gate): missing window, data, method
+  ✓ KR2.2 traces to an objective
+  ✓ KR2.2 belongs to a gate that exists: G2
+  ✓ KR2.2 is unambiguous
+  ✓ KR2.2 is free of design
+  ✗ KR3.1 is verifiable (metric, unit, threshold, window, data, method, gate): missing metric, unit, comparator, threshold, window, data, method
+  ✓ KR3.1 traces to an objective
+  ✓ KR3.1 belongs to a gate that exists: G2
+  ✗ KR3.1 is unambiguous: no crashes
+  ✓ KR3.1 is free of design
+  ✗ KR4.1 is verifiable (metric, unit, threshold, window, data, method, gate): missing metric, unit, comparator, threshold, window, data, method
+  ✓ KR4.1 traces to an objective
+  ✓ KR4.1 belongs to a gate that exists: G2
+  ✓ KR4.1 is unambiguous
+  ✓ KR4.1 is free of design
+  ✗ constraints: the limits are numbers: unspecified: max_holding_calendar_days, universe_min_price_usd, universe_min_dollar_volume_usd, universe_max_spread_bps
+  ✗ risk: the limits are numbers: unspecified: risk_per_position_pct, max_open_risk_pct, max_position_overnight_pct, vol_target_daily_pct
+  ✗ costs: the limits are numbers: unspecified: round_trip_cost_bps, stress_cost_multiplier
+  ✗ activity: the limits are numbers: unspecified: cost_budget_pct_per_year, min_risk_trades_per_week
+  ✗ returns: the limits are numbers: unspecified: min_net_excess_sharpe, target_net_excess_sharpe
+  ✗ constraints: no vague limits: heavily traded, penny
+  ✓ risk: no vague limits
+  ✗ costs: no vague limits: realistic
+  ✗ activity: no vague limits: constantly
+  ✓ gate G1 has a machine-checkable rule: net_positive
+  ✓ gate G2 has a machine-checkable rule: net_positive
+  ✓ gate G3 has a machine-checkable rule: owner_decision
+  ✓ every KPP is decided at a gate
+  ✗ kill criteria stated (when the program stops)
+
+GT-2 internal consistency: 11 failing (0s)
+  ✗ every stop hit at once stays inside the daily loss limit: 2.5% open risk x 1.25 slippage = 3.12% vs 2%
+  ✓ stress gaps match the price data: NVIDIA, 3 July 2008, unscheduled revenue warning: -28.0%; Yahoo, 1 February 2008, takeover bid: +49.5%
+  ✓ one position's 1-in-100 overnight gap fits inside the daily loss limit: 20% x 5.31% = 1.06% vs 2%
+  ✗ one long held overnight through the worst unscheduled gap down fits inside the daily loss limit: 20% x 28.0% (NVIDIA, 3 July 2008, unscheduled revenue warning) = 5.60% vs 2%
+  ✗ one short held overnight through a takeover gap fits inside the daily loss limit: 20% x 49.5% (Yahoo, 1 February 2008, takeover bid) = 9.90% vs 2%
+  ✗ the overnight book through a 13% market-wide gap fits inside the daily loss limit: 100% gross x 13% = 13.00% vs 2%
+  ✗ overnight exposure limited separately from intraday: positions may be held for days, but only intraday sizes are set
+  ✗ jumps sized as jumps (a gap or a halt is not a slipped stop): the limits assume a stop bounds the loss; across a gap or a halt it doesn't
+  ✗ the planned activity fits the position limit: no planned activity or holding time
+  · position limits and the gross exposure limit: 5 x 20% = 100% vs 100%: the position limits bind first
+  ✗ short selling is consistent with the leverage rule: a short sale is borrowed stock; state leverage as gross exposure instead
+  ✓ drawdown halt is above the daily loss limit: halt after 5 days at the limit
+  ✗ volatility budget stated: without it, drawdown and loss limits can't be judged
+  ✗ activity bounds and a cost budget stated: constant trading has no upper or lower bound
+  ✗ a return objective is stated: 'makes money' has no size
+
+GT-3 cost feasibility by horizon: 3 failing (0s)
+  ✗ the cost model is not cheaper than published costs: no cost is stated; published costs come to 6.95 bps per round trip
+  · typical stock moves by horizon (real data): daily 168 bps (GOOG, MSFT), index 104 bps; break-even IC at 6.9 bps: 10 seconds: move 3 bps, IC 2.513; 1 minute: move 8 bps, IC 1.026; 5 minutes: move 19 bps, IC 0.459; 30 minutes: move 46 bps, IC 0.187; 1 hour: move 66 bps, IC 0.132; 1 day: move 168 bps, IC 0.052; 5 days: move 375 bps, IC 0.023
+  · horizons where costs need an implausible signal (IC > 0.15): 10 seconds, 1 minute, 5 minutes, 30 minutes
+  ✗ the goal says which horizons the planned edge comes from: holding from seconds is allowed, but only 1 day, 5 days can pay costs with at most a 'great' signal
+  ✗ the return objective is achievable at the stated activity: unspecified: min_net_excess_sharpe, vol_target_daily_pct, planned_risk_trades_per_week, typical_holding_minutes, typical_position_pct
+
+GT-4 do the gates tell skill from luck: 20 failing (3s)
+  · simulation setup: volatility 1.00%/day (measured over 1 day), cost drag 0.070%/day, stress x2, 10 variants, G1 252 days, G2 20 days, target Sharpe 2.0, 400 runs each
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (normal): 99.75% of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (normal): G1 99.75% x G2 211/399 = 52.75%
+  ✗ G1 passes the targeted edge at least 80% of the time (normal): 68.2% of 400; a no-edge variant was chosen and passed 127 times
+  ✗ G2 passes the targeted edge at least 80% of the time after G1 (normal): 190/273 = 69.6%
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (normal): 38.0%
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (t4): 99.50% of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (t4): G1 99.50% x G2 207/398 = 51.75%
+  ✗ G1 passes the targeted edge at least 80% of the time (t4): 69.8% of 400; a no-edge variant was chosen and passed 121 times
+  ✗ G2 passes the targeted edge at least 80% of the time after G1 (t4): 207/279 = 74.2%
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (t4): 42.0%
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (garch): 99.75% of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (garch): G1 99.75% x G2 190/399 = 47.50%
+  ✗ G1 passes the targeted edge at least 80% of the time (garch): 73.8% of 400; a no-edge variant was chosen and passed 105 times
+  ✗ G2 passes the targeted edge at least 80% of the time after G1 (garch): 213/295 = 72.2%
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (garch): 29.0%
+  ✗ G1 lets the best of 10 no-edge variants through at most 5% (ar1): 100.00% of 400
+  ✗ a no-edge strategy reaches real money at most 1.0% of the time (ar1): G1 100.00% x G2 201/400 = 50.25%
+  ✗ G1 passes the targeted edge at least 80% of the time (ar1): 60.2% of 400; a no-edge variant was chosen and passed 159 times
+  ✗ G2 passes the targeted edge at least 80% of the time after G1 (ar1): 176/241 = 73.0%
+  ✗ the 10% drawdown halt stops the targeted edge at most 10% of years (ar1): 50.7%
+  · share passing G1 and G2, by true Sharpe (normal noise): 0.25: 50%, 0.5: 48%, 0.75: 56%, 1: 54%, 1.25: 62%, 1.5: 56%, 1.75: 57%, 2: 66%
+  · daily loss limit hits per year at the volatility budget (clustered, fat-tailed): 4.12
+  · days of track record to show a Sharpe 2 at 99% confidence: 345 days
+
+GT-5 random strategies on real prices: 4 failing (2s)
+  · real data: 4011 aligned days of sp500, msft, orcl, nvda, yhoo, 1999-01-22 to 2014-12-31
+  ✗ G1 passes the best of 10 balanced random strategies at most 5% of the time (real data): 59/60 windows of 252 days = 98%
+  ✗ G2 passes a balanced random strategy at most 20% of the time (real data): 76/178 windows of 20 days = 43%
+  ✗ G1 passes the best of 10 long-only random strategies at most 5% of the time (real data): 51/60 windows of 252 days = 85%
+  ✗ G2 passes a long-only random strategy at most 20% of the time (real data): 92/178 windows of 20 days = 52%
+
+GT-6 metric gaming: 9 failing (0s)
+  ✗ rejects 'averaging down' (adds to losers in steps each inside the per-trade limit, so one position risks 4x that limit): passes the goal
+  ✗ rejects 'selling tails without a stop' (many small wins, a rare crash not yet seen): passes the goal
+  ✗ rejects 'riding the market' (fully long in a rising market: profit with no edge): passes the goal
+  ✗ rejects 'padding the trade count' (a few lucky trades plus hundreds of scratch trades): passes the goal
+  ✗ rejects 'best of 50' (the luckiest of 50 strategies with no net edge): passes the goal
+  ✗ rejects 'paper's generous fills' (earns only because paper fills limit orders the moment price touches): passes the goal
+  ✗ rejects 'look-ahead leak' (uses tomorrow's data today: a Sharpe of 8): passes the goal
+  ✗ rejects 'big overnight positions' (holds full-size positions overnight, where a gap jumps past the stop): passes the goal
+  ✗ rejects 'big overnight shorts' (holds 10% short positions overnight, where a takeover bid gaps one up 50% (Yahoo, 1 February 2008)): passes the goal
+
+GT-7 control coverage: 29 failing (0s)
+  ✗ MA-1 15c3-5(c)(1)(i): block orders that would exceed preset credit or capital limits: not covered
+  ✗ MA-2 15c3-5(c)(1)(ii): reject orders outside price or size limits, per order or over a short period: not covered
+  ✗ MA-3 15c3-5(c)(1)(ii): reject orders that appear to be duplicates: not covered
+  ✗ MA-4 15c3-5(c)(2): meet regulatory requirements before an order goes out (short-sale rules, restricted names): not covered
+  ✗ MA-5 15c3-5(c)(2): post-trade surveillance and immediate access to execution reports: not covered
+  ✗ MA-6 15c3-5(e): review the controls' effectiveness regularly, in writing: not covered
+  ✗ FN-1 FINRA 15-09: assess risks and respond: not covered
+  ✗ FN-2 FINRA 15-09: control code development and implementation (change management): not covered
+  ✗ FN-3 FINRA 15-09: test software and validate the system before production: not covered
+  ✗ FN-4 FINRA 15-09: trading systems: monitoring, alerts, kill switch: not covered
+  ✗ FN-5 FINRA 15-09: compliance: no spoofing, layering, wash trades or marking the close: not covered
+  ✗ RT-1 RTS 6 Art. 12: kill functionality, knowing which strategy owns each order: not covered
+  ✗ RT-2 RTS 6 Art. 15: price collars, maximum order value and volume, message limits: not covered
+  ✗ RT-3 RTS 6 Art. 16: real-time monitoring with alerts: not covered
+  ✗ RT-4 RTS 6 Art. 17: post-trade controls and reconciliation: not covered
+  ✗ RT-5 RTS 6 Arts. 5-8: test before deployment; deploy under limits: not covered
+  ✗ RT-6 RTS 6 Art. 9: periodic self-assessment: not covered
+  ✗ RT-7 RTS 6 Art. 18: security and access (credentials): not covered
+  ✗ RT-8 RTS 6 Art. 14: business continuity: positions can be closed when the system or its link fails: not covered
+  ✗ RT-9 RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles: not covered
+  ✗ RT-10 MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC: not covered
+  ✗ RT-11 MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years: not covered
+  ✗ MR-1 SR 11-7: effective challenge by competent, independent reviewers: not covered
+  ✗ MR-2 SR 11-7: ongoing monitoring and outcomes analysis (results against expectations): not covered
+  ✗ KC-1 Knight Capital: alerts designed and treated as alerts: not covered
+  ✗ KC-2 Knight Capital: a control that halts the system's own runaway behavior: not covered
+  ✗ KC-3 Knight Capital: the system's view of its orders and positions checked against the market's, as it trades: not covered
+  ✗ KC-4 Knight Capital: written procedures for responding to incidents: not covered
+  ✗ KC-5 Knight Capital: every component verified to run the approved version before trading: not covered
+
+GT-8 outside view: 5 failing (0s)
+  ✗ a strategy that passes G1 and G2 has a real edge with probability at least 80%: prior 5%, power 42%, false pass 52.75% (measured by GT-4): 4%; prior 2%: 2%, prior 5%: 4%, prior 10%: 8%; the prior says nothing about how large a real edge is
+  ✗ the goal says when to stop if nothing passes (research budget)
+  ✗ real money starts small and grows only with evidence: 'starting small' has no size or growth rule
+  ✗ published edges count at most at what remains after publication (McLean-Pontiff: 42%): not stated
+  ✗ the evidence bar accounts for every variant tried (Harvey-Liu-Zhu, Bailey-López de Prado)
+
+41/152 checks pass
