@@ -19,11 +19,16 @@ STOCKS = ("goog", "msft", "orcl", "nvda", "yhoo")
 #   earnings blackout would not have avoided it);
 # * a short held overnight: Yahoo opened 49.5% up on 1 February 2008 on Microsoft's unsolicited bid,
 #   a 62% premium to the previous close;
-# * the whole book: a market-wide fall of 7%, the level at which US exchanges halt all trading
-#   (market-wide circuit breaker, level 1).
+# * the whole book: see STRESS_MARKET_GAP below.
 LONG_GAP = ("nvda", "2008-07-03", -0.280, "NVIDIA, 3 July 2008, unscheduled revenue warning")
 SHORT_GAP = ("yhoo", "2008-02-01", 0.495, "Yahoo, 1 February 2008, takeover bid")
-STRESS_MARKET_GAP = 0.07
+# beyond the data, from public records: SVB Financial (S&P 500) fell 60% on 9 March 2023, was halted
+# before the next open and never traded on Nasdaq again; on 13 March 2023 First Republic and Western
+# Alliance fell 60-75% together; US exchanges halt all trading for 15 minutes at a 13% market fall
+# (level 2) before 15:25, but no breaker bounds an overnight gap
+SVB_EVENT = "SVB, 10 March 2023"
+CONTAGION_EVENT = "regional banks, 13 March 2023"
+STRESS_MARKET_GAP = 0.13
 
 
 def _gap_on(name: str, day: str) -> float:
@@ -33,14 +38,14 @@ def _gap_on(name: str, day: str) -> float:
 
 
 def overnight_gaps() -> dict:
-    """|open / previous close - 1| quantiles from 1999. For single stocks, the 2% largest gaps are
-    dropped as a proxy for earnings nights, which the goal forbids holding through."""
+    """|open / previous close - 1| quantiles of single stocks from 1999, with the 2% largest gaps
+    dropped as a proxy for earnings nights, which the goal forbids holding through. (The index's
+    opening prices in this data are not reliable, so it is not used for gaps.)"""
     out = {}
-    for name in ("sp500",) + STOCKS:
+    for name in STOCKS:
         b = [r for r in data.bars(name) if r["date"].year >= 1999]
         gaps = sorted(abs(b[i]["open"] / b[i - 1]["close"] - 1) for i in range(1, len(b)))
-        if name != "sp500":
-            gaps = gaps[: int(len(gaps) * 0.98)]
+        gaps = gaps[: int(len(gaps) * 0.98)]
         out[name] = {"q99": stats.quantile(gaps, 0.99), "n": len(gaps)}
     return out
 
@@ -100,7 +105,8 @@ def run(spec: dict) -> list[Check]:
     else:
         add("every stop hit at once stays inside the daily loss limit", False, "a limit is unspecified")
 
-    # 2. positions held overnight: a gap jumps past the stop
+    # 2. jumps: a gap or a halt moves the price past the stop, so the loss is set by the position's
+    #    size and the jump, not by the stop
     if c.get("max_holding_trading_days", 0) > 1 or c.get("max_holding_calendar_days", 0) > 1:
         try:
             gaps = overnight_gaps()
@@ -114,8 +120,32 @@ def run(spec: dict) -> list[Check]:
             long_cap = r.get("max_overnight_long_pct", either)
             short_cap = r.get("max_overnight_short_pct", either)
             stock_q99 = max(gaps[n]["q99"] for n in STOCKS)
+            jump = r.get("jump_overnight_pct")
             if long_cap is None or short_cap is None or daily is None:
                 add("overnight gaps fit inside the daily loss limit", False, "a limit is unspecified")
+            elif jump is not None:
+                worst_seen = max(abs(LONG_GAP[2]), SHORT_GAP[2]) * 100
+                add("the overnight jump assumption covers the largest gaps in the data", jump >= worst_seen,
+                    f"{jump:g}% vs {SHORT_GAP[3]} {SHORT_GAP[2]:+.1%} and {LONG_GAP[3]} {LONG_GAP[2]:+.1%}")
+                one = max(long_cap, short_cap) * jump / 100
+                add("one position held overnight through the assumed jump fits inside the daily loss limit", one <= daily,
+                    f"{max(long_cap, short_cap):g}% x {jump:g}% = {one:.2f}% vs {daily:g}%")
+                j_in = r.get("jump_intraday_pct")
+                if j_in is not None and r.get("max_position_pct"):
+                    intraday = r["max_position_pct"] * j_in / 100
+                    add("one position through an intraday jump (a halt, two price bands) fits inside the daily loss limit",
+                        intraday <= daily, f"{r['max_position_pct']:g}% x {j_in:g}% = {intraday:.2f}% vs {daily:g}%")
+                bound = r.get("max_jump_loss_pct")
+                if bound is not None:
+                    total = max(long_cap, short_cap)
+                    add(f"a total loss in one name held overnight stays within the jump-loss bound ({SVB_EVENT})",
+                        total <= bound, f"{total:g}% vs {bound:g}%")
+                    if "max_overnight_industry_pct" in r:
+                        industry = r["max_overnight_industry_pct"] * jump / 100
+                        add(f"an industry-wide jump stays within the jump-loss bound ({CONTAGION_EVENT})", industry <= bound,
+                            f"{r['max_overnight_industry_pct']:g}% x {jump:g}% = {industry:.2f}% vs {bound:g}%")
+                    else:
+                        add("overnight exposure to one industry is limited", False, "a jump that hits a whole industry is unbounded")
             else:
                 single = max(long_cap, short_cap) * stock_q99
                 add("one position's 1-in-100 overnight gap fits inside the daily loss limit", single <= daily,
@@ -126,20 +156,21 @@ def run(spec: dict) -> list[Check]:
                 worst_short = short_cap * SHORT_GAP[2]
                 add("one short held overnight through a takeover gap fits inside the daily loss limit",
                     worst_short <= daily, f"{short_cap:g}% x {SHORT_GAP[2]:.1%} ({SHORT_GAP[3]}) = {worst_short:.2f}% vs {daily:g}%")
-            # the whole book: a market gap moves every name; with a net limit, longs and shorts offset
+            # the whole book: a market gap moves every name; with a net limit, longs and shorts offset.
+            # Circuit breakers pause trading but do not bound an overnight gap, so the stress is the
+            # level-2 breaker (13%), not the level-1 pause (7%)
             net = r.get("max_overnight_net_pct", r.get("max_overnight_gross_pct",
                                                         (long_cap or 0) * r.get("max_positions", 0)))
             if daily is not None:
                 crash = net * STRESS_MARKET_GAP
-                add("the overnight book through a 7% market-wide gap fits inside the daily loss limit", crash <= daily,
-                    f"{net:g}% {'net' if 'max_overnight_net_pct' in r else 'gross'} x 7% = {crash:.2f}% vs {daily:g}%")
+                add("the overnight book through a 13% market-wide gap fits inside the daily loss limit", crash <= daily,
+                    f"{net:g}% {'net' if 'max_overnight_net_pct' in r else 'gross'} x 13% = {crash:.2f}% vs {daily:g}%")
             add("overnight exposure limited separately from intraday",
                 any(k in r for k in ("max_position_overnight_pct", "max_overnight_long_pct")),
                 "" if any(k in r for k in ("max_position_overnight_pct", "max_overnight_long_pct"))
                 else "positions may be held for days, but only intraday sizes are set")
-            add("overnight shorts limited separately from overnight longs (takeover gaps are larger)",
-                "max_overnight_short_pct" in r, "" if "max_overnight_short_pct" in r
-                else "a short can gap up further than a long can gap down")
+            add("jumps sized as jumps (a gap or a halt is not a slipped stop)", jump is not None,
+                "" if jump is not None else "the limits assume a stop bounds the loss; across a gap or a halt it doesn't")
 
     # 3. the planned activity must fit the position limit and the exposure limits (Little's law:
     #    average open positions = trades a day x days held; Erlang: how often every slot is full)
@@ -220,8 +251,18 @@ def run(spec: dict) -> list[Check]:
     else:
         add("activity bounds and a cost budget stated", False, "constant trading has no upper or lower bound")
 
-    # 9. a return objective
+    # 9. a return objective, stated as a return too (the IPS asks for one), consistent with the
+    #    Sharpe ratio at the volatility budget
     ret = spec.get("returns", {})
     add("a return objective is stated", "min_net_excess_sharpe" in ret,
         "" if "min_net_excess_sharpe" in ret else "'makes money' has no size")
+    if vol and "min_net_excess_sharpe" in ret:
+        yearly = vol * math.sqrt(252)
+        for sr_key, pct_key in (("min_net_excess_sharpe", "min_net_excess_return_pct"),
+                                ("target_net_excess_sharpe", "target_net_excess_return_pct")):
+            if sr_key in ret and pct_key in ret:
+                implied = ret[sr_key] * yearly
+                add(f"the stated return matches the Sharpe ratio at the volatility budget ({pct_key})",
+                    abs(implied - ret[pct_key]) <= 0.5,
+                    f"Sharpe {ret[sr_key]:g} x {yearly:.2f}%/yr = {implied:.1f}%/yr vs {ret[pct_key]:g}%")
     return out

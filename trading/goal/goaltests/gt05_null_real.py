@@ -99,29 +99,28 @@ def _one_kind(args: tuple) -> dict:
     rng = random.Random(f"gt5-{label}")
     passes = tries = 0
     for start in range(15, n - g1_days, 63):           # windows a quarter apart
-        best, best_sr, srs = None, -math.inf, []
+        best, best_sr = None, -math.inf
         for _ in range(trials):
             d, x, k, paid = random_strategy(series, market, start, g1_days, long_only, spec, rng)
             sr = stats.sharpe(x if g1.get("metric") == "excess" else d)
-            srs.append(sr)
             if sr > best_sr:
                 best_sr, best = sr, (d, x, k, paid)
         d, x, k, paid = best
-        rec = gates.Record(daily=d, excess=x, trades=k, n_trials=trials, trial_srs=srs,
+        rec = gates.Record(daily=d, excess=x, trades=k, n_trials=trials, lag_audit_ok=True,
                            stressed=[v - extra * f for v, f in zip(x, paid)], conservative_fills=True)
         passes += bool(gates.evaluate(g1, rec)[0])
         tries += 1
     # paper-length windows, judged by G2 as written; trade-count clauses are left out because five
-    # instruments on daily bars can't make hundreds of trades, which would fail every window
+    # instruments on daily bars can't make hundreds of trades, which would fail every window. Paper
+    # matches the frozen strategy's rerun exactly: the question here is the edge, not the execution
     rng = random.Random(f"gt5-paper-{label}")
     g2_days = max(g2.get("min_days", 20), 20) + g2.get("extend_days", 0)
-    rule2 = {k: v for k, v in g2.items() if k not in ("min_trades", "min_risk_trades")}
+    rule2 = {k: v for k, v in g2.items() if k not in ("min_trades", "min_risk_trades", "max_days_to_trades")}
     passes2 = tries2 = 0
     for start in range(15 + g1_days, n - g2_days, 21):
         d, x, k, _ = random_strategy(series, market, start, g2_days, long_only, spec, rng)
-        _, oos_x, _, _ = random_strategy(series, market, start - g1_days, g1_days, long_only, spec, rng)
-        rec = gates.Record(daily=d, excess=x, trades=k, risk_trades=k, oos=oos_x,
-                           claimed_sr=stats.sharpe(oos_x), conservative_fills=True)
+        rec = gates.Record(daily=d, excess=x, trades=k, risk_trades=k, rerun=list(x), rerun_match=1.0,
+                           conservative_fills=True)
         passes2 += bool(gates.evaluate(rule2, rec)[0])
         tries2 += 1
     return {"label": label, "g1_days": g1_days, "trials": trials, "passes": passes, "tries": tries,

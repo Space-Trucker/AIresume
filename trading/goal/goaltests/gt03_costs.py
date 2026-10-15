@@ -80,15 +80,25 @@ def run(spec: dict) -> list[Check]:
     add("horizons where costs need an implausible signal (IC > 0.15)", None, ", ".join(infeasible) or "none")
 
     ret = spec.get("returns", {})
-    edge_min = ret.get("edge_min_horizon_minutes")
+    edge_min = ret.get("planned_edge_horizon_minutes", ret.get("edge_min_horizon_minutes"))
     if edge_min is None:
-        add("the goal says which horizons the edge must come from", False,
+        add("the goal says which horizons the planned edge comes from", False,
             f"holding from seconds is allowed, but only {', '.join(feasible)} can pay costs with at most a 'great' signal")
     else:
         move = stock_d * math.sqrt(min(edge_min, 5 * 390) / 390)
         ic = ic_needed(cost, move)
-        add("at the edge's shortest horizon, costs need at most a 'great' signal (IC <= 0.10)", ic <= IC_GREAT,
+        add("at the planned edge's shortest horizon, costs need at most a 'great' signal (IC <= 0.10)", ic <= IC_GREAT,
             f"{edge_min:g} min: move {move:.0f} bps, break-even IC {ic:.3f}")
+
+    # market impact at the participation limit: the square-root law (impact per side about Y x daily
+    # volatility x the square root of the position's share of daily volume, Y between 0.5 and 1;
+    # Almgren et al. 2005, Toth et al. 2011) against the cost model's slippage
+    adv = spec.get("constraints", {}).get("max_position_adv_pct")
+    slip = costs.get("slippage_bps_per_side")
+    if adv is not None and slip is not None:
+        lo, hi = (y * stock_d * math.sqrt(adv / 100) for y in (0.5, 1.0))
+        add("market impact at the participation limit is about the slippage the cost model charges", lo <= slip * 1.5,
+            f"{adv:g}% of daily volume: {lo:.1f} to {hi:.1f} bps a side vs {slip:g} bps charged")
 
     # the return objective at the stated activity: the gross edge each trade needs
     a, r = spec.get("activity", {}), spec.get("risk", {})

@@ -1,7 +1,8 @@
 """GT-7: control coverage. Oracle: the controls regulators expect of algorithmic trading (SEC Rule
 15c3-5, FINRA Regulatory Notice 15-09, EU RTS 6), model risk guidance (Fed SR 11-7), and the failures
 in the SEC's Knight Capital order. Every item must be covered by a goal control, or declared not
-applicable with a reason."""
+applicable with a reason. A control may cover an item with a stated deviation from it, which is
+reported."""
 from __future__ import annotations
 
 from .spec import Check
@@ -27,23 +28,34 @@ CHECKLIST = {
     "RT-5": "RTS 6 Arts. 5-8: test before deployment; deploy under limits",
     "RT-6": "RTS 6 Art. 9: periodic self-assessment",
     "RT-7": "RTS 6 Art. 18: security and access (credentials)",
+    "RT-8": "RTS 6 Art. 14: business continuity: positions can be closed when the system or its link fails",
+    "RT-9": "RTS 6 Art. 15(2)-(3): orders count toward limits as soon as they are sent; execution throttles",
+    "RT-10": "MiFID II RTS 25 (clock synchronization): business clocks traceable to UTC",
+    "RT-11": "MiFID II Arts. 16(6), 17(2): records of orders and algorithms kept at least 5 years",
     "MR-1": "SR 11-7: effective challenge by competent, independent reviewers",
     "MR-2": "SR 11-7: ongoing monitoring and outcomes analysis (results against expectations)",
     "KC-1": "Knight Capital: alerts designed and treated as alerts",
     "KC-2": "Knight Capital: a control that halts the system's own runaway behavior",
+    "KC-3": "Knight Capital: the system's view of its orders and positions checked against the market's, as it trades",
+    "KC-4": "Knight Capital: written procedures for responding to incidents",
+    "KC-5": "Knight Capital: every component verified to run the approved version before trading",
 }
 
 
 def run(spec: dict) -> list[Check]:
     covered: dict[str, list[str]] = {}
+    deviations: dict[str, list[str]] = {}
     for c in spec.get("controls", []):
         for item in c.get("covers", []):
             covered.setdefault(item, []).append(c["id"])
+        for d in c.get("deviations", []):
+            deviations.setdefault(d.split(":")[0].strip(), []).append(f"{c['id']}: {d.split(':', 1)[1].strip()}")
     na = {x["id"]: x.get("reason", "") for x in spec.get("controls_not_applicable", [])}
     out = []
     for item, what in CHECKLIST.items():
         if item in covered:
-            out.append(Check(TEST, f"{item} {what}", True, "by " + ", ".join(covered[item])))
+            note = "; stated deviation, " + "; ".join(deviations[item]) if item in deviations else ""
+            out.append(Check(TEST, f"{item} {what}", True, "by " + ", ".join(covered[item]) + note))
         elif item in na and na[item]:
             out.append(Check(TEST, f"{item} {what}", True, "not applicable: " + na[item]))
         else:

@@ -10,6 +10,7 @@ from .spec import Check
 
 TEST = "GT-1"
 METHODS = {"test", "analysis", "inspection", "demonstration"}
+KINDS = {"achieve", "maintain", "avoid"}
 # words with no agreed measure (ISO 29148 lists these kinds of terms as signs of ambiguity)
 VAGUE = ["realistic", "strict", "fast", "quick", "robust", "adequate", "appropriate", "as needed",
          "etc", "and/or", "user-friendly", "constantly", "all day", "whole market", "small", "large",
@@ -57,6 +58,10 @@ def run(spec: dict) -> list[Check]:
         add(f"{oid} has a measurable key result", bool(mine))
         design = _words(o.get("statement", ""), DESIGN)
         add(f"{oid} states what, not how", not design, ", ".join(design))
+        # KAOS: every goal is achieve, maintain or avoid; GQM: every goal asks the question its
+        # key results answer
+        add(f"{oid} has a goal kind (KAOS)", o.get("kind") in KINDS, o.get("kind", "none"))
+        add(f"{oid} states the question its key results answer (GQM)", bool(o.get("question")))
 
     for k in krs:
         kid = k.get("id", "?")
@@ -68,7 +73,8 @@ def run(spec: dict) -> list[Check]:
         if "method" in k:
             add(f"{kid} uses an ISO 29148 verification method", k["method"] in METHODS, k["method"])
         if "gate" in k:
-            add(f"{kid} belongs to a gate that exists", k["gate"] in gates)
+            mine = k["gate"] if isinstance(k["gate"], list) else [k["gate"]]
+            add(f"{kid} belongs to a gate that exists", all(g in gates for g in mine), ", ".join(mine))
         vague = _words(k.get("statement", ""), VAGUE)
         add(f"{kid} is unambiguous", not vague, ", ".join(vague))
         design = _words(k.get("statement", ""), DESIGN)
@@ -88,7 +94,7 @@ def run(spec: dict) -> list[Check]:
     for g in spec.get("gates", []):
         rule = g.get("rule", {})
         add(f"gate {g['id']} has a machine-checkable rule", "kind" in rule, rule.get("kind", ""))
-    kpp_gates = {k.get("gate") for k in krs if k.get("kpp")}
+    kpp_gates = {g for k in krs if k.get("kpp") for g in (k["gate"] if isinstance(k.get("gate"), list) else [k.get("gate")])}
     add("every KPP is decided at a gate", all(gk in gates for gk in kpp_gates))
     add("kill criteria stated (when the program stops)", bool(spec.get("kill_criteria")))
 
@@ -102,11 +108,11 @@ def run(spec: dict) -> list[Check]:
             missing = [k["id"] for k in krs if k["id"] not in text]
             add("GOAL.md names every key result", not missing, ", ".join(missing))
             stale = []
-            for section in ("constraints", "risk", "costs", "activity", "returns"):
+            for section in ("constraints", "risk", "costs", "activity", "returns", "order_limits", "live", "kill_criteria"):
                 for key, v in spec.get(section, {}).items():
                     if isinstance(v, (int, float)) and not isinstance(v, bool):
-                        shown = f"{v:,}" if isinstance(v, int) and v >= 10000 else f"{v:g}"
-                        if shown not in text:
-                            stale.append(f"{section}.{key}={shown}")
+                        forms = {f"{v:g}", f"{v:,}"}
+                        if not any(f in text for f in forms):
+                            stale.append(f"{section}.{key}={v:g}")
             add("GOAL.md shows every number goal.toml sets", not stale, ", ".join(stale))
     return out

@@ -24,21 +24,24 @@ OKRs (objectives and key results) are used only as the one-page summary at the t
 **Intent and scope.** One mission sentence, the stakeholders and what each needs, and explicit
 non-goals. The viewpoint is the owner's.
 
-**Goal tree (KAOS).** The top goal is AND-refined: it is met only if all its sub-goals are. Each leaf
-is one of three kinds: *achieve* (reach a state), *maintain* (keep a property always) or *avoid* (never
-reach a state). Each goal lists its *obstacles*, the ways it could fail, and the resolution for each.
-Most of the risk rules come from obstacles.
+**Goal tree (KAOS).** The top goal is AND-refined: it is met only if all its sub-goals, the objectives,
+are. Each objective is one of three kinds: *achieve* (reach a state), *maintain* (keep a property
+always) or *avoid* (never reach a state). Its key results are the measures that decide it. Each
+objective lists its *obstacles*, the ways it could fail, and the resolution for each. Most of the risk
+rules come from obstacles.
 
 **Objectives and constraints (IPS).** The investment part of the goal uses the IPS headings:
-- return objective and risk objective;
+- return objective, stated both as a Sharpe ratio and as a return a year, and risk objective, stated
+  as the largest losses the owner accepts;
 - time horizon, here the holding period;
 - liquidity, here the tradable universe;
 - legal and regulatory;
 - taxes;
 - unique circumstances: a paper account first, a broker API, an autonomous decision-maker.
 
-**Measures (INCOSE, GQM).** Every key result names:
-- the object measured, the purpose, the quality focus and the viewpoint (GQM);
+**Measures (INCOSE, GQM).** Each objective is the goal in GQM's sense, seen from the owner's
+viewpoint, and states the question its key results answer: the object measured, the purpose and the
+quality focus. Every key result is a metric that answers it, and names:
 - the metric, its unit, a threshold value and, where useful, a better objective value;
 - the measurement window and the data;
 - the verification method (test, analysis, inspection or demonstration, as ISO 29148 lists them);
@@ -82,10 +85,13 @@ Knight Capital's 2012 loss came from failures of exactly these kinds: a deployme
 treated as alerts, and no control to halt its own runaway orders.
 
 **Decision gates.** Each stage tests a different hypothesis, so none repeats another:
-- **G1, research on history:** is there an edge, net of costs, on data not used to find it?
-- **G2, paper trading:** does the system behave correctly, live and unattended, and do its results
-  match G1 once paper's flattering fills are corrected?
-- **G3, live with a small amount:** do real fills match the cost model?
+- **G1, research on history:** is there an edge, net of costs, on data not used to find it? Only a
+  long history can answer this.
+- **G2, paper trading:** does the live system do what the tested strategy does, unattended and within
+  every limit, and does it make money once paper's flattering fills are corrected? A few months of
+  paper can't prove an edge, so G2 checks the system, not the edge.
+- **G3, live with a small amount:** do real fills match the cost model? From then on a sequential test
+  keeps weighing the live record, and capital grows only while it favors the edge.
 
 The pass and fail rules for each gate are fixed before its data exists.
 
@@ -106,12 +112,12 @@ therefore has an *oracle*, the source of the right answer, that lies outside the
 | Test | Oracle (where the right answer comes from) |
 |---|---|
 | GT-1 statement quality | the characteristics in ISO/IEC/IEEE 29148, applied as rules |
-| GT-2 internal consistency | arithmetic and logic on the stated limits |
+| GT-2 internal consistency | arithmetic and logic on the stated limits; queueing theory (Little's law, Erlang's loss formula); real price gaps and named market events |
 | GT-3 cost feasibility | published fee schedules (SEC, FINRA, Alpaca) and spread data, with volatility measured on real prices |
 | GT-4 gate power and false passes | simulated strategies whose true edge is known because we set it |
 | GT-5 null strategies on real data | random strategies, which have no edge by construction, run on real price history |
 | GT-6 metric gaming (Goodhart) | strategies built to look good while having no edge, or hidden risk |
-| GT-7 control coverage | the checklists in SEC 15c3-5, FINRA 15-09 and RTS 6 |
+| GT-7 control coverage | the checklists in SEC 15c3-5, FINRA 15-09, RTS 6, MiFID II record and clock rules, SR 11-7, and the Knight Capital order |
 | GT-8 outside view | published base rates for traders and trading strategies |
 | GT-9 effective challenge | independent reviewers who see only the goal documents |
 

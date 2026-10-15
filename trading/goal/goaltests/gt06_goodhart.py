@@ -33,49 +33,49 @@ def probes(spec: dict) -> list[tuple[str, str, str, gates.Record]]:
     vol = spec.get("risk", {}).get("vol_target_daily_pct", 1.0) / 100
     trades = max(g2.get("min_trades", 0), g2.get("min_risk_trades", 0), 300)
     good = lambda n: _lucky(n, 3.0, vol, rng)  # noqa: E731
-    oos = good(d1)
-    base = dict(trades=trades, risk_trades=trades, oos=oos, claimed_sr=stats.sharpe(oos), conservative_fills=True,
+    # a paper record: what paper trading shows, with a rerun of the frozen strategy that matches it
+    base = dict(trades=trades, risk_trades=trades, days_to_min_trades=d2, rerun_match=0.98, conservative_fills=True,
                 max_risk_per_trade_pct=0.25, max_risk_per_position_pct=0.25, max_open_risk_pct=1.0, max_gross_pct=50,
                 max_position_pct=10, max_holding_days=1)
+    paper = lambda p, **kw: gates.Record(daily=p, excess=p, rerun=list(p), **{**base, **kw})  # noqa: E731
     out = []
     p = good(d2)
     out.append(("averaging down", "adds to losers in steps each inside the per-trade limit, so one position "
                 "risks 4x that limit", "G2",
-                gates.Record(daily=p, excess=p, **{**base, "max_risk_per_trade_pct": 0.5, "max_risk_per_position_pct": 2.0,
-                                                   "max_position_pct": 20})))
+                paper(p, max_risk_per_trade_pct=0.5, max_risk_per_position_pct=2.0, max_position_pct=20)))
     p = good(d2)
     out.append(("selling tails without a stop", "many small wins, a rare crash not yet seen", "G2",
-                gates.Record(daily=p, excess=p, **{**base, "every_position_has_stop": False})))
+                paper(p, every_position_has_stop=False)))
     rng2 = random.Random("gt6-beta")
     mkt = _lucky(d2, 3.0, 0.01, rng2)                                       # a rising market
     noise = [0.002 * rng2.gauss(0, 1) for _ in mkt]
     beyond = [n - sum(noise) / len(noise) - 0.0002 for n in noise]         # nothing beyond the market but costs
     out.append(("riding the market", "fully long in a rising market: profit with no edge", "G2",
-                gates.Record(daily=[m + b for m, b in zip(mkt, beyond)], excess=beyond,
-                             **{**base, "max_gross_pct": 100, "max_position_pct": 20})))
+                gates.Record(daily=[m + b for m, b in zip(mkt, beyond)], excess=beyond, rerun=list(beyond),
+                             **{**base, "max_gross_pct": 100, "max_position_pct": 10})))
     p = good(d2)
     out.append(("padding the trade count", "a few lucky trades plus hundreds of scratch trades", "G2",
-                gates.Record(daily=p, excess=p, **{**base, "risk_trades": 20})))
-    best, srs, _ = sim.best_of([0.0] * 50, d1, vol, "normal", rng)
+                paper(p, risk_trades=20)))
+    best, _, _ = sim.best_of([0.0] * 50, d1, vol, "normal", rng)
     out.append(("best of 50", "the luckiest of 50 strategies with no net edge", "G1",
-                gates.Record(daily=best, excess=best, trades=5000, n_trials=50, trial_srs=srs,
+                gates.Record(daily=best, excess=best, trades=5000, n_trials=50, lag_audit_ok=True,
                              stressed=[b - 0.0001 for b in best], conservative_fills=True)))
     p = good(d2)
     out.append(("paper's generous fills", "earns only because paper fills limit orders the moment price touches",
-                "G2", gates.Record(daily=p, excess=p, **{**base, "conservative_fills": False})))
+                "G2", paper(p, conservative_fills=False)))
     leak = _lucky(d1, 8.0, vol, rng)
     out.append(("look-ahead leak", "uses tomorrow's data today: a Sharpe of 8", "G1",
-                gates.Record(daily=leak, excess=leak, trades=5000, n_trials=1, stressed=leak, conservative_fills=True)))
+                gates.Record(daily=leak, excess=leak, trades=5000, n_trials=1, stressed=leak, conservative_fills=True,
+                             lag_audit_ok=False)))
     p = good(d2)
     out.append(("big overnight positions", "holds full-size positions overnight, where a gap jumps past the stop",
-                "G2", gates.Record(daily=p, excess=p, **{**base, "max_overnight_long_pct": 20, "max_position_pct": 20,
-                                                         "max_overnight_gross_pct": 60, "max_overnight_net_pct": 20,
-                                                         "max_holding_days": 3})))
+                "G2", paper(p, max_overnight_long_pct=20, max_position_pct=20, max_overnight_gross_pct=60,
+                            max_overnight_net_pct=20, max_holding_days=3)))
     p = good(d2)
     out.append(("big overnight shorts", "holds 10% short positions overnight, where a takeover bid gaps one up "
                 "50% (Yahoo, 1 February 2008)", "G2",
-                gates.Record(daily=p, excess=p, **{**base, "max_overnight_short_pct": 10, "max_overnight_gross_pct": 20,
-                                                   "max_overnight_net_pct": 20, "max_holding_days": 3})))
+                paper(p, max_overnight_short_pct=10, max_overnight_gross_pct=20, max_overnight_net_pct=20,
+                      max_holding_days=3)))
     return out
 
 
